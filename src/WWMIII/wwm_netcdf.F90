@@ -344,8 +344,7 @@
       END DO
       MaxIEcont=maxval(ContElements)
       SatMaxDeg=2*MaxIEcont
-      allocate(ListAdjWithDupl(SatMaxDeg,NP_TOTAL))
-      allocate(IEcontain(MaxIEcont,NP_TOTAL))
+      allocate(ListAdjWithDupl(SatMaxDeg,NP_TOTAL), IEcontain(MaxIEcont,NP_TOTAL), stat=istat)
       ListDegWork=0
       DO IE=1,NE_TOTAL
         DO I=1,3
@@ -378,8 +377,7 @@
       END DO
 !      WRITE(STAT%FHNDL,*) 'Stage 1 finished'
 !      FLUSH(STAT%FHNDL)
-      allocate(StatusAdj(SatMaxDeg))
-      allocate(TheBound % IOBP(np_total))
+      allocate(StatusAdj(SatMaxDeg), TheBound % IOBP(np_total), stat=istat)
       NumberAllTwo=0
       NumberBoundary=0
       NumberPathological=0
@@ -439,7 +437,7 @@
       FLUSH(STAT%FHNDL)
 !      WRITE(STAT%FHNDL,*) 'Stage 2 finished'
 !      FLUSH(STAT%FHNDL)
-      allocate(TheBound % ListBoundEdge(2, TheBound % nbEdgeBound))
+      allocate(TheBound % ListBoundEdge(2, TheBound % nbEdgeBound), stat=istat)
       idxEdgeBound=0
       TheBound % IOBP = 0
       DO IP=1,NP_TOTAL
@@ -466,7 +464,7 @@
       END DO
 !      WRITE(STAT%FHNDL,*) 'Stage 3 finished'
 !      FLUSH(STAT%FHNDL)
-      allocate(TheBound % ListVertBound(TheBound % nbVertBound))
+      allocate(TheBound % ListVertBound(TheBound % nbVertBound), stat=istat)
       idx=0
       DO IP=1,np_total
         IF (TheBound % IOBP(IP) .eq. 1) THEN
@@ -488,7 +486,7 @@
       ListDegVertBound=0
 !      Print *, 'nbEdgeBound=', TheBound % nbEdgeBound
 !      Print *, 'MaxNbContEdge=', MaxNbContEdge, ' np_total=', np_total
-      allocate(MappingIP_iEdgeBound(MaxNbContEdge,np_total))
+      allocate(MappingIP_iEdgeBound(MaxNbContEdge,np_total), stat=istat)
       DO iEdgeBound=1,TheBound % nbEdgeBound
         DO I=1,2
           IP=TheBound % ListBoundEdge(I,iEdgeBound)
@@ -499,8 +497,7 @@
       END DO
 !      WRITE(STAT%FHNDL,*) 'Stage 4 finished'
 !      FLUSH(STAT%FHNDL)
-      allocate(TheBound % AdjacencyEdgeBound(2,TheBound % nbEdgeBound))
-      allocate(ListDegEdgeBound(TheBound % nbEdgeBound))
+      allocate(TheBound % AdjacencyEdgeBound(2,TheBound % nbEdgeBound), ListDegEdgeBound(TheBound % nbEdgeBound), stat=istat)
       ListDegEdgeBound=0
       DO IP=1,np_total
         IF (IsPointClassicalBoundary(IP) .eq. 1) THEN
@@ -537,8 +534,7 @@
               IF (nb .eq. 1) eRealDegBound=eRealDegBound+1
             END IF
           END DO
-          allocate(ListAdjVert(eRealDeg))
-          allocate(ListAdjVertBound(eRealDegBound))
+          allocate(ListAdjVert(eRealDeg), ListAdjVertBound(eRealDegBound), stat=istat)
           StatusAdj=0
           idxDeg=0
           idxDegBound=0
@@ -563,7 +559,7 @@
           END DO
           if (idxDegBound .ne. eRealDegBound) CALL WWM_ABORT("Logical error on eRealDegBound")
           nbContIE=ListDegWork(IP)
-          allocate(ListMatchVert(eRealDegBound))
+          allocate(ListMatchVert(eRealDegBound), stat=istat)
           ListMatchVert=ListAdjVertBound
           DO 
             WeDoOperation=.false.
@@ -596,7 +592,7 @@
               EXIT
             END IF
           END DO
-          allocate(ListAng(eRealDegBound))
+          allocate(ListAng(eRealDegBound), stat=istat)
           DO iVertBound=1,eRealDegBound
             IPadj=ListAdjVertBound(iVertBound)
             DeltaX=XPtotal(IPadj) - XPtotal(IP)
@@ -604,7 +600,7 @@
             eAng=ATAN2(DeltaY, DeltaX)
             ListAng(iVertBound)=eAng
           END DO
-          allocate(ListPrevVertBound(eRealDegBound), ListNextVertBound(eRealDegBound))
+          allocate(ListPrevVertBound(eRealDegBound), ListNextVertBound(eRealDegBound), stat=istat)
 !          Print *, 'Before determination of next/prev s'
           DO iVertBound=1,eRealDegBound
 !            Print *, 'iVertBound=', iVertBound
@@ -632,7 +628,7 @@
 !            Print *, 'iV=', iVertBound, ' prev/next=', ListPrevVertBound(iVertBound), ListNextVertBound(iVertBound)
           END DO
           deallocate(ListAng)
-          allocate(ListIedgeBound(eRealDegBound))
+          allocate(ListIedgeBound(eRealDegBound), stat=istat)
           DO iVertBound=1,eRealDegBound
             IP1=ListAdjVertBound(iVertBound)
             IF (IP .lt. IP1) THEN
@@ -682,10 +678,7 @@
               ListDegEdgeBound(jEdgeBound)=eDeg+1
             END IF
           END DO
-          deallocate(ListIedgeBound)
-          deallocate(ListMatchVert)
-          deallocate(ListPrevVertBound, ListNextVertBound)
-          deallocate(ListAdjVert, ListAdjVertBound)
+          deallocate(ListIedgeBound, ListMatchVert, ListPrevVertBound, ListNextVertBound, ListAdjVert, ListAdjVertBound)
         END IF
       END DO
 !      WRITE(STAT%FHNDL,*) 'Stage 5 finished'
@@ -700,11 +693,8 @@
           CALL WWM_ABORT("Degree error")
         END IF
       END DO
-      allocate(TheBound % NEIGHBORedge(TheBound % nbEdgeBound))
-      allocate(TheBound % CorrespVertex(TheBound % nbEdgeBound))
+      allocate(TheBound % NEIGHBORedge(TheBound % nbEdgeBound), TheBound % CorrespVertex(TheBound % nbEdgeBound), LenCycle(TheBound % nbEdgeBound), TheBound % TheCycleBelong(TheBound % nbEdgeBound), stat=istat)
       TheBound % NEIGHBORedge=0
-      allocate(LenCycle(TheBound % nbEdgeBound))
-      allocate(TheBound % TheCycleBelong(TheBound % nbEdgeBound))
       LenCycle=0
       NbCycle=0
       DO iEdgeBound=1,TheBound % nbEdgeBound
@@ -747,12 +737,11 @@
         END IF
       END DO
       TheBound % NbCycle=NbCycle
-      allocate(TheBound % LenCycle(NbCycle))
+      allocate(TheBound % LenCycle(NbCycle), stat=istat)
       DO i=1,NbCycle
         TheBound % LenCycle(i)=LenCycle(i)
       END DO
-      deallocate(StatusAdj, ListAdjWithDupl)
-      deallocate(MappingIP_iEdgeBound, ListDegEdgeBound)
+      deallocate(StatusAdj, ListAdjWithDupl, MappingIP_iEdgeBound, ListDegEdgeBound)
       WRITE(STAT%FHNDL,*) 'Leaving SERIAL_GET_BOUNDARY_NEXTGENERATION'
       FLUSH(STAT%FHNDL)
       END SUBROUTINE

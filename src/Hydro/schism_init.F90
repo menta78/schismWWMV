@@ -39,16 +39,11 @@
 #endif
 
 #ifdef USE_ICM
-      USE icm_mod, only: iSun,iWQPS,nps,DTD,WWPRPOC,WWPLPOC, &
-                        &WWPDOCA,WWPRPON,WWPLPON,WWPDON,WWPNH4,WWPNO3, &
-                        &WWPRPOP,WWPLPOP,WWPDOP,WWPPO4t,WWPSU,WWPSAt, &
-                        &WWPCOD,WWPDO,xPSQ,xPSK,PRPOC,PLPOC,PDOCA,PRPON, &
-                        &PLPON,PDON,PNH4,PNO3,PRPOP,PLPOP,PDOP,PPO4t,PSU, &
-                        &PSAt,PCOD,PDO     !added by YC
-      USE icm_sed_mod, only: sed_BENDO,CTEMP,BBM,CPOS,PO4T2TM1S,NH4T2TM1S,NO3T2TM1S, &
-                            &HST2TM1S,CH4T2TM1S,CH41TM1S,SO4T2TM1S,SIT2TM1S,BENSTR1S,CPOP,CPON,CPOC,  &
-                            &NH41TM1S,NO31TM1S,HS1TM1S,SI1TM1S,PO41TM1S,PON1TM1S,PON2TM1S,PON3TM1S,POC1TM1S,POC2TM1S,&
-                            &POC3TM1S,POP1TM1S,POP2TM1S,POP3TM1S,PSITM1S,BFORMAXS,ISWBENS,DFEEDM1S  !added YC 
+      use icm_mod, only : iSun,wqc,rIa,rIavg
+      use icm_sed_mod, only: SED_BENDO,CTEMP,BBM,CPOS,PO4T2TM1S,NH4T2TM1S,NO3T2TM1S, &
+                           & HST2TM1S,CH4T2TM1S,CH41TM1S,SO4T2TM1S,SIT2TM1S,BENSTR1S,CPOP,CPON,CPOC,  &
+                           & NH41TM1S,NO31TM1S,HS1TM1S,SI1TM1S,PO41TM1S,PON1TM1S,PON2TM1S,PON3TM1S,POC1TM1S,POC2TM1S,&
+                           & POC3TM1S,POP1TM1S,POP2TM1S,POP3TM1S,PSITM1S,BFORMAXS,ISWBENS,DFEEDM1S 
 #endif
 
 #ifdef USE_NAPZD
@@ -530,7 +525,7 @@
 #endif
 
 #ifdef USE_ICM
-      ntrs(7)=23
+      ntrs(7)=21
       tr_mname(7)='ICM'
 #endif
 
@@ -1030,12 +1025,12 @@
       !varnm_ns(9)='Wave-ripples z0 at elem. center (m)'
       !varnm_ns(10)='barotropic pressure gradient force at side centers'
       !varnm_ns(11)='wave force at side centers and whole levels'
-      !varnm_ns(12)='ICM: BENDOC'
+      !varnm_ns(12)='ICM: SED_BENDOC'
       !varnm_ns(13)='ICM: SED_BENNH4'
       !varnm_ns(14)='ICM: SED_BENNO3'
-      !varnm_ns(15)='ICM: BENPO4'
+      !varnm_ns(15)='ICM: SED_BENPO4'
       !varnm_ns(16)='ICM: SED_BENCOD'
-      !varnm_ns(17)='ICM: sed_BENDO'
+      !varnm_ns(17)='ICM: SED_BENDO'
       !varnm_ns(18)='ICM: BENSA'
       !varnm_ns(19)='SED: total bed layer thickness (m)'
       !varnm_ns(20)='SED: total bed layer age (sec)'
@@ -1234,11 +1229,11 @@
 
 !     Elev. b.c. ramp option (=0: ramp up from eta=0; =1: from eta2 before
 !     the time loop, after the hotstart loop)
-      call get_param('param.in','nramp_elev',1,nramp_elev,tmp,stringvalue)
-      if(nramp_elev/=0.and.nramp_elev/=1) then
-        write(errmsg,*)'Illegal nramp_elev:',nramp_elev
-        call parallel_abort(errmsg)
-      endif
+!      call get_param('param.in','nramp_elev',1,nramp_elev,tmp,stringvalue)
+!      if(nramp_elev/=0.and.nramp_elev/=1) then
+!        write(errmsg,*)'Illegal nramp_elev:',nramp_elev
+!        call parallel_abort(errmsg)
+!      endif
 
 !     Inverse barometric effects on elev. b.c.
       call get_param('param.in','inv_atm_bnd',1,inv_atm_bnd,tmp,stringvalue)
@@ -1526,7 +1521,7 @@
          &  nwild(nea+12+natrm),nwild2(ne_global),swild(nsa+nvrt+12+ntracers),swild2(nvrt,12),swild10(max(3,nvrt),12), &
          &  swild3(50+ntracers),swild4(nvrt,1+ntracers),swild8(nvrt,2),&
          &  iwater_type(npa),rho_mean(nvrt,nea),erho(nvrt,nea),& 
-         &  PSQ(nea),PSK(nea),surf_t1(npa),surf_t2(npa),surf_t(npa),etaic(npa),stat=istat)
+         &  surf_t1(npa),surf_t2(npa),surf_t(npa),etaic(npa),stat=istat)
       if(istat/=0) call parallel_abort('MAIN: other allocation failure')
 
 !     Tracers
@@ -2515,7 +2510,6 @@
         if(istat/=0) call parallel_abort('INIT: ieg_source failure')
         do i=1,nsources
           read(31,*)ieg_source(i) !global elem. #
-          write(*,*) i, ieg_source(i)
         enddo !i
 
         read(31,*) !blank line
@@ -2531,7 +2525,6 @@
           open(63,file='vsource.th',status='old') !values (>=0) in m^3/s
           read(63,*)tmp,ath3(1:nsources,1,1,1)
           read(63,*)th_dt3(1),ath3(1:nsources,1,2,1)
-          write(*,*) abs(tmp), th_dt3(1), dt
           if(abs(tmp)>1.e-6.or.th_dt3(1)<dt) call parallel_abort('SCHISM_INIT: vsource.th start time wrong')
           th_time3(1,1)=0
           th_time3(2,1)=th_dt3(1)
@@ -4049,8 +4042,8 @@
 
 !...  Reads model inputs
         if(myrank==0) write(16,*)'Reading ICM parameters inputs'
-        allocate(WSRP(nea),WSLP(nea),WSPB1(nea),WSPB2(nea),WSPB3(nea),turb(nea),WRea(nea),stat=istat)  !added by YC
-        if(istat/=0) call parallel_abort('Failed to allocate (11)')
+        !allocate(WSRP(nea),WSLP(nea),WSPB1(nea),WSPB2(nea),WSPB3(nea),turb(nea),WRea(nea),stat=istat)  !added by YC
+        !if(istat/=0) call parallel_abort('Failed to allocate (11)')
         !call WQCO2(WSRP,WSLP,WSPB1,WSPB2,WSPB3,turb,WRea) !added by YC
         call read_icm_param2
         call WQinput(0.d0) !(time) !added by YC, still need debuging
@@ -4674,6 +4667,15 @@
         enddo !i=1,np_global
 
 #ifdef USE_ICM
+        !temportary fix, need to write wqc in hotstart, ZG
+        do i=1,nea
+          do k=1,nvrt
+            do j=1,ntrs(7)
+              wqc(j,k,i)=tr_el(j-1+irange_tr(1,7),k,i)
+            enddo
+          enddo
+        enddo
+
         do i=1,ne_global       
           read(36) iegb,swild3(1:40)
           if(iegl(iegb)%rank==myrank) then
@@ -4957,74 +4959,75 @@
 #ifdef USE_ICM 
         if(myrank==0) write(16,*)'hotstart ICM point source..'
         !call WQCO1(dt,rnday,NDTWQ)                                         !added by YC
-        call read_icm_param
-        allocate(WSRP(nea),WSLP(nea),WSPB1(nea),WSPB2(nea),WSPB3(nea),turb(nea),WRea(nea),stat=istat)  !added by YC
+        !allocate(WSRP(nea),WSLP(nea),WSPB1(nea),WSPB2(nea),WSPB3(nea),turb(nea),WRea(nea),stat=istat)  !added by YC
         !call WQCO2(WSRP,WSLP,WSPB1,WSPB2,WSPB3,turb,WRea)                  !added by YC
+        call read_icm_param
         call read_icm_param2
-        if(iWQPS==2) then
-          PSQ(:)=0.
-          PSK(:)=0
-          WWPRPOC(:) = 0.
-          WWPLPOC(:) = 0.
-          WWPDOCA(:) = 0.
-          WWPRPON(:) = 0.
-          WWPLPON(:) = 0.
-          WWPDON(:)  = 0.
-          WWPNH4(:)  = 0.
-          WWPNO3(:)  = 0.
-          WWPRPOP(:) = 0.
-          WWPLPOP(:) = 0.
-          WWPDOP(:)  = 0.
-          WWPPO4t(:) = 0.
-          WWPSU(:)   = 0.
-          WWPSAt(:)  = 0.
-          WWPCOD(:)  = 0.
-          WWPDO(:)   = 0.
+!        if(iWQPS==2) then
+!          PSQ(:)=0.
+!          PSK(:)=0
+!          WWPRPOC(:) = 0.
+!          WWPLPOC(:) = 0.
+!          WWPDOCA(:) = 0.
+!          WWPRPON(:) = 0.
+!          WWPLPON(:) = 0.
+!          WWPDON(:)  = 0.
+!          WWPNH4(:)  = 0.
+!          WWPNO3(:)  = 0.
+!          WWPRPOP(:) = 0.
+!          WWPLPOP(:) = 0.
+!          WWPDOP(:)  = 0.
+!          WWPPO4t(:) = 0.
+!          WWPSU(:)   = 0.
+!          WWPSAt(:)  = 0.
+!          WWPCOD(:)  = 0.
+!          WWPDO(:)   = 0.
+!!
+!          x1 = 1.0E3 !from kg to g
+!          npstiminc=86400.
+!          open(61,file='ps.in',status='old')
+!          rewind(61)
+!          ninv=time/npstiminc
+!          npstime=ninv*npstiminc
+!!org yc        npstime1=ninv*npstiminc
+!!org yc        npstime2=(ninv+1)*npstiminc
+!          read(61,*)      !title
+!          do it=0,ninv
+!            read(61,*)    !time
+!            do i=1,nps
+!              read(61,*) iegb,xPSK,xPSQ,PRPOC,PLPOC,PDOCA,PRPON,PLPON,PDON, &
+!            &             PNH4,PNO3,PRPOP,PLPOP,PDOP,PPO4t,PSU,PSAt,PCOD,PDO
+!              if(iegl(iegb)%rank==myrank) then
+!                PSQ(iegl(iegb)%id)     = xPSQ
+!                PSK(iegl(iegb)%id)     = xPSK
+!                WWPRPOC(iegl(iegb)%id) = PRPOC * x1  ! kg/d * 10^3  = g per day
+!                WWPLPOC(iegl(iegb)%id) = PLPOC * x1
+!                WWPDOCA(iegl(iegb)%id) = PDOCA * x1
+!                WWPRPON(iegl(iegb)%id) = PRPON * x1
+!                WWPLPON(iegl(iegb)%id) = PLPON * x1
+!                WWPDON(iegl(iegb)%id)  = PDON  * x1
+!                WWPNH4(iegl(iegb)%id)  = PNH4  * x1
+!                WWPNO3(iegl(iegb)%id)  = PNO3  * x1
+!                WWPRPOP(iegl(iegb)%id) = PRPOP * x1
+!                WWPLPOP(iegl(iegb)%id) = PLPOP * x1
+!                WWPDOP(iegl(iegb)%id)  = PDOP  * x1
+!                WWPPO4t(iegl(iegb)%id) = PPO4t * x1
+!                WWPSU(iegl(iegb)%id)   = PSU  * x1
+!                WWPSAt(iegl(iegb)%id)  = PSAt * x1
+!                 WWPCOD(iegl(iegb)%id)  = PCOD * x1
+!                WWPDO(iegl(iegb)%id)   = PDO  * x1
+!              endif
+!              if(myrank==0)write(16,*)'ICM: xPSK= ',xPSK
+!            enddo !i
+!          enddo !ninv
+!        endif ! iWQPS=2
 !
-          x1 = 1.0E3 !from kg to g
-          npstiminc=86400.
-          open(61,file='ps.in',status='old')
-          rewind(61)
-          ninv=time/npstiminc
-          npstime=ninv*npstiminc
-!org yc        npstime1=ninv*npstiminc
-!org yc        npstime2=(ninv+1)*npstiminc
-          read(61,*)      !title
-          do it=0,ninv
-            read(61,*)    !time
-            do i=1,nps
-              read(61,*) iegb,xPSK,xPSQ,PRPOC,PLPOC,PDOCA,PRPON,PLPON,PDON, &
-            &             PNH4,PNO3,PRPOP,PLPOP,PDOP,PPO4t,PSU,PSAt,PCOD,PDO
-              if(iegl(iegb)%rank==myrank) then
-                PSQ(iegl(iegb)%id)     = xPSQ
-                PSK(iegl(iegb)%id)     = xPSK
-                WWPRPOC(iegl(iegb)%id) = PRPOC * x1  ! kg/d * 10^3  = g per day
-                WWPLPOC(iegl(iegb)%id) = PLPOC * x1
-                WWPDOCA(iegl(iegb)%id) = PDOCA * x1
-                WWPRPON(iegl(iegb)%id) = PRPON * x1
-                WWPLPON(iegl(iegb)%id) = PLPON * x1
-                WWPDON(iegl(iegb)%id)  = PDON  * x1
-                WWPNH4(iegl(iegb)%id)  = PNH4  * x1
-                WWPNO3(iegl(iegb)%id)  = PNO3  * x1
-                WWPRPOP(iegl(iegb)%id) = PRPOP * x1
-                WWPLPOP(iegl(iegb)%id) = PLPOP * x1
-                WWPDOP(iegl(iegb)%id)  = PDOP  * x1
-                WWPPO4t(iegl(iegb)%id) = PPO4t * x1
-                WWPSU(iegl(iegb)%id)   = PSU  * x1
-                WWPSAt(iegl(iegb)%id)  = PSAt * x1
-                 WWPCOD(iegl(iegb)%id)  = PCOD * x1
-                WWPDO(iegl(iegb)%id)   = PDO  * x1
-              endif
-              if(myrank==0)write(16,*)'ICM: xPSK= ',xPSK
-            enddo !i
-          enddo !ninv
-        endif ! iWQPS=2
-
-        npstiminc=86400.
-        ninv=time/npstiminc
-        npstime=ninv*npstiminc
+!        npstiminc=86400.
+!        ninv=time/npstiminc
+!        npstime=ninv*npstiminc
  
         call WQinput(time)
+        rIavg=rIa !temporary fix, should be written into hotstart.in
         !do it=0,ninv
         !  call WQinput !(time)
         !enddo
@@ -5310,11 +5313,23 @@
       write(10,*)nrec,real(dt*nspool),nspool,nvrt,kz,real(h0),real(h_s),real(h_c),real(theta_b),real(theta_f)
       write(10,*)(real(ztot(k)),k=1,kz-1),(real(sigma(k)),k=1,nvrt-kz+1)
       if(ics==1) then
-        write(10,*)np,ne,(real(xnd(m)),real(ynd(m)),real(dp00(m)),kbp00(m),m=1,np), &
-     &(i34(m),(elnode(mm,m),mm=1,i34(m)),m=1,ne)
+        write(10,*)np,ne
+        do m=1,np
+          write(10,*)real(xnd(m)),real(ynd(m)),real(dp00(m)),kbp00(m)
+        enddo !m
+        do m=1,ne
+          write(10,*)i34(m),(elnode(mm,m),mm=1,i34(m))
+        enddo !m
+!     &(i34(m),(elnode(mm,m),mm=1,i34(m)),m=1,ne)
       else !lat/lon
-        write(10,*)np,ne,(real(xlon(m)/pi*180),real(ylat(m)/pi*180),real(dp00(m)),kbp00(m),m=1,np), &
-     &(i34(m),(elnode(mm,m),mm=1,i34(m)),m=1,ne)
+        write(10,*)np,ne
+        do m=1,np
+          write(10,*)real(xlon(m)/pi*180),real(ylat(m)/pi*180),real(dp00(m)),kbp00(m)
+        enddo !m
+        do m=1,ne
+          write(10,*)i34(m),(elnode(mm,m),mm=1,i34(m))
+        enddo !m
+!     &(i34(m),(elnode(mm,m),mm=1,i34(m)),m=1,ne)
       endif !ics
 
       close(10)

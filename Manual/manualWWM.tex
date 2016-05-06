@@ -64,20 +64,120 @@
 
 
 \section{Introduction}
-WWMIII is a third generation wave model that solves the Wave Action Equation on an unstructured mesh.
-It provides following interesting features:
+WWMIII is a third generation wave model that allows to forecast gravity surface waves
+on lakes and open sea.
+
+solves the Wave Action Equation on unstructured triangular meshes.
+
+
+
+
+
+It provides following features:
 \begin{enumerate}
 \item It has many different source term formulations.
 \item It is based on redistribution schemes and provide several advection
   schemes that can be both explicit and implicit.
 \item It has coupling with many different geoscience models.
+\item 
 \end{enumerate}
 
 
 
 \section{Compilation and running the model}
 
+The WWM model depends on several external libraries that have to be installed:
+\begin{enumerate}
+\item {\tt MPI}: This is the Message Passing Interface of the model. If not available
+  then you can only use the model in serial mode.
+\item {\tt Parmetis/Metis}: This is the library for decomposing the domains. The source
+  code is available at \url{http://glaros.dtc.umn.edu/gkhome/metis/parmetis/overview}.
+\item {\tt Netcdf}: This is the library for doing Netcdf input/output. Source code available at
+  \url{http://www.unidata.ucar.edu/software/netcdf/}. You can use netcdf-3.x or netcdf-4.x
+\item {\tt GribApi}: This is the library for reading and writing Grib files. Source code
+  can be downloaded at \url{https://software.ecmwf.int/wiki/display/GRIB/Home}.
+\item {\tt PETSc}: This is a parallel implicit solver. It can be downloaded
+  at \url{http://www.mcs.anl.gov/petsc/download/}. It is a priori not needed.
+\end{enumerate}
+
+
+
+
 The WWM model can be run in serial mode, with MPI (Message Passing Interface) and/or OpenMP.
+There are several makefiles in the directory {\tt src/WWMIII}. The reference makefile is
+{\tt makefile.mathieu} and it can be called simply via
+\begin{verbatim}
+[mathieu@neptun ~]$ make -f makefile.mathieu
+\end{verbatim}
+
+There are a number of options to select. Say, if option {\tt MPI} is selected then you put
+\begin{verbatim}
+MPI = on
+\end{verbatim}
+while if it is NOT selected you put nothing, that is:
+\begin{verbatim}
+MPI =
+\end{verbatim}
+The following options are available:
+\begin{enumerate}
+\item {\tt MPI}: it is to select whether you use MPI parallelization or not. If not selected the model is run in serial mode.
+\item {\tt PETSC}: if selected, the PETSc implicit solver becomes available as a solver. This option is not a priori interesting since we have better solvers.
+\item {\tt NETCDF}: if selected netcdf input/output become available. This concerns hotfile, wind input, history output, boundary conditions. Most likely you want to select this option.
+\item {\tt DARKO}: Always unselect this option.
+\item {\tt SNL4\_TSA}: The TSA method for computing snl4 interactions.
+\item {\tt OPENMP}: This option activates the OpenMP parallelization.
+\item {\tt GRIB}: this option allows the use of the GRIB type of files. This concerns the WAM boundary forcing and the wind input.
+\item {\tt TIME}: this option allows the computing of timings in the integration.
+\item {\tt PDLIB}: this option allows the use of the PDLIB parallelization scheme. This option is relevant only if MPI is selected. If not selected then the parallelization is done with the SCHISM scheme.
+\end{enumerate}
+
+Following environment variables are relevant to the compilation:
+\begin{enumerate}
+\item {\tt NETCDF\_FORTRAN\_LINK}: This environment variable specifies what is needed for the linking. Example of possible value:
+\begin{flushleft}
+{\tt /usr/local/modules/NetCDF-Fortran/4.2/intel/lib/libnetcdff.a /usr/local/modules/NetCDF/4.3.0/intel/lib/libnetcdf.a /usr/local/modules/hdf5/1.8.11/intel/lib/libhdf5\_hl.a /usr/local/modules/hdf5/1.8.11/intel/lib/libhdf5.a /usr/local/modules/szip/2.1/intel/lib/libsz.a -lcurl}
+\end{flushleft}
+or
+\begin{flushleft}
+{\tt -L/home/mathieu/opt/netcdf-4.3.2\_c/lib -L/home/mathieu/opt/netcdf-fortran-4.4.2\_ifort14.0.3/lib -lnetcdff -lnetcdf -Wl,-rpath,/home/mathieu/opt/netcdf-4.3.2\_c/lib -Wl,-rpath,/home/mathieu/opt/netcdf-fortran-4.4.2\_ifort14.0.3/lib}
+\end{flushleft}
+
+\item {\tt NETCDF\_INCDIR}: This specifies where the include file for netcdf are to be obtained. Example:
+\begin{verbatim}
+/usr/local/modules/NetCDF-Fortran/4.2/intel/include
+\end{verbatim}
+
+\item {\tt PDLIB\_PATH}: This specifies where the PDLIB library has been installed. The lib and include directories are obtained as {\tt \$(PDLIB\_PATH)/lib} and {\tt \$(PDLIB\_PATH)/include}. Example of posible value:
+\begin{verbatim}
+/home/mathieu/opt/pdlib_openmpi1.10.1_ifort14.0.3
+\end{verbatim}
+
+\item {\tt METIS\_PATH}: This specifies where the metis and parmetis libraries are to be found. This is needed if MPI is selected. Example of possible values:
+\begin{verbatim}
+/home/mathieu/opt/parmetis-4.0.3_ifort14.0.3_openmpi1.10.1
+\end{verbatim}
+
+\item {\tt WWM\_COMPILER}: This environment variable specifies which compiler is used. Usually set to mpif90.
+  
+\item {\tt MPI\_LINK}: This specifies what libraries are needed for compilation. If mpif90 is used then nothing is needed.
+
+\item {\tt GRIB\_PATH}: The path where the grib is installed. Example of possible value:
+\begin{verbatim}
+/home/mathieu/opt/grib_api-1.14.2_ifort14.0.3
+\end{verbatim}
+
+\item {\tt GRIB\_FORTRAN\_LINK}: The linking scheme used. Example of possible value:
+\begin{flushleft}
+{\tt -L/home/mathieu/opt/grib\_api-1.14.2\_ifort14.0.3/lib -Wl,-rpath,/home/mathieu/opt/grib\_api-1.14.2\_ifort14.0.3/lib -lgrib\_api\_f90 -lgrib\_api -lgrib\_api\_f77}
+\end{flushleft}
+  
+
+
+
+\end{enumerate}
+
+
+
 
 
 
@@ -554,6 +654,7 @@ TODO: clear the meaning with {\tt LSTCU}.
 This section specifies the choices of physical parametrizations done in the WWM model.
 \begin{verbatim}
 &ENGS !SOURCE TERMS
+ ISOURCE        = 1
  MESNL          = 1      
  MESIN          = 1      
  IFRIC          = 1              
@@ -576,22 +677,29 @@ This section specifies the choices of physical parametrizations done in the WWM 
 \end{verbatim}
 The meaning of the options is the following:
 \begin{enumerate}
+\item {\tt ISOURCE} (integer): the choice of the input source terms. Possible values:
+  \begin{itemize}
+  \item {\tt 1}: The Ardhuin et al. (2010) formulation \cite{ArdhuinSurfaceStressFormulation}.
+  \item {\tt 2}: The Cycle 4 formulation \cite{CycleIV}.
+  \item {\tt 3}: The Cycle 3 formulation \cite{WAMDIgroup}.
+  \end{itemize}
+Other formulations that could be put in the future are Makin \& Stam \cite{MakinStam} and Donealan et al. formulations.
+\item {\tt MESIN} (integer): the input source term. Possible values:
+  \begin{itemize}
+  \item {\tt 0}: no wind input source terms.
+  \item {\tt 1}: The wind input is selected.
+  \end{itemize}
+Recommended option is {\tt MESIN=1}. Other options are for research purposes.
+\item {\tt MESDS} (integer): the whitecapping function.
+  \begin{itemize}
+  \item {\tt 0}: no wave dissipation source terms.
+  \item {\tt 1}: The dissipation is selected.
+  \end{itemize}
 \item {\tt MESNL} (integer): this is the option for nonlinear interactions:
   \begin{itemize}
   \item {\tt 0}: no nonlinear interactions
   \item {\tt 1}: nonlinear interactions computed according to DIA.
   \end{itemize}
-\item {\tt MESIN} (integer): the input source term. Possible values:
-  \begin{itemize}
-  \item {\tt 0}: no input source terms. 
-  \item {\tt 1}: The Ardhuin et al. (2010) formulation \cite{ArdhuinSurfaceStressFormulation}.
-  \item {\tt 2}: The Cycle 4 formulation \cite{CycleIV}.
-  \item {\tt 3}: The Makin \& Stam formulation \cite{MakinStam}.
-  \item {\tt 4}: The Donealan et al. formulation.
-  \item {\tt 5}: The Cycle 3 formulation
-  \end{itemize}
-Recommended option is {\tt MESIN=1}. Other options are for research purposes.
-\item {\tt MESDS} (integer): the whitecapping function. It is usually set to the same value as {\tt MESIN}.
 \item {\tt LPRECOMPST4} (logical): precompute ST4 data and save it to disk. This concerns only {\tt MESIN=1}. 
 \item {\tt IFRIC} (integer): atmospheric boundary layer formulation. Possible values:
   \begin{itemize}

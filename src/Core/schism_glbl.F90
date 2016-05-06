@@ -77,7 +77,7 @@ module schism_glbl
                   &ibc,nrampbc,nrampwind,nramp,nramp_ss,ibdef,ihorcon,nstep_wwm,icou_elfe_wwm, &
                   &iwind_form,irec_nu,itur,ihhat,inu_elev, &
                   &inu_uv,ibcc_mean,iflux,iout_sta,nspool_sta,nhot,nhot_write, &
-                  &moitn0,mxitn0,nchi,ibtrack_test,nramp_elev,idrag,islip,ibtp,inunfl, &
+                  &moitn0,mxitn0,nchi,ibtrack_test,idrag,islip,ibtp,inunfl, &
                   &inv_atm_bnd,ieos_type,ieos_pres,iupwind_mom,inter_mom,ishapiro,ihydlg
   integer,save :: ntrs(natrm)
 

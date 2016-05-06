@@ -1602,12 +1602,12 @@ end subroutine inter_btrack
       enddo !j
       kbpl=minval(jk(1:i34(nnel))) !min. bottom index
 
-      do k=kbpl,nvrt
-        ztmp(k)=0
-        do j=1,i34(nnel)
+      ztmp(kbpl:nvrt)=0
+      do j=1,i34(nnel)
+        do k=kbpl,nvrt
           ztmp(k)=ztmp(k)+ztmp2(max(k,jk(j)),j)*arco(j)
-        enddo !j
-      enddo !k
+        enddo !k
+      enddo !j
 
 !      n1=elnode(1,nnel)
 !      n2=elnode(2,nnel)
