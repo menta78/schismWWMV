@@ -8,7 +8,7 @@
       implicit none
       integer, intent(in)        :: ip
       real(rkind), intent(in)    :: hs, smespc
-      real(rkind), intent(out)   :: ssnl3(msc,mdc), dssnl3(msc,mdc)
+      real(rkind), intent(inout) :: ssnl3(msc,mdc), dssnl3(msc,mdc)
       real(rkind), intent(in)    :: acloc(msc,mdc)
       integer id, is, ismax
       real(rkind)    aux1, aux2, biph, c0, cm, e0
@@ -52,8 +52,6 @@
           SA(IS,ID) = MAX(ZERO, FT*(EM*(EM - 2*E0)))
         END DO
       END DO
-      SSNL3 = ZERO
-      DSSNL3 = ZERO
       DO ID = 1, MDC
         DO IS = 1, MSC
           SIGPI = SPSIG(IS) * PI2

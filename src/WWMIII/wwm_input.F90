@@ -15,7 +15,7 @@
      &        ILOUTS, OUT, DAY2SEC, FRHIGH, DBG, LINES, VAROUT_HISTORY, &
      &        VAROUT_STATION, GRIDWRITE, RKIND, LVAR_READ,              &
      &        PARAMWRITE_HIS, PARAMWRITE_STAT, wwmerr, LCFL, myrank,    &
-     &        istat
+     &        istat, TEXT_OUTPUT_PRINT
 #ifdef NCDF
          USE NETCDF
          USE DATAPOOL, only : USE_SINGLE_OUT_STAT, USE_SINGLE_OUT_HIS,  &
@@ -61,7 +61,7 @@
          NAMELIST /HISTORY/ BEGTC, DELTC, UNITC, ENDTC, DEFINETC,       &
      &      OUTSTYLE, FILEOUT, LOUTITER, IOBPD, CG,                     &
      &      LENERGY, LWXFN, GRIDWRITE, PARAMWRITE,                      &
-     &      MULTIPLEOUT, USE_SINGLE_OUT, PRINTMMA,                      &
+     &      MULTIPLEOUT, USE_SINGLE_OUT, PRINTMMA, TEXT_OUTPUT_PRINT,   &
      &      HS, TM01, TM02, TM10, KLM, WLM,                             &
      &      ETOTC, ETOTS, DM, DSPR,                                     &
      &      TPPD, CPPD, KPPD, CGPD,                                     &

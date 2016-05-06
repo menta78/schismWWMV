@@ -9,7 +9,7 @@
       INTEGER, INTENT(IN)           :: IP
       REAL(rkind)                   :: UBOT, BOTEXPER, ORBITAL, TMBOT
       REAL(rkind)   , INTENT(IN)    :: ACLOC(MSC,MDC)
-      REAL(rkind), INTENT(OUT)      :: SSBF(MSC,MDC), DSSBF(MSC,MDC)
+      REAL(rkind), INTENT(INOUT)    :: SSBF(MSC,MDC), DSSBF(MSC,MDC)
       INTEGER                       :: IS, ID, J
       REAL(rkind)                   :: KDEP
 #ifdef SCHISM
@@ -32,9 +32,6 @@
       SBF(:,IP) = ZERO
 #endif
       TMP_X     = ZERO; TMP_Y = ZERO
-
-      SSBF = ZERO
-      DSSBF = ZERO
 
       CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT,'FRICTION')
  
