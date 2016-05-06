@@ -46,7 +46,7 @@
          ENDIF
 
          IMATDA = IMATDA + DSSBR + DSSNL3 + DSSBF
-         IMATRA = IMATRA + SSBR  + SSNL3 
+         IMATRA = IMATRA + SSBR  + SSNL3  + SSBF
 
       END SUBROUTINE
 !**********************************************************************

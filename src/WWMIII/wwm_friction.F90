@@ -67,15 +67,15 @@
 ! This correction puts the opposite sign compared to SWAN. At least it is physically
 ! sensible since the bottom friction should decrease wave energy.
         DSSBF(IS,:) = - CFBOT * (SPSIG(IS) / SINH(MIN(20.0_rkind,KDEP)))**2
-        DO ID = 1, MDC
-          SSBF(IS,ID)   = - DSSBF(IS,ID) * ACLOC(IS,ID)
+!        DO ID = 1, MDC
+!          SSBF(IS,ID)   = - DSSBF(IS,ID) * ACLOC(IS,ID)
 !          IF (ICOMP .GE. 2) THEN
 !            IMATDA(IS,ID) = IMATDA(IS,ID) + DSSBF(IS,ID)
 !          ELSE
 !            IMATDA(IS,ID) = IMATDA(IS,ID) - DSSBF(IS,ID)
 !            IMATRA(IS,ID) = IMATRA(IS,ID) - DSSBF(IS,ID) * ACLOC(IS,ID)
 !          END IF
-        END DO
+!        END DO
       END DO
 
 #ifdef SCHISM
