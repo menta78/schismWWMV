@@ -2008,7 +2008,7 @@
           iret = nf90_create(TRIM(FILE_NAME), NF90_CLOBBER, ncid)
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
           nbTime=-1
-          CALL WRITE_NETCDF_HEADERS_1(ncid, -1, MULTIPLEOUT_HIS, GRIDWRITE, IOBPD_HISTORY, CG_HISTORY, np_write, ne_write)
+          CALL WRITE_NETCDF_HEADERS_1(ncid, nbTime, MULTIPLEOUT_HIS, GRIDWRITE, IOBPD_HISTORY, CG_HISTORY, np_write, ne_write)
           iret=nf90_inq_dimid(ncid, 'mnp', nnode_dims)
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, iret)
           iret=nf90_inq_dimid(ncid, 'ocean_time', ntime_dims)

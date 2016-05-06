@@ -619,6 +619,32 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE CHECK_FOR_BLOW
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER IP, ID, IS
+      REAL(rkind) :: ACLOC(MSC,MDC)
+      REAL(rkind) :: ETOT, DS, EAD, HS2
+      
+      DO IP=1,MNP
+         ACLOC(:,:) = AC2(:,:,IP)
+         ETOT = 0.0
+         DO ID = 1, MDC
+            DO IS = 2, MSC
+               DS = SPSIG(IS) - SPSIG(IS-1)
+               EAD = 0.5*(SPSIG(IS)*ACLOC(IS,ID)+SPSIG(IS-1)*ACLOC(IS-1,ID))*DS*DDIR
+               ETOT = ETOT + EAD
+            END DO
+         END DO
+         HS2 = 4.0_rkind*SQRT(ETOT)
+         IF (HS2 > LEVEL_HS_BLOW) THEN
+           CALL WWM_ABORT('Terminate due to wrong HS')
+         END IF
+      END DO
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE CHECK_STEADY(TIME, CONV1, CONV2, CONV3, CONV4, CONV5)
         USE DATAPOOL
         IMPLICIT NONE

@@ -194,6 +194,8 @@
 #endif
          INTEGER    :: ITEST      = 0 
          INTEGER    :: KKK        = 1
+         LOGICAL    :: ABORT_BLOWUP = .FALSE.
+         INTEGER    :: LEVEL_HS_BLOW = 50
 
          INTEGER    :: HMNP, HMNE, HMSC, HMDC, HFRLOW, HFRHIGH
 
