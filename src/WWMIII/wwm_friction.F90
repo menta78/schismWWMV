@@ -9,7 +9,7 @@
       INTEGER, INTENT(IN)           :: IP
       REAL(rkind)                   :: UBOT, BOTEXPER, ORBITAL, TMBOT
       REAL(rkind)   , INTENT(IN)    :: ACLOC(MSC,MDC)
-      REAL(rkind), INTENT(OUT)      :: SSBF(MSC,MDC), DSSBF(MSC,MDC)
+      REAL(rkind), INTENT(INOUT)    :: SSBF(MSC,MDC), DSSBF(MSC,MDC)
       INTEGER                       :: IS, ID, J
       REAL(rkind)                   :: KDEP
 #ifdef SCHISM
@@ -32,9 +32,6 @@
       SBF(:,IP) = ZERO
 #endif
       TMP_X     = ZERO; TMP_Y = ZERO
-
-      SSBF = ZERO
-      DSSBF = ZERO
 
       CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT,'FRICTION')
  
@@ -67,15 +64,15 @@
 ! This correction puts the opposite sign compared to SWAN. At least it is physically
 ! sensible since the bottom friction should decrease wave energy.
         DSSBF(IS,:) = - CFBOT * (SPSIG(IS) / SINH(MIN(20.0_rkind,KDEP)))**2
-        DO ID = 1, MDC
-          SSBF(IS,ID)   = - DSSBF(IS,ID) * ACLOC(IS,ID)
+!        DO ID = 1, MDC
+!          SSBF(IS,ID)   = - DSSBF(IS,ID) * ACLOC(IS,ID)
 !          IF (ICOMP .GE. 2) THEN
 !            IMATDA(IS,ID) = IMATDA(IS,ID) + DSSBF(IS,ID)
 !          ELSE
 !            IMATDA(IS,ID) = IMATDA(IS,ID) - DSSBF(IS,ID)
 !            IMATRA(IS,ID) = IMATRA(IS,ID) - DSSBF(IS,ID) * ACLOC(IS,ID)
 !          END IF
-        END DO
+!        END DO
       END DO
 
 #ifdef SCHISM
