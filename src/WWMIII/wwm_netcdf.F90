@@ -1193,6 +1193,10 @@
         eStr="NB_ITER_SOLV"
         eStrFullName="Number of iteration of the solver"
         eStrUnit="nondim."
+      ELSE IF (IDX.eq.65) THEN
+        eStr="HMAX"
+        eStrFullName="Wave breaking height"
+        eStrUnit="meter"
       ELSE
         CALL WWM_ABORT('Wrong Number')
       END IF
