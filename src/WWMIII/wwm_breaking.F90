@@ -180,6 +180,7 @@
       ELSE
         SURFSEL=SURFA0
       END IF
+#ifdef DEBUG
       IF (iplg(IP) .eq. 20506) THEN
         WRITE(STAT%FHNDL, *) 'idxcall=', idxcall
         WRITE(STAT%FHNDL, *) 'SURFA0=', SURFA0, ' SURFA1=', SURFA1
@@ -190,6 +191,7 @@
         WRITE(STAT%FHNDL, *) 'WS=', WS, ' Sbrd=', Sbrd
         idxcall=idxcall+1
       END IF
+#endif
       DSSBR = SURFSEL
       DO IS = 1, MSC
         DO ID = 1, MDC
