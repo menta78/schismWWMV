@@ -16,6 +16,7 @@
 
       REAL(rkind) :: BETA, QQ, QB, BETA2, ARG
       REAL(rkind) :: S0, TMP_X, TMP_Y
+      integer, save :: idxcall = 0
 #ifdef WAN_QB
       REAL(rkind) :: AUX
 #endif      
@@ -120,7 +121,7 @@
           IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
             IF ( BETA2 .LT. ONE - 10.E-10) THEN
               WS   = - ( ALPBJ / PI) *  QB * SME / BETA2
-              SbrD = - WS * (ONE - QB) / (BETA2 - QB)
+              SbrD =   WS * (ONE - QB) / (BETA2 - QB)
             ELSE
               WS   = - (ALPBJ/PI)*SME !
               SbrD = ZERO 
@@ -178,6 +179,16 @@
         SURFSEL=SURFA1
       ELSE
         SURFSEL=SURFA0
+      END IF
+      IF (iplg(IP) .eq. 20506) THEN
+        WRITE(STAT%FHNDL, *) 'idxcall=', idxcall
+        WRITE(STAT%FHNDL, *) 'SURFA0=', SURFA0, ' SURFA1=', SURFA1
+        WRITE(STAT%FHNDL, *) 'IBREAK=', IBREAK, ' ICOMP=', ICOMP
+        WRITE(STAT%FHNDL, *) 'ICRIT=', ICRIT, ' QB=', QB
+        WRITE(STAT%FHNDL, *) 'SME=', SME, 'ALPBJ=', ALPBJ
+        WRITE(STAT%FHNDL, *) 'BETA2=', BETA2, ' HMAX=', HMAX(IP)
+        WRITE(STAT%FHNDL, *) 'WS=', WS, ' Sbrd=', Sbrd
+        idxcall=idxcall+1
       END IF
       DSSBR = SURFSEL
       DO IS = 1, MSC

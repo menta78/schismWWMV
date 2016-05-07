@@ -715,7 +715,7 @@
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
-      USE DATAPOOL, ONLY : G9, PI2, RADDEG, RKIND, NSPEC, ZERO, ONE, DBG, THR8, SINBR, ICOMP, SOURCE_IMPL
+      USE DATAPOOL, ONLY : G9, PI2, RADDEG, RKIND, NSPEC, ZERO, ONE, DBG, THR8, SINBR
 !/S      USE W3SERVMD, ONLY: STRACE
 !/T      USE W3ODATMD, ONLY: NDST
 !/T0      USE W3ARRYMD, ONLY: PRT2DS
@@ -1926,7 +1926,7 @@
 !/ ------------------------------------------------------------------- /
       SUBROUTINE W3SDS4(A, K, CG, USTAR, USDIR, DEPTH, S, D, BRLAMBDA, WHITECAP)
 !/ ------------------------------------------------------------------- /
-      USE DATAPOOL, ONLY : INVPI2, G9, RHOW, RHOA, RADDEG, PI2, RKIND, NSPEC, ZERO, ONE, ZERO, THR8, ICOMP, PI
+      USE DATAPOOL, ONLY : INVPI2, G9, RHOW, RHOA, RADDEG, PI2, RKIND, NSPEC, ZERO, ONE, ZERO, THR8, PI
 !
       IMPLICIT NONE
 !/
