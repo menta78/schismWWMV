@@ -60,7 +60,7 @@
 # ifdef WET_DRY
      &                           rmask_wet, umask_wet, vmask_wet,       &
 # endif
-     &                           alpha, beta, rho, t,                   &
+     &                           rho, t,                                &
      &                           Hair, Pair, Tair, Uwind, Vwind,        &
 # ifdef CLOUDS
      &                           cloud,                                 &
@@ -134,6 +134,31 @@
 
       real(rkind), parameter :: eps = 1.0E-20_rkind
       real(rkind), parameter :: r3 = 1.0_rkind/3.0_rkind
+
+      real(rkind), parameter :: blk_Cpa = 1004.67_r8      ! (J/kg/K), Businger 1982
+      real(rkind), parameter :: blk_Cpw = 4000.0_r8       ! (J/kg/K)
+      real(rkind), parameter :: blk_Rgas = 287.1_r8       ! (J/kg/K)
+      real(rkind), parameter :: blk_Zabl = 600.0_r8       ! (m)
+      real(rkind), parameter :: blk_beta = 1.2_r8         ! non-dimensional
+      real(rkind), parameter :: blk_dter = 0.3_r8         ! (K)
+      real(rkind), parameter :: blk_tcw = 0.6_r8          ! (W/m/K)
+      real(rkind), parameter :: blk_visw = 0.000001_r8    ! (m2/s)
+      real(rkind), parameter :: Cp = 3985.0_r8              ! Joules/kg/degC
+      real(rkind), parameter :: Csolar = 1353.0_r8          ! 1360-1380 W/m2
+      real(rkind), parameter :: Infinity                    ! Infinity = 1.0/0.0
+      real(rkind), parameter :: Eradius = 6371315.0_r8      ! m
+      real(rkind), parameter :: StefBo = 5.67E-8_r8         ! Watts/m2/K4
+      real(rkind), parameter :: emmiss = 0.97_r8            ! non_dimensional
+      real(rkind), parameter :: rhow = 1000.0_r8            ! kg/m3
+      real(rkind), parameter :: g = 9.81_r8                 ! m/s2
+      real(rkind), parameter :: gorho0                      ! m4/s2/kg
+      real(rkind), parameter :: vonKar = 0.41_r8            ! non-dimensional
+      
+
+      
+! alpha and beta are actualla variable. But here we use fixed value
+      real(rkind), parameter :: alpha = 2.1014611551470d-04
+      real(rkind), parameter :: beta = 7.2575037309946d-04
 
       real(rkind) :: Bf, Cd, Hl, Hlw, Hscale, Hs, Hsr, IER
       real(rkind) :: PairM,  RH, Taur
@@ -224,8 +249,8 @@
           rhoSea(i)=rho(i,N(ng))+1000.0_rkind
           RH=Hair(i)
           SRad(i)=srflx(i)*Hscale
-          Tcff(i)=alpha(i)
-          Scff(i)=beta(i)
+          Tcff(i)=alpha
+          Scff(i)=beta
 !
 !  Initialize.
 !
