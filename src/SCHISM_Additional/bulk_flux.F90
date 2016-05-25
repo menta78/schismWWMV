@@ -57,9 +57,6 @@
 !
       CONTAINS
       SUBROUTINE bulk_flux      (
-# ifdef WET_DRY
-     &                           rmask_wet, umask_wet, vmask_wet,       &
-# endif
      &                           rho, t,                                &
      &                           Hair, Pair, Tair, Uwind, Vwind,        &
 # ifdef CLOUDS
@@ -77,18 +74,11 @@
 # endif
      &                           rain, lhflx, lrflx, shflx,             &
      &                           srflx, stflx,                          &
-# ifdef EMINUSP
      &                           EminusP, evap,                         &
-# endif
      &                           sustr, svstr)
 !
 !  Imported variable declarations.
 !
-#  ifdef WET_DRY
-      real(rkind), intent(in) :: rmask_wet(npa)
-      real(rkind), intent(in) :: umask_wet(npa)
-      real(rkind), intent(in) :: vmask_wet(npa)
-#  endif
       real(rkind), intent(in) :: alpha(npa)
       real(rkind), intent(in) :: beta(npa)
       real(rkind), intent(in) :: rho(npa,N(ng))
@@ -119,10 +109,8 @@
       real(rkind), intent(inout) :: srflx(npa)
       real(rkind), intent(inout) :: stflx(npa,NT(ng))
 
-#  ifdef EMINUSP
       real(rkind), intent(out) :: EminusP(npa)
       real(rkind), intent(out) :: evap(npa)
-#  endif
       real(rkind), intent(out) :: sustr(npa)
       real(rkind), intent(out) :: svstr(npa)
 # endif
@@ -135,24 +123,23 @@
       real(rkind), parameter :: eps = 1.0E-20_rkind
       real(rkind), parameter :: r3 = 1.0_rkind/3.0_rkind
 
-      real(rkind), parameter :: blk_Cpa = 1004.67_r8      ! (J/kg/K), Businger 1982
-      real(rkind), parameter :: blk_Cpw = 4000.0_r8       ! (J/kg/K)
-      real(rkind), parameter :: blk_Rgas = 287.1_r8       ! (J/kg/K)
-      real(rkind), parameter :: blk_Zabl = 600.0_r8       ! (m)
-      real(rkind), parameter :: blk_beta = 1.2_r8         ! non-dimensional
-      real(rkind), parameter :: blk_dter = 0.3_r8         ! (K)
-      real(rkind), parameter :: blk_tcw = 0.6_r8          ! (W/m/K)
-      real(rkind), parameter :: blk_visw = 0.000001_r8    ! (m2/s)
-      real(rkind), parameter :: Cp = 3985.0_r8              ! Joules/kg/degC
-      real(rkind), parameter :: Csolar = 1353.0_r8          ! 1360-1380 W/m2
-      real(rkind), parameter :: Infinity                    ! Infinity = 1.0/0.0
-      real(rkind), parameter :: Eradius = 6371315.0_r8      ! m
-      real(rkind), parameter :: StefBo = 5.67E-8_r8         ! Watts/m2/K4
-      real(rkind), parameter :: emmiss = 0.97_r8            ! non_dimensional
-      real(rkind), parameter :: rhow = 1000.0_r8            ! kg/m3
-      real(rkind), parameter :: g = 9.81_r8                 ! m/s2
+      real(rkind), parameter :: blk_Cpa = 1004.67_rkind      ! (J/kg/K), Businger 1982
+      real(rkind), parameter :: blk_Cpw = 4000.0_rkind       ! (J/kg/K)
+      real(rkind), parameter :: blk_Rgas = 287.1_rkind       ! (J/kg/K)
+      real(rkind), parameter :: blk_Zabl = 600.0_rkind       ! (m)
+      real(rkind), parameter :: blk_beta = 1.2_rkind         ! non-dimensional
+      real(rkind), parameter :: blk_dter = 0.3_rkind         ! (K)
+      real(rkind), parameter :: blk_tcw = 0.6_rkind          ! (W/m/K)
+      real(rkind), parameter :: blk_visw = 0.000001_rkind    ! (m2/s)
+      real(rkind), parameter :: Cp = 3985.0_rkind              ! Joules/kg/degC
+      real(rkind), parameter :: Csolar = 1353.0_rkind          ! 1360-1380 W/m2
+      real(rkind), parameter :: Eradius = 6371315.0_rkind      ! m
+      real(rkind), parameter :: StefBo = 5.67E-8_rkind         ! Watts/m2/K4
+      real(rkind), parameter :: emmiss = 0.97_rkind            ! non_dimensional
+      real(rkind), parameter :: rhow = 1000.0_rkind            ! kg/m3
+      real(rkind), parameter :: g = 9.81_rkind                 ! m/s2
       real(rkind), parameter :: gorho0                      ! m4/s2/kg
-      real(rkind), parameter :: vonKar = 0.41_r8            ! non-dimensional
+      real(rkind), parameter :: vonKar = 0.41_rkind            ! non-dimensional
       
 
       
@@ -237,6 +224,7 @@
       Hscale=rho0*Cp
       twopi_inv=0.5_rkind/pi
       DO i=1,npa
+          IF (idry(i) == 1) CYCLE
 !
 !  Input bulk parameterization fields.
 !
@@ -295,12 +283,6 @@
 
 # else
           LRad(i)=lrflx(i)*Hscale
-# endif
-# ifdef MASKING
-          LRad(i)=LRad(i)*rmask(i)
-# endif
-# ifdef WET_DRY
-          LRad(i)=LRad(i)*rmask_wet(i)
 # endif
 !
 !-----------------------------------------------------------------------
@@ -455,15 +437,15 @@
           WaveLength(i)=Lwave(i)
 #  endif
 # endif
-        END DO
+      END DO
 !
 !  Iterate until convergence. It usually converges within 3 iterations.
 # if defined COARE_OOST || defined COARE_TAYLOR_YELLAND
 !  Use wave info if we have it, two different options.
 # endif
 !
-        DO Iter=1,IterMax
-          DO i=Istr-1,IendR
+      DO Iter=1,IterMax
+        DO i=1,npa
 # ifdef COARE_OOST
             ZoW(i)=(25.0_rkind/pi)*WaveLength(i)*                          &
      &             (Wstar(i)/Cwave(i))**4.5_rkind+                         &
@@ -564,14 +546,13 @@
             END IF
             delQc(i)=Cwet(i)*delTc(i)
 # endif
-          END DO
         END DO
 !
 !-----------------------------------------------------------------------
 !  Compute Atmosphere/Ocean fluxes.
 !-----------------------------------------------------------------------
 !
-        DO i=Istr-1,IendR
+        DO i=1,npa
 !
 !  Compute transfer coefficients for momentum (Cd).
 !
@@ -594,12 +575,6 @@
           Hsr=rain(i)*wet_bulb*blk_Cpw*                               &
      &        ((TseaC(i)-TairC(i))+(Qsea(i)-Q(i))*Hlv(i)/blk_Cpa)
           SHeat(i)=(Hs+Hsr)
-# ifdef MASKING
-          SHeat(i)=SHeat(i)*rmask(i)
-# endif
-# ifdef WET_DRY
-          SHeat(i)=SHeat(i)*rmask_wet(i)
-# endif
 !
 !  Compute turbulent latent heat flux (W/m2), Hl.
 !
@@ -611,12 +586,6 @@
      &          (1.0_rkind+1.61_rkind*Q(i))*Wstar(i)*Tstar(i)/TairK(i)
           Hlw=rhoAir(i)*Hlv(i)*upvel*Q(i)
           LHeat(i)=(Hl+Hlw)
-# ifdef MASKING
-          LHeat(i)=LHeat(i)*rmask(i)
-# endif
-# ifdef WET_DRY
-          LHeat(i)=LHeat(i)*rmask_wet(i)
-# endif
 !
 !  Compute momentum flux (N/m2) due to rainfall (kg/m2/s).
 !
@@ -626,21 +595,8 @@
 !
           cff=rhoAir(i)*Cd*Wspeed
           Taux(i)=(cff*Uwind(i)+Taur*SIGN(1.0_rkind,Uwind(i)))
-# ifdef MASKING
-          Taux(i)=Taux(i)*rmask(i)
-# endif
-# ifdef WET_DRY
-          Taux(i)=Taux(i)*rmask_wet(i)
-# endif
           Tauy(i)=(cff*Vwind(i)+Taur*SIGN(1.0_rkind,Vwind(i)))
-# ifdef MASKING
-          Tauy(i)=Tauy(i)*rmask(i)
-# endif
-# ifdef WET_DRY
-          Tauy(i)=Tauy(i)*rmask_wet(i)
-# endif
         END DO
-      END DO
 !
 !=======================================================================
 !  Compute surface net heat flux and surface wind stress.
@@ -672,60 +628,21 @@
 !
       Hscale=1.0_rkind/(rho0*Cp)
       cff=1.0_rkind/rhow
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
+      DO i=1,npa
           lrflx(i)=LRad(i)*Hscale
           lhflx(i)=-LHeat(i)*Hscale
           shflx(i)=-SHeat(i)*Hscale
-          stflx(i,itemp)=(srflx(i)+lrflx(i)+                      &
-     &                      lhflx(i)+shflx(i))
-# ifdef MASKING
-          stflx(i,itemp)=stflx(i,itemp)*rmask(i)
-# endif
-# ifdef WET_DRY
-          stflx(i,itemp)=stflx(i,itemp)*rmask_wet(i)
-# endif
-# ifdef EMINUSP
+          stflx(i,itemp)=srflx(i)+lrflx(i)+                      &
+     &                      lhflx(i)+shflx(i)
           evap(i)=LHeat(i)/Hlv(i)
           stflx(i,isalt)=cff*(evap(i)-rain(i))
-#  ifdef MASKING
-          evap(i)=evap(i)*rmask(i)
-          stflx(i,isalt)=stflx(i,isalt)*rmask(i)
-#  endif
-#  ifdef WET_DRY
-          evap(i)=evap(i)*rmask_wet(i)
-          stflx(i,isalt)=stflx(i,isalt)*rmask_wet(i)
-#  endif
           EminusP(i)=stflx(i,isalt)
-# endif
-        END DO
       END DO
 !
 !  Compute kinematic, surface wind stress (m2/s2).
 !
-      cff=0.5_rkind/rho0
-      DO j=JstrR,JendR
-        DO i=Istr,IendR
-          sustr(i)=cff*(Taux(i-1,j)+Taux(i))
-# ifdef MASKING
-          sustr(i)=sustr(i)*umask(i)
-# endif
-# ifdef WET_DRY
-          sustr(i)=sustr(i)*umask_wet(i)
-# endif
-        END DO
-      END DO
-      DO j=Jstr,JendR
-        DO i=IstrR,IendR
-          svstr(i)=cff*(Tauy(i-1)+Tauy(i))
-# ifdef MASKING
-          svstr(i)=svstr(i)*vmask(i)
-# endif
-# ifdef WET_DRY
-          svstr(i)=svstr(i)*vmask_wet(i)
-# endif
-        END DO
-      END DO
+      sustr = Taux
+      svstr = Tauy
       END SUBROUTINE bulk_flux
 
       FUNCTION bulk_psiu (ZoL, pi)
@@ -739,8 +656,6 @@
 !  and Holtslag (1991).                                                !
 !                                                                      !
 !=======================================================================
-!
-      USE mod_kinds
 !
 !  Function result
 !
@@ -802,9 +717,6 @@
 !  and Holtslag (1991).                                                !
 !
 !=======================================================================
-!                                                                      !
-!
-      USE mod_kinds
 !
 !  Function result
 !
