@@ -64,7 +64,8 @@
       SUBROUTINE bulk_flux      (prho, tr_nd,                           &
      &                           Hair_spec, Pair, Tair, Uwind, Vwind,   &
      &                           cloud,                                 &
-     &                           rain, lhflx, lrflx, shflx,             &
+     &                           rain, lrflx,                           &
+     &                           sen_flux, lat_flux,                    &
      &                           srflx, stflx,                          &
 #ifdef PREC_EVAP
      &                           EminusP, evap,                         &
@@ -88,8 +89,10 @@
 
       real(rkind), intent(inout) :: lrflx(npa)
       
-      real(rkind), intent(out) :: lhflx(npa)
-      real(rkind), intent(out) :: shflx(npa)
+!      real(rkind), intent(out) :: lhflx(npa)
+!      real(rkind), intent(out) :: shflx(npa)
+      real(rkind), intent(out) :: sen_flux(npa)
+      real(rkind), intent(out) :: lat_flux(npa)
       real(rkind), intent(out) :: stflx(2,npa)
       real(rkind), intent(out) :: EminusP(npa)
       real(rkind), intent(out) :: evap(npa)
@@ -585,8 +588,10 @@
       cff=1.0_rkind/rhow
       DO i=1,npa
           lrflx(i)=LRad(i)
-          lhflx(i)=-LHeat(i)
-          shflx(i)=-SHeat(i)
+!          lhflx(i)=-LHeat(i) ! ROMS variable
+!          shflx(i)=-SHeat(i) ! ROMS variable
+          sen_flux(i) = SHeat(i)
+          lat_flux(i) = LHeat(i)
           stflx(1,i)=srflx(i)+lrflx(i)+                      &
      &                      lhflx(i)+shflx(i)
           evap(i)=LHeat(i)/Hlv(i)

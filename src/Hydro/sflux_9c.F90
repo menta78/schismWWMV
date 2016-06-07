@@ -435,7 +435,8 @@
         CALL bulk_flux (prho, tr_nd0,                          &
      &                  q_air, pr, t_air, windx, windy,        &
      &                  cloud,                                 &
-     &                  rain, lhflx, lrflx, shflx,             &
+     &                  rain, lrflx,                           &
+     &                  sen_flux, lat_flux,                    &
      &                  srflx, stflx,                          &
 #ifdef PREC_EVAP
      &                  EminusP, evap,                         &
