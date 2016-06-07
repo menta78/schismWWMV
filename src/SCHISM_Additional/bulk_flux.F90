@@ -1,4 +1,9 @@
       MODULE bulk_flux_mod
+        LOGICAL L_COOL_SKIN = .TRUE.
+        LOGICAL L_COARE_OOST = .FALSE.
+        LOGICAL L_COARE_TAYLOR_YELLAND = .FALSE.
+        LOGICAL L_LONGWAVE=.FALSE.
+        LOGICAL L_LONGWAVE_OUT=.TRUE.
 !
 !svn $Id: bulk_flux.F 751 2015-01-07 22:56:36Z arango $
 !================================================== Hernan G. Arango ===
@@ -59,19 +64,10 @@
       SUBROUTINE bulk_flux      (
      &                           rho, t,                                &
      &                           Hair, Pair, Tair, Uwind, Vwind,        &
-# ifdef CLOUDS
      &                           cloud,                                 &
-# endif
-# ifdef COARE_TAYLOR_YELLAND
      &                           Hwave,                                 &
-# endif
-# if defined COARE_TAYLOR_YELLAND || defined COARE_OOST
      &                           Pwave_top,                             &
-# endif
-# if !defined DEEPWATER_WAVES      && \
-     (defined COARE_TAYLOR_YELLAND || defined COARE_OOST)
      &                           Lwave,                                 &
-# endif
      &                           rain, lhflx, lrflx, shflx,             &
      &                           srflx, stflx,                          &
      &                           EminusP, evap,                         &
@@ -88,19 +84,10 @@
       real(rkind), intent(in) :: Tair(npa)
       real(rkind), intent(in) :: Uwind(npa)
       real(rkind), intent(in) :: Vwind(npa)
-#  ifdef CLOUDS
       real(rkind), intent(in) :: cloud(npa)
-#  endif
-# ifdef COARE_TAYLOR_YELLAND
       real(rkind), intent(in) :: Hwave(npa)
-# endif
-# if defined COARE_TAYLOR_YELLAND || defined COARE_OOST
       real(rkind), intent(in) :: Pwave_top(npa)
-# endif
-# if !defined DEEPWATER_WAVES      && \
-     (defined COARE_TAYLOR_YELLAND || defined COARE_OOST)
       real(rkind), intent(in) :: Lwave(npa)
-# endif
       real(rkind), intent(in) :: rain(npa)
 
       real(rkind), intent(inout) :: lhflx(npa)
@@ -113,7 +100,6 @@
       real(rkind), intent(out) :: evap(npa)
       real(rkind), intent(out) :: sustr(npa)
       real(rkind), intent(out) :: svstr(npa)
-# endif
 !
 !  Local variable declarations.
 !
@@ -153,12 +139,8 @@
 
       real(rkind) :: cff, cff1, cff2, diffh, diffw, oL, upvel
       real(rkind) :: twopi_inv, wet_bulb
-# ifdef LONGWAVE
       real(rkind) :: e_sat, vap_p
-# endif
-# ifdef COOL_SKIN
       real(rkind) :: Clam, Fc, Hcool, Hsb, Hlb, Qbouy, Qcool, lambd
-# endif
 
       real(rkind), dimension(npa) :: CC
       real(rkind), dimension(npa) :: Cd10
@@ -254,7 +236,7 @@
 !  Compute net longwave radiation (W/m2), LRad.
 !-----------------------------------------------------------------------
 
-# if defined LONGWAVE
+       IF (L_LONGWAVE) THEN
 !
 !  Use Berliand (1952) formula to calculate net longwave radiation.
 !  The equation for saturation vapor pressure is from Gill (Atmosphere-
@@ -273,7 +255,7 @@
      &                    (1.0_rkind-0.6823_rkind*cloud(i)*cloud(i))+     &
      &               cff2*4.0_rkind*(TseaK(i)-TairK(i)))
 
-# elif defined LONGWAVE_OUT
+        ELSE IF (L_LONGWAVE_OUT) THEN
 !
 !  Treat input longwave data as downwelling radiation only and add
 !  outgoing IR from model sea surface temperature.
@@ -281,9 +263,9 @@
           LRad(i)=lrflx(i)*Hscale-                                  &
      &              emmiss*StefBo*TseaK(i)*TseaK(i)*TseaK(i)*TseaK(i)
 
-# else
+        ELSE
           LRad(i)=lrflx(i)*Hscale
-# endif
+        END IF
 !
 !-----------------------------------------------------------------------
 !  Compute specific humidities (kg/kg).
@@ -392,9 +374,9 @@
           Ct(i)=vonKar/LOG(blk_ZT(ng)/ZoT10(i))  ! T transfer coefficient
           CC(i)=vonKar*Ct(i)/Cd
           delTc(i)=0.0_rkind
-# ifdef COOL_SKIN
-          delTc(i)=blk_dter
-# endif
+          IF (L_COOL_SKIN) THEN
+            delTc(i)=blk_dter
+          END IF
           Ribcu(i)=-blk_ZW(ng)/(blk_Zabl*0.004_rkind*blk_beta**3)
           Ri(i)=-g*blk_ZW(ng)*((delT(i)-delTc(i))+                      &
      &                          0.61_rkind*TairK(i)*delQ(i))/              &
@@ -428,36 +410,28 @@
           ELSE
             charn(i)=0.011_rkind
           END IF
-# if defined COARE_OOST || defined COARE_TAYLOR_YELLAND
-#  if defined DEEPWATER_WAVES
-          Cwave(i)=g*MAX(Pwave_top(i),eps)*twopi_inv
-          WaveLength(i)=Cwave(i)*MAX(Pwave_top(i),eps)
-#  else
+        IF (L_COARE_OOST .or. L_COARE_TAYLOR_YELLAND) THEN
           Cwave(i)=Lwave(i)/MAX(Pwave_top(i),eps)
           WaveLength(i)=Lwave(i)
-#  endif
-# endif
+        END IF
       END DO
 !
 !  Iterate until convergence. It usually converges within 3 iterations.
-# if defined COARE_OOST || defined COARE_TAYLOR_YELLAND
-!  Use wave info if we have it, two different options.
-# endif
 !
       DO Iter=1,IterMax
         DO i=1,npa
-# ifdef COARE_OOST
+          IF (L_COARE_OOST) THEN
             ZoW(i)=(25.0_rkind/pi)*WaveLength(i)*                          &
      &             (Wstar(i)/Cwave(i))**4.5_rkind+                         &
      &             0.11_rkind*VisAir(i)/(Wstar(i)+eps)
-# elif defined COARE_TAYLOR_YELLAND
+          ELSE IF (L_COARE_TAYLOR_YELLAND) THEN
             ZoW(i)=1200.0_rkind*Hwave(i)*                                &
      &             (Hwave(i)/WaveLength(i))**4.5_rkind+                  &
      &             0.11_rkind*VisAir(i)/(Wstar(i)+eps)
-# else
+          ELSE
             ZoW(i)=charn(i)*Wstar(i)*Wstar(i)/g+                        &
      &             0.11_rkind*VisAir(i)/(Wstar(i)+eps)
-# endif
+          END IF
             Rr(i)=ZoW(i)*Wstar(i)/VisAir(i)
 !
 !  Compute Monin-Obukhov stability parameter, Z/L.
@@ -476,11 +450,11 @@
             Wpsi(i)=bulk_psiu(ZoL(i),pi)
             Tpsi(i)=bulk_psit(blk_ZT(ng)/L(i),pi)
             Qpsi(i)=bulk_psit(blk_ZQ(ng)/L(i),pi)
-# ifdef COOL_SKIN
+            IF (L_COOL_SKIN) THEN
             Cwet(i)=0.622_rkind*Hlv(i)*Qsea(i)/                          &
      &              (blk_Rgas*TseaK(i)*TseaK(i))
             delQc(i)=Cwet(i)*delTc(i)
-# endif
+            END IF
 !
 !  Compute wind scaling parameters, Wstar.
 !
@@ -501,7 +475,7 @@
               Wgus(i)=0.2_rkind
             END IF
             delW(i)=SQRT(Wmag(i)*Wmag(i)+Wgus(i)*Wgus(i))
-# ifdef COOL_SKIN
+          IF (L_COOL_SKIN) THEN
 !
 !-----------------------------------------------------------------------
 !  Cool Skin correction.
@@ -545,7 +519,7 @@
               delTc(i)=0.0_rkind
             END IF
             delQc(i)=Cwet(i)*delTc(i)
-# endif
+          END IF
         END DO
 !
 !-----------------------------------------------------------------------
