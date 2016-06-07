@@ -62,7 +62,7 @@
 !
       CONTAINS
       SUBROUTINE bulk_flux      (prho, tr_nd,                           &
-     &                           Hair, Pair, Tair, Uwind, Vwind,        &
+     &                           Hair_spec, Pair, Tair, Uwind, Vwind,   &
      &                           cloud,                                 &
      &                           rain, lhflx, lrflx, shflx,             &
      &                           srflx, stflx,                          &
@@ -77,7 +77,7 @@
       real(rkind), intent(in) :: beta(npa)
       real(rkind), intent(in) :: prho(nvrt,npa)
       real(rkind), intent(in) :: tr_nd(ntracers,nvrt,npa)
-      real(rkind), intent(in) :: Hair(npa)
+      real(rkind), intent(in) :: Hair_spec(npa)
       real(rkind), intent(in) :: Pair(npa)
       real(rkind), intent(in) :: Tair(npa)
       real(rkind), intent(in) :: Uwind(npa)
@@ -206,13 +206,16 @@
 !  Input bulk parameterization fields.
 !
           Wmag(i)=SQRT(Uwind(i)*Uwind(i)+Vwind(i)*Vwind(i))
-          PairM=Pair(i)
+          PairM=Pair(i) / 100.0_rkind
           TairC(i)=Tair(i)
           TairK(i)=TairC(i)+273.16_rkind
           TseaC(i)=tr_nd(1,nvrt,i)
           TseaK(i)=TseaC(i)+273.16_rkind
           rhoSea(i)=prho(nvrt,i)
-          RH=Hair(i)
+          SpecHum=Hair_spec(i)
+          RH  = -1000000    ! We need to put conversion of specific humidity to
+          ! relative humidity but that is needed only for LONGWAVE option
+          ! which is questionable
           SRad(i)=srflx(i)*Hscale
           Tcff(i)=alpha
           Scff(i)=beta
@@ -303,12 +306,13 @@
 !
 !  Compute specific humidity, Q (kg/kg).
 !
-          IF (RH.lt.2.0_rkind) THEN                       !RH fraction
-            cff=cff*RH                                 !Vapor pres (mb)
-            Q(i)=0.62197_rkind*(cff/(PairM-0.378_rkind*cff)) !Spec hum (kg/kg)
-          ELSE          !RH input was actually specific humidity in g/kg
-            Q(i)=RH/1000.0_rkind                          !Spec Hum (kg/kg)
-          END IF
+          Q(i)=SpecHum
+!          IF (RH.lt.2.0_rkind) THEN                       !RH fraction
+!            cff=cff*RH                                 !Vapor pres (mb)
+!            Q(i)=0.62197_rkind*(cff/(PairM-0.378_rkind*cff)) !Spec hum (kg/kg)
+!          ELSE          !RH input was actually specific humidity in g/kg
+!            Q(i)=RH/1000.0_rkind                          !Spec Hum (kg/kg)
+!          END IF
 !
 !  Compute water saturation vapor pressure (mb), using Teten formula.
 !

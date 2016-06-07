@@ -377,6 +377,7 @@
         real(rkind) :: x_tmp, y_tmp, sflux_frac
         integer i_node_tmp
         logical, save :: first_call = .true.
+        real(rkind) cloud(npa)
 
 ! define the local variables num_nodes
         num_nodes = npa
@@ -430,8 +431,9 @@
 ! calculate the turbulent fluxes at the nodes
 
 #ifdef USE_BULK_FLUX_FORMULATION
-        CALL bulk_flux (prho, t,                               &
-     &                  Hair, Pair, Tair, Uwind, Vwind,        &
+        cloud=0
+        CALL bulk_flux (prho, tr_nd0,                          &
+     &                  q_air, pr, t_air, windx, windy,        &
      &                  cloud,                                 &
      &                  rain, lhflx, lrflx, shflx,             &
      &                  srflx, stflx,                          &
