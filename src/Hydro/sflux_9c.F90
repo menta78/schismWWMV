@@ -428,20 +428,31 @@
         enddo !i_node
 
 ! calculate the turbulent fluxes at the nodes
-#ifdef DEBUG
-        write(38,*) 'above turb_fluxes'
-#endif
 
+#ifdef USE_BULK_FLUX_FORMULATION
+        CALL bulk_flux (prho, t,                               &
+     &                  Hair, Pair, Tair, Uwind, Vwind,        &
+     &                  cloud,                                 &
+     &                  rain, lhflx, lrflx, shflx,             &
+     &                  srflx, stflx,                          &
+#ifdef PREC_EVAP
+     &                  EminusP, evap,                         &
+#endif
+     &                  sustr, svstr)
+#else
+# ifdef DEBUG
+        write(38,*) 'above turb_fluxes'
+# endif
         call turb_fluxes (num_nodes, &
      &                    u_air, v_air, p_air, t_air, q_air, &
      &                    sen_flux, lat_flux, &
-#ifdef PREC_EVAP
+# ifdef PREC_EVAP
      &                    evap_flux, &
-#endif
+# endif
      &                    tau_xz, tau_yz)
-
-#ifdef DEBUG
+# ifdef DEBUG
         write(38,*) 'below turb_fluxes'
+# endif
 #endif
 
 ! now calculate upwards longwave flux at the surface, using black-body

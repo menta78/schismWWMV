@@ -61,33 +61,28 @@
       PUBLIC  :: bulk_flux, bulk_psiu, bulk_psit
 !
       CONTAINS
-      SUBROUTINE bulk_flux      (
-     &                           rho, t,                                &
+      SUBROUTINE bulk_flux      (prho, tr_nd,                           &
      &                           Hair, Pair, Tair, Uwind, Vwind,        &
      &                           cloud,                                 &
-     &                           Hwave,                                 &
-     &                           Pwave_top,                             &
-     &                           Lwave,                                 &
      &                           rain, lhflx, lrflx, shflx,             &
      &                           srflx, stflx,                          &
+#ifdef PREC_EVAP
      &                           EminusP, evap,                         &
+#endif
      &                           sustr, svstr)
 !
 !  Imported variable declarations.
 !
       real(rkind), intent(in) :: alpha(npa)
       real(rkind), intent(in) :: beta(npa)
-      real(rkind), intent(in) :: rho(npa,N(ng))
-      real(rkind), intent(in) :: t(npa,N(ng),3,NT(ng))
+      real(rkind), intent(in) :: prho(nvrt,npa)
+      real(rkind), intent(in) :: tr_nd(ntracers,nvrt,npa)
       real(rkind), intent(in) :: Hair(npa)
       real(rkind), intent(in) :: Pair(npa)
       real(rkind), intent(in) :: Tair(npa)
       real(rkind), intent(in) :: Uwind(npa)
       real(rkind), intent(in) :: Vwind(npa)
       real(rkind), intent(in) :: cloud(npa)
-      real(rkind), intent(in) :: Hwave(npa)
-      real(rkind), intent(in) :: Pwave_top(npa)
-      real(rkind), intent(in) :: Lwave(npa)
       real(rkind), intent(in) :: rain(npa)
 
       real(rkind), intent(inout) :: lhflx(npa)
@@ -214,9 +209,9 @@
           PairM=Pair(i)
           TairC(i)=Tair(i)
           TairK(i)=TairC(i)+273.16_rkind
-          TseaC(i)=t(i,N(ng),nrhs,itemp)
+          TseaC(i)=tr_nd(1,nvrt,i)
           TseaK(i)=TseaC(i)+273.16_rkind
-          rhoSea(i)=rho(i,N(ng))+1000.0_rkind
+          rhoSea(i)=prho(nvrt,i)
           RH=Hair(i)
           SRad(i)=srflx(i)*Hscale
           Tcff(i)=alpha
@@ -410,28 +405,14 @@
           ELSE
             charn(i)=0.011_rkind
           END IF
-        IF (L_COARE_OOST .or. L_COARE_TAYLOR_YELLAND) THEN
-          Cwave(i)=Lwave(i)/MAX(Pwave_top(i),eps)
-          WaveLength(i)=Lwave(i)
-        END IF
       END DO
 !
 !  Iterate until convergence. It usually converges within 3 iterations.
 !
       DO Iter=1,IterMax
         DO i=1,npa
-          IF (L_COARE_OOST) THEN
-            ZoW(i)=(25.0_rkind/pi)*WaveLength(i)*                          &
-     &             (Wstar(i)/Cwave(i))**4.5_rkind+                         &
-     &             0.11_rkind*VisAir(i)/(Wstar(i)+eps)
-          ELSE IF (L_COARE_TAYLOR_YELLAND) THEN
-            ZoW(i)=1200.0_rkind*Hwave(i)*                                &
-     &             (Hwave(i)/WaveLength(i))**4.5_rkind+                  &
-     &             0.11_rkind*VisAir(i)/(Wstar(i)+eps)
-          ELSE
             ZoW(i)=charn(i)*Wstar(i)*Wstar(i)/g+                        &
      &             0.11_rkind*VisAir(i)/(Wstar(i)+eps)
-          END IF
             Rr(i)=ZoW(i)*Wstar(i)/VisAir(i)
 !
 !  Compute Monin-Obukhov stability parameter, Z/L.
