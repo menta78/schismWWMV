@@ -84,13 +84,13 @@
       real(rkind), intent(in) :: Vwind(npa)
       real(rkind), intent(in) :: cloud(npa)
       real(rkind), intent(in) :: rain(npa)
+      real(rkind), intent(in) :: srflx(npa)
 
-      real(rkind), intent(inout) :: lhflx(npa)
       real(rkind), intent(inout) :: lrflx(npa)
-      real(rkind), intent(inout) :: shflx(npa)
-      real(rkind), intent(inout) :: srflx(npa)
-      real(rkind), intent(inout) :: stflx(npa,NT(ng))
-
+      
+      real(rkind), intent(out) :: lhflx(npa)
+      real(rkind), intent(out) :: shflx(npa)
+      real(rkind), intent(out) :: stflx(2,npa)
       real(rkind), intent(out) :: EminusP(npa)
       real(rkind), intent(out) :: evap(npa)
       real(rkind), intent(out) :: sustr(npa)
@@ -128,7 +128,7 @@
       real(rkind), parameter :: alpha = 2.1014611551470d-04
       real(rkind), parameter :: beta = 7.2575037309946d-04
 
-      real(rkind) :: Bf, Cd, Hl, Hlw, Hscale, Hs, Hsr, IER
+      real(rkind) :: Bf, Cd, Hl, Hlw, Hscale, HscaleInv, Hs, Hsr, IER
       real(rkind) :: PairM,  RH, Taur
       real(rkind) :: Wspeed, ZQoL, ZToL
 
@@ -224,8 +224,6 @@
 !
           delTc(i)=0.0_rkind
           delQc(i)=0.0_rkind
-          LHeat(i)=lhflx(i)*Hscale
-          SHeat(i)=shflx(i)*Hscale
           Taur=0.0_rkind
           Taux(i)=0.0_rkind
           Tauy(i)=0.0_rkind
@@ -533,7 +531,7 @@
      &                                     (blk_Cpa*diffh))
           Hsr=rain(i)*wet_bulb*blk_Cpw*                               &
      &        ((TseaC(i)-TairC(i))+(Qsea(i)-Q(i))*Hlv(i)/blk_Cpa)
-          SHeat(i)=(Hs+Hsr)
+          SHeat(i)=Hs+Hsr
 !
 !  Compute turbulent latent heat flux (W/m2), Hl.
 !
@@ -544,7 +542,7 @@
           upvel=-1.61_rkind*Wstar(i)*Qstar(i)-                             &
      &          (1.0_rkind+1.61_rkind*Q(i))*Wstar(i)*Tstar(i)/TairK(i)
           Hlw=rhoAir(i)*Hlv(i)*upvel*Q(i)
-          LHeat(i)=(Hl+Hlw)
+          LHeat(i)=Hl+Hlw
 !
 !  Compute momentum flux (N/m2) due to rainfall (kg/m2/s).
 !
@@ -585,17 +583,17 @@
 !  to (psu m/s) for stflx(isalt) in "set_vbc.F". The E-P value is
 !  saved in variable EminusP for I/O purposes.
 !
-      Hscale=1.0_rkind/(rho0*Cp)
+      HscaleInv=1.0_rkind/(rho0*Cp)
       cff=1.0_rkind/rhow
       DO i=1,npa
-          lrflx(i)=LRad(i)*Hscale
-          lhflx(i)=-LHeat(i)*Hscale
-          shflx(i)=-SHeat(i)*Hscale
-          stflx(i,itemp)=srflx(i)+lrflx(i)+                      &
+          lrflx(i)=LRad(i)*HscaleInv
+          lhflx(i)=-LHeat(i)*HscaleInv
+          shflx(i)=-SHeat(i)*HscaleInv
+          stflx(1,i)=srflx(i)+lrflx(i)+                      &
      &                      lhflx(i)+shflx(i)
           evap(i)=LHeat(i)/Hlv(i)
-          stflx(i,isalt)=cff*(evap(i)-rain(i))
-          EminusP(i)=stflx(i,isalt)
+          stflx(2,i)=cff*(evap(i)-rain(i))
+          EminusP(i)=stflx(2,i)
       END DO
 !
 !  Compute kinematic, surface wind stress (m2/s2).

@@ -431,7 +431,7 @@
 ! calculate the turbulent fluxes at the nodes
 
 #ifdef USE_BULK_FLUX_FORMULATION
-        cloud=0
+        cloud=0 ! only for the LONGWAVE option, not needed in general.
         CALL bulk_flux (prho, tr_nd0,                          &
      &                  q_air, pr, t_air, windx, windy,        &
      &                  cloud,                                 &
@@ -440,7 +440,7 @@
 #ifdef PREC_EVAP
      &                  EminusP, evap,                         &
 #endif
-     &                  sustr, svstr)
+     &                  tau_xz, tau_yz)
 #else
 # ifdef DEBUG
         write(38,*) 'above turb_fluxes'
