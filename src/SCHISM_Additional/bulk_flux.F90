@@ -198,7 +198,6 @@
 !  Atmosphere-Ocean bulk fluxes parameterization.
 !=======================================================================
 !
-      Hscale=rho0*Cp
       twopi_inv=0.5_rkind/pi
       DO i=1,npa
           IF (idry(i) == 1) CYCLE
@@ -216,7 +215,7 @@
           RH  = -1000000    ! We need to put conversion of specific humidity to
           ! relative humidity but that is needed only for LONGWAVE option
           ! which is questionable
-          SRad(i)=srflx(i)*Hscale
+          SRad(i)=srflx(i)
           Tcff(i)=alpha
           Scff(i)=beta
 !
@@ -246,9 +245,9 @@
           vap_p=e_sat*RH       ! water vapor pressure (hPa or mbar)
           cff2=TairK(i)*TairK(i)*TairK(i)
           cff1=cff2*TairK(i)
-          LRad(i)=-emmiss*StefBo*                                     &
-     &              (cff1*(0.39_rkind-0.05_rkind*SQRT(vap_p))*                &
-     &                    (1.0_rkind-0.6823_rkind*cloud(i)*cloud(i))+     &
+          LRad(i)=-emmiss*StefBo*                                      &
+     &              (cff1*(0.39_rkind-0.05_rkind*SQRT(vap_p))*         &
+     &              (1.0_rkind-0.6823_rkind*cloud(i)*cloud(i))+        &
      &               cff2*4.0_rkind*(TseaK(i)-TairK(i)))
 
         ELSE IF (L_LONGWAVE_OUT) THEN
@@ -256,11 +255,11 @@
 !  Treat input longwave data as downwelling radiation only and add
 !  outgoing IR from model sea surface temperature.
 !
-          LRad(i)=lrflx(i)*Hscale-                                  &
+          LRad(i)=lrflx(i)-                                            &
      &              emmiss*StefBo*TseaK(i)*TseaK(i)*TseaK(i)*TseaK(i)
 
         ELSE
-          LRad(i)=lrflx(i)*Hscale
+          LRad(i)=lrflx(i)
         END IF
 !
 !-----------------------------------------------------------------------
@@ -583,12 +582,11 @@
 !  to (psu m/s) for stflx(isalt) in "set_vbc.F". The E-P value is
 !  saved in variable EminusP for I/O purposes.
 !
-      HscaleInv=1.0_rkind/(rho0*Cp)
       cff=1.0_rkind/rhow
       DO i=1,npa
-          lrflx(i)=LRad(i)*HscaleInv
-          lhflx(i)=-LHeat(i)*HscaleInv
-          shflx(i)=-SHeat(i)*HscaleInv
+          lrflx(i)=LRad(i)
+          lhflx(i)=-LHeat(i)
+          shflx(i)=-SHeat(i)
           stflx(1,i)=srflx(i)+lrflx(i)+                      &
      &                      lhflx(i)+shflx(i)
           evap(i)=LHeat(i)/Hlv(i)
