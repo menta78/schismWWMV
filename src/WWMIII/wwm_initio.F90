@@ -1141,6 +1141,7 @@
        REAL(rkind)     :: ACLOC(MSC,MDC)
        REAL(rkind)     :: DEG
        REAL(rkind)     :: TMPPAR(8,MNP), SSBRL(MSC,MDC)
+       REAL(rkind)     :: EPSMIN
        INTEGER         :: nbINIT1
        TMPPAR = 0.
        nbINIT1 = 0
@@ -1208,6 +1209,14 @@
                  ENDDO
                ENDDO
                REWIND(1113)
+             ELSE IF (INITSTYLE == 4) THEN
+               ! WAM style initialization to the noise
+               EPSMIN=10E-7
+               DO ID=1,MDC
+                 DO IS=1,MSC
+                   ACLOC(IS,ID) =  EPSMIN / PI2 / SPSIG(IS)
+                 ENDDO
+               ENDDO
              END IF ! INITSTYLE
              IF (LMAXETOT .AND. ISHALLOW(IP) .EQ. 1) CALL BREAK_LIMIT(IP,ACLOC,SSBRL) ! Miche for initial cond.
            ELSE
@@ -1217,7 +1226,7 @@
              WINDTH      = 0.
              ACLOC       = 0.
            END IF ! DEP(IP) .GT. DMIN .AND. WIND10 .GT. SMALL
-           AC2(:,:,IP) = 10E-7 
+           AC2(:,:,IP) = ACLOC
          END DO ! IP
        ELSE IF (LHOTR .AND. .NOT. LINID) THEN
          WRITE(STAT%FHNDL,*) 'Calling the INPUT_HOTFILE'
