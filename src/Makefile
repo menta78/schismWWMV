@@ -93,7 +93,7 @@ endif
 #Search path
 VPATH = Core/ Driver/ Hydro/ EcoSim/ ICM/ Sediment/ Sed2d/ WWMIII/ \
         /disk/ambcs03/0/yinglong/SELFE/from_Durski_Sept2009/V3.0c/ \
-        TiMor/
+        TiMor/ SCHISM_additional/
 
 ifdef USE_PETSC
   include ${PETSC_DIR}/conf/variables
@@ -103,6 +103,10 @@ OBJS = schism_glbl.o schism_msgp.o misc_modules.o schism_driver.o
 
 ifdef USE_PREC_EVAP
   PPFLAGS := $(PPFLAGS) $(IBMCPP)-DPREC_EVAP
+endif
+
+ifdef USE_BULK_FLUX
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_BULK_FLUX_FORMULATION
 endif
 
 ifdef USE_MM5
