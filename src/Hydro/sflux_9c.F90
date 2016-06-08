@@ -351,6 +351,9 @@
         use schism_glbl, only : rkind, npa, uu2, vv2, tr_nd, & !tnd, snd, &
      &                     kfp, idry, nvrt, ivcor,ipgl,fdb,lfdb
         use schism_msgp, only : myrank,parallel_abort
+#ifdef USE_BULK_FLUX_FORMULATION
+        use bulk_flux_mod, only : bulk_flux
+#endif
         implicit none
 
 ! input/output variables
@@ -378,6 +381,16 @@
         integer i_node_tmp
         logical, save :: first_call = .true.
         real(rkind) cloud(npa)
+#ifdef USE_BULK_FLUX_FORMULATION
+        real(rkind) lrflx(npa), srflx(npa)
+#endif
+
+#if !defined PREC_EVAP && defined USE_BULK_FLUX_FORMULATION
+        real(rkind) precip_flux(npa)
+#endif
+#if !defined PREC_EVAP && defined USE_BULK_FLUX_FORMULATION
+        precip_flux=0
+#endif
 
 ! define the local variables num_nodes
         num_nodes = npa
@@ -432,15 +445,17 @@
 
 #ifdef USE_BULK_FLUX_FORMULATION
         cloud=0 ! only for the LONGWAVE option, not needed in general.
+        srflx = shortwave_d
+        lrflx = longwave_d
         CALL bulk_flux (prho, tr_nd0,                          &
      &                  q_air, pr, t_air, windx, windy,        &
      &                  cloud,                                 &
-     &                  rain, lrflx,                           &
+     &                  precip_flux, lrflx,                    &
      &                  sen_flux, lat_flux,                    &
-     &                  srflx, stflx,                          &
-#ifdef PREC_EVAP
-     &                  EminusP, evap,                         &
-#endif
+     &                  srflx,                                 &
+# ifdef PREC_EVAP
+     &                  evap_flux,                             &
+# endif
      &                  tau_xz, tau_yz)
 #else
 # ifdef DEBUG

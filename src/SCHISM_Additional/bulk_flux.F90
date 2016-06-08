@@ -1,7 +1,5 @@
       MODULE bulk_flux_mod
         LOGICAL L_COOL_SKIN = .TRUE.
-        LOGICAL L_COARE_OOST = .FALSE.
-        LOGICAL L_COARE_TAYLOR_YELLAND = .FALSE.
         LOGICAL L_LONGWAVE=.FALSE.
         LOGICAL L_LONGWAVE_OUT=.TRUE.
 !
@@ -66,9 +64,9 @@
      &                           cloud,                                 &
      &                           rain, lrflx,                           &
      &                           sen_flux, lat_flux,                    &
-     &                           srflx, stflx,                          &
+     &                           srflx,                                 &
 #ifdef PREC_EVAP
-     &                           EminusP, evap,                         &
+     &                           evap,                                  &
 #endif
      &                           sustr, svstr)
 !
@@ -93,11 +91,16 @@
 !      real(rkind), intent(out) :: shflx(npa)
       real(rkind), intent(out) :: sen_flux(npa)
       real(rkind), intent(out) :: lat_flux(npa)
-      real(rkind), intent(out) :: stflx(2,npa)
-      real(rkind), intent(out) :: EminusP(npa)
+#ifdef PREC_EVAP
       real(rkind), intent(out) :: evap(npa)
+#endif
       real(rkind), intent(out) :: sustr(npa)
       real(rkind), intent(out) :: svstr(npa)
+!      
+!  Formerly out variables.
+!      
+      real(rkind) :: EminusP(npa)
+      real(rkind) :: stflx(2,npa)
 !
 !  Local variable declarations.
 !
@@ -204,15 +207,20 @@
       twopi_inv=0.5_rkind/pi
       DO i=1,npa
           IF (idry(i) == 1) CYCLE
-!
+          if (ivcor .eq. -1) then         ! z
+             sfc_lev = kfp(i_node)
+          else                            ! sigma
+             sfc_lev = nvrt
+          endif
+          !
 !  Input bulk parameterization fields.
 !
           Wmag(i)=SQRT(Uwind(i)*Uwind(i)+Vwind(i)*Vwind(i))
           PairM=Pair(i) / 100.0_rkind
           TairC(i)=Tair(i)
-          TairK(i)=TairC(i)+273.16_rkind
-          TseaC(i)=tr_nd(1,nvrt,i)
-          TseaK(i)=TseaC(i)+273.16_rkind
+          TairK(i)=TairC(i) + 273.16_rkind
+          TseaC(i)=tr_nd(1,sfc_lev,i)
+          TseaK(i)=TseaC(i) + 273.16_rkind
           rhoSea(i)=prho(nvrt,i)
           SpecHum=Hair_spec(i)
           RH  = -1000000    ! We need to put conversion of specific humidity to
@@ -594,8 +602,10 @@
           lat_flux(i) = LHeat(i)
           stflx(1,i)=srflx(i)+lrflx(i)+                      &
      &                      lhflx(i)+shflx(i)
+#ifdef PREC_EVAP
           evap(i)=LHeat(i)/Hlv(i)
           stflx(2,i)=cff*(evap(i)-rain(i))
+#endif
           EminusP(i)=stflx(2,i)
       END DO
 !
