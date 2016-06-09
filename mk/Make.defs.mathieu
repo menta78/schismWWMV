@@ -108,6 +108,9 @@ endif
 # Wind wave model WWM
 # USE_WWM = yes
 
+# Bulk flux formulation
+USE_BULK_FLUX = yes
+
 # TIMOR 
 # USE_TIMOR = yes
 
