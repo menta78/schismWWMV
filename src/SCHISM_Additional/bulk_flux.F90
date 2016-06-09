@@ -1,7 +1,7 @@
       MODULE bulk_flux_mod
-        LOGICAL L_COOL_SKIN = .TRUE.
-        LOGICAL L_LONGWAVE=.FALSE.
-        LOGICAL L_LONGWAVE_OUT=.TRUE.
+        LOGICAL :: L_COOL_SKIN = .TRUE.
+        LOGICAL :: L_LONGWAVE=.FALSE.
+        LOGICAL :: L_LONGWAVE_OUT=.TRUE.
 !
 !svn $Id: bulk_flux.F 751 2015-01-07 22:56:36Z arango $
 !================================================== Hernan G. Arango ===
@@ -53,13 +53,11 @@
 !                                                                      !
 !=======================================================================
 !
-      implicit none
-!
       PRIVATE
       PUBLIC  :: bulk_flux, bulk_psiu, bulk_psit
 !
       CONTAINS
-      SUBROUTINE bulk_flux      (prho, tr_nd,                           &
+      SUBROUTINE bulk_flux      (prho, tr_nd_temp,                      &
      &                           Hair_spec, Pair, Tair, Uwind, Vwind,   &
      &                           cloud,                                 &
      &                           rain, lrflx,                           &
@@ -69,13 +67,17 @@
      &                           evap,                                  &
 #endif
      &                           sustr, svstr)
+      use schism_glbl, only : rkind
+      USE schism_glbl, only : idry, ivcor, kfp
+      USE schism_glbl, only : npa, nvrt
+      IMPLICIT NONE
 !
 !  Imported variable declarations.
 !
-      real(rkind), intent(in) :: alpha(npa)
-      real(rkind), intent(in) :: beta(npa)
+!      real(rkind), intent(in) :: alpha(npa)
+!      real(rkind), intent(in) :: beta(npa)
       real(rkind), intent(in) :: prho(nvrt,npa)
-      real(rkind), intent(in) :: tr_nd(ntracers,nvrt,npa)
+      real(rkind), intent(in) :: tr_nd_temp(nvrt,npa)
       real(rkind), intent(in) :: Hair_spec(npa)
       real(rkind), intent(in) :: Pair(npa)
       real(rkind), intent(in) :: Tair(npa)
@@ -105,8 +107,15 @@
 !  Local variable declarations.
 !
       integer :: Iter, i, j, k
+      integer sfc_lev
       integer, parameter :: IterMax = 3
 
+      real(rkind), parameter :: blk_ZQ = 10.0_rkind     ! normally through .in file
+      real(rkind), parameter :: blk_ZT = 10.0_rkind     ! normally through .in file
+      real(rkind), parameter :: blk_ZW = 10.0_rkind     ! normally through .in file
+
+
+      
       real(rkind), parameter :: eps = 1.0E-20_rkind
       real(rkind), parameter :: r3 = 1.0_rkind/3.0_rkind
 
@@ -125,7 +134,7 @@
       real(rkind), parameter :: emmiss = 0.97_rkind            ! non_dimensional
       real(rkind), parameter :: rhow = 1000.0_rkind            ! kg/m3
       real(rkind), parameter :: g = 9.81_rkind                 ! m/s2
-      real(rkind), parameter :: gorho0                      ! m4/s2/kg
+      real(rkind), parameter :: pi = 3.1415926535_rkind        ! non-dimensional
       real(rkind), parameter :: vonKar = 0.41_rkind            ! non-dimensional
       
 
@@ -142,6 +151,7 @@
       real(rkind) :: twopi_inv, wet_bulb
       real(rkind) :: e_sat, vap_p
       real(rkind) :: Clam, Fc, Hcool, Hsb, Hlb, Qbouy, Qcool, lambd
+      real(rkind) :: SpecHum
 
       real(rkind), dimension(npa) :: CC
       real(rkind), dimension(npa) :: Cd10
@@ -208,7 +218,7 @@
       DO i=1,npa
           IF (idry(i) == 1) CYCLE
           if (ivcor .eq. -1) then         ! z
-             sfc_lev = kfp(i_node)
+             sfc_lev = kfp(i)
           else                            ! sigma
              sfc_lev = nvrt
           endif
@@ -219,7 +229,7 @@
           PairM=Pair(i) / 100.0_rkind
           TairC(i)=Tair(i)
           TairK(i)=TairC(i) + 273.16_rkind
-          TseaC(i)=tr_nd(1,sfc_lev,i)
+          TseaC(i)=tr_nd_temp(sfc_lev,i)
           TseaK(i)=TseaC(i) + 273.16_rkind
           rhoSea(i)=prho(nvrt,i)
           SpecHum=Hair_spec(i)
@@ -366,7 +376,7 @@
 !  Neutral coefficients.
 !
           ZoW(i)=0.0001_rkind
-          u10(i)=delW(i)*LOG(10.0_rkind/ZoW(i))/LOG(blk_ZW(ng)/ZoW(i))
+          u10(i)=delW(i)*LOG(10.0_rkind/ZoW(i))/LOG(blk_ZW/ZoW(i))
           Wstar(i)=0.035_rkind*u10(i)
           Zo10(i)=0.011_rkind*Wstar(i)*Wstar(i)/g+                         &
      &            0.11_rkind*VisAir(i)/Wstar(i)
@@ -374,18 +384,18 @@
           Ch10(i)=0.00115_rkind
           Ct10(i)=Ch10(i)/sqrt(Cd10(i))
           ZoT10(i)=10.0_rkind/EXP(vonKar/Ct10(i))
-          Cd=(vonKar/LOG(blk_ZW(ng)/Zo10(i)))**2
+          Cd=(vonKar/LOG(blk_ZW/Zo10(i)))**2
 !
 !  Compute Richardson number.
 !
-          Ct(i)=vonKar/LOG(blk_ZT(ng)/ZoT10(i))  ! T transfer coefficient
+          Ct(i)=vonKar/LOG(blk_ZT/ZoT10(i))  ! T transfer coefficient
           CC(i)=vonKar*Ct(i)/Cd
           delTc(i)=0.0_rkind
           IF (L_COOL_SKIN) THEN
             delTc(i)=blk_dter
           END IF
-          Ribcu(i)=-blk_ZW(ng)/(blk_Zabl*0.004_rkind*blk_beta**3)
-          Ri(i)=-g*blk_ZW(ng)*((delT(i)-delTc(i))+                      &
+          Ribcu(i)=-blk_ZW/(blk_Zabl*0.004_rkind*blk_beta**3)
+          Ri(i)=-g*blk_ZW*((delT(i)-delTc(i))+                      &
      &                          0.61_rkind*TairK(i)*delQ(i))/              &
      &          (TairK(i)*delW(i)*delW(i))
           IF (Ri(i).lt.0.0_rkind) THEN
@@ -393,18 +403,18 @@
           ELSE
             Zetu(i)=CC(i)*Ri(i)/(1.0_rkind+3.0_rkind*Ri(i)/CC(i))   ! Stable
           END IF
-          L10(i)=blk_ZW(ng)/Zetu(i)
+          L10(i)=blk_ZW/Zetu(i)
 !
 !  First guesses for Monon-Obukhov similarity scales.
 !
-          Wstar(i)=delW(i)*vonKar/(LOG(blk_ZW(ng)/Zo10(i))-             &
-     &                             bulk_psiu(blk_ZW(ng)/L10(i),pi))
+          Wstar(i)=delW(i)*vonKar/(LOG(blk_ZW/Zo10(i))-             &
+     &                             bulk_psiu(blk_ZW/L10(i),pi))
           Tstar(i)=-(delT(i)-delTc(i))*vonKar/                          &
-     &             (LOG(blk_ZT(ng)/ZoT10(i))-                           &
-     &              bulk_psit(blk_ZT(ng)/L10(i),pi))
+     &             (LOG(blk_ZT/ZoT10(i))-                           &
+     &              bulk_psit(blk_ZT/L10(i),pi))
           Qstar(i)=-(delQ(i)-delQc(i))*vonKar/                          &
-     &             (LOG(blk_ZQ(ng)/ZoT10(i))-                           &
-     &              bulk_psit(blk_ZQ(ng)/L10(i),pi))
+     &             (LOG(blk_ZQ/ZoT10(i))-                           &
+     &              bulk_psit(blk_ZQ/L10(i),pi))
 !
 !  Modify Charnock for high wind speeds. The 0.125 factor below is for
 !  1.0/(18.0-10.0).
@@ -431,18 +441,18 @@
 !
             ZoQ(i)=MIN(1.15e-4_rkind,5.5e-5_rkind/Rr(i)**0.6_rkind)
             ZoT(i)=ZoQ(i)
-            ZoL(i)=vonKar*g*blk_ZW(ng)*                                 &
+            ZoL(i)=vonKar*g*blk_ZW*                                 &
      &             (Tstar(i)*(1.0_rkind+0.61_rkind*Q(i))+                     &
      &                        0.61_rkind*TairK(i)*Qstar(i))/               &
      &             (TairK(i)*Wstar(i)*Wstar(i)*                         &
      &              (1.0_rkind+0.61_rkind*Q(i))+eps)
-            L(i)=blk_ZW(ng)/(ZoL(i)+eps)
+            L(i)=blk_ZW/(ZoL(i)+eps)
 !
 !  Evaluate stability functions at Z/L.
 !
             Wpsi(i)=bulk_psiu(ZoL(i),pi)
-            Tpsi(i)=bulk_psit(blk_ZT(ng)/L(i),pi)
-            Qpsi(i)=bulk_psit(blk_ZQ(ng)/L(i),pi)
+            Tpsi(i)=bulk_psit(blk_ZT/L(i),pi)
+            Qpsi(i)=bulk_psit(blk_ZQ/L(i),pi)
             IF (L_COOL_SKIN) THEN
             Cwet(i)=0.622_rkind*Hlv(i)*Qsea(i)/                          &
      &              (blk_Rgas*TseaK(i)*TseaK(i))
@@ -452,11 +462,11 @@
 !  Compute wind scaling parameters, Wstar.
 !
             Wstar(i)=MAX(eps,delW(i)*vonKar/                            &
-     &               (LOG(blk_ZW(ng)/ZoW(i))-Wpsi(i)))
+     &               (LOG(blk_ZW/ZoW(i))-Wpsi(i)))
             Tstar(i)=-(delT(i)-delTc(i))*vonKar/                        &
-     &               (LOG(blk_ZT(ng)/ZoT(i))-Tpsi(i))
+     &               (LOG(blk_ZT/ZoT(i))-Tpsi(i))
             Qstar(i)=-(delQ(i)-delQc(i))*vonKar/                        &
-     &               (LOG(blk_ZQ(ng)/ZoQ(i))-Qpsi(i))
+     &               (LOG(blk_ZQ/ZoQ(i))-Qpsi(i))
 !
 !  Compute gustiness in wind speed.
 !
@@ -514,6 +524,7 @@
             delQc(i)=Cwet(i)*delTc(i)
           END IF
         END DO
+      END DO
 !
 !-----------------------------------------------------------------------
 !  Compute Atmosphere/Ocean fluxes.
@@ -600,8 +611,8 @@
 !          shflx(i)=-SHeat(i) ! ROMS variable
           sen_flux(i) = SHeat(i)
           lat_flux(i) = LHeat(i)
-          stflx(1,i)=srflx(i)+lrflx(i)+                      &
-     &                      lhflx(i)+shflx(i)
+!          stflx(1,i)=srflx(i)+lrflx(i)+                      &
+!     &                      lhflx(i)+shflx(i)
 #ifdef PREC_EVAP
           evap(i)=LHeat(i)/Hlv(i)
           stflx(2,i)=cff*(evap(i)-rain(i))
@@ -616,6 +627,8 @@
       END SUBROUTINE bulk_flux
 
       FUNCTION bulk_psiu (ZoL, pi)
+      use schism_glbl, only : rkind
+      IMPLICIT NONE
 !
 !=======================================================================
 !                                                                      !
@@ -673,10 +686,11 @@
         bulk_psiu=-((1.0_rkind+ZoL)+0.6667_rkind*(ZoL-14.28_rkind)/              &
      &            EXP(cff)+8.525_rkind)
       END IF
-      RETURN
       END FUNCTION bulk_psiu
 
       FUNCTION bulk_psit (ZoL, pi)
+      use schism_glbl, only : rkind
+      IMPLICIT NONE
 !
 !=======================================================================
 !                                                                      !
@@ -732,7 +746,5 @@
         bulk_psit=-((1.0_rkind+2.0_rkind*ZoL)**1.5_rkind+                        &
      &            0.6667_rkind*(ZoL-14.28_rkind)/EXP(cff)+8.525_rkind)
       END IF
-
-      RETURN
       END FUNCTION bulk_psit
       END MODULE

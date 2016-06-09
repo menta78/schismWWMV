@@ -93,7 +93,7 @@ endif
 #Search path
 VPATH = Core/ Driver/ Hydro/ EcoSim/ ICM/ Sediment/ Sed2d/ WWMIII/ \
         /disk/ambcs03/0/yinglong/SELFE/from_Durski_Sept2009/V3.0c/ \
-        TiMor/ SCHISM_additional/
+        TiMor/ SCHISM_Additional/
 
 ifdef USE_PETSC
   include ${PETSC_DIR}/conf/variables
@@ -245,10 +245,10 @@ ifdef USE_SED2D
 endif
 
 #Remaining Hydro
-OBJS := $(OBJS) grid_subs.o hydraulic_structures.o schism_init.o \
+OBJS := $(OBJS) grid_subs.o hydraulic_structures.o simpler_wind.o schism_init.o \
         schism_step.o schism_finalize.o bktrk_subs.o solver_subs.o \
         io_subs.o misc_subs.o transport_TVD.o transport_TVD_imp.o \
-        sflux_9c.o lap.o simpler_wind.o single_netcdf.o
+        bulk_flux.o sflux_9c.o lap.o single_netcdf.o
 
 # Names of the object files with configuration intermediate file (.o,.mod) output directory prepended
 CONFIG_OBJS :=  $(addprefix o/$(config)/, $(OBJS))

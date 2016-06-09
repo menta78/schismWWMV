@@ -352,6 +352,7 @@
      &                     kfp, idry, nvrt, ivcor,ipgl,fdb,lfdb
         use schism_msgp, only : myrank,parallel_abort
 #ifdef USE_BULK_FLUX_FORMULATION
+        use schism_glbl, only : tr_nd, prho
         use bulk_flux_mod, only : bulk_flux
 #endif
         implicit none
@@ -447,8 +448,8 @@
         cloud=0 ! only for the LONGWAVE option, not needed in general.
         srflx = shortwave_d
         lrflx = longwave_d
-        CALL bulk_flux (prho, tr_nd0,                          &
-     &                  q_air, pr, t_air, windx, windy,        &
+        CALL bulk_flux (prho, tr_nd(1,:,:),                    &
+     &                  q_air, p_air, t_air, u_air, v_air,     &
      &                  cloud,                                 &
      &                  precip_flux, lrflx,                    &
      &                  sen_flux, lat_flux,                    &

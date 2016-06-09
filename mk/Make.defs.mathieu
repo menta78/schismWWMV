@@ -57,8 +57,8 @@ FLD = $(FCP)
 # MPI vserion (1 or 2) 
 PPFLAGS := $(PPFLAGS) -DMPIVERSION=2 #-DUSE_WRAP
 #OPTFLAGS = -O2
-#OPTFLAGS = -warn interfaces,nouncalled -fpp -gen-interface -g -fp-model precise -traceback -check all -fpe0
-OPTFLAGS = -O2 -fpe0
+OPTFLAGS = -warn interfaces,nouncalled -fpp -gen-interface -g -fp-model precise -traceback -check all -fpe0
+#OPTFLAGS = -O2 -fpe0
 FCPFLAGS = $(PPFLAGS) $(OPTFLAGS) -Bstatic -assume byterecl #-g -traceback #-check uninit -check pointer -check bounds #MPI code
 FLDFLAGS = $(OPTFLAGS) #for final linking of object files
 
