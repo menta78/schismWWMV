@@ -2,10 +2,10 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+#undef DEBUG
 #define DEBUG
 #define DEBUG_ITERATION_LOOP
 #undef DEBUG_ITERATION_LOOP
-#undef DEBUG
 !AR:todo: code duplication ... and buggy since boundary pointer are not taken into account 
       SUBROUTINE COMPUTE_CFL_N_SCHEME_EXPLICIT(CFLadvgeoOutI)
       USE DATAPOOL
@@ -582,6 +582,10 @@
       !
       IF (ASPAR_LOCAL_LEVEL .eq. 0) THEN
         CALL ADD_FREQ_DIR_TO_ASPAR_COMP_CADS(ASPAR_JAC)
+#ifdef DEBUG
+        WRITE(STAT%FHNDL,*) 'Aft/Refr/Freq sum(abs(ASPAR_JAC))=', sum(abs(ASPAR_JAC))
+        WRITE(STAT%FHNDL,*) 'Aft/Refr/Freq sum(    ASPAR_JAC )=', sum(ASPAR_JAC)
+#endif
       END IF
 
       IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
