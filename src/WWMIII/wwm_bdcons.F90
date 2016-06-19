@@ -2947,7 +2947,7 @@
              eCLATS = 1
            END IF
            DO IK=1,NK
-!AR: here is the bug SPSIGLOC is not defined please correct this
+!Mathieu: here is the bug SPSIGLOC is not defined please correct this
              CALL ALL_FROM_TABLE(SPSIGLOC,DEPLOC,WVK,WVCG,WVKDEP,WVN,WVC)
              eCG = WVCG              
              DO ITH=1,NTH

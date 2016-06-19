@@ -29,7 +29,7 @@
 #endif
          ELSE IF (ISOURCE == 3) THEN
 #ifdef DEBUG_SOURCE_TERM
-           WRITE(*,*) 'DOING SWAN SHIT'
+           WRITE(*,*) 'DOING CYCLE 3'
 #endif
            CALL CYCLE3_PRE(IP, ACLOC, IMATRA, IMATDA, SSINE, DSSINE, SSDS, DSSDS, SSNL4, DSSNL4, SSINL)
          ENDIF
