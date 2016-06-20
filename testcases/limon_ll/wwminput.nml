@@ -14,6 +14,8 @@
  ENDTC   = 19980901.010000     ,
  DMIN    =  1.000000000000000E-004
  /
+
+
  &COUPL
  LCPL    = F,
  LROMS   = F,
@@ -25,6 +27,8 @@
  DTCOUP  =   600.000000000000     ,
  IMET_DRY        =           0
  /
+
+
  &GRID
  LCIRD   = T,
  LSTAG   = T,
@@ -44,14 +48,18 @@
  CART2LATLON = T, 
  LATLON2CART = F, 
  /
+
+
  &INIT
  LHOTR   = F,
  LINID   = F,
  INITSTYLE = 1
  /
+
+
  &BOUC
  LBCSE   = F,
- LBCWA   = F,
+ LBCWA   = T,
  LBCSP   = F,
  LINHOM  = F,
  LBSP1D  = F,
@@ -61,17 +69,15 @@
  DELTC   =   5.00000000000000     ,
  UNITC   = SEC                 ,
  ENDTC   = 19980901.010000     ,
- FILEBOUND       = wwmbnd.gr3                                                                                                        
-                           ,
+ FILEBOUND       = wwmbnd.gr3 ,
  IBOUNDFORMAT    =           1,
- FILEWAVE        = wwmbnd.gr3                                                                                                        
-                           ,
+ FILEWAVE        = wwmbnd.gr3 ,
  LINDSPRDEG      = F,
  LPARMDIR        = F,
  WBHS    =   4.00000000000000     ,
  WBTP    =   8.00000000000000     ,
  WBDM    =   90.0000000000000     ,
- WBDS    =   20.0000000000000     ,
+ WBDS    =   5.00000000000000     ,
  WBSS    =   2.00000000000000     ,
  WBDSMS  =   1.00000000000000     ,
  WBGAUSS =  0.100000000000000     ,
@@ -82,6 +88,8 @@
  NCDF_FP_NAME    = fp                                      ,
  NCDF_F02_NAME   = t02                                     
  /
+
+
  &WIND
  LSEWD   = F,
  LSTWD   = T,
@@ -101,6 +109,8 @@
  IWINDFORMAT     =           1,
  LWINDFROMWWM    =  T,
  /
+
+
  &CURR
  LSECU   = F,
  BEGTC   = 19980901.000000     ,
@@ -118,6 +128,8 @@
  CURFAC  =   1.00000000000000     ,
  ICURRFORMAT     =           1
  /
+
+
  &WALV
  LSEWL   = F,
  BEGTC   =                     ,
@@ -131,6 +143,8 @@
  WALVFAC =   1.00000000000000     ,
  IWATLVFORMAT    =           1
  /
+
+
  &ENGS
  MESNL   =          1,
  MESIN   =          1,
@@ -148,10 +162,12 @@
  TRIRA   =   2.50000000000000     ,
  TRIURS  =  0.100000000000000     
  /
+
+
  &NUMS
  ICOMP   =           0,
  AMETHOD =           0,
- SMETHOD =           1,
+ SMETHOD =           0,
  DMETHOD =           0,
  LITERSPLIT      = F,
  LFILTERTH       = F,
@@ -207,16 +223,16 @@
  LNANINFCHK      = F,
  LZETA_SETUP     = F,
  ZETA_METH       = 0,
- LSOURCESWAM     = F,
- LSOURCESWWIII   = F,
  /
+
+
  &HISTORY
  BEGTC   = 19980901.000000     ,
  DELTC   = 1.00000000000000     ,
  UNITC   = SEC                 ,
  ENDTC   = 19990901.010000     ,
  DEFINETC        =  0.000000000000000E+000,
- OUTSTYLE        = XFN                 ,
+ OUTSTYLE        = NC                 ,
  FILEOUT = field.dat                               ,
  LOUTITER        = F,
  IOBPD   = F,
@@ -287,6 +303,8 @@
  CFL3    = F,
  ZETA_SETUP      = F
  /
+
+
  &STATION
  BEGTC   = 19980901.000000     ,
  DELTC   =   20.0000000000000     ,
@@ -432,6 +450,8 @@
  CFL3    = F,
  ZETA_SETUP      = F
  /
+
+
  &HOTFILE
  BEGTC   = 19980901.000000     ,
  DELTC   =   5.00000000000000     ,
@@ -450,8 +470,10 @@
                            
  /
 
+
 &NESTING
 /
+
 
 &PETScOptions
                                      ! Summary of Sparse Linear Solvers Available from PETSc: http://www.mcs.anl.gov/petsc/documentation/linearsolvertable.html

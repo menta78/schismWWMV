@@ -871,6 +871,7 @@
               END IF
               CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1), .FALSE.,'CALL FROM WB 3', USE_OPTI_SPEC_SHAPE_BOUC)
             ELSE ! Steady in time ...
+              Print *, 'Applying parametric boundary condition'
               SPPARM = 0.
               IF (LMONO_IN) THEN
                 SPPARM(1,1) = WBHS * SQRT(2.)
@@ -937,6 +938,7 @@
       USE DATAPOOL
       IMPLICIT NONE
       CHARACTER(len=29) :: CHR
+      Print *, 'Applying SET_WAVE_BOUNDARY_CONDITION'
       IF (LNANINFCHK) THEN
         WRITE(DBG%FHNDL,*) ' ENTERING SET_WAVE_BOUNDARY_CONDITION ',  SUM(AC2)
         IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1959')
@@ -1563,6 +1565,64 @@
       REAL(rkind), INTENT(IN)    :: DX, DY, OFFSET_X, OFFSET_Y
       REAL(rkind), INTENT(OUT)   :: VAL(8,IWBMNP)
       CALL SPPARM_INTER_STRUCT(NDX,NDY,DX,DY,OFFSET_X,OFFSET_Y, MNP, XP, YP, VAL, DOPEAK_BOUNDARY)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE READWAVEPARWWM
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER         :: IP
+#ifdef MPI_PARALL_GRID
+      INTEGER         :: IPP
+      REAL(rkind)     :: RTMP
+#endif
+
+!     SPPARM(1): Hs, sign. wave height
+!     SPPARM(2): Wave period given by user (either peak or mean)
+!     SPPARM(3): average direction
+!     SPPARM(4): directional spread
+!     SPPARM(5): spectral shape (1-4),
+!                (1 - Pierson-Moskowitz,
+!                 2 - JONSWAP,
+!                 3 - BIN,
+!                 4 - Gauss)
+!                     negative peak (+) 
+!                     or mean frequency (-)
+!     SPPARM(6): directional spreading in degree (1) or exponent (2)
+!     SPPARM(7): gaussian width for the gauss spectrum 0.1
+!     SPPARM(8): peak enhancement factor for the JONSWAP spectra 3.3
+
+      IF (LINHOM) THEN
+        READ(WAV%FHNDL,*)
+      END IF
+
+#ifdef MPI_PARALL_GRID
+      IPP = 0
+      IF (LINHOM) THEN
+        DO IP = 1, IWBMNPGL
+          IF(ipgl(IWBNDGL(IP))%rank == myrank) THEN ! if boundary nodes belong to local domain ...
+            IPP = IPP + 1
+            READ (WAV%FHNDL, *) SPPARM(:,IPP) ! ... read values into boundary array
+          ELSE
+            READ (WAV%FHNDL, *) RTMP, RTMP, RTMP, RTMP, RTMP, RTMP, RTMP, RTMP ! ... else ... throw them away
+          ENDIF
+        END DO
+      ELSE
+        READ (WAV%FHNDL, *) SPPARM(:,1)
+        DO IP = 2, IWBMNPGL
+          SPPARM(:,IP) = SPPARM(:,1)
+        END DO
+      END IF
+#else 
+      IF (LINHOM) THEN
+        DO IP = 1, IWBMNP
+          READ (WAV%FHNDL, *) SPPARM(:,IP)
+        END DO
+      ELSE
+        READ (WAV%FHNDL, *) SPPARM(:,1)
+      END IF
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

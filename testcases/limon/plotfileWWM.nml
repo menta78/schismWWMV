@@ -8,8 +8,9 @@
  HisPrefix = "field.nc", 
  PicPrefix = "WWM_plot/"
  Extension="png",
- KeepNC_NCL = F,
+ KeepNC_NCL = T,
 /
+
 
 &VARS
  WIND10 = F, 
