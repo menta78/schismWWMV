@@ -311,7 +311,7 @@
  UNITC   = SEC                 ,
  ENDTC   = 19980901.010000     ,
  DEFINETC        =  -1.00000000000000     ,
- OUTSTYLE        = NC                  ,
+ OUTSTYLE        = NO                  ,
  USE_SINGLE_OUT  = T,
  MULTIPLEOUT     =           0,
  PARAMWRITE      = T,

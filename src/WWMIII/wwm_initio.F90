@@ -741,7 +741,7 @@
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET THE INITIAL CONDITION'
       FLUSH(STAT%FHNDL)
       CALL INITIAL_CONDITION
-!      CALL Print_SumAC2("After INITIAL_CONDITION")
+      CALL Print_SumAC2("After INITIAL_CONDITION")
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT STATION OUTPUT'
       FLUSH(STAT%FHNDL)
       CALL INIT_STATION_OUTPUT
@@ -1234,7 +1234,7 @@
        END IF
        WRITE(STAT%FHNDL,*) 'nbINIT1 = ', nbINIT1
        CALL Print_SumAC2("After the INIT operations")
-!       CALL SET_WAVE_BOUNDARY
+       CALL SET_WAVE_BOUNDARY
        CALL Print_SumAC2("After SET_WAVE_BOUNDARY")
        END SUBROUTINE
 !**********************************************************************
