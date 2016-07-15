@@ -1,15 +1,16 @@
 &PROC
  MODELNAME = "WWM", 
- BEGTC = "19980901.000000", 
+ BEGTC = "earliest",
  DELTC =  10, 
  UNITC = "SEC", 
- ENDTC = "19980901.001000", 
+ ENDTC = "latest",
  GridFile = "field.nc", 
  HisPrefix = "field.nc", 
  PicPrefix = "WWM_plot/"
  Extension="png",
- KeepNC_NCL = F,
+ KeepNC_NCL = T,
 /
+
 
 &VARS
  WIND10 = F, 

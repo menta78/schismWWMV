@@ -113,19 +113,11 @@
       REAL(rkind), INTENT(IN)    :: TIME
       IF (HISTORY_XFN) THEN
         CALL OUTPUT_HISTORY_XFN( TIME )
-      END IF
-      IF (HISTORY_NC) THEN
+      ELSE IF (HISTORY_NC) THEN
 #ifdef NCDF
         CALL OUTPUT_HISTORY_NC
 #else
         CALL WWM_ABORT('For History in netcdf, need netcdf!')
-#endif
-      END IF
-      IF (HISTORY_XFN) THEN
-#ifdef DARKO
-        CALL OUTPUT_HISTORY_SHP( TIME )
-#else
-        CALL WWM_ABORT('For DARKO, compile with -DDARKO option')
 #endif
       END IF
       WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY'
