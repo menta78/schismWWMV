@@ -41,6 +41,7 @@
       REAL(rkind) :: SPSIGLOC, WVN, WVC, WVK, WVCG
       integer ISMAX, IS
       DEPLOC=10000
+!AR: What is happening here?!
       ISMAX=MSC
       CURTXYLOC=ZERO
       DO IS=1,MSC
