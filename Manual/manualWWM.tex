@@ -91,11 +91,26 @@ The WWM model depends on several external libraries that have to be installed:
 \item {\tt MPI}: This is the Message Passing Interface of the model. If not available
   then you can only use the model in serial mode.
 \item {\tt Parmetis/Metis}: This is the library for decomposing the domains. The source
-  code is available at \url{http://glaros.dtc.umn.edu/gkhome/metis/parmetis/overview}.
+  code is available at \url{http://glaros.dtc.umn.edu/gkhome/metis/parmetis/overview}.\\
+This library is needed if and only if the MPI mode is used.
 \item {\tt Netcdf}: This is the library for doing Netcdf input/output. Source code available at
-  \url{http://www.unidata.ucar.edu/software/netcdf/}. You can use netcdf-3.x or netcdf-4.x
+  \url{http://www.unidata.ucar.edu/software/netcdf/}. You can use netcdf-3.x or netcdf-4.x\\
+The netcdf library is not strictly necessary but it may be needed for:
+\begin{itemize}
+\item Hotfiles (but binary hotfiles are always possible)
+\item history output (but .bin files for XFN are always possible)
+\item station output (but station binary files are also possible)
+\item Wind forcing (but text file or grib are also possibilities)
+\item Boundary forcing (alternative are many)
+\item Current and water height forcing (there are several alternatives)  
+\end{itemize}
 \item {\tt GribApi}: This is the library for reading and writing Grib files. Source code
-  can be downloaded at \url{https://software.ecmwf.int/wiki/display/GRIB/Home}.
+  can be downloaded at \url{https://software.ecmwf.int/wiki/display/GRIB/Home}\\
+The gribapi is not strictly necessary, but it may be useful for:
+\begin{itemize}
+\item Wind forcing since meteorological institutes frequently use grib files
+\item boundary forcing since ECMWF produces spectrum output in grib.
+\end{itemize}
 \item {\tt PETSc}: This is a parallel implicit solver. It can be downloaded
   at \url{http://www.mcs.anl.gov/petsc/download/}. It is a priori not needed.
 \end{enumerate}
