@@ -2034,7 +2034,7 @@
       USE NETCDF
       USE DATAPOOL
       IMPLICIT NONE
-      INTEGER           :: fid, varid, dimids(2)
+      INTEGER           :: fid, varid, dimids(nf90_max_var_dims)
       TYPE(VAR_NETCDF_CF), intent(inout) :: eVAR
       REAL(rkind), ALLOCATABLE :: CF_LON(:,:), CF_LAT(:,:)
       character (len = *), parameter :: CallFct="INIT_NETCDF_CF"
@@ -2043,6 +2043,9 @@
       integer posBlank, alen
       type(FD_FORCING_GRID) TheInfo
       integer IX, IY
+      WRITE(DBG%FHNDL,*) 'IWINDFORMAT=', IWINDFORMAT
+      WRITE(DBG%FHNDL,*) 'INIT_NETCDF_CF_WWM_WIND start'
+      FLUSH(DBG%FHNDL)
       CALL INIT_DIRECT_NETCDF_CF(eVAR, MULTIPLE_IN_WIND, WIN%FNAME, "Uwind")
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
@@ -2264,7 +2267,7 @@
       character(len=*), intent(in) :: eString
 !      
       INTEGER           :: fid, varid
-      INTEGER           :: dimidsB(2), dimids(2)
+      INTEGER           :: dimidsB(nf90_max_var_dims), dimids(nf90_max_var_dims)
       integer nbChar
       character (len=20) :: eTimeStr
       character(len=100) :: CHRERR
@@ -2278,7 +2281,7 @@
       integer eInt(1)
       real(rkind) :: eReal(2)
       integer IPROC
-      integer np_file
+      integer np_file, NumberDim
       eVAR % MULTIPLE_IN = MULTIPLE_IN
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN .or. (myrank .eq. 0)) THEN
@@ -2288,23 +2291,30 @@
 
         ! Reading wind attributes
 
-!        Print *, 'eString=', TRIM(eString)
-!        Print *, 'FNAME=', TRIM(eFileName)
+        Print *, 'eString=', TRIM(eString)
+        Print *, 'FNAME=', TRIM(eFileName)
         ISTAT = nf90_inq_varid(fid, TRIM(eString), varid)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, ISTAT)
 
         ISTAT = nf90_inquire_variable(fid, varid, dimids=dimidsB)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, ISTAT)
 
+        ISTAT = nf90_inquire_variable(fid, varid, ndims=NumberDim)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, ISTAT)
+
+
+
         ISTAT = nf90_inquire_dimension(fid, dimidsB(1), len=np_file)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, ISTAT)
-        IF (np_file .ne. np_total) THEN
-          Print *, 'We have np_file=', np_file
-          Print *, '   But np_total=', np_total
-          CALL WWM_ABORT("Direct forcing file seems to have wrong dimension")
+        IF (NumberDim .eq. 2) THEN
+          IF (np_file .ne. np_total) THEN
+            Print *, 'We have np_file=', np_file
+            Print *, '   But np_total=', np_total
+            CALL WWM_ABORT("Direct forcing file seems to have wrong dimension")
+          END IF
         END IF
 
-        ISTAT = nf90_inquire_dimension(fid, dimidsB(2), name=eTimeStr)
+        ISTAT = nf90_inquire_dimension(fid, dimidsB(NumberDim), name=eTimeStr)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, ISTAT)
         WRITE(WINDBG%FHNDL,*) 'variable used for time=', TRIM(eTimeStr)
         FLUSH(WINDBG%FHNDL)

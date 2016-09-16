@@ -56,8 +56,8 @@ FCP = mpif90
 FLD = $(FCP)
 # MPI vserion (1 or 2) 
 PPFLAGS := $(PPFLAGS) -DMPIVERSION=2 #-DUSE_WRAP
-#OPTFLAGS = -O2
-OPTFLAGS = -warn interfaces,nouncalled -fpp -gen-interface -g -fp-model precise -traceback -check all -fpe0
+OPTFLAGS = -O2
+#OPTFLAGS = -warn interfaces,nouncalled -fpp -gen-interface -g -fp-model precise -traceback -check all -fpe0
 #OPTFLAGS = -O2 -fpe0
 FCPFLAGS = $(PPFLAGS) $(OPTFLAGS) -Bstatic -assume byterecl #-g -traceback #-check uninit -check pointer -check bounds #MPI code
 FLDFLAGS = $(OPTFLAGS) #for final linking of object files
@@ -66,7 +66,7 @@ FLDFLAGS = $(OPTFLAGS) #for final linking of object files
 #MTSLIBS = -L/usr/lib/ -lparmetis -lmetis
 MTSLIBS = -L./ParMetis-3.1-Sep2010/ -lparmetis -lmetis
 CDFLIBS = $(NETCDF_FORTRAN_LINK)
-CDFMOD = -I$(NETCDF_INCDIR)
+CDFMOD = -I$(NETCDF_INCDIR) -DSINGLE_NETCDF_OUTPUT
 ifdef USE_GOTM
    GTMMOD =  -I/home/users/yinglong/GOTM/gotm-3.2.5/Intel64/modules/IFORT/ #modules
    GTMLIBS = -L/home/users/yinglong/GOTM/gotm-3.2.5/Intel64/lib/IFORT/ -lturbulence_prod  -lutil_prod
