@@ -375,6 +375,15 @@
       REAL(rkind) :: Uw, Vw
       INTEGER IX, IY
       REAL(rkind) :: cf_scale_factor, cf_add_offset
+      INTEGER SHIFTXY(4,2)
+      SHIFTXY(1,1)=0
+      SHIFTXY(1,2)=0
+      SHIFTXY(2,1)=1
+      SHIFTXY(2,2)=0
+      SHIFTXY(3,1)=0
+      SHIFTXY(3,2)=1
+      SHIFTXY(4,1)=1
+      SHIFTXY(4,2)=1
       cf_scale_factor = eVAR_WIND % cf_scale_factor
       cf_add_offset = eVAR_WIND % cf_add_offset
       DO I = 1, MNP_WIND
@@ -651,7 +660,7 @@
       END IF
 # endif      
      END SUBROUTINE SAVE_INTERP_ARRAY
-#endif    
+#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -782,16 +791,8 @@
       logical EXTRAPO_OUT
       real(rkind) eX, eY
       WRITE(WINDBG%FHNDL,*) 'Starting node loop for calcs of coefs'
-      allocate(CF_IX(MNP_WIND), CF_IY(MNP_WIND), SHIFTXY(4,2), CF_COEFF(4,MNP_WIND), stat=istat)
+      allocate(CF_IX(MNP_WIND), CF_IY(MNP_WIND), CF_COEFF(4,MNP_WIND), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
-      SHIFTXY(1,1)=0
-      SHIFTXY(1,2)=0
-      SHIFTXY(2,1)=1
-      SHIFTXY(2,2)=0
-      SHIFTXY(3,1)=0
-      SHIFTXY(3,2)=1
-      SHIFTXY(4,1)=1
-      SHIFTXY(4,2)=1
 #ifdef NCDF
       WRITE(WINDBG%FHNDL,*) 'LSAVE_INTERP_ARRAY=', LSAVE_INTERP_ARRAY
       IF (LSAVE_INTERP_ARRAY) THEN

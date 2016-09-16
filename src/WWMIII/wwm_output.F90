@@ -113,19 +113,11 @@
       REAL(rkind), INTENT(IN)    :: TIME
       IF (HISTORY_XFN) THEN
         CALL OUTPUT_HISTORY_XFN( TIME )
-      END IF
-      IF (HISTORY_NC) THEN
+      ELSE IF (HISTORY_NC) THEN
 #ifdef NCDF
         CALL OUTPUT_HISTORY_NC
 #else
         CALL WWM_ABORT('For History in netcdf, need netcdf!')
-#endif
-      END IF
-      IF (HISTORY_XFN) THEN
-#ifdef DARKO
-        CALL OUTPUT_HISTORY_SHP( TIME )
-#else
-        CALL WWM_ABORT('For DARKO, compile with -DDARKO option')
 #endif
       END IF
       WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY'
@@ -259,6 +251,9 @@
 
          IF (myrank == 0) THEN
            IF (LINIT_OUTPUT) THEN
+!             DO IP=1,NP_GLOBAL
+!               WRITE(STAT%FHNDL,*) 'IP=', IP, ' nwild_gb=', nwild_gb(IP)
+!             END DO
              OPEN(OUT%FHNDL+1, FILE  = 'ergzusw.bin'  , FORM = 'UNFORMATTED')
              OPEN(OUT%FHNDL+2, FILE  = 'erguvh.bin'  , FORM = 'UNFORMATTED')
              OPEN(OUT%FHNDL+3, FILE  = 'ergwind.bin'  , FORM = 'UNFORMATTED')
@@ -271,6 +266,7 @@
                OPEN(OUT%FHNDL+9, FILE  = 'airsea.dat'  , FORM = 'FORMATTED')
              END IF
            END IF
+           WRITE(STAT%FHNDL,*) 'sum(OUTT_GLOBAL(:,1))=', sum(OUTT_GLOBAL(:,1))
            WRITE(OUT%FHNDL+1)  SNGL(TIME)
            !WRITE(OUT%FHNDL+1)  (SNGL(FORCE_GLOBAL(IP,1)), SNGL(FORCE_GLOBAL(IP,2)), SNGL(OUTT_GLOBAL(IP,1))  , IP = 1, NP_GLOBAL)
            WRITE(OUT%FHNDL+1)  (SNGL(OUTT_GLOBAL(IP,7)), SNGL(OUTT_GLOBAL(IP,8)), SNGL(OUTT_GLOBAL(IP,1))  , IP = 1, NP_GLOBAL)

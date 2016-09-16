@@ -74,7 +74,7 @@ F90 = mpif90
 
 
 #GFORTRAN
-F90OPTI = -g -O1 -ffree-line-length-0 -fbacktrace -Wall
+#F90OPTI = -g -O1 -ffree-line-length-0 -fbacktrace -Wall
 
 
 

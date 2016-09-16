@@ -19,12 +19,26 @@
 ! will do in the futre now some code consolidation with respect to the source terms part. All external codes are courtesy to ECWMF or others as 
 ! indicated in the source code. If something is not cited right please correct or let me know a.roland@bgsite.de or aaronroland@gmx.de
 ! 
-! Developers:                                                   
-! Lead: Aron Roland (IT&E, Frankfurt, Z&P, Hannover), Yinglong Joseph Zhang (VIMS), Mathieu Dutour Sikiric (IRB, Zagreb), Ulrich Zanke (Z&P, Hannover) 
+! Developers:
+! Lead:
+!   Aron Roland (IT&E, Frankfurt, Z&P, Hannover),
+!   Yinglong Joseph Zhang (VIMS),
+!   Mathieu Dutour Sikiric (IRB, Zagreb),
+!   Ulrich Zanke (Z&P, Hannover) 
 !
-! Contributors: Christian Ferrarin (ISMAR-CNR), Fabrice Ardhuin (IFREMER), Yaron Toledo (Tel-Aviv University), Thomas Huxhorn (TUD), Ivica Janekovic (IRB, Zagreb), 
-! Will Perrie (Fisheries, Canada), Bash Toulany (Fisheries, Canada), Harry Wang (VIMS), Andrea Fortunato (LNEC), Guillaume Dodet (LNEC), Kai Li (LNEC)
-! Andreas Wurpts (Forschungsstelle Küste, Norderney), Michael Glozman (Cameri, Technion)
+! Contributors:
+!   Christian Ferrarin (ISMAR-CNR),
+!   Fabrice Ardhuin (IFREMER),
+!   Yaron Toledo (Tel-Aviv University),
+!   Thomas Huxhorn (TUD),
+!   Will Perrie (Fisheries, Canada),
+!   Bash Toulany (Fisheries, Canada),
+!   Harry Wang (VIMS),
+!   Andrea Fortunato (LNEC),
+!   Guillaume Dodet (LNEC),
+!   Kai Li (LNEC)
+!   Andreas Wurpts (Forschungsstelle Küste, Norderney),
+!   Michael Glozman (Cameri, Technion)
 !				
 ! Copyright: 2008 - 2014 Z&P (Aron Roland, IT&E, Frankfurt, Zanke&Partner, Hannover, Germany)
 ! All Rights Reserved                                     

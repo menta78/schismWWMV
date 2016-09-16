@@ -188,4 +188,3 @@
 
       RETURN
       END SUBROUTINE STRESS
-
