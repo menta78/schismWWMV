@@ -872,7 +872,6 @@
               END IF
               CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1), .FALSE.,'CALL FROM WB 3', USE_OPTI_SPEC_SHAPE_BOUC)
             ELSE ! Steady in time ...
-              Print *, 'Applying parametric boundary condition'
               SPPARM = 0.
               IF (LMONO_IN) THEN
                 SPPARM(1,1) = WBHS * SQRT(2.)
@@ -939,7 +938,6 @@
       USE DATAPOOL
       IMPLICIT NONE
       CHARACTER(len=29) :: CHR
-      Print *, 'Applying SET_WAVE_BOUNDARY_CONDITION'
       IF (LNANINFCHK) THEN
         WRITE(DBG%FHNDL,*) ' ENTERING SET_WAVE_BOUNDARY_CONDITION ',  SUM(AC2)
         IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN BOUNDARY CONDTITION l.1959')
