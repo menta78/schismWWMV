@@ -684,6 +684,7 @@
       nx = TheInfo % nx_dim
       ny = TheInfo % ny_dim
       MinDist=LARGE
+      EXTRAPO_OUT=.FALSE.
 
       IXs=-1
       IYs=-1
@@ -717,7 +718,6 @@
             Y(3)=TheInfo % LAT(IX, IY+1)
             CALL INTELEMENT_COEF(X,Y,eX,eY,WI)
             IF (minval(WI) .ge. -THR) THEN
-              EXTRAPO_OUT=.FALSE.
               eCF_IX=IX
               eCF_IY=IY
               a=WI(2)
@@ -739,7 +739,6 @@
             Y(3)=TheInfo % LAT(IX, IY+1)
             CALL INTELEMENT_COEF(X,Y,eX,eY,WI)
             IF (minval(WI) .ge. -THR) THEN
-              EXTRAPO_OUT=.FALSE.
               eCF_IX=IX
               eCF_IY=IY
               a=1 - WI(3)
@@ -816,9 +815,7 @@
         CF_IX(I) = eCF_IX
         CF_IY(I) = eCF_IY
         CF_COEFF(:,I) = eCF_COEFF
-        IF (EXTRAPO_OUT .eqv. .TRUE.) THEN
-          nbExtrapolation = nbExtrapolation + 1
-        END IF
+        IF (EXTRAPO_OUT) nbExtrapolation = nbExtrapolation + 1
       END DO
 #ifdef NCDF
       IF (LSAVE_INTERP_ARRAY) THEN
@@ -2212,7 +2209,6 @@
       INTEGER                            :: FID, ID
       real(rkind) :: VAR_tot(np_total)
       real(rkind) :: Vtotal(np_total)
-      real(rkind) :: Vlocal(MNP)
       real(rkind) :: cf_scale_factor, cf_add_offset
 # ifdef MPI_PARALL_GRID
       integer IP_glob, IP

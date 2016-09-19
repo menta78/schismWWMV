@@ -156,10 +156,9 @@
       real(rkind) :: eVect(nbOned)
       !
       integer eInt(1)
-      integer np_write, ne_write
-      integer MULTIPLEOUT_W
-      logical GRIDWRITE_W, IOBPD_HISTORY_W, WriteOutputProcess
-      integer nbMatch, nbTime
+      integer np_write
+      logical WriteOutputProcess
+      integer nbMatch
       integer IP, IE, I, idx, IP2, iProc, nbMatchLoc
       real(rkind) eW
       integer, allocatable :: ListMatch(:), ListStatus(:)
@@ -306,7 +305,7 @@
       REAL(rkind) :: CURTXYLOC(2), DEPLOC, WATLEVLOC, WKLOC(MSC), ACLOC(MSC,MDC)
       real(rkind) :: eVect(8)
       real(rkind) :: WVK,WVCG,WVKDEP,WVN,WVC
-      integer IE, nbTime, IP, idx
+      integer IE, IP, idx
       integer nbMatch, np_write, nbBound
       integer, allocatable :: ListMatch(:)
       integer IP2, I, IS

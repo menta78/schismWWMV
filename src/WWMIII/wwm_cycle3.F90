@@ -21,8 +21,8 @@
          REAL(rkind), INTENT(OUT)   :: SSNL4(MSC,MDC),DSSNL4(MSC,MDC)
          REAL(rkind)                :: ETOT,SME01,SME10,KME01,KMWAM
          REAL(rkind)                :: KMWAM2,HS,WIND10
-         REAL(rkind)                :: EFTAIL,EMAX,NEWDAC,MAXDAC,FPM,WINDTH
-         REAL(rkind)                :: RATIO,LIMDAC
+         REAL(rkind)                :: NEWDAC,MAXDAC,FPM,WINDTH
+         REAL(rkind)                :: LIMDAC
 
          NEWAC = ZERO
          SSINL = ZERO

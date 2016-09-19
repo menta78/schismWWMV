@@ -1053,8 +1053,6 @@
 
          INTEGER             :: ID, IS
 
-         LOGICAL             :: ISINF
-
          REAL(rkind)                :: ETOT_SKD
          REAL(rkind)                :: ETOT_SKDSIG, TMP(MSC), Y(MSC)
 !

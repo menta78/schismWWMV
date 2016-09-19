@@ -81,9 +81,8 @@
 
          INTEGER, INTENT(IN)       :: IP
          REAL(rkind),INTENT(INOUT) :: ACLOC(MSC,MDC)
-         INTEGER                   :: IS, ID
-         REAL(rkind)               :: VEC2RAD, WINDTH, FPM, WIND10
-         REAL(rkind)               :: IMATRA(MSC,MDC)
+         INTEGER                   :: ID
+         REAL(rkind)               :: FPM
          REAL(rkind)               :: SSINE(MSC,MDC),DSSINE(MSC,MDC), SSINL(MSC,MDC)
          REAL(rkind)               :: SSDS(MSC,MDC),DSSDS(MSC,MDC)
 

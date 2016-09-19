@@ -35,7 +35,6 @@
          REAL(rkind)   , INTENT(OUT) :: FPM
 
          REAL(rkind)                 :: CDRAG
-         REAL(rkind)                 :: VEC2RAD 
          REAL(rkind)                 :: EPS_D
          REAL(rkind)                 :: z00, z0_t, fU10, CD10
          REAL(rkind)                 :: ULur, Ur  , Lur

@@ -519,7 +519,6 @@
 #endif
       IMPLICIT NONE
       REAL(rkind)    :: TIME1, TIME2
-      integer        :: i,j
 
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME1)
