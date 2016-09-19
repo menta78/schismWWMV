@@ -1688,7 +1688,6 @@
       IMPLICIT NONE
       integer, intent(in) :: ncid
       integer iret, var_id
-      integer LSPHE_INT
       character (len = *), parameter :: CallFct="WRITE_PARAM_2"
       real(rkind) :: eReal(1)
       integer :: eInt(1)

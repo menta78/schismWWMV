@@ -157,7 +157,6 @@
       !
       integer eInt(1)
       integer np_write
-      logical WriteOutputProcess
       integer nbMatch
       integer IP, IE, I, idx, IP2, iProc, nbMatchLoc
       real(rkind) eW

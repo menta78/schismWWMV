@@ -57,8 +57,6 @@
       REAL, PARAMETER :: A = 0.8/1000.
       REAL, PARAMETER :: B = 0.08/1000.
 
-      INTEGER :: IJ,IJS,IJL
-
       REAL(rkind) :: BG_GUST
       REAL(rkind) :: U10, C_D, DC_DDU, SIG_CONV
       REAL(rkind) :: ZHOOK_HANDLE

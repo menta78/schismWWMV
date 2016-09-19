@@ -43,21 +43,17 @@
 !     &            DELUST   ,DELALP
 
        USE DATAPOOL, ONLY : FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, ILEVTAIL, &
-     &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, DELTAIL, IPHYS, &
+     &                      WK, DELTAIL, IPHYS, &
      &                      IUSTAR, IALPHA, USTARM, TAUHFT, STAT, TAUHFT2, &
      &                      DELUST, DELALP, ALPHA, BETAMAX, RKIND, JTOT, &
      &                      XKAPPA, ZALP, LOUTWAM, &
-     &                      DELTH => DDIR, &
      &                      G => G9, &
      &                      ZPI => PI2, &
      &                      EPSMIN => SMALL, &
-     &                      NANG => MDC, &
-     &                      NFRE => MSC, &
      &                      INDEP => DEP, &
-     &                      ZERO, ONE, &
-     &                      SRCDBG
+     &                      ZERO, ONE
 #ifdef MPI_PARALL_GRID
-      USE DATAPOOL, ONLY : COMM, MYRANK
+      USE DATAPOOL, ONLY : MYRANK
 #endif
 
 
@@ -72,7 +68,6 @@
       REAL(rkind) :: ALPHAM, ALPHAMCOEF, CONST1, OMEGAC, X0, UST, Z0, OMEGACC, YC
       REAL(rkind) :: DELY, OMEGA, CM, ZX, ZARG, ZMU, ZLOG, Y, ZBETA
       REAL(rkind) :: UST0, XLEVTAIL, TAUW0, TAUW, W(JTOT)
-      integer istat
 
 ! ----------------------------------------------------------------------
 

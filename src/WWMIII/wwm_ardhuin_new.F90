@@ -534,12 +534,12 @@
 !/ ------------------------------------------------------------------- /
 !/ Local parameters
 !/
-      INTEGER                 :: IS, IK, ITH, I1
+      INTEGER                 :: IS, IK, ITH
 !/S      INTEGER, SAVE           :: IENT = 0
 
       REAL(rkind)            :: TAUW, EBAND, EMEANWS, RDCH,   &
-                                 UNZ, FP,                         &
-                                 R1, CP, EB(NK),EB2(NK),ALFA(NK)
+                                 UNZ,                         &
+                                 EB(NK),EB2(NK),ALFA(NK)
 !/
 !/ ------------------------------------------------------------------- /
 !/
@@ -715,7 +715,7 @@
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
-      USE DATAPOOL, ONLY : G9, PI2, RADDEG, RKIND, NSPEC, ZERO, ONE, DBG, THR8, SINBR
+      USE DATAPOOL, ONLY : G9, PI2, RADDEG, RKIND, NSPEC, ZERO, ONE, DBG, THR8
 !/S      USE W3SERVMD, ONLY: STRACE
 !/T      USE W3ODATMD, ONLY: NDST
 !/T0      USE W3ARRYMD, ONLY: PRT2DS
@@ -736,9 +736,9 @@
 !/ ------------------------------------------------------------------- /
 !/ Local parameters
 !/
-      INTEGER                 :: IS,IK,ITH, IOMA
+      INTEGER                 :: IS,IK,ITH
 !/S      INTEGER, SAVE           :: IENT = 0
-      REAL(rkind)                    :: FACLN1, FACLN2, CLAM, OMA, COSFAC
+      REAL(rkind)                    :: FACLN1, FACLN2
       REAL(rkind)                    :: COSU, SINU, TAUX, TAUY, USDIRP, USTP
       REAL(rkind)                    :: TAUPX, TAUPY, UST2, TAUW, TAUWB
       REAL(rkind)   , PARAMETER      :: EPS1 = 0.00001, EPS2 = 0.000001
@@ -746,11 +746,10 @@
       REAL(rkind)                    :: Usigma           !standard deviation of U due to gustiness
       REAL(rkind)                    :: USTARsigma       !standard deviation of USTAR due to gustiness
 # endif
-      REAL(rkind)                    :: CM,ZCO,UCN,ZCN, &
+      REAL(rkind)                    :: CM,UCN,ZCN, &
                                  Z0VISC, Z0NOZ, EB,  &
                                  EBX, EBY, AORB, AORB1, FW, UORB, M2, TH2, &
                                  RE, FU, FUD, SWELLCOEFV, SWELLCOEFT
-      REAL(rkind)                   :: FACTOR
       REAL(rkind)                   ::  PTURB, PVISC, SMOOTH
       REAL(rkind)                   :: XI,DELI1,DELI2
       REAL(rkind) XJ,DELJ1,DELJ2

@@ -81,8 +81,6 @@
 
          INTEGER, INTENT(IN)       :: IP
          REAL(rkind),INTENT(INOUT) :: ACLOC(MSC,MDC)
-         INTEGER                   :: ID
-         REAL(rkind)               :: FPM
          REAL(rkind)               :: SSINE(MSC,MDC),DSSINE(MSC,MDC), SSINL(MSC,MDC)
          REAL(rkind)               :: SSDS(MSC,MDC),DSSDS(MSC,MDC)
 
@@ -146,8 +144,7 @@
          REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
          REAL(rkind), INTENT(IN)    :: ACOLD(MSC,MDC)
          REAL(rkind)                :: NEWDAC, OLDAC, NEWAC, DELT, XIMP, DELFL(MSC)
-         REAL(rkind)                :: MAXDAC, CONST, SND, UFR_LIM, DELT5, USFM
-         REAL(rkind)                :: MAXDACOLD
+         REAL(rkind)                :: MAXDAC, CONST, SND, DELT5, USFM
 
          CONST  = PI2**2*3.0*1.0E-7*DT4S*SPSIG(MSC)
          SND    = PI2*5.6*1.0E-3

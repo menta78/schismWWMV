@@ -81,8 +81,6 @@ real(rkind), intent(out)   :: diag(nsig,ndir)         ! diagonal term (dXnl/dA)
 !------------------------------------------------------------------------------
 !     Local parameters
 !
-integer isig,idir            ! counters
-integer igrid                ! grid index
 integer iproc                ! processor number for MPI and file naming
 !
 !------------------------------------------------------------------------------
