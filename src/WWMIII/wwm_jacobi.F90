@@ -617,7 +617,7 @@
 #ifdef DEBUG
         WRITE(STAT%FHNDL,*) 'Before iteration sum(AC2)=', sum(abs(AC2))
         sumESUM=0
-#endif/SINGLE_VERTEX_COMPUTATION
+#endif SINGLE_VERTEX_COMPUTATION
         nbPassive = 0
        
         DO IP=1,NP_RES
