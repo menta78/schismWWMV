@@ -17,10 +17,9 @@
          INTEGER      :: IS, ID
 
          REAL(rkind)  :: VEC2RAD
-         REAL(rkind)  :: ETOT,SME01,SME10,KME01,KMWAM,KMWAM2,HS,WIND10
-         REAL(rkind)  :: ETAIL,EFTAIL,EMAX,LIMAC,NEWDAC,FPM,WINDTH,TEMP,GTEMP1
-         REAL(rkind)  :: RATIO,LIMFAC,LIMDAC,GTEMP2,FLHAB,DELFL,USFM, NEWDACDT
-         REAL(rkind)  :: MAXDAC, MAXDACDT, MAXDACDTDA, SC, SP, DNEWDACDTDA, JAC
+         REAL(rkind)  :: WIND10
+         REAL(rkind)  :: FPM,WINDTH,TEMP
+         REAL(rkind)  :: SC, SP, JAC
 
          REAL(rkind)                :: FL3(MDC,MSC), FL(MDC,MSC), SL(MDC,MSC)
 
@@ -81,7 +80,7 @@
          REAL(rkind), INTENT(INOUT)    :: ACLOC(MSC,MDC)
 
          INTEGER                       :: IS, ID
-         REAL(rkind)                   :: VEC2RAD, WINDTH, FPM, WIND10
+         REAL(rkind)                   :: VEC2RAD, FPM
          REAL(rkind)                   :: IMATRA(MSC,MDC)
 
          REAL(rkind), INTENT(OUT)   :: SSINE(MSC,MDC),DSSINE(MSC,MDC), SSINL(MSC,MDC)

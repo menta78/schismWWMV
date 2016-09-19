@@ -15,13 +15,12 @@
          REAL(rkind), INTENT(OUT) :: SSBRL(MSC,MDC)
          REAL(rkind), INTENT(OUT) :: SSBF(MSC,MDC),DSSBF(MSC,MDC)
 
-         INTEGER      :: IS, ID, IMETHOD
+         INTEGER      :: IS, ID
          REAL(rkind)  :: VEC2RAD
-         REAL(rkind)  :: NEWAC(MSC,MDC)
-         REAL(rkind)  :: ETOT,SME01,SME10,KME01,KMWAM,KMWAM2,HS,WIND10,TMP_DS(MSC)
-         REAL(rkind)  :: ETAIL,EFTAIL,EMAX,LIMAC,NEWDAC,FPM,WINDTH,TEMP,GTEMP1
-         REAL(rkind)  :: RATIO,LIMFAC,LIMDAC,GTEMP2,FLHAB,DELFL,USFM, NEWDACDT
-         REAL(rkind)  :: MAXDAC, MAXDACDT, MAXDACDTDA, SC, SP, DNEWDACDTDA, JAC
+         REAL(rkind)  :: ETOT,SME01,SME10,KME01,KMWAM,KMWAM2,HS
+         REAL(rkind)  :: NEWDAC,FPM,WINDTH,TEMP
+         REAL(rkind)  :: RATIO,LIMDAC,NEWDACDT
+         REAL(rkind)  :: MAXDAC, SC, SP
 
          SSNL3 = ZERO; DSSNL3 = ZERO
          SSBR  = ZERO; DSSBR  = ZERO
