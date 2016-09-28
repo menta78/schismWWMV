@@ -923,7 +923,13 @@
           NUM_NETCDF_FILES = NUM_NETCDF_FILES + 1
         END DO
         REWIND (WIN%FHNDL)
-
+        IF (NUM_NETCDF_FILES .eq. 0) THEN
+           WRITE(WINDBG%FHNDL,*) 'We have NUM_NETCDF_FILES = 0'
+           WRITE(WINDBG%FHNDL,*) 'In routine INIT_NETCDF_DWD'
+           WRITE(WINDBG%FHNDL,*) 'Wrong file is file=', TRIM(WIN%FNAME)
+           FLUSH(WINDBG%FHNDL)
+           CALL WWM_ABORT('Please correct your setup')
+        END IF
         ALLOCATE(NETCDF_FILE_NAMES(NUM_NETCDF_FILES), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 3')
 
@@ -1240,6 +1246,13 @@
           NUM_NETCDF_FILES = NUM_NETCDF_FILES + 1
         END DO
         REWIND (WIN%FHNDL)
+        IF (NUM_NETCDF_FILES .eq. 0) THEN
+           WRITE(WINDBG%FHNDL,*) 'Error in routine INIT_NETCDF_CRFS'
+           WRITE(WINDBG%FHNDL,*) 'We have NUM_NETCDF_FILES = 0'
+           WRITE(WINDBG%FHNDL,*) 'Wrong file is eFile=', TRIM(WIN%FNAME)
+           FLUSH(WINDBG%FHNDL)
+           CALL WWM_ABORT('Please correct your setup')
+        END IF
 
         ALLOCATE(NETCDF_FILE_NAMES(NUM_NETCDF_FILES), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 18')
@@ -1474,6 +1487,15 @@
           NUM_NETCDF_FILES = NUM_NETCDF_FILES + 1
         END DO
         REWIND (WIN%FHNDL)
+
+        IF (NUM_NETCDF_FILES .eq. 0) THEN
+           WRITE(WINDBG%FHNDL,*) 'Error in INIT_NETCDF_NARR'
+           WRITE(WINDBG%FHNDL,*) 'We have NUM_NETCDF_FILES=', NUM_NETCDF_FILES
+           WRITE(WINDBG%FHNDL,*) 'Wrong file is eFile=', TRIM(WIN%FNAME)
+           FLUSH(WINDBG%FHNDL)
+           CALL WWM_ABORT('Please correct your setup')
+        END IF
+        
         ALLOCATE(NETCDF_FILE_NAMES(NUM_NETCDF_FILES), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 22')
         WRITE(WINDBG%FHNDL,*) 'NUM_NETCDF_FILES=', NUM_NETCDF_FILES
@@ -2041,9 +2063,9 @@
       integer posBlank, alen
       type(FD_FORCING_GRID) TheInfo
       integer IX, IY
-      WRITE(DBG%FHNDL,*) 'IWINDFORMAT=', IWINDFORMAT
-      WRITE(DBG%FHNDL,*) 'INIT_NETCDF_CF_WWM_WIND start'
-      FLUSH(DBG%FHNDL)
+      WRITE(WINDBG%FHNDL,*) 'IWINDFORMAT=', IWINDFORMAT
+      WRITE(WINDBG%FHNDL,*) 'INIT_NETCDF_CF_WWM_WIND start'
+      FLUSH(WINDBG%FHNDL)
       CALL INIT_DIRECT_NETCDF_CF(eVAR, MULTIPLE_IN_WIND, WIN%FNAME, "Uwind")
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
@@ -2485,8 +2507,9 @@
 !      FLUSH(STAT%FHNDL)
       call grib_count_in_file(ifile,n)
       IF (n .eq. 0) THEN
-         WRITE(DBG%FHNDL,*) 'We found n=0 in the following file'
-         WRITE(DBG%FHNDL,*) 'eFile=', TRIM(eFile)
+         WRITE(WINDBG%FHNDL,*) 'We found n=0 in the following file'
+         WRITE(WINDBG%FHNDL,*) 'eFile=', TRIM(eFile)
+         FLUSH(WINDBG%FHNDL)
          CALL WWM_ABORT('Please check your files')
       END IF
 !      WRITE(STAT%FHNDL, *) 'Step 3, n=', n
