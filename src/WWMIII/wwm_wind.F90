@@ -2475,17 +2475,42 @@
       CHARACTER(len=140), intent(in) :: eFile
       LOGICAL, intent(in) :: STEPRANGE_IN
       integer ifile, i, n
+      INTEGER, SAVE :: nbCall = 0
       integer, allocatable :: igrib(:)
       CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(eFile))
+!      WRITE(STAT%FHNDL, *) 'Step 1, nbCall=', nbCall
+!      FLUSH(STAT%FHNDL)
       CALL GRIB_OPEN_FILE(ifile, TRIM(eFile), 'r')
+!      WRITE(STAT%FHNDL, *) 'Step 2'
+!      FLUSH(STAT%FHNDL)
       call grib_count_in_file(ifile,n)
+      IF (n .eq. 0) THEN
+         WRITE(DBG%FHNDL,*) 'We found n=0 in the following file'
+         WRITE(DBG%FHNDL,*) 'eFile=', TRIM(eFile)
+         CALL WWM_ABORT('Please check your files')
+      END IF
+!      WRITE(STAT%FHNDL, *) 'Step 3, n=', n
+!      FLUSH(STAT%FHNDL)
       allocate(igrib(n))
+!      WRITE(STAT%FHNDL, *) 'Step 4'
+!      FLUSH(STAT%FHNDL)
       i=1
+!      WRITE(STAT%FHNDL, *) 'Step 5 ifile=', ifile
+!      FLUSH(STAT%FHNDL)
       call grib_new_from_file(ifile, igrib(i))
+!      WRITE(STAT%FHNDL, *) 'Step 6, igrib(i)=', igrib(i)
+!      FLUSH(STAT%FHNDL)
       CALL RAW_READ_TIME_OF_GRIB_FILE(igrib(i), STEPRANGE_IN, eTimeOut)
+!      WRITE(STAT%FHNDL, *) 'Step 7'
+!      FLUSH(STAT%FHNDL)
       CALL grib_release(igrib(i))
+!      WRITE(STAT%FHNDL, *) 'Step 8'
+!      FLUSH(STAT%FHNDL)
       CALL GRIB_CLOSE_FILE(ifile)
+!      WRITE(STAT%FHNDL, *) 'Step 9'
+!      FLUSH(STAT%FHNDL)
       deallocate(igrib)
+      nbCall=nbCall+1
       END SUBROUTINE
 !****************************************************************************
 !* Reading grid information from a GRIB file (case 1)                       *
