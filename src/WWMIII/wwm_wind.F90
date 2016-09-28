@@ -2864,6 +2864,14 @@
         CLOSE (WIN%FHNDL)
         FLUSH(WINDBG%FHNDL)
         !
+        IF (NUM_GRIB_FILES .eq. 0) THEN
+           WRITE(WINDBG%FHNDL,*) 'Error! We have NUM_GRIB_FILES = 0'
+           WRITE(WINDBG%FHNDL,*) 'Error in INIT_GRIB_WIND routine'
+           WRITE(WINDBG%FHNDL,*) 'eFile=', TRIM(WIN%FNAME)
+           FLUSH(WINDBG%FHNDL)
+           CALL WWM_ABORT('Please correct your setup')
+        END IF
+        !
         nbtime_mjd=NUM_GRIB_FILES
         allocate(wind_time_mjd(nbtime_mjd), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 48')
