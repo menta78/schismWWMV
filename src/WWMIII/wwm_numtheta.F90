@@ -78,7 +78,9 @@
 
          INTEGER :: IP, IS
          INTEGER :: IT, ITER
-
+#ifdef DEBUG
+         INTEGER ID
+#endif
          REAL(rkind)    :: CAD(MSC,MDC)
          REAL(rkind)    :: ACQ(0:MDC+1)
          REAL(rkind)    :: CADS(0:MDC+1)
