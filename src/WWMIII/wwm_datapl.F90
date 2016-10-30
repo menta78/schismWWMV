@@ -603,7 +603,6 @@
          INTEGER, ALLOCATABLE       :: cf_c12(:,:)
          INTEGER, ALLOCATABLE       :: CF_IX(:), CF_IY(:)
          REAL(rkind), ALLOCATABLE   :: CF_coeff(:,:)
-         integer, allocatable :: SHIFTXY(:,:)
          INTEGER                    :: REC1_wind_old, REC2_wind_old
          INTEGER                    :: REC1_wind_new, REC2_wind_new
          INTEGER                    :: REC1_curr_old, REC2_curr_old

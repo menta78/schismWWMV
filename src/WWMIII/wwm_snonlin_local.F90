@@ -67,10 +67,10 @@
 !      USE YOWSTAT  , ONLY : ISHALLO  ,ISNONLIN
 !      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 
-       USE DATAPOOL, ONLY : FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, FRINTF, COFRM4, CG, WK, ISNONLIN, &
-     &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, EMEAN, FMEAN, TH, ENH, DEP, AF11, &
+       USE DATAPOOL, ONLY : FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, COFRM4, WK, ISNONLIN, &
+     &                      DFIM, DFIMOFR, WK, RKIND, TH, ENH, DEP, AF11, &
      &                      IKP, IKP1, IKM, IKM1, K1W, K2W, K11W, K21W, FKLAP, FKLAP1, FKLAM, FKLAM1, FRH, &
-     &                      CL11, CL21, DAL1, DAL2, ACL1, ACL2, MLSTHG, MFRSTLW, KFRH, RNLCOEF, INLCOEF, &
+     &                      CL11, CL21, DAL1, DAL2, MLSTHG, MFRSTLW, KFRH, RNLCOEF, INLCOEF, &
      &                      DELTH => DDIR, LOUTWAM, ICOMP, ZERO, &
      &                      G => G9, &
      &                      ZPI => PI2, &

@@ -432,7 +432,15 @@
       integer M, K
       LOGICAL :: DoHSchecks = .TRUE.
       real(rkind) ETOT, tmp(msc), DS, ETAIL, HS_WWM, EMwork
-      
+      INTEGER SHIFTXY(4,2)
+      SHIFTXY(1,1)=0
+      SHIFTXY(1,2)=0
+      SHIFTXY(2,1)=1
+      SHIFTXY(2,2)=0
+      SHIFTXY(3,1)=0
+      SHIFTXY(3,2)=1
+      SHIFTXY(4,1)=1
+      SHIFTXY(4,2)=1
       CALL READ_GRIB_WAM_BOUNDARY_WBAC_KERNEL_NAKED(WBAC_WAM, IFILE, eTimeSearch)
 !      WRITE(STAT%FHNDL,*) 'RETURN: sum(WBAC_WAM)=', sum(WBAC_WAM)
 !      WRITE(STAT%FHNDL,*) 'IWBMNP=', IWBMNP

@@ -670,8 +670,8 @@
       REAL(rkind)                :: OMEG2,OMEG,EAD,UXD, ETOT
       REAL(rkind)                :: EFTAIL,PPTAIL,EFTOT,EPTAIL
       REAL(rkind)                :: EHFR,AHFR,APTAIL,EPTOT,APTOT
-      REAL(rkind)                :: SKK, CKTAIL, ETOT1, SIG22, EKTOT, CETAIL
-      REAL(rkind)                :: tmp(msc),actmp(msc)
+      REAL(rkind)                :: CKTAIL, ETOT1, SIG22, EKTOT, CETAIL
+      REAL(rkind)                :: tmp(msc),actmp(msc), SKK
 !
 ! total energy ...
 !
@@ -1052,8 +1052,6 @@
          REAL(rkind), INTENT(OUT)   :: UBOT, ORBITAL, BOTEXPER, TMBOT
 
          INTEGER             :: ID, IS
-
-         LOGICAL             :: ISINF
 
          REAL(rkind)                :: ETOT_SKD
          REAL(rkind)                :: ETOT_SKDSIG, TMP(MSC), Y(MSC)
@@ -1680,7 +1678,7 @@
                 OMEG  = SPSIG(IS) + WKLOC(IS) * UXD
                 OMEG2 = OMEG**2
               ELSE
-               OMEG2 = SIGPOW(IS,2)
+                OMEG2 = SIGPOW(IS,2)
               ENDIF
               ETOT  = ETOT + EAD
               EFTOT = EFTOT + EAD * OMEG2

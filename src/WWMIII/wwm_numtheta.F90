@@ -78,14 +78,15 @@
 
          INTEGER :: IP, IS
          INTEGER :: IT, ITER
-
+#ifdef DEBUG
+         INTEGER ID
+#endif
          REAL(rkind)    :: CAD(MSC,MDC)
          REAL(rkind)    :: ACQ(0:MDC+1)
          REAL(rkind)    :: CADS(0:MDC+1)
          REAL(rkind)    :: DT4DI 
          REAL(rkind)    :: REST
          REAL(rkind)    :: CFLCAD
-         integer :: ID
 !$OMP PARALLEL DEFAULT(NONE) & 
 !$OMP&         SHARED(AC2,SI,DAC_THE,DT4D,DDIR,LCIRD,LTHBOUND,MNP, & 
 !$OMP&                MSC,MDC,WK,DEP,DMIN,CURTXY,ICOMP,IOBP,DAC_ADV,DAC_SIG,DAC_SOU)  &

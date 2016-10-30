@@ -6,11 +6,7 @@
         USE DATAPOOL
         IMPLICIT NONE
 
-        INTEGER           :: IS, ID, IP
-        REAL(rkind)       :: VEC2RAD, DEG
-        REAL(rkind)       :: SSIN(MDC,MSC), DSSIN(MDC,MSC), SSNL4(MDC,MSC), DSSNL4(MDC,MSC), SSDS(MDC,MSC), DSSDS(MDC,MSC)
-        REAL(rkind)       :: SC, MAXDAC, NEWDAC
-        REAL(rkind)       :: SSNL3(MSC,MDC)
+        REAL(rkind)       :: VEC2RAD
 
 #ifdef TIMINGS
         REAL(rkind)       :: TIME1, TIME2, TIME3, TIME4, TIME5
@@ -142,7 +138,6 @@
         IMPLICIT NONE
 
         REAL(rkind), SAVE       :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7, TIME8, GTEMP1, GTEMP2
-        INTEGER          :: IT
 
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE COMPUTE_SEMI_IMPLICIT'
@@ -215,7 +210,6 @@
         REAL(rkind)       :: TIME1, TIME2, TIME3, TIME4, TIME5
         REAL(rkind)       :: TIME6, TIME7, TIME8
 #endif
-        INTEGER :: IP
 
         IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
           DT4A = MAIN%DELT

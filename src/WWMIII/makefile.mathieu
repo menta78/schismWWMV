@@ -1,6 +1,6 @@
 #include ${PETSC_DIR}/conf/variables
-PROG = $(HOME)/bin/wwmadv
-#PROG = wwmadv
+#PROG = $(HOME)/bin/wwmadv
+PROG = wwmadv
 
 FFLAGS = -DST42 -DWWM_SETUP
 
@@ -35,7 +35,7 @@ F90 = $(WWM_COMPILER)
 #INTEL
 #INTEL: DEBUGGING FLAG
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -fstack-protector -assume protect_parens
- F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -fp-model precise -traceback -check all -fpe0 -DDEBUG
+#F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -fp-model precise -traceback -check all -fpe0 -DDEBUG
 
 #INTEL: OPTI FLAG
 #F90OPTI =  -O2
@@ -67,7 +67,7 @@ F90 = $(WWM_COMPILER)
 
 #GFORTRAN
 #F90OPTI = -g -O3 -ffree-line-length-0
-#F90OPTI = -g -O3 -ffree-line-length-0 -fbacktrace -Wall
+F90OPTI = -g -O3 -ffree-line-length-0 -fbacktrace -Wall
 #F90OPTI = -g -O3 -ffree-line-length-0 -fbacktrace -Wall -fcheck=all
 #F90OPTI = -O3 -ffree-line-length-0
 
@@ -110,11 +110,13 @@ endif
 
 ifdef PDLIB
   LIBS += $(PDLIB_PATH)/libpd.a
+#  LIBS += -L$(PDLIB_PATH)/lib -Wl,-rpath,$(PDLIB_PATH)/lib -lpdlib
   FFLAGS += -I$(PDLIB_PATH)/modules/ -I$(PDLIB_PATH)/include -DPDLIB
 endif
 
 ifdef MPI
   LIBS += $(MPI_LINK) $(METIS_PATH)/lib/libparmetis.a $(METIS_PATH)/lib/libmetis.a
+#  LIBS += $(MPI_LINK) -L$(METIS_PATH)/lib -Wl,-rpath,$(METIS_PATH)/lib -lparmetis
   MPIFLAG  = -DWWM_MPI -DMPIVERSION=2 -DUSE_WWM -DSHYFEM_COUPLING $(MPI_INCLUDE)
   ifdef PDLIB
     OBJS= wwm_pdlib.o $(OBJWWM)

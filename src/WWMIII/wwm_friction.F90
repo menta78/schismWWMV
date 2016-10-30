@@ -10,7 +10,7 @@
       REAL(rkind)                   :: UBOT, BOTEXPER, ORBITAL, TMBOT
       REAL(rkind)   , INTENT(IN)    :: ACLOC(MSC,MDC)
       REAL(rkind), INTENT(INOUT)    :: SSBF(MSC,MDC), DSSBF(MSC,MDC)
-      INTEGER                       :: IS, ID, J
+      INTEGER                       :: IS, J
       REAL(rkind)                   :: KDEP
 #ifdef SCHISM
       REAL(rkind)                   :: COST, SINT

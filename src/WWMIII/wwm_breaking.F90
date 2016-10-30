@@ -16,7 +16,9 @@
 
       REAL(rkind) :: BETA, QQ, QB, BETA2, ARG
       REAL(rkind) :: S0, TMP_X, TMP_Y
+#ifdef DEBUG
       integer, save :: idxcall = 0
+#endif
 #ifdef WAN_QB
       REAL(rkind) :: AUX
 #endif      

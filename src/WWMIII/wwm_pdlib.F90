@@ -113,7 +113,7 @@ implicit none
     use yowpd,only: nTasks, ipgl1=>ipgl, npa, ne, np, ng, x, y, z, INE, abort
     implicit  none
     integer :: istat
-    integer I, IP, IPglob
+    integer IP, IPglob
 
     nproc = nTasks
     MNP = npa

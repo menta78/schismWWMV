@@ -566,7 +566,7 @@
 !
          INTEGER :: IP, IE, IT
          INTEGER :: I1, I2, I3
-         INTEGER :: NI(3), IP_TEST
+         INTEGER :: NI(3)
 !
 ! local double
 !
@@ -591,9 +591,6 @@
 ! local parameter
 !
          REAL(rkind) :: TMP
-
-!         IP_TEST = 20710 
-!         AC2(1,IS,IP_TEST) = 1. 
 
          U(:) = AC2(IS,ID,:)
 !
@@ -707,16 +704,16 @@
 !
 ! local integer
 !
-         INTEGER :: IP, IE, IT, I, J, IDD, ICON, II, IP_CONN(20)
-         INTEGER :: I1, I2, I3, IGSE, NGSE, IPOS, NIOLD(3)
-         INTEGER :: NI(3), IP_TEST, GSE_SCHEME, IELEM
+         INTEGER :: IP, IE, IT, I, IDD, ICON, II
+         INTEGER :: I1, I2, I3, IGSE, NGSE, IPOS
+         INTEGER :: NI(3), GSE_SCHEME
 !
 ! local double
 !
          REAL(rkind) :: FT
          REAL(rkind)  :: UTILDE
 
-         REAL(rkind)  :: TMP(3), TMP1, DFAK, GAM, DXX, DIFFA
+         REAL(rkind)  :: TMP(3), DFAK, GAM, DXX, DIFFA
 
          REAL(rkind)  :: LAMBDA(2), DT4AI, BBB, AAA
          REAL(rkind)  :: BET1(3), BETAHAT(3), BL
@@ -726,10 +723,10 @@
 
          REAL(rkind)  :: THETA_L(3,MNE), THETA_H(3), THETA_ACE(3,MNE), r0(2), DTHV(2)
          REAL(rkind)  :: UTMP(3), a_n, a_s, nn, ss, cct, avg_area, ratio, rrac(3)
-         REAL(rkind)  :: WII(2,MNP), UL(MNP,3), USTARI(2,MNP), RR(4,2), WI(3), ZI
+         REAL(rkind)  :: WII(2,MNP), UL(MNP,3), RR(4,2), WI(3)
 
-         REAL(rkind)  :: ST(MNP), PM(MNP), PP(MNP), UIM(MNE), SSS(2), NNN(2)
-         REAL(rkind)  :: UIP(MNE), UIPIP(MNP), UIMIP(MNP), U3(3), UDTDX(MNP)
+         REAL(rkind)  :: ST(MNP), PM(MNP), PP(MNP), SSS(2), NNN(2)
+         REAL(rkind)  :: U3(3)
 
          REAL(rkind)  :: C(2,MNP), C_GSE1(2,MNP), C_GSE2(2,MNP), U(MNP), DTSI(MNP), N(MNE)
          REAL(rkind)  :: FL111, FL112, FL211, FL212, FL311, FL312
@@ -739,7 +736,6 @@
 !
 ! local parameter
 !
-!         IP_TEST = 20710 
          GSE_SCHEME = 3 
 
          IF (GSE_SCHEME == 1) THEN
@@ -772,7 +768,6 @@
                UL(IP,IGSE) = WBAC(IS,ID,1)/NGSE
              ENDIF 
            ENDDO
-!           AC1(1,ID,IP_TEST) = 1.
 
            CALL CADVXY(IS,ID ,C_GSE1)
            CALL CADVXY(IS,IDD,C_GSE2)
@@ -1016,14 +1011,14 @@
 !
          INTEGER :: IP, IE, IT, I, J
          INTEGER :: I1, I2, I3
-         INTEGER :: NI(3), IP_TEST
+         INTEGER :: NI(3)
 !
 ! local double
 !
          REAL(rkind) :: FT
          REAL(rkind)  :: UTILDE
 
-         REAL(rkind)  :: TMP(3), TMP1, DFAK
+         REAL(rkind)  :: TMP(3), TMP1
 
          REAL(rkind)  :: LAMBDA(2), DT4AI
          REAL(rkind)  :: BET1(3), BETAHAT(3), BL
@@ -1043,12 +1038,8 @@
 !
 ! local parameter
 !
-!         IP_TEST = 20710 
-!         DFAK    = 100.
          
 !         WRITE(*,*) IEND
-!
-         !AC2(1,:,IP_TEST) = 0.1
 !
          BL = ZERO
 !
@@ -1631,7 +1622,9 @@
          REAL(rkind)  :: AU(NNZ+1)
          REAL(rkind)  :: INIU(MNP)
 
+#ifdef TIMINGS
          REAL(rkind)  :: TIME1, TIME2, TIME3, TIME4
+#endif
 
          INTEGER :: IP
 
@@ -2345,7 +2338,7 @@
 
       INTEGER :: I, J, K
       INTEGER :: IP, IE, POS, POS_J, POS_K, IP_I, IP_J, IP_K
-      INTEGER :: I1, I2, I3, IPPOS, NI(3), NIOLD(3), IPOS
+      INTEGER :: I1, I2, I3, IPPOS, NI(3), IPOS
       INTEGER :: CHILF(MNP), COUNT_MAX
       INTEGER :: ITMP(MNP)
       INTEGER :: POS_TRICK(3,2)
@@ -2831,7 +2824,9 @@
          REAL(rkind)  :: UTILDE3(MNE), UTILDE33(MSC,MDC)
          REAL(rkind)  :: USOC, WVC, DIFRU
 
+#ifdef TIMINGS
          REAL(rkind)  :: TIME1, TIME2
+#endif
 !
 ! local parameter
 !
@@ -3205,19 +3200,20 @@
 !
 ! local double
 !
-         REAL(rkind)  :: UTILDE
          REAL(rkind)  :: DTMAX_GLOBAL_EXP, DTMAX_EXP
          REAL(rkind)  :: REST, CFLXY
          REAL(rkind)  :: LAMBDA(2,MSC,MDC), DT4AI
          REAL(rkind)  :: FL11(MSC,MDC),FL12(MSC,MDC),FL21(MSC,MDC),FL22(MSC,MDC),FL31(MSC,MDC),FL32(MSC,MDC)
          REAL(rkind)  :: FL111(MSC,MDC), FL112(MSC,MDC), FL211(MSC,MDC), FL212(MSC,MDC), FL311(MSC,MDC), FL312(MSC,MDC)
          REAL(rkind)  :: KTMP(MSC,MDC,3)
-         REAL(rkind)  :: U3(3), U33(MSC,MDC,3), ST1, ST3(MSC,MDC)
+         REAL(rkind)  :: U33(MSC,MDC,3), ST3(MSC,MDC)
          REAL(rkind)  :: KKSUM(MSC,MDC,MNP), ST(MSC,MDC,MNP), N(MSC,MDC,MNE)
          REAL(rkind)  :: CX(MSC,MDC,MNP), CY(MSC,MDC,MNP), UTILDE33(MSC,MDC)
          REAL(rkind)  :: USOC, WVC, DIFRU
 
+#ifdef TIMINGS
          REAL(rkind)  :: TIME1, TIME2
+#endif
 !
 ! local parameter
 !
@@ -3555,7 +3551,6 @@
 ! local integer
 !
       INTEGER :: IP, IE, IT, IS, ID
-      INTEGER :: I1, I2, I3
       INTEGER :: NI(3), I, IPOS
 !
 ! local double

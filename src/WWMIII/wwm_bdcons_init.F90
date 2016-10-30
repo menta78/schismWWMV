@@ -420,7 +420,7 @@
       SUBROUTINE READ_IOBP_TOTAL
       USE DATAPOOL
       IMPLICIT NONE
-      integer iProc, IP
+      integer iProc
       allocate(IOBPtotal(np_total), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 1')
 #ifdef MPI_PARALL_GRID

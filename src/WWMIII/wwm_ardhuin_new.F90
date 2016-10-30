@@ -89,7 +89,8 @@
       INTEGER                 :: DIKCUMUL
 !  Size of wave height table for integrating the PDF of wave heights
       INTEGER,    PARAMETER          :: NKHI=100
-      REAL(rkind),    PARAMETER      :: FAC_KD1=1.01, FAC_KD2=1000., KHSMAX=2., KHMAX=2.
+      REAL(rkind),    PARAMETER      :: FAC_KD1=1.01, KHSMAX=2., KHMAX=2.
+      INTEGER,        PARAMETER      :: FAC_KD2 = 1000
       REAL(rkind),    PARAMETER      ::KDMAX=200000.
       REAL(rkind),    PARAMETER      :: kappa = 0.40       !Von Karman's constant
 ! variables for negative wind input (beta from ST2)
@@ -533,13 +534,12 @@
 !/ ------------------------------------------------------------------- /
 !/ Local parameters
 !/
-      INTEGER                 :: IKP1   ! wind sea peak index
-      INTEGER                 :: IS, IK, ITH, I1, ITT
+      INTEGER                 :: IS, IK, ITH
 !/S      INTEGER, SAVE           :: IENT = 0
 
-      REAL(rkind)            :: TAUW, EBAND, EMEANWS, RDCH, FXPMC,    &
-                                 WNP, UNZ, FP,                         &
-                                 R1, CP, EB(NK),EB2(NK),ALFA(NK)
+      REAL(rkind)            :: TAUW, EBAND, EMEANWS, RDCH,   &
+                                 UNZ,                         &
+                                 EB(NK),EB2(NK),ALFA(NK)
 !/
 !/ ------------------------------------------------------------------- /
 !/
@@ -715,7 +715,7 @@
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
-      USE DATAPOOL, ONLY : G9, PI2, RADDEG, RKIND, NSPEC, ZERO, ONE, DBG, THR8, SINBR
+      USE DATAPOOL, ONLY : G9, PI2, RADDEG, RKIND, NSPEC, ZERO, ONE, DBG, THR8
 !/S      USE W3SERVMD, ONLY: STRACE
 !/T      USE W3ODATMD, ONLY: NDST
 !/T0      USE W3ARRYMD, ONLY: PRT2DS
@@ -736,21 +736,20 @@
 !/ ------------------------------------------------------------------- /
 !/ Local parameters
 !/
-      INTEGER                 :: IS,IK,ITH, IOMA, ICL
+      INTEGER                 :: IS,IK,ITH
 !/S      INTEGER, SAVE           :: IENT = 0
-      REAL(rkind)                    :: FACLN1, FACLN2, ULAM, CLAM, OMA, &
-                                 RD1, RD2, LAMBDA, COSFAC 
+      REAL(rkind)                    :: FACLN1, FACLN2
       REAL(rkind)                    :: COSU, SINU, TAUX, TAUY, USDIRP, USTP
       REAL(rkind)                    :: TAUPX, TAUPY, UST2, TAUW, TAUWB
       REAL(rkind)   , PARAMETER      :: EPS1 = 0.00001, EPS2 = 0.000001
+# ifdef STAB3
       REAL(rkind)                    :: Usigma           !standard deviation of U due to gustiness
       REAL(rkind)                    :: USTARsigma       !standard deviation of USTAR due to gustiness
-      REAL(rkind)                    :: BETA, mu_janssen, omega_janssen,     &
-                                 CM,ZCO,UCO,UCN,ZCN, &
+# endif
+      REAL(rkind)                    :: CM,UCN,ZCN, &
                                  Z0VISC, Z0NOZ, EB,  &
                                  EBX, EBY, AORB, AORB1, FW, UORB, M2, TH2, &
                                  RE, FU, FUD, SWELLCOEFV, SWELLCOEFT
-      REAL(rkind)                   :: HSBLOW, ABJSEA, FACTOR
       REAL(rkind)                   ::  PTURB, PVISC, SMOOTH
       REAL(rkind)                   :: XI,DELI1,DELI2
       REAL(rkind) XJ,DELJ1,DELJ2
@@ -1437,7 +1436,7 @@
 ! ----------------------------------------------------------------------
       INTEGER I,J,ITER
       REAL(rkind) ZTAUW,UTOP,CDRAG,WCD,USTOLD,TAUOLD
-      REAL(rkind) X,UST,ZZ0,F,DELF,ZZ00,ALOGZ
+      REAL(rkind) X,UST,ZZ0,F,DELF,ZZ00
 !
 !
       DELU    = UMAX/MyREAL(JUMAX)
@@ -1957,7 +1956,6 @@
       REAL(rkind)                    :: DK(NK), HS(NK), KBAR(NK), DCK(NK)
       REAL(rkind)                    :: EFDF(NK)     ! Energy integrated over a spectral band
       INTEGER                        :: IKSUP(NK)
-      REAL(rkind)                    :: SSDS(NSPEC)
       REAL(rkind)                    :: FACSAT, DKHS, FACSTRAIN 
       REAL(rkind)                    :: BTH0(NK)     !saturation spectrum 
       REAL(rkind)                    :: BTH(NSPEC)   !saturation spectrum 

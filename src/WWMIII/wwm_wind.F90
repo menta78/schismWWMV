@@ -375,6 +375,15 @@
       REAL(rkind) :: Uw, Vw
       INTEGER IX, IY
       REAL(rkind) :: cf_scale_factor, cf_add_offset
+      INTEGER SHIFTXY(4,2)
+      SHIFTXY(1,1)=0
+      SHIFTXY(1,2)=0
+      SHIFTXY(2,1)=1
+      SHIFTXY(2,2)=0
+      SHIFTXY(3,1)=0
+      SHIFTXY(3,2)=1
+      SHIFTXY(4,1)=1
+      SHIFTXY(4,2)=1
       cf_scale_factor = eVAR_WIND % cf_scale_factor
       cf_add_offset = eVAR_WIND % cf_add_offset
       DO I = 1, MNP_WIND
@@ -651,7 +660,7 @@
       END IF
 # endif      
      END SUBROUTINE SAVE_INTERP_ARRAY
-#endif    
+#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -675,6 +684,7 @@
       nx = TheInfo % nx_dim
       ny = TheInfo % ny_dim
       MinDist=LARGE
+      EXTRAPO_OUT=.FALSE.
 
       IXs=-1
       IYs=-1
@@ -708,7 +718,6 @@
             Y(3)=TheInfo % LAT(IX, IY+1)
             CALL INTELEMENT_COEF(X,Y,eX,eY,WI)
             IF (minval(WI) .ge. -THR) THEN
-              EXTRAPO_OUT=.FALSE.
               eCF_IX=IX
               eCF_IY=IY
               a=WI(2)
@@ -730,7 +739,6 @@
             Y(3)=TheInfo % LAT(IX, IY+1)
             CALL INTELEMENT_COEF(X,Y,eX,eY,WI)
             IF (minval(WI) .ge. -THR) THEN
-              EXTRAPO_OUT=.FALSE.
               eCF_IX=IX
               eCF_IY=IY
               a=1 - WI(3)
@@ -782,16 +790,8 @@
       logical EXTRAPO_OUT
       real(rkind) eX, eY
       WRITE(WINDBG%FHNDL,*) 'Starting node loop for calcs of coefs'
-      allocate(CF_IX(MNP_WIND), CF_IY(MNP_WIND), SHIFTXY(4,2), CF_COEFF(4,MNP_WIND), stat=istat)
+      allocate(CF_IX(MNP_WIND), CF_IY(MNP_WIND), CF_COEFF(4,MNP_WIND), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
-      SHIFTXY(1,1)=0
-      SHIFTXY(1,2)=0
-      SHIFTXY(2,1)=1
-      SHIFTXY(2,2)=0
-      SHIFTXY(3,1)=0
-      SHIFTXY(3,2)=1
-      SHIFTXY(4,1)=1
-      SHIFTXY(4,2)=1
 #ifdef NCDF
       WRITE(WINDBG%FHNDL,*) 'LSAVE_INTERP_ARRAY=', LSAVE_INTERP_ARRAY
       IF (LSAVE_INTERP_ARRAY) THEN
@@ -815,9 +815,7 @@
         CF_IX(I) = eCF_IX
         CF_IY(I) = eCF_IY
         CF_COEFF(:,I) = eCF_COEFF
-        IF (EXTRAPO_OUT .eqv. .TRUE.) THEN
-          nbExtrapolation = nbExtrapolation + 1
-        END IF
+        IF (EXTRAPO_OUT) nbExtrapolation = nbExtrapolation + 1
       END DO
 #ifdef NCDF
       IF (LSAVE_INTERP_ARRAY) THEN
@@ -925,7 +923,13 @@
           NUM_NETCDF_FILES = NUM_NETCDF_FILES + 1
         END DO
         REWIND (WIN%FHNDL)
-
+        IF (NUM_NETCDF_FILES .eq. 0) THEN
+           WRITE(WINDBG%FHNDL,*) 'We have NUM_NETCDF_FILES = 0'
+           WRITE(WINDBG%FHNDL,*) 'In routine INIT_NETCDF_DWD'
+           WRITE(WINDBG%FHNDL,*) 'Wrong file is file=', TRIM(WIN%FNAME)
+           FLUSH(WINDBG%FHNDL)
+           CALL WWM_ABORT('Please correct your setup')
+        END IF
         ALLOCATE(NETCDF_FILE_NAMES(NUM_NETCDF_FILES), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 3')
 
@@ -1242,6 +1246,13 @@
           NUM_NETCDF_FILES = NUM_NETCDF_FILES + 1
         END DO
         REWIND (WIN%FHNDL)
+        IF (NUM_NETCDF_FILES .eq. 0) THEN
+           WRITE(WINDBG%FHNDL,*) 'Error in routine INIT_NETCDF_CRFS'
+           WRITE(WINDBG%FHNDL,*) 'We have NUM_NETCDF_FILES = 0'
+           WRITE(WINDBG%FHNDL,*) 'Wrong file is eFile=', TRIM(WIN%FNAME)
+           FLUSH(WINDBG%FHNDL)
+           CALL WWM_ABORT('Please correct your setup')
+        END IF
 
         ALLOCATE(NETCDF_FILE_NAMES(NUM_NETCDF_FILES), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 18')
@@ -1476,6 +1487,15 @@
           NUM_NETCDF_FILES = NUM_NETCDF_FILES + 1
         END DO
         REWIND (WIN%FHNDL)
+
+        IF (NUM_NETCDF_FILES .eq. 0) THEN
+           WRITE(WINDBG%FHNDL,*) 'Error in INIT_NETCDF_NARR'
+           WRITE(WINDBG%FHNDL,*) 'We have NUM_NETCDF_FILES=', NUM_NETCDF_FILES
+           WRITE(WINDBG%FHNDL,*) 'Wrong file is eFile=', TRIM(WIN%FNAME)
+           FLUSH(WINDBG%FHNDL)
+           CALL WWM_ABORT('Please correct your setup')
+        END IF
+        
         ALLOCATE(NETCDF_FILE_NAMES(NUM_NETCDF_FILES), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 22')
         WRITE(WINDBG%FHNDL,*) 'NUM_NETCDF_FILES=', NUM_NETCDF_FILES
@@ -2034,7 +2054,7 @@
       USE NETCDF
       USE DATAPOOL
       IMPLICIT NONE
-      INTEGER           :: fid, varid, dimids(2)
+      INTEGER           :: fid, varid, dimids(nf90_max_var_dims)
       TYPE(VAR_NETCDF_CF), intent(inout) :: eVAR
       REAL(rkind), ALLOCATABLE :: CF_LON(:,:), CF_LAT(:,:)
       character (len = *), parameter :: CallFct="INIT_NETCDF_CF"
@@ -2043,6 +2063,9 @@
       integer posBlank, alen
       type(FD_FORCING_GRID) TheInfo
       integer IX, IY
+      WRITE(WINDBG%FHNDL,*) 'IWINDFORMAT=', IWINDFORMAT
+      WRITE(WINDBG%FHNDL,*) 'INIT_NETCDF_CF_WWM_WIND start'
+      FLUSH(WINDBG%FHNDL)
       CALL INIT_DIRECT_NETCDF_CF(eVAR, MULTIPLE_IN_WIND, WIN%FNAME, "Uwind")
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
@@ -2208,7 +2231,6 @@
       INTEGER                            :: FID, ID
       real(rkind) :: VAR_tot(np_total)
       real(rkind) :: Vtotal(np_total)
-      real(rkind) :: Vlocal(MNP)
       real(rkind) :: cf_scale_factor, cf_add_offset
 # ifdef MPI_PARALL_GRID
       integer IP_glob, IP
@@ -2264,7 +2286,7 @@
       character(len=*), intent(in) :: eString
 !      
       INTEGER           :: fid, varid
-      INTEGER           :: dimidsB(2), dimids(2)
+      INTEGER           :: dimidsB(nf90_max_var_dims), dimids(nf90_max_var_dims)
       integer nbChar
       character (len=20) :: eTimeStr
       character(len=100) :: CHRERR
@@ -2278,7 +2300,7 @@
       integer eInt(1)
       real(rkind) :: eReal(2)
       integer IPROC
-      integer np_file
+      integer np_file, NumberDim
       eVAR % MULTIPLE_IN = MULTIPLE_IN
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN .or. (myrank .eq. 0)) THEN
@@ -2288,23 +2310,30 @@
 
         ! Reading wind attributes
 
-!        Print *, 'eString=', TRIM(eString)
-!        Print *, 'FNAME=', TRIM(eFileName)
+        Print *, 'eString=', TRIM(eString)
+        Print *, 'FNAME=', TRIM(eFileName)
         ISTAT = nf90_inq_varid(fid, TRIM(eString), varid)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, ISTAT)
 
         ISTAT = nf90_inquire_variable(fid, varid, dimids=dimidsB)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, ISTAT)
 
+        ISTAT = nf90_inquire_variable(fid, varid, ndims=NumberDim)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, ISTAT)
+
+
+
         ISTAT = nf90_inquire_dimension(fid, dimidsB(1), len=np_file)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, ISTAT)
-        IF (np_file .ne. np_total) THEN
-          Print *, 'We have np_file=', np_file
-          Print *, '   But np_total=', np_total
-          CALL WWM_ABORT("Direct forcing file seems to have wrong dimension")
+        IF (NumberDim .eq. 2) THEN
+          IF (np_file .ne. np_total) THEN
+            Print *, 'We have np_file=', np_file
+            Print *, '   But np_total=', np_total
+            CALL WWM_ABORT("Direct forcing file seems to have wrong dimension")
+          END IF
         END IF
 
-        ISTAT = nf90_inquire_dimension(fid, dimidsB(2), name=eTimeStr)
+        ISTAT = nf90_inquire_dimension(fid, dimidsB(NumberDim), name=eTimeStr)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, ISTAT)
         WRITE(WINDBG%FHNDL,*) 'variable used for time=', TRIM(eTimeStr)
         FLUSH(WINDBG%FHNDL)
@@ -2468,17 +2497,43 @@
       CHARACTER(len=140), intent(in) :: eFile
       LOGICAL, intent(in) :: STEPRANGE_IN
       integer ifile, i, n
+      INTEGER, SAVE :: nbCall = 0
       integer, allocatable :: igrib(:)
       CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(eFile))
+!      WRITE(STAT%FHNDL, *) 'Step 1, nbCall=', nbCall
+!      FLUSH(STAT%FHNDL)
       CALL GRIB_OPEN_FILE(ifile, TRIM(eFile), 'r')
+!      WRITE(STAT%FHNDL, *) 'Step 2'
+!      FLUSH(STAT%FHNDL)
       call grib_count_in_file(ifile,n)
+      IF (n .eq. 0) THEN
+         WRITE(WINDBG%FHNDL,*) 'We found n=0 in the following file'
+         WRITE(WINDBG%FHNDL,*) 'eFile=', TRIM(eFile)
+         FLUSH(WINDBG%FHNDL)
+         CALL WWM_ABORT('Please check your files')
+      END IF
+!      WRITE(STAT%FHNDL, *) 'Step 3, n=', n
+!      FLUSH(STAT%FHNDL)
       allocate(igrib(n))
+!      WRITE(STAT%FHNDL, *) 'Step 4'
+!      FLUSH(STAT%FHNDL)
       i=1
+!      WRITE(STAT%FHNDL, *) 'Step 5 ifile=', ifile
+!      FLUSH(STAT%FHNDL)
       call grib_new_from_file(ifile, igrib(i))
+!      WRITE(STAT%FHNDL, *) 'Step 6, igrib(i)=', igrib(i)
+!      FLUSH(STAT%FHNDL)
       CALL RAW_READ_TIME_OF_GRIB_FILE(igrib(i), STEPRANGE_IN, eTimeOut)
+!      WRITE(STAT%FHNDL, *) 'Step 7'
+!      FLUSH(STAT%FHNDL)
       CALL grib_release(igrib(i))
+!      WRITE(STAT%FHNDL, *) 'Step 8'
+!      FLUSH(STAT%FHNDL)
       CALL GRIB_CLOSE_FILE(ifile)
+!      WRITE(STAT%FHNDL, *) 'Step 9'
+!      FLUSH(STAT%FHNDL)
       deallocate(igrib)
+      nbCall=nbCall+1
       END SUBROUTINE
 !****************************************************************************
 !* Reading grid information from a GRIB file (case 1)                       *
@@ -2808,6 +2863,14 @@
         END DO
         CLOSE (WIN%FHNDL)
         FLUSH(WINDBG%FHNDL)
+        !
+        IF (NUM_GRIB_FILES .eq. 0) THEN
+           WRITE(WINDBG%FHNDL,*) 'Error! We have NUM_GRIB_FILES = 0'
+           WRITE(WINDBG%FHNDL,*) 'Error in INIT_GRIB_WIND routine'
+           WRITE(WINDBG%FHNDL,*) 'eFile=', TRIM(WIN%FNAME)
+           FLUSH(WINDBG%FHNDL)
+           CALL WWM_ABORT('Please correct your setup')
+        END IF
         !
         nbtime_mjd=NUM_GRIB_FILES
         allocate(wind_time_mjd(nbtime_mjd), stat=istat)

@@ -533,7 +533,7 @@
       REAL(rkind) :: TIME1, TIME2, TIME3, TIME4, TIME5
 #endif
       REAL(rkind) :: eFact
-      REAL(rkind) :: Sum_new, eVal, DiffNew
+      REAL(rkind) :: Sum_new, DiffNew
       INTEGER :: IP, J, idx, nbIter, is_converged(1), itmp(1)
       INTEGER :: JDX
       LOGICAL, SAVE :: InitCFLadvgeo = .FALSE.
@@ -617,7 +617,7 @@
 #ifdef DEBUG
         WRITE(STAT%FHNDL,*) 'Before iteration sum(AC2)=', sum(abs(AC2))
         sumESUM=0
-#endif/SINGLE_VERTEX_COMPUTATION
+#endif
         nbPassive = 0
        
         DO IP=1,NP_RES
@@ -787,7 +787,7 @@
       REAL(rkind)              :: IMATRA(MSC,MDC)
       REAL(rkind)              :: IMATDA(MSC,MDC)
       REAL(rkind)              :: eVal
-      INTEGER ID, idx
+
 
       IMATRA=ZERO
       IMATDA=ZERO
