@@ -291,7 +291,7 @@
          LOGICAL    :: LWINDFROMWWM= .FALSE.
          LOGICAL    :: LVECTOR     = .FALSE.
          LOGICAL    :: LOPTSIG     = .FALSE.
-         LOGICAL    :: LWINDSWAN   = .FALSE.
+         LOGICAL    :: LWINDSWAN   = .TRUE.
          LOGICAL    :: LZYLINDER   = .TRUE.
          LOGICAL    :: CART2LATLON = .FALSE. 
          LOGICAL    :: LATLON2CART = .FALSE.  
@@ -303,10 +303,10 @@
          INTEGER    :: idxWind
 
 
-         LOGICAL    :: LWRITE_ORIG_WIND                = .FALSE.
-         LOGICAL    :: LWRITE_WW3_RESULTS              = .FALSE.
-         LOGICAL    :: LWRITE_ALL_WW3_RESULTS          = .FALSE.
-         LOGICAL    :: LWRITE_INTERPOLATED_WW3_RESULTS = .FALSE.
+         LOGICAL    :: LWRITE_ORIG_WIND                = .TRUE.
+         LOGICAL    :: LWRITE_WW3_RESULTS              = .TRUE.
+         LOGICAL    :: LWRITE_ALL_WW3_RESULTS          = .TRUE.
+         LOGICAL    :: LWRITE_INTERPOLATED_WW3_RESULTS = .TRUE.
 
          character(len=20) :: MODEL_OUT_TYPE = "WW3"
 

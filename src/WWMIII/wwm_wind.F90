@@ -1238,7 +1238,7 @@
 ! So, it goes by blocks of 7.
 ! PREF_ANALYZED = TRUE.  For prefering analyzed fields when available
 !                 FALSE  For using the analyzed field only at first step.
-        PREF_ANALYZED=.FALSE.
+        PREF_ANALYZED=.TRUE.
         NUM_NETCDF_FILES = 0
         DO
           READ( WIN%FHNDL, *, IOSTAT = ISTAT )
