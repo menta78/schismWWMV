@@ -173,7 +173,7 @@
                END DO
             END DO
             IF(ETOTF4 .GT. VERYSMALL) THEN
-               FP = ETOTF3/ETOTF4
+               FP = ETOTF3/ETOTF4*PI2 ! must be in sigma ...
                CALL WAVEKCG(DEP(IP), FP, WVN, CP, KPP, CGP)
                TP = ONE/(FP/PI2)
                LPP = ONE/KPP*PI2
@@ -1182,10 +1182,10 @@
            END DO
          END DO
          IF(ETOTF4 .GT. VERYSMALL) THEN
-            FP = ETOTF3/ETOTF4
+            FP = ETOTF3/ETOTF4*PI2
             TP_W = ONE/FP/PI2
-            !CALL WAVEKCG(DEP(IP), FP, WN_W, CP_W, KP_W, CGP_W)
-            CALL ALL_FROM_TABLE(FP,DEP(IP),KP_W,CGP_W,WKDEP_W,WN_W,CP_W)
+            CALL WAVEKCG(DEP(IP), FP, WN_W, CP_W, KP_W, CGP_W)
+            !CALL ALL_FROM_TABLE(FP,DEP(IP),KP_W,CGP_W,WKDEP_W,WN_W,CP_W)
             LP_W  = PI2/KP_w
          ELSE
             FP    = ZERO 
@@ -1261,10 +1261,10 @@
          END DO
 
          IF(ETOTF4 .GT. VERYSMALL .AND. ETOTF4 .GT. VERYSMALL) THEN
-
-           FPP    = ETOTF3/ETOTF4
-           !CALL WAVEKCG(DEP(IP), FPP, WNPP, CPP, KPP, CGPP)
-           CALL ALL_FROM_TABLE(FPP,DEP(IP),KPP,CGPP,WKDEPP,WNPP,CPP)
+!ALL THIS ARGUMENTS MUST BE CHECK WITH RESPECT TO THE DISPERSION RELATION
+           FPP    = ETOTF3/ETOTF4*PI2
+           CALL WAVEKCG(DEP(IP), FPP, WNPP, CPP, KPP, CGPP)
+           !CALL ALL_FROM_TABLE(FPP,DEP(IP),KPP,CGPP,WKDEPP,WNPP,CPP)
            TPP    = PI2/FPP
            LPP    = PI2/KPP
            PEAKDM = VEC2DEG (ETOTC4, ETOTS4)
@@ -1392,9 +1392,9 @@
            END DO
          END DO
          IF(ETOTF4 .GT. VERYSMALL .AND. ETOTF4 .GT. VERYSMALL) THEN
-           FPP    = ETOTF3/ETOTF4
-           !CALL WAVEKCG(DEPLOC, FPP, WNPP, CPP, KPP, CGPP)
-           CALL ALL_FROM_TABLE(FPP,DEPLOC,KPP,CGPP,WKDEPP,WNPP,CPP) 
+           FPP    = ETOTF3/ETOTF4*PI2
+           CALL WAVEKCG(DEPLOC, FPP, WNPP, CPP, KPP, CGPP)
+           !CALL ALL_FROM_TABLE(FPP,DEPLOC,KPP,CGPP,WKDEPP,WNPP,CPP) 
            PEAKDM = VEC2DEG (ETOTC4, ETOTS4)
            TPP    = PI2/FPP
            LPP    = PI2/KPP
