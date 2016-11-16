@@ -265,6 +265,7 @@
              IF (DoAirSea) THEN
                OPEN(OUT%FHNDL+9, FILE  = 'airsea.dat'  , FORM = 'FORMATTED')
              END IF
+             IF (LCFL) OPEN(OUT%FHNDL+10, FILE  = 'cflcxy.bin'  , FORM = 'UNFORMATTED')
            END IF
            WRITE(STAT%FHNDL,*) 'sum(OUTT_GLOBAL(:,1))=', sum(OUTT_GLOBAL(:,1))
            WRITE(OUT%FHNDL+1)  SNGL(TIME)
@@ -345,10 +346,11 @@
            IF (DoAirSea) THEN
              OPEN(OUT%FHNDL+9, FILE  = 'airsea.dat'  , FORM = 'FORMATTED')
            END IF
-           OPEN(OUT%FHNDL+10, FILE  = 'cflcxy.bin'  , FORM = 'UNFORMATTED')
+           IF (LCFL) OPEN(OUT%FHNDL+10, FILE  = 'cflcxy.bin'  , FORM = 'UNFORMATTED')
          END IF
+
          WRITE(OUT%FHNDL+1) SNGL(TIME) 
-         WRITE(OUT%FHNDL+1)  (SNGL(OUTT(IP,7)), SNGL(OUTT(IP,8)), SNGL(OUTT(IP,1)), IP = 1, MNP)
+         WRITE(OUT%FHNDL+1)  (SNGL(OUTT(IP,7)), SNGL(OUTT(IP,8)), SNGL(OUTT(IP,1)), IP = 1, MNP)
          FLUSH(OUT%FHNDL+1)
          WRITE(OUT%FHNDL+2) SNGL(TIME)
          WRITE(OUT%FHNDL+2)  (SNGL(CURR(IP,1)), SNGL(CURR(IP,2)), SNGL(DEP(IP)), IP = 1, MNP)
