@@ -701,9 +701,9 @@
           END DO
 
           IF(ETOTF4 .GT. THR8 .AND. ETOTF3 .GT. THR8) THEN
-             FP   = ETOTF3/ETOTF4
- !            CALL WAVEKCG(DEP(IP), FP, WNP, CP, KPP, CGP)
-             CALL ALL_FROM_TABLE(FP,DEP(IP),KPP,CGP,KD,WNP,CP)
+             FP   = ETOTF3/ETOTF4*PI2
+            CALL WAVEKCG(DEP(IP), FP, WNP, CP, KPP, CGP)
+!             CALL ALL_FROM_TABLE(FP,DEP(IP),KPP,CGP,KD,WNP,CP)
              TP   = 1.0_rkind/FP/PI2
              KHS2 = HS2 * KPP
           ELSE
