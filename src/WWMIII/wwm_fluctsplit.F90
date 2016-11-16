@@ -13,8 +13,8 @@
          INTEGER             :: IS, ID
          IF (LCFL .and. LCALC) THEN
            CFLCXY(1,:) = ZERO
-           CFLCXY(2,:) = LARGE
-           CFLCXY(3,:) = LARGE 
+           CFLCXY(2,:) = LARGE 
+           CFLCXY(3,:) = ZERO 
          END IF
 
          IF (LVECTOR) THEN
@@ -217,17 +217,7 @@
        REAL(rkind) :: DTMAX_GLOBAL_EXP
        REAL(rkind) :: DTMAX_GLOBAL_EXP_LOC
        REAL(rkind) :: DTMAX_EXP
-!           KKSUM = ZERO
-!           DO IE = 1, MNE
-!             IF (IE_IS_STEADY(IE) .GT. 2) THEN
-!               CYCLE
-!             ENDIF
-!             NI = INE(:,IE)
-!             KKSUM(NI) = KKSUM(NI) + KELEM(:,IE)
-!           END DO
-!AR: Experimental ... improves speed by 20% but maybe unstable in
-!certain situations ... must be checked thoroughly
-!       KKMAX = ZERO
+
        KKSUM = ZERO
        J    = 0
        DO IP = 1, MNP
@@ -236,7 +226,7 @@
            IE    = IE_CELL(J)
            POS   = POS_CELL(J)
            KKSUM(IP)  = KKSUM(IP) + MAX(KELEM(POS,IE),ZERO)
-!           IF ( ABS(KELEM(POS,IE)) > KKMAX(IP) ) KKMAX(IP) = ABS(KELEM(POS,IE))
+           !IF ( ABS(KELEM(POS,IE)) > KKMAX(IP) ) KKMAX(IP) = ABS(KELEM(POS,IE))
          END DO
        END DO
 #ifdef DEBUG
@@ -246,38 +236,29 @@
 #ifdef MPI_PARALL_GRID
        DTMAX_GLOBAL_EXP = VERYLARGE
        DTMAX_GLOBAL_EXP_LOC = VERYLARGE
+       
        DO IP = 1, NP_RES
-!            IF (IP_IS_STEADY(IP) .GT. 2) THEN
-!              CYCLE
-!            ENDIF
          DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP))
-         IF (LCFL) THEN
-           CXnorm=SQRT(C(1,IP)*C(1,IP) + C(2,IP)*C(2,IP))
-           CFLCXY(1,IP) = MAX(CFLCXY(1,IP), CXnorm)
-           CFLCXY(2,IP) = MIN(CFLCXY(2,IP), DTMAX_EXP)
-           CFLCXY(3,IP) = MIN(CFLCXY(3,IP), KKSUM(IP))
-         END IF
+         !DTMAX_EXP = SI(IP)/MAX(THR,KKMAX(IP))
+         CXnorm=SQRT((C(1,IP)/INVSPHTRANS(IP,1))**2 + (C(2,IP)/INVSPHTRANS(IP,2))**2)
+         !if (is == 1) write(*,'(I10,4F20.10)') IS, 1./(SPSIG(IS)/PI2), CXnorm, DEP(IP)
+         CFLCXY(1,IP) = MAX(CFLCXY(1,IP),CXnorm)
+         CFLCXY(2,IP) = MIN(CFLCXY(2,IP),DTMAX_EXP)
+         CFLCXY(3,IP) = MAX(CFLCXY(3,IP),DT4A*MAX(THR,KKSUM(IP))/SI(IP))
          DTMAX_GLOBAL_EXP_LOC = MIN(DTMAX_GLOBAL_EXP_LOC,DTMAX_EXP)
        END DO
        CALL MPI_ALLREDUCE(DTMAX_GLOBAL_EXP_LOC,DTMAX_GLOBAL_EXP,1,rtype,MPI_MIN,COMM,IERR)
-       IF (LCFL) THEN
-         CALL PARALLEL_SYNCHRONIZE_CFL
-       END IF
+       CALL PARALLEL_SYNCHRONIZE_CFL
 #else
        DTMAX_GLOBAL_EXP = VERYLARGE
        DO IP = 1, MNP
-         IF (IOBP(IP) .NE. 0) CYCLE 
-!            IF (IP_IS_STEADY(IP) .GT. 2) THEN
-!              CYCLE
-!            ENDIF
-         DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP)) 
+         DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP))
          !DTMAX_EXP = SI(IP)/MAX(THR,KKMAX(IP))
-         IF (LCFL) THEN
-           CXnorm=SQRT(C(1,IP)*C(1,IP) + C(2,IP)*C(2,IP))
-           CFLCXY(1,IP) = MAX(CFLCXY(1,IP), CXnorm)
-           CFLCXY(2,IP) = MIN(CFLCXY(2,IP), DTMAX_EXP)
-           CFLCXY(3,IP) = MIN(CFLCXY(3,IP), KKSUM(IP))
-         END IF
+         CXnorm=SQRT((C(1,IP)/INVSPHTRANS(IP,1))**2 + (C(2,IP)/INVSPHTRANS(IP,2))**2)
+         !if (is == 1) write(*,'(I10,4F20.10)') IS, 1./(SPSIG(IS)/PI2), CXnorm, DEP(IP)
+         CFLCXY(1,IP) = MAX(CFLCXY(1,IP),CXnorm)
+         CFLCXY(2,IP) = MIN(CFLCXY(2,IP),DTMAX_EXP)
+         CFLCXY(3,IP) = MAX(CFLCXY(3,IP),DT4A*MAX(THR,KKSUM(IP))/SI(IP))
          DTMAX_GLOBAL_EXP = MIN ( DTMAX_GLOBAL_EXP, DTMAX_EXP)
        END DO
 #endif
