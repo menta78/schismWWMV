@@ -2,8 +2,8 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-#undef DEBUG
 #define DEBUG
+#undef DEBUG
 #define DEBUG_ITERATION_LOOP
 #undef DEBUG_ITERATION_LOOP
 !AR:todo: code duplication ... and buggy since boundary pointer are not taken into account 

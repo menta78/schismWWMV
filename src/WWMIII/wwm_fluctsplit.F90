@@ -238,11 +238,11 @@
        DTMAX_GLOBAL_EXP = VERYLARGE
        DTMAX_GLOBAL_EXP_LOC = VERYLARGE
        
-       DO IP = 1, NP_RES
+       DO IP = 1, NP_RES ! Why over global? 
          DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP))
          !DTMAX_EXP = SI(IP)/MAX(THR,KKMAX(IP))
          CXnorm=SQRT((C(1,IP)/INVSPHTRANS(IP,1))**2 + (C(2,IP)/INVSPHTRANS(IP,2))**2)
-         !if (is == 1) write(*,'(I10,5F20.10)') IS, 1./(SPSIG(IS)/PI2), CXnorm, DEP(IP), DTMAX_EXP, DT4A*MAX(THR,KKSUM(IP))/SI(IP)
+         !if (is == 1 .and. ip == 44269) write(*,'(I10,10F20.10)') IS, 1./(SPSIG(IS)/PI2), C(:,IP), CXnorm, DEP(IP), DTMAX_EXP, DT4A*MAX(THR,KKSUM(IP))/SI(IP)
          CFLCXY(1,IP) = MAX(CFLCXY(1,IP),CXnorm)
          CFLCXY(2,IP) = MIN(CFLCXY(2,IP),DTMAX_EXP)
          CFLCXY(3,IP) = MAX(CFLCXY(3,IP),DT4A*MAX(THR,KKSUM(IP))/SI(IP))

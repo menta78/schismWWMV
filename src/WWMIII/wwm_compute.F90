@@ -15,7 +15,9 @@
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'START COMPUTE COMPUTE_SIMPLE_EXPLICIT'
          FLUSH(STAT%FHNDL)
-
+#ifdef TIMINGS
+         CALL WAV_MY_WTIME(TIME1)
+#endif
          AC1 = AC2
 
          IF (LNANINFCHK) THEN
@@ -37,18 +39,15 @@
          END IF
 
 #ifdef TIMINGS
-         CALL WAV_MY_WTIME(TIME1)
+         CALL WAV_MY_WTIME(TIME2)
 #endif
-
          CALL COMPUTE_DIFFRACTION
 #ifdef DEBUG
          CALL Print_SumAC2("After COMPUTE_DIFFRACTION")
 #endif
-
 #ifdef TIMINGS
-         CALL WAV_MY_WTIME(TIME2)
+         CALL WAV_MY_WTIME(TIME3)
 #endif
-
          IF (FMETHOD .GT. 0) CALL COMPUTE_FREQUENCY
 #ifdef DEBUG
          CALL Print_SumAC2("After COMPUTE_FREQUENCY 1")
@@ -57,7 +56,6 @@
 #ifdef DEBUG
          CALL Print_SumAC2("After COMPUTE_DIRECTION 1")
 #endif
-
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER DIRECTION AND FREQUENCY -1- ',  SUM(AC2)
            IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 2')
@@ -65,7 +63,7 @@
          ENDIF
   
 #ifdef TIMINGS
-         CALL WAV_MY_WTIME(TIME3)
+         CALL WAV_MY_WTIME(TIME4)
 #endif
          IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL
 #ifdef DEBUG
@@ -79,7 +77,7 @@
          ENDIF
 
 #ifdef TIMINGS
-         CALL WAV_MY_WTIME(TIME4)
+         CALL WAV_MY_WTIME(TIME5)
 #endif
          IF (FMETHOD .GT. 0) CALL COMPUTE_FREQUENCY
 #ifdef DEBUG
@@ -97,7 +95,7 @@
          ENDIF
 
 #ifdef TIMINGS
-         CALL WAV_MY_WTIME(TIME5)
+         CALL WAV_MY_WTIME(TIME6)
 #endif
 
 #ifdef DEBUG
@@ -115,15 +113,14 @@
          ENDIF
 
 #ifdef TIMINGS
-         CALL WAV_MY_WTIME(TIME6)
+         CALL WAV_MY_WTIME(TIME7)
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----SIMPLE SPLITTING SCHEME-----'
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'DIFFRACTION                      ', TIME2-TIME1
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SOURCES                          ', TIME6-TIME5
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'DIFFRACTION                      ', TIME3-TIME2
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SOURCES                          ', TIME7-TIME6
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS ADVEKTION            ', TIME5-TIME4
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS THETA SPACE          ', TIME4-TIME3
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS SIGMA SPACE          ', TIME3-TIME2
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU MICHE LIMITER                ', TIME6-TIME5
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS TOTAL TIME           ', TIME6-TIME1
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS SPECTRAL SPACE       ', TIME6-TIME5 + TIME4-TIME3
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU MICHE LIMITER                ', TIME6-TIME5 ! ???????
+         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS TOTAL TIME           ', TIME7-TIME1
          WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
 #endif
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE COMPUTE_SIMPLE_EXPLICIT'
@@ -357,23 +354,14 @@
          TMPCAD    = 0.
 
          DO IP = 1, MNP
-           IF (DEP(IP) .GT. DMIN) THEN
-             CALL PROPTHETA(IP,CAD)
-             CALL PROPSIGMA(IP,CAS)
-             TMPCAD(IP)    = MAXVAL(ABS(CAD))
-! 0.5 since the directional and frequency intergration is split in two parts ....
-             TMPCFLCAD(IP) = 0.5 * TMPCAD(IP)*MAIN%DELT/DDIR
-             TMPCAS(IP)    = MAXVAL(ABS(CAS))
+           CALL PROPTHETA(IP,CAD)
+           CALL PROPSIGMA(IP,CAS)
+           TMPCAD(IP)    = MAXVAL(ABS(CAD))
+! 0.5 since the directional and frequency intergration is split in two parts .... no of course not. Why should it be so, u solve 2 times a 1d equation and this has just the normal cfl 
+           TMPCFLCAD(IP) = TMPCAD(IP)*MAIN%DELT/DDIR
+           TMPCAS(IP)    = MAXVAL(ABS(CAS))
 ! absolute max. value ... lies on the secure side ... to do ...
-             TMPCFLCAS(IP) = 0.5 * TMPCAS(IP)*MAIN%DELT/MINVAL(DS_INCR)
-           ELSE
-             CALL PROPTHETA(IP,CAD)
-             CALL PROPSIGMA(IP,CAS)
-             TMPCFLCAD(IP) = 0.
-             TMPCAD(IP)    = 0.
-             TMPCFLCAS(IP) = 0.
-             TMPCAS(IP)    = 0.
-           END IF
+           TMPCFLCAS(IP) = TMPCAS(IP)*MAIN%DELT/MINVAL(DS_INCR)
            CFL_CASD(1,IP)=TMPCAS(IP)
            CFL_CASD(2,IP)=TMPCAD(IP)
            CFL_CASD(3,IP)=TMPCFLCAS(IP)

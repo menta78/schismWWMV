@@ -605,11 +605,12 @@
          REAL(rkind)    :: WVK,WVCG,WVKDEP,WVN,WVC,SPSIGLOC
 
          DO IP = 1, MNP
-           DEPLOC = MAX(DMIN,DEP(IP))
+           !DEPLOC = MAX(DMIN,DEP(IP))
+           DEPLOC = DEP(IP)
            DO IS = 1, MSC
              SPSIGLOC = SPSIG(IS)
-             CALL ALL_FROM_TABLE(SPSIGLOC,DEPLOC,WVK,WVCG,WVKDEP,WVN,WVC)
-!             CALL WAVEKCG(DEPLOC,SPSIGLOC,WVN,WVC,WVK,WVCG)
+!             CALL ALL_FROM_TABLE(SPSIGLOC,DEPLOC,WVK,WVCG,WVKDEP,WVN,WVC)
+             CALL WAVEKCG(DEPLOC,SPSIGLOC,WVN,WVC,WVK,WVCG)
              WK(IS,IP) = WVK
              CG(IS,IP) = WVCG
              WC(IP,IS) = WVC

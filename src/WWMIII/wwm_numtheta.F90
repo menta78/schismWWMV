@@ -631,9 +631,6 @@
                     WKDEP = WK(IS,IP) * DEP(IP)
                     IF (WKDEP .LT. 13.) THEN
                       DWDH = SPSIG(IS)/SINH(MIN(KDMAX,2.*WKDEP))
-!AR: Joseph: There is a small very tiny different in terms of CPU
-!when we do refraction ... it has something to do with the depth
-!gradients ...
                       DO ID = 1, MDC
                         CAD(IS,ID) = DWDH * ( SINTH(ID)*DDEP(IP,1)-COSTH(ID)*DDEP(IP,2) )
                       END DO

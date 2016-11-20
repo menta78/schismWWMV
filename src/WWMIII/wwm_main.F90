@@ -425,7 +425,9 @@
       CALL WAV_MY_WTIME(TIME2)
 #endif
 
-      IF (LCFL_CASD) CALL CFLSPEC()
+      IF (LCFL_CASD) THEN
+        CALL CFLSPEC()
+      ENDIF
 
 !      CALL Print_SumAC2("Before the advection")
       IF (ICOMP .EQ. 0) THEN
@@ -473,6 +475,7 @@
       IF (LCONV) THEN
         CALL CHECK_STEADY(RTIME,CONV1,CONV2,CONV3,CONV4,CONV5)
       END IF
+
       IF (ABORT_BLOWUP) THEN
         CALL CHECK_FOR_BLOW
       END IF
@@ -772,7 +775,6 @@
       write(740+MyRankGlobal,*)  'WWMIII_MPI, after mpi_init'
       FLUSH(740+MyRankGlobal)
 # endif
-
 # ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME1)
 # endif
@@ -811,8 +813,6 @@
       write(740+MyRankGlobal,*)  'WWMIII_MPI, after INITIALIZE_WWM'
       FLUSH(740+MyRankGlobal)
 # endif
-
-!      STOP 'MEMORY TEST 1'
 
       DO K = 1, MAIN%ISTP
         CALL Print_SumAC2("In the time loop")
