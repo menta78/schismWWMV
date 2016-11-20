@@ -20,7 +20,7 @@
             WN = 0.
             WVK=10.
             WVCG2=0.
-            RETURN
+            STOP 
          END IF
 
          IF (DEPLOC .GT. 0.01) THEN

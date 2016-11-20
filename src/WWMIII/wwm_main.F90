@@ -425,6 +425,8 @@
       CALL WAV_MY_WTIME(TIME2)
 #endif
 
+      IF (LCFL_CASD) CALL CFLSPEC()
+
 !      CALL Print_SumAC2("Before the advection")
       IF (ICOMP .EQ. 0) THEN
         CALL COMPUTE_EXPLICIT

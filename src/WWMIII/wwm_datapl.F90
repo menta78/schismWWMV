@@ -262,7 +262,7 @@
          LOGICAL    :: LLIMT       = .TRUE.
          LOGICAL    :: LSOURCESLIM = .TRUE.
          LOGICAL    :: LCFL        = .TRUE.
-         LOGICAL    :: LCFL_CASD   = .FALSE.
+         LOGICAL    :: LCFL_CASD   = .TRUE.
          LOGICAL    :: LWCAP       = .TRUE.
          LOGICAL    :: LJASN       = .TRUE.
          LOGICAL    :: LMAXETOT    = .TRUE.
@@ -291,7 +291,7 @@
          LOGICAL    :: LWINDFROMWWM= .FALSE.
          LOGICAL    :: LVECTOR     = .FALSE.
          LOGICAL    :: LOPTSIG     = .FALSE.
-         LOGICAL    :: LWINDSWAN   = .TRUE.
+         LOGICAL    :: LWINDSWAN   = .FALSE.
          LOGICAL    :: LZYLINDER   = .TRUE.
          LOGICAL    :: CART2LATLON = .FALSE. 
          LOGICAL    :: LATLON2CART = .FALSE.  

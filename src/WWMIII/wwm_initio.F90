@@ -277,8 +277,8 @@
          ALLOCATE (CFLCXY(3,MNP), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 30')
          CFLCXY(1,:) = ZERO
-         CFLCXY(2,:) = ZERO
-         CFLCXY(3,:) = LARGE
+         CFLCXY(2,:) = LARGE 
+         CFLCXY(3,:) = ZERO 
        END IF
 
        IF (LCFL_CASD) THEN
