@@ -101,13 +101,15 @@
          INTEGER :: IP
          REAL(rkind) :: ACLOC(MSC,MDC)
 
-         DO IP = 1, MNP
-           ACLOC = AC2(:,:,IP)
-           IF (SMETHOD == 1) THEN
-             CALL SEMI_IMPLICIT_INTEGRATION(IP,DT4S,ACLOC)
-           ENDIF
-           AC2(:,:,IP) = ACLOC 
-         ENDDO
+         IF (SMETHOD .gt. 0) THEN
+           DO IP = 1, MNP
+             IF (IOBDP(IP) .EQ. 1) THEN
+               ACLOC = AC2(:,:,IP)
+               CALL SEMI_IMPLICIT_INTEGRATION(IP,DT4S,ACLOC)
+               AC2(:,:,IP) = ACLOC
+             ENDIF
+           ENDDO
+         ENDIF
 
       END SUBROUTINE
 !**********************************************************************
@@ -153,7 +155,7 @@
          DELT5  = XIMP*DELT
          DELFL  = COFRM4*DELT
          MAXDAC = ZERO
-
+ 
          DO IS = 1, MSC
            IF (ISOURCE .EQ. 1) THEN
              IF (UFRIC(IP) .GT. SMALL) THEN

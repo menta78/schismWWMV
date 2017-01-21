@@ -745,7 +745,7 @@
 #endif
 !
       DO IP = 1, MNP
-        CALL LIMITER(IP,AC1(:,:,IP),AC2(:,:,IP))
+        IF (DEP(IP) .GT. DMIN) CALL LIMITER(IP,AC1(:,:,IP),AC2(:,:,IP)) 
       END DO
 #ifdef DEBUG
       CALL LOCAL_NODE_PRINT(20506, "After limiter")
