@@ -9,7 +9,7 @@
       REAL(rkind), INTENT(IN) :: DT
       REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
       INTEGER       :: IS, ID
-      REAL(rkind)   :: NEWDAC
+      REAL(rkind)   :: NEWDAC, SSBR(MSC,MDC)
       REAL(rkind)   :: IMATRA(MSC,MDC), IMATDA(MSC,MDC), ACOLD(MSC,MDC)
 
       ACOLD = ACLOC
@@ -23,6 +23,7 @@
       END DO
       !CALL POST_INTEGRATION(IP,ACLOC)
       IF (LLIMT) CALL LIMITER(IP,ACOLD,ACLOC)
+      IF (LMAXETOT) CALL BREAK_LIMIT(IP,ACLOC,SSBR)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
