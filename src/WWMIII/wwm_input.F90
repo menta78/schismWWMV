@@ -110,7 +110,7 @@
          USE_SINGLE_OUT=.TRUE.
          DEFINETC=-1
 #endif
-         FILEOUT = "zorglub"
+         FILEOUT = "zorglub_history"
          HS=.FALSE.
          TM01=.FALSE.
          TM02=.FALSE.
@@ -270,7 +270,7 @@
          IF (OutputOptionsSet .eqv. .FALSE.) THEN
            CALL WWM_ABORT('OUTSTYLE badly set. allowed choices: NO, NC, XFN and SHP')
          END IF
-         IF (   TRIM(FILEOUT) == 'zorglub') THEN
+         IF (   TRIM(FILEOUT) == 'zorglub_history') THEN
            IF (     TRIM(OUTSTYLE) == 'XFN') THEN
               FILEOUT='XFNout'
            ELSE IF (TRIM(OUTSTYLE) == 'NC') THEN
@@ -362,7 +362,7 @@
          USE_SINGLE_OUT=.TRUE.
          DEFINETC=-1
 #endif
-         FILEOUT = "zorglub"
+         FILEOUT = "zorglub_station"
          AC=.FALSE.
          WK=.FALSE.
          ACOUT_1D=.FALSE.
@@ -513,7 +513,7 @@
          IF (IOUTS.eq.0) THEN
            LOUTS=.FALSE.
          END IF
-         IF (   TRIM(FILEOUT) == 'zorglub') THEN
+         IF (   TRIM(FILEOUT) == 'zorglub_station') THEN
            IF (     TRIM(OUTSTYLE) == 'STE') THEN
               FILEOUT='STEout'
            ELSE IF (TRIM(OUTSTYLE) == 'NC') THEN
