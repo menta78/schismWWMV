@@ -2,7 +2,7 @@
 #PROG = $(HOME)/bin/wwmadv
 PROG = wwmadv
 
-FFLAGS = -DST42 -DWWM_SETUP -DDEBUG_SOURCE_TERM
+FFLAGS = -DST42 -DWWM_SETUP
 
 # Put MPI = on for compiling with mpi, nothing if no MPI is wished.
 MPI = on
@@ -55,8 +55,8 @@ F90OPTI = -g -O3 -ffree-line-length-0 -fbacktrace -Wall
 #F90OPTI = -O3 -ffree-line-length-0
 F90OPTI    = -Wall -O0 -g -ggdb -ffree-line-length-none -fcheck=all -fsanitize=thread -fbacktrace -fstack-protector-all -ffpe-trap=invalid,zero,overflow
 #F90OPTI    = -Wall -O0 -g -ggdb -ffree-line-length-none -fcheck=all -fsanitize=address -fsanitize=undefined   -fbacktrace -fstack-protector-all -ffpe-trap=invalid,zero,overflow
-#F90OPTI    = -Wall -O3 -g -ggdb -ffree-line-length-none -ffpe-trap=invalid,zero,overflow
-F90OPTI    = -Wall -O9 -ffree-line-length-none
+F90OPTI    = -Wall -O3 -g -ggdb -ffree-line-length-none -ffpe-trap=invalid,zero,overflow -DDEBUG
+#F90OPTI    = -Wall -O9 -ffree-line-length-none
 
 
 OBJSELFE = elfe_glbl.o elfe_msgp.o solver_subs.o io_subs.o grid_subs.o misc_subs.o

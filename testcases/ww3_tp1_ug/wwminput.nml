@@ -36,21 +36,17 @@
  LSTAG   = F,
  MINDIR  =  0.000000000000000E+000,
  MAXDIR  =   360.000000000000     ,
- MDC     =          36,
- FRLOW   =  5.000000000000000E-002,
+ MDC     =          24,
+ FRLOW   =  0.05 ,
  FRHIGH  =   1.00000000000000     ,
- MSC     =          36,
+ MSC     =          25,
  FILEGRID        = "system.dat" ,
  IGRIDTYPE       =           1,
  LSLOP   = F,
  SLMAX   =  0.200000000000000     ,
  LVAR1D  = F,
  LOPTSIG = T,
- CART2LATLON     = F,
- LATLON2CART     = F,
  APPLY_DXP_CORR  = F,
- USE_EXACT_FORMULA_SPHERICAL_AREA = F,
- LEXPORT_GRID_MOD_OUT = F
  /
 
 
