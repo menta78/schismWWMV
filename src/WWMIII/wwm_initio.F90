@@ -729,9 +729,13 @@
       CALL SET_HMAX
 
       IF (ISOURCE == 1) THEN
+#if defined ST41 || defined ST42
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT ARDHUIN et al.'
         FLUSH(STAT%FHNDL)
         CALL PREPARE_ARDHUIN
+#else
+        CALL WWM_ABORT('For PREPARE_ARDHUIN, you need ST42 to be selected')
+#endif
       ENDIF
       
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET THE INITIAL WAVE BOUNDARY CONDITION'

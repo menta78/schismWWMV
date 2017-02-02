@@ -802,11 +802,9 @@
       eVal = SI(IP) * DT4A
 
       IF (optionCall .eq. 1) THEN
-        CALL GET_BLOCAL(IP, ACin1, BLOC)
         BSIDE = eVal * IMATRA
         DIAG  = eVal * IMATDA
       ELSE IF (optionCall .eq. 2) THEN
-        CALL GET_BLOCAL(IP, ACin1, BLOC) 
         BSIDE =  eVal * (IMATRA - MIN(ZERO,IMATDA) * Acin2(:,:,IP))
         DIAG  = -eVal * MIN(ZERO,IMATDA)
       END IF

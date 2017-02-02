@@ -16,6 +16,8 @@
  MULTIPLE_OUT_INFO       = T,
  MODEL_OUT_TYPE  = WW3                 
  /
+
+
  &COUPL
  LCPL    = F,
  LROMS   = F,
@@ -27,6 +29,8 @@
  DTCOUP  =  0.000000000000000E+000,
  IMET_DRY        =           0
  /
+
+
  &GRID
  LCIRD   = T,
  LSTAG   = F,
@@ -49,11 +53,15 @@
  USE_EXACT_FORMULA_SPHERICAL_AREA = F,
  LEXPORT_GRID_MOD_OUT = F
  /
+
+
  &INIT
  LHOTR   = F,
  LINID   = T,
  INITSTYLE = 1, 
  /
+
+
  &BOUC
  LBCSE   = F,
  LBCWA   = F,
@@ -102,6 +110,8 @@
  LEXPORT_BOUC_MOD_OUT    = F,
  EXPORT_BOUC_DELTC       =  0.000000000000000E+000
  /
+
+
  &WIND
  LSEWD   = F,
  LSTWD   = T,
@@ -128,6 +138,8 @@
  EXPORT_WIND_DELTC       =  0.000000000000000E+000,
  LSAVE_INTERP_ARRAY      = F
  /
+
+
  &CURR
  LSECU   = F,
  BEGTC   = 20030910.000000     ,
@@ -147,6 +159,8 @@
  LEXPORT_CURR_MOD_OUT    = F,
  EXPORT_CURR_DELTC       =  0.000000000000000E+000
  /
+
+
  &WALV
  LSEWL   = F,
  BEGTC   = 20030910.000000     ,
@@ -165,6 +179,8 @@
  LEXPORT_WALV_MOD_OUT    = F,
  EXPORT_WALV_DELTC       =  0.000000000000000E+000
  /
+
+
  &ENGS
  ISOURCE =           1, 
  MESIN   =           1,
@@ -182,6 +198,8 @@
  TRIRA   =   2.50000000000000     ,
  TRIURS  =  0.100000000000000     
  /
+
+
  &NUMS
  ICOMP   =           0,
  AMETHOD =           0,
@@ -254,6 +272,8 @@
  ZETA_METH       =           0,
  STP_SOLVERTHR   =  1.000000000000000E-010
  /
+
+
  &HISTORY
  BEGTC   = 20030910.000000     ,
  DELTC   =   600.000000000000     ,
@@ -335,6 +355,8 @@
  CFL_CASD3       = F,
  CFL_CASD4       = F
  /
+
+
  &STATION
  BEGTC   = 20030910.000000     ,
  DELTC   =   600.000000000000     ,
@@ -424,6 +446,8 @@
  CFL_CASD3       = F,
  CFL_CASD4       = F
  /
+
+
  &HOTFILE
  BEGTC   = 20000101.000000     ,
  DELTC   =   1.00000000000000     ,
@@ -441,6 +465,8 @@
  FILEHOT_IN      = hotfile_in.dat                                                                                                    
                            
  /
+
+
  &NESTING
  L_NESTING       = F,
  NB_GRID_NEST    =           0,
