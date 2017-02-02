@@ -42,6 +42,7 @@
       REAL(rkind)   :: SSBR(MSC,MDC),DSSBR(MSC,MDC)
       REAL(rkind)   :: SSBRL(MSC,MDC)
       REAL(rkind)   :: SSBF(MSC,MDC),DSSBF(MSC,MDC)
+      REAL(rkind)   :: HS,TM01,TM02,TM10,KLM,WLM
 
       IMATDA = ZERO; IMATRA = ZERO
 
@@ -63,6 +64,8 @@
       IF (IP .eq. TESTNODE) THEN
          WRITE(740+myrank,*) 'Before integration'
          WRITE(740+myrank,*) 'sum(ACLOC)=', sum(ACLOC)
+         CALL MEAN_PARAMETER(IP,ACLOC,MSC,HS,TM01,TM02,TM10,KLM,WLM)
+         WRITE(740+myrank,*) 'HS=', HS, ' TM01=', TM01
       END IF
 #endif
       
@@ -73,6 +76,8 @@
       IF (IP .eq. TESTNODE) THEN
          WRITE(740+myrank,*) 'After integration'
          WRITE(740+myrank,*) 'sum(ACLOC)=', sum(ACLOC)
+         CALL MEAN_PARAMETER(IP,ACLOC,MSC,HS,TM01,TM02,TM10,KLM,WLM)
+         WRITE(740+myrank,*) 'HS=', HS, ' TM01=', TM01
          WRITE(740+myrank,*) 'WAVE ACTION=', SUM(ACLOC), MINVAL(ACLOC), MAXVAL(ACLOC)
          WRITE(740+myrank,*) 'LINEAR INPUT=', SUM(SSINL), MINVAL(SSINL), MAXVAL(SSINL)
          WRITE(740+myrank,*) 'BREAKING LIMITER=', SUM(SSBRL), MINVAL(SSBRL), MAXVAL(SSBRL)
