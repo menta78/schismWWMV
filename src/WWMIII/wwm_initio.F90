@@ -1211,7 +1211,8 @@
                    IF ((K.ne.ID).or.(M.ne.IS)) THEN
                      CALL WWM_ABORT('Inconsistency in reading the input spectra')
                    END IF
-                   ACLOC(IS,ID) =  MyREAL(VA(IS,ID)) / PI2 / SPSIG(IS)
+!                   ACLOC(IS,ID) =  MyREAL(VA(IS,ID)) / PI2 / SPSIG(IS)
+                   ACLOC(IS,ID) =  MyREAL(VA(IS,ID)) / CG(IS,IP)
                  ENDDO
                ENDDO
 #ifdef DEBUG

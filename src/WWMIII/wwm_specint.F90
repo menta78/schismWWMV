@@ -43,7 +43,12 @@
       REAL(rkind)   :: SSBRL(MSC,MDC)
       REAL(rkind)   :: SSBF(MSC,MDC),DSSBF(MSC,MDC)
       REAL(rkind)   :: HS,TM01,TM02,TM10,KLM,WLM
-
+#ifdef DEBUG
+      REAL(rkind)   :: SSINL_WW3(MSC,MDC), SSINE_WW3(MSC,MDC)
+      REAL(rkind)   :: SSBRL_WW3(MSC,MDC), SSDS_WW3(MSC,MDC)
+      REAL(rkind)   :: SSNL4_WW3(MSC,MDC), SSBF_WW3(MSC,MDC)
+      REAL(rkind)   :: SSBR_WW3(MSC,MDC)
+#endif
       IMATDA = ZERO; IMATRA = ZERO
 
       IF (IOBP(IP) .NE. 0 .AND. .NOT. LSOUBOUND) THEN
@@ -74,10 +79,25 @@
       IF (ISHALLOW(IP) .EQ. ONE) CALL SHALLOW_WATER(IP, ACLOC, IMATRA, IMATDA, SSBR, DSSBR, SSBF, DSSBF, SSBRL, SSNL3, DSSNL3)
 #ifdef DEBUG
       IF (IP .eq. TESTNODE) THEN
-         WRITE(740+myrank,*) 'After integration'
+         WRITE(740+myrank,*) 'After integration ISOURCE=', ISOURCE
          WRITE(740+myrank,*) 'sum(ACLOC)=', sum(ACLOC)
          CALL MEAN_PARAMETER(IP,ACLOC,MSC,HS,TM01,TM02,TM10,KLM,WLM)
          WRITE(740+myrank,*) 'HS=', HS, ' TM01=', TM01
+         CALL CONVERT_VS_WWM_TO_WW3(IP, SSINL, SSINL_WW3)
+         WRITE(740+myrank,*) 'WW3 : LINEAR INPUT =', SUM(SSINL_WW3), MINVAL(SSINL_WW3), MAXVAL(SSINL_WW3)
+         CALL CONVERT_VS_WWM_TO_WW3(IP, SSINE, SSINE_WW3)
+         WRITE(740+myrank,*) 'WW3 : EXP. INPUT   =', SUM(SSINE_WW3), MINVAL(SSINE_WW3), MAXVAL(SSINE_WW3)
+         CALL CONVERT_VS_WWM_TO_WW3(IP, SSBRL, SSBRL_WW3)
+         WRITE(740+myrank,*) 'WW3 : BREAK LIMIT  =', SUM(SSBRL_WW3), MINVAL(SSBRL_WW3), MAXVAL(SSBRL_WW3)
+         CALL CONVERT_VS_WWM_TO_WW3(IP, SSDS, SSDS_WW3)
+         WRITE(740+myrank,*) 'WW3 : WHITECAP     =', SUM(SSDS_WW3), MINVAL(SSDS_WW3), MAXVAL(SSDS_WW3)
+         CALL CONVERT_VS_WWM_TO_WW3(IP, SSNL4, SSNL4_WW3)
+         WRITE(740+myrank,*) 'WW3 : SNL4         =', SUM(SSNL4_WW3), MINVAL(SSNL4_WW3), MAXVAL(SSNL4_WW3)
+         CALL CONVERT_VS_WWM_TO_WW3(IP, SSBF, SSBF_WW3)
+         WRITE(740+myrank,*) 'WW3 : BOT. FRIC.   =', SUM(SSBF_WW3), MINVAL(SSBF_WW3), MAXVAL(SSBF_WW3)
+         CALL CONVERT_VS_WWM_TO_WW3(IP, SSBR, SSBR_WW3)
+         WRITE(740+myrank,*) 'WW3 : BREAKING     =', SUM(SSBR_WW3), MINVAL(SSBR_WW3), MAXVAL(SSBR_WW3)
+         
          WRITE(740+myrank,*) 'WAVE ACTION      =', SUM(ACLOC), MINVAL(ACLOC), MAXVAL(ACLOC)
          WRITE(740+myrank,*) 'LINEAR INPUT     =', SUM(SSINL), MINVAL(SSINL), MAXVAL(SSINL)
          WRITE(740+myrank,*) 'BREAKING LIMITER =', SUM(SSBRL), MINVAL(SSBRL), MAXVAL(SSBRL)
@@ -108,6 +128,22 @@
       WRITE(*,'(A20,6E20.10)') 'BREAKING', SUM(SSBR), SUM(DSSBR), MINVAL(SSBR), MAXVAL(SSBR), MINVAL(DSSBR), MAXVAL(DSSBR)
       WRITE(*,'(A20,6E20.10)') 'TOTAL SOURCE TERMS', SUM(IMATRA), SUM(IMATDA), MINVAL(IMATRA), MAXVAL(IMATRA), MINVAL(IMATDA), MAXVAL(IMATDA)
 #endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE CONVERT_VS_WWM_TO_WW3(IP, VS_WWM, VS_WW3)
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer IP
+      REAL(rkind), intent(in) :: VS_WWM(MSC,MDC)
+      REAL(rkind), intent(out) :: VS_WW3(MSC,MDC)
+      INTEGER ID,IS
+      DO ID=1,MDC
+        DO IS=1,MSC
+          VS_WW3(IS,ID) = CG(IS,IP) * VS_WWM(IS,ID)
+        END DO
+      END DO
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
