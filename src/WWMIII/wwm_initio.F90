@@ -1142,7 +1142,7 @@
        REAL(rkind)     :: WIND10, WINDTH, VEC2DEG
        REAL(rkind)     :: WINDX, WINDY
        REAL(rkind)     :: ACLOC(MSC,MDC)
-       REAL(rkind)     :: VA(MSC,MDC)
+       REAL            :: VA(MSC,MDC)
        REAL(rkind)     :: DEG
        REAL(rkind)     :: TMPPAR(8,MNP), SSBRL(MSC,MDC)
        REAL(rkind)     :: EPSMIN
@@ -1205,17 +1205,19 @@
                TMPPAR(8,IP) = 3.3
                CALL SPECTRAL_SHAPE(TMPPAR(:,IP),ACLOC,.FALSE.,'INITIAL CONDITION WW3', USE_OPTI_SPEC_SHAPE_INIT)
              ELSE IF (INITSTYLE == 3) THEN
-               OPEN(1113,FILE='fort.10003',STATUS='OLD')
                DO ID=1,MDC
                  DO IS=1,MSC
-                   READ(1113,*) K, M, VA(IS,ID)
+                   READ(10003) K, M, VA(IS,ID)
                    IF ((K.ne.ID).or.(M.ne.IS)) THEN
                      CALL WWM_ABORT('Inconsistency in reading the input spectra')
                    END IF
-                   ACLOC(IS,ID) =  VA(IS,ID) / PI2 / SPSIG(IS)
+                   ACLOC(IS,ID) =  MyREAL(VA(IS,ID)) / PI2 / SPSIG(IS)
                  ENDDO
                ENDDO
-               REWIND(1113)
+#ifdef DEBUG
+               WRITE(740+myrank,*) 'IP=', IP
+               WRITE(740+myrank,*) 'sum(VA)=', sum(VA), ' sum(ACLOC)=', sum(ACLOC)
+#endif
              ELSE IF (INITSTYLE == 4) THEN
                ! WAM style initialization to the noise
                EPSMIN=10E-7

@@ -52,7 +52,7 @@
 
  &INIT
  LHOTR   = F,
- LINID   = F,
+ LINID   = T,
  INITSTYLE = 3, 
  /
 
