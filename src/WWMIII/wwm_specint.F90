@@ -160,7 +160,7 @@
          IF (ISOURCE == 1) THEN
            CALL ST4_POST(IP, ACLOC, SSINE, DSSINE, SSDS, DSSDS, SSINL)
          ELSE IF (ISOURCE == 2) THEN
-           CALL ECMWF_POST(IP, ACLOC, SSINE, DSSINE, SSDS, DSSDS, SSINL)
+           CALL ECMWF_POST(IP, ACLOC)
          ELSE IF (ISOURCE == 3) THEN
 !2do write some post code for cycle3
          ENDIF

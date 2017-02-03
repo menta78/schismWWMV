@@ -72,22 +72,15 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE ECMWF_POST(IP,ACLOC,SSINE,DSSINE,SSDS,DSSDS,SSINL)
+      SUBROUTINE ECMWF_POST(IP,ACLOC)
          USE DATAPOOL
          IMPLICIT NONE
-
          INTEGER, INTENT(IN)           :: IP
          REAL(rkind), INTENT(INOUT)    :: ACLOC(MSC,MDC)
-
          INTEGER                       :: IS, ID
          REAL(rkind)                   :: VEC2RAD, FPM
          REAL(rkind)                   :: IMATRA(MSC,MDC)
-
-         REAL(rkind), INTENT(OUT)   :: SSINE(MSC,MDC),DSSINE(MSC,MDC), SSINL(MSC,MDC)
-         REAL(rkind), INTENT(OUT)   :: SSDS(MSC,MDC),DSSDS(MSC,MDC)
-
          REAL(rkind)                :: FL3(MDC,MSC), FL(MDC,MSC), SL(MDC,MSC)
-
          THWOLD(IP,1) = THWNEW(IP)
          THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
          U10NEW(IP) = MAX(TWO,SQRT(WINDXY(IP,1)**2+WINDXY(IP,2)**2)) * WINDFAC
