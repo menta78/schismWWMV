@@ -42,7 +42,13 @@
       REAL(rkind)   :: SSBR(MSC,MDC),DSSBR(MSC,MDC)
       REAL(rkind)   :: SSBRL(MSC,MDC)
       REAL(rkind)   :: SSBF(MSC,MDC),DSSBF(MSC,MDC)
-
+      REAL(rkind)   :: HS,TM01,TM02,TM10,KLM,WLM
+#ifdef DEBUG
+      REAL(rkind)   :: SSINL_WW3(MSC,MDC), SSINE_WW3(MSC,MDC)
+      REAL(rkind)   :: SSBRL_WW3(MSC,MDC), SSDS_WW3(MSC,MDC)
+      REAL(rkind)   :: SSNL4_WW3(MSC,MDC), SSBF_WW3(MSC,MDC)
+      REAL(rkind)   :: SSBR_WW3(MSC,MDC)
+#endif
       IMATDA = ZERO; IMATRA = ZERO
 
       IF (IOBP(IP) .NE. 0 .AND. .NOT. LSOUBOUND) THEN
@@ -59,8 +65,58 @@
       SSBF  = ZERO; DSSBF  = ZERO
       SSBRL = ZERO
 
+#ifdef DEBUG
+      IF (IP .eq. TESTNODE) THEN
+         WRITE(740+myrank,*) 'Before integration'
+         WRITE(740+myrank,*) 'sum(ACLOC)=', sum(ACLOC)
+         CALL MEAN_PARAMETER(IP,ACLOC,MSC,HS,TM01,TM02,TM10,KLM,WLM)
+         WRITE(740+myrank,*) 'HS=', HS, ' TM01=', TM01
+      END IF
+#endif
+      
+      
       CALL DEEP_WATER(IP, ACLOC, IMATRA, IMATDA, SSINE, DSSINE, SSDS, DSSDS, SSNL4, DSSNL4, SSINL)
       IF (ISHALLOW(IP) .EQ. ONE) CALL SHALLOW_WATER(IP, ACLOC, IMATRA, IMATDA, SSBR, DSSBR, SSBF, DSSBF, SSBRL, SSNL3, DSSNL3)
+#ifdef DEBUG
+      IF (IP .eq. TESTNODE) THEN
+         WRITE(740+myrank,*) 'After integration ISOURCE=', ISOURCE
+         WRITE(740+myrank,*) 'sum(ACLOC)=', sum(ACLOC)
+         CALL MEAN_PARAMETER(IP,ACLOC,MSC,HS,TM01,TM02,TM10,KLM,WLM)
+         WRITE(740+myrank,*) 'HS=', HS, ' TM01=', TM01
+         CALL CONVERT_VS_WWM_TO_WW3(IP, SSINL, SSINL_WW3)
+         WRITE(740+myrank,*) 'WW3 : LINEAR INPUT =', SUM(SSINL_WW3), MINVAL(SSINL_WW3), MAXVAL(SSINL_WW3)
+         CALL CONVERT_VS_WWM_TO_WW3(IP, SSINE, SSINE_WW3)
+         WRITE(740+myrank,*) 'WW3 : EXP. INPUT   =', SUM(SSINE_WW3), MINVAL(SSINE_WW3), MAXVAL(SSINE_WW3)
+         CALL CONVERT_VS_WWM_TO_WW3(IP, SSBRL, SSBRL_WW3)
+         WRITE(740+myrank,*) 'WW3 : BREAK LIMIT  =', SUM(SSBRL_WW3), MINVAL(SSBRL_WW3), MAXVAL(SSBRL_WW3)
+         CALL CONVERT_VS_WWM_TO_WW3(IP, SSDS, SSDS_WW3)
+         WRITE(740+myrank,*) 'WW3 : WHITECAP     =', SUM(SSDS_WW3), MINVAL(SSDS_WW3), MAXVAL(SSDS_WW3)
+         CALL CONVERT_VS_WWM_TO_WW3(IP, SSNL4, SSNL4_WW3)
+         WRITE(740+myrank,*) 'WW3 : SNL4         =', SUM(SSNL4_WW3), MINVAL(SSNL4_WW3), MAXVAL(SSNL4_WW3)
+         CALL CONVERT_VS_WWM_TO_WW3(IP, SSBF, SSBF_WW3)
+         WRITE(740+myrank,*) 'WW3 : BOT. FRIC.   =', SUM(SSBF_WW3), MINVAL(SSBF_WW3), MAXVAL(SSBF_WW3)
+         CALL CONVERT_VS_WWM_TO_WW3(IP, SSBR, SSBR_WW3)
+         WRITE(740+myrank,*) 'WW3 : BREAKING     =', SUM(SSBR_WW3), MINVAL(SSBR_WW3), MAXVAL(SSBR_WW3)
+         
+         WRITE(740+myrank,*) 'WAVE ACTION      =', SUM(ACLOC), MINVAL(ACLOC), MAXVAL(ACLOC)
+         WRITE(740+myrank,*) 'LINEAR INPUT     =', SUM(SSINL), MINVAL(SSINL), MAXVAL(SSINL)
+         WRITE(740+myrank,*) 'BREAKING LIMITER =', SUM(SSBRL), MINVAL(SSBRL), MAXVAL(SSBRL)
+         WRITE(740+myrank,*) 'EXP INPUT(SSINE) =', SUM(SSINE),  MINVAL(SSINE),  MAXVAL(SSINE)
+         WRITE(740+myrank,*) 'EXP INPUT(DSSINE)=', SUM(DSSINE), MINVAL(DSSINE), MAXVAL(DSSINE)
+         WRITE(740+myrank,*) 'WHITECAP(SSDS)   =', SUM(SSDS),  MINVAL(SSDS),  MAXVAL(SSDS)
+         WRITE(740+myrank,*) 'WHITECAP(DSSDS)  =', SUM(DSSDS), MINVAL(DSSDS), MAXVAL(DSSDS)
+         WRITE(740+myrank,*) 'SNL4(SSNL4)      =', SUM(SSNL4), MINVAL(SSNL4), MAXVAL(SSNL4)
+         WRITE(740+myrank,*) 'SNL4(DSSNL4)     =', SUM(DSSNL4), MINVAL(DSSNL4), MAXVAL(DSSNL4)
+         WRITE(740+myrank,*) 'BOT. FRIC(SSBF)  =', SUM(SSBF),  MINVAL(SSBF),  MAXVAL(SSBF)
+         WRITE(740+myrank,*) 'BOT. FRIC(DSSBF) =', SUM(DSSBF), MINVAL(DSSBF), MAXVAL(DSSBF)
+         WRITE(740+myrank,*) 'BREAKING(SSBR)   =', SUM(SSBR),  MINVAL(SSBR),  MAXVAL(SSBR)
+         WRITE(740+myrank,*) 'BREAKING(DSSBR)  =', SUM(DSSBR), MINVAL(DSSBR), MAXVAL(DSSBR)
+         WRITE(740+myrank,*) 'TOTAL SRC(IMATRA)=', SUM(IMATRA), MINVAL(IMATRA), MAXVAL(IMATRA)
+         WRITE(740+myrank,*) 'TOTAL SRC(IMATDA)=', SUM(IMATDA), MINVAL(IMATDA), MAXVAL(IMATDA)
+      END IF
+#endif
+
+
 #ifdef DEBUG_SOURCE_TERM
       WRITE(*,'(A20,6E20.10)') 'WAVE ACTION', SUM(ACLOC), MINVAL(ACLOC), MAXVAL(ACLOC)
       WRITE(*,'(A20,6E20.10)') 'LINEAR INPUT', SUM(SSINL), MINVAL(SSINL), MAXVAL(SSINL)
@@ -72,6 +128,22 @@
       WRITE(*,'(A20,6E20.10)') 'BREAKING', SUM(SSBR), SUM(DSSBR), MINVAL(SSBR), MAXVAL(SSBR), MINVAL(DSSBR), MAXVAL(DSSBR)
       WRITE(*,'(A20,6E20.10)') 'TOTAL SOURCE TERMS', SUM(IMATRA), SUM(IMATDA), MINVAL(IMATRA), MAXVAL(IMATRA), MINVAL(IMATDA), MAXVAL(IMATDA)
 #endif
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE CONVERT_VS_WWM_TO_WW3(IP, VS_WWM, VS_WW3)
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer IP
+      REAL(rkind), intent(in) :: VS_WWM(MSC,MDC)
+      REAL(rkind), intent(out) :: VS_WW3(MSC,MDC)
+      INTEGER ID,IS
+      DO ID=1,MDC
+        DO IS=1,MSC
+          VS_WW3(IS,ID) = CG(IS,IP) * VS_WWM(IS,ID)
+        END DO
+      END DO
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -88,7 +160,7 @@
          IF (ISOURCE == 1) THEN
            CALL ST4_POST(IP, ACLOC, SSINE, DSSINE, SSDS, DSSDS, SSINL)
          ELSE IF (ISOURCE == 2) THEN
-           CALL ECMWF_POST(IP, ACLOC, SSINE, DSSINE, SSDS, DSSDS, SSINL)
+           CALL ECMWF_POST(IP, ACLOC)
          ELSE IF (ISOURCE == 3) THEN
 !2do write some post code for cycle3
          ENDIF

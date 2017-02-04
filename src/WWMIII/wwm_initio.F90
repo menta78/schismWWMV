@@ -729,9 +729,13 @@
       CALL SET_HMAX
 
       IF (ISOURCE == 1) THEN
+#if defined ST41 || defined ST42
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT ARDHUIN et al.'
         FLUSH(STAT%FHNDL)
         CALL PREPARE_ARDHUIN
+#else
+        CALL WWM_ABORT('For PREPARE_ARDHUIN, you need ST42 to be selected')
+#endif
       ENDIF
       
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET THE INITIAL WAVE BOUNDARY CONDITION'
@@ -1138,6 +1142,7 @@
        REAL(rkind)     :: WIND10, WINDTH, VEC2DEG
        REAL(rkind)     :: WINDX, WINDY
        REAL(rkind)     :: ACLOC(MSC,MDC)
+       REAL            :: VA(MSC,MDC)
        REAL(rkind)     :: DEG
        REAL(rkind)     :: TMPPAR(8,MNP), SSBRL(MSC,MDC)
        REAL(rkind)     :: EPSMIN
@@ -1200,14 +1205,20 @@
                TMPPAR(8,IP) = 3.3
                CALL SPECTRAL_SHAPE(TMPPAR(:,IP),ACLOC,.FALSE.,'INITIAL CONDITION WW3', USE_OPTI_SPEC_SHAPE_INIT)
              ELSE IF (INITSTYLE == 3) THEN
-               OPEN(1113,FILE='fort.10003',STATUS='OLD')
                DO ID=1,MDC
                  DO IS=1,MSC
-                   READ(1113,*) K, M, ACLOC(IS,ID)
-                   ACLOC(IS,ID) =  ACLOC(IS,ID) / PI2 / SPSIG(IS)
+                   READ(10003) K, M, VA(IS,ID)
+                   IF ((K.ne.ID).or.(M.ne.IS)) THEN
+                     CALL WWM_ABORT('Inconsistency in reading the input spectra')
+                   END IF
+!                   ACLOC(IS,ID) =  MyREAL(VA(IS,ID)) / PI2 / SPSIG(IS)
+                   ACLOC(IS,ID) =  MyREAL(VA(IS,ID)) / CG(IS,IP)
                  ENDDO
                ENDDO
-               REWIND(1113)
+#ifdef DEBUG
+               WRITE(740+myrank,*) 'IP=', IP
+               WRITE(740+myrank,*) 'sum(VA)=', sum(VA), ' sum(ACLOC)=', sum(ACLOC)
+#endif
              ELSE IF (INITSTYLE == 4) THEN
                ! WAM style initialization to the noise
                EPSMIN=10E-7

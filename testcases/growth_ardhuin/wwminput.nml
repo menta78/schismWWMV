@@ -8,10 +8,10 @@
  LNAUTOUT        = F,
  LMONO_OUT       = F,
  LMONO_IN        = F,
- BEGTC   = 20030911.000000     ,
- DELTC   = 600.000000000000     ,
+ BEGTC   = 20030910.000000     ,
+ DELTC   =   10.000000000000     ,
  UNITC   = SEC                 ,
- ENDTC   = 20030921.000000     ,
+ ENDTC   = 20030911.000000     ,
  DMIN    =  0.100000000000000     ,
  MULTIPLE_OUT_INFO       = T,
  MODEL_OUT_TYPE  = WW3                 
@@ -36,6 +36,8 @@
  FRLOW   =  5.000000000000000E-002,
  FRHIGH  =   1.00000000000000     ,
  MSC     =          36,
+ USE_FRATIO      = F,
+ FRATIO  =  0.000000000000000E+000,
  FILEGRID        = system.dat                                                                                                        
                            ,
  IGRIDTYPE       =           1,
@@ -51,7 +53,7 @@
  /
  &INIT
  LHOTR   = F,
- LINID   = T,
+ LINID   = F,
  INITSTYLE = 1, 
  /
  &BOUC
@@ -113,7 +115,7 @@
  ENDTC   = 20031001.000000     ,
  LINTERWD        = T,
  WDIR    =  0.000000000000000E+000,
- WVEL    =  20.0000000000000     ,
+ WVEL    =   10.0000000000000     ,
  CWINDX  =  0.000000000000000E+000,
  CWINDY  =  0.000000000000000E+000,
  FILEWIND        = windfiles_narr.dat                                                                                                
@@ -166,7 +168,7 @@
  EXPORT_WALV_DELTC       =  0.000000000000000E+000
  /
  &ENGS
- ISOURCE =           1, 
+ MESNL   =           1,
  MESIN   =           1,
  IFRIC   =           1,
  MESBF   =           1,
@@ -177,6 +179,7 @@
  ALPBJ   =   1.00000000000000     ,
  BRHD    =  0.730000000000000     ,
  LMAXETOT        = F,
+ MESDS   =           1,
  MESTR   =           1,
  TRICO   =   1.00000000000000     ,
  TRIRA   =   2.50000000000000     ,
@@ -198,8 +201,8 @@
  MAXCFLSIG       =   1.00000000000000     ,
  LSIGBOUND       = F,
  LLIMT   = T,
- MELIM   = 1, 
- LIMFAK  = 0.1,
+ LIMFAK  =  0.100000000000000     ,
+ MELIM   =           1,
  LDIFR   = F,
  IDIFFR  =           1,
  LADVTEST        = F,
@@ -226,9 +229,11 @@
  NDYNITER_SNL3   =           1,
  NDYNITER_SBF    =           1,
  NB_BLOCK        =           3,
- MAXITER =      10,
- LNANINFCHK      = T,
- PMIN    =  0.,
+ MAXITER =      100000,
+ LNANINFCHK      = F,
+ LSOURCESWAM     = F,
+ PMIN    =  0.000000000000000E+000,
+ LSOURCESWWIII   = F,
  BLOCK_GAUSS_SEIDEL      = T,
  LNONL   = F,
  L_SOLVER_NORM   = F,

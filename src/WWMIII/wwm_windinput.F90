@@ -177,42 +177,32 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SIN_LIN_CAV( IP, WINDTH, FPM, IMATRA, SSINL )
+      SUBROUTINE SIN_LIN_CAV( IP, WINDTH, FPM, SSINL )
 !
 !     Linear growth term according to Cavaleri & Melanotte Rizolli ...
 !
-         USE DATAPOOL
-         IMPLICIT NONE
-
-         INTEGER, INTENT(IN)   :: IP
-         REAL(rkind)   , INTENT(OUT)  :: IMATRA(MSC,MDC)
-         REAL(rkind)   , INTENT(OUT)  :: SSINL(MSC,MDC)
-         REAL(rkind)   , INTENT(IN)   :: WINDTH
-         REAL(rkind)   , INTENT(IN)   :: FPM
-
-         INTEGER                      :: IS, ID
-         REAL(rkind)                  :: AUX, AUX1, AUX2, AUXH
-         REAL(rkind)                  :: SWINA
-
-         AUX = 0.0015_rkind / ( G9*G9*PI2 )
-
-         SSINL = ZERO 
-         DO IS = 1, MSC
-           AUX1 = MIN( 2.0_rkind, FPM / SPSIG(IS) )
-           AUXH = EXP( -1.0_rkind*(AUX1**4.0_rkind) )
-           DO ID = 1, MDC
-             IF (SPSIG(IS) .GE. (0.7_rkind*FPM)) THEN
-               AUX2 = ( UFRIC(IP) * MAX( 0._rkind , MyCOS(SPDIR(ID)-WINDTH) ) )**4
-               SWINA = MAX(0._rkind,AUX * AUX2 * AUXH)
-               SSINL(IS,ID) = SWINA / SPSIG(IS)
-               IMATRA(IS,ID) = SSINL(IS,ID)
-             ELSE
-               IMATRA(IS,ID) = ZERO
-             ENDIF 
-             !IF (IP == TESTNODE) WRITE(*,'(10F20.10)') IMATRA(IS,ID), SSINL(IS,ID)
-           END DO
-         END DO
-         !IF (IP == TESTNODE)  WRITE(*,'(10F20.10)') SUM(IMATRA), SUM(SSINL)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, INTENT(IN)   :: IP
+      REAL(rkind)   , INTENT(OUT)  :: SSINL(MSC,MDC)
+      REAL(rkind)   , INTENT(IN)   :: WINDTH
+      REAL(rkind)   , INTENT(IN)   :: FPM
+      INTEGER                      :: IS, ID
+      REAL(rkind)                  :: AUX, AUX1, AUX2, AUXH
+      REAL(rkind)                  :: SWINA
+      AUX = 0.0015_rkind / ( G9*G9*PI2 )
+      SSINL  = ZERO 
+      DO IS = 1, MSC
+        AUX1 = MIN( 2.0_rkind, FPM / SPSIG(IS) )
+        AUXH = EXP( -1.0_rkind*(AUX1**4.0_rkind) )
+        DO ID = 1, MDC
+          IF (SPSIG(IS) .GE. (0.7_rkind*FPM)) THEN
+            AUX2 = ( UFRIC(IP) * MAX( 0._rkind , MyCOS(SPDIR(ID)-WINDTH) ) )**4
+            SWINA = MAX(0._rkind,AUX * AUX2 * AUXH)
+            SSINL(IS,ID) = SWINA / SPSIG(IS)
+          ENDIF
+        END DO
+      END DO
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

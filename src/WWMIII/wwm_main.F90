@@ -823,7 +823,6 @@
         END IF
         LCALC=.FALSE.
       END DO
-
 #ifdef TIMINGS
        CALL WAV_MY_WTIME(TIME2)
       WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----TOTAL TIME IN PROG-----', TIME2-TIME1
