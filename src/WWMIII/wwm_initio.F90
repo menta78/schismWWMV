@@ -347,7 +347,7 @@
 !      
       IF (IPHYS.EQ.0) THEN
 !       ECMWF PHYSICS:
-        BETAMAX = 1.20
+        BETAMAX = 1.52
         ZALP    = 0.008
         TAUWSHELTER=0.0
         IF(MSC.GT.30) THEN
