@@ -859,17 +859,17 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-     SUBROUTINE CONVERT_VS_VD_WWM(IP, VS, VD, IMATRA, IMATDA)
+     SUBROUTINE CONVERT_VS_VD_WWM(IP, VS, VD, IMATRA_R, IMATDA_R)
      USE DATAPOOL
      IMPLICIT NONE
      INTEGER, intent(in) :: IP
-     REAL, intent(in) :: VS(MSC*MDC), VD(MSC*MDC)
-     REAL, intent(out) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+     REAL(rkind), intent(in) :: VS(NSPEC), VD(NSPEC)
+     REAL(rkind), intent(out) :: IMATRA_R(MSC,MDC), IMATDA_R(MSC,MDC)
      INTEGER :: IS, ID
      DO IS=1,MSC
        DO ID=1,MDC
-          IMATRA(IS,ID) = VS(ID + (IS-1) * MDC) / CG(IS,IP)
-          IMATDA(IS,ID) = VD(ID + (IS-1) * MDC)
+          IMATRA_R(IS,ID) = VS(ID + (IS-1) * MDC) / CG(IS,IP)
+          IMATDA_R(IS,ID) = VD(ID + (IS-1) * MDC)
        END DO
      END DO
      END SUBROUTINE
