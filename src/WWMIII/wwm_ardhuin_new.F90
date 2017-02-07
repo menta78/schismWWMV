@@ -288,19 +288,28 @@
 !        WRITE(5001,*) 'FTE, FTF, FACHF, FACHFE'
 !        WRITE(5001,*) FTE, FTF, FACHF, FACHFE
 
-        SSWELLF(1) = 0.8_rkind
-        SSWELLF(2) = -0.018_rkind
-        SSWELLF(3) = 0.015_rkind
-        SSWELLF(4) = 1.E5
+        SSWELLF(1) = 0.66
+        SSWELLF(2) = -0.018
+        SSWELLF(3) = 0.022
+        SSWELLF(4) = 1.5E5
         SSWELLF(5) = 1.2
-        SSWELLF(6) = 0._rkind
-        SSWELLF(7) = 0._rkind
+        SSWELLF(6) = 0.
+        SSWELLF(7) = 360000.
+        
+!        SSWELLF(1) = 0.8_rkind
+!        SSWELLF(2) = -0.018_rkind
+!        SSWELLF(3) = 0.015_rkind
+!        SSWELLF(4) = 1.E5
+!        SSWELLF(5) = 1.2
+!        SSWELLF(6) = 0._rkind
+!        SSWELLF(7) = 0._rkind
 
 !        WRITE(5001,*) 'SSWELLF'
 !        WRITE(5001,*) SSWELLF
 
         AALPHA = 0.0095_rkind
-        BBETA  = 1.54_rkind ! 1.54 for ECMWF
+!        BBETA  = 1.54_rkind ! 1.54 for ECMWF
+        BBETA  = 1.52_rkind ! 1.52 as in WaveWatch III trunk
         ZZALP   = 0.006_rkind
         ZZWND   = 10._rkind
 
@@ -709,7 +718,7 @@
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
-      USE DATAPOOL, ONLY : G9, PI2, RADDEG, RKIND, NSPEC, ZERO, ONE, DBG, THR8
+      USE DATAPOOL, ONLY : G9, PI2, RADDEG, RKIND, NSPEC, ZERO, ONE, DBG, THR8, myrank
 !/S      USE W3SERVMD, ONLY: STRACE
 !/T      USE W3ODATMD, ONLY: NDST
 !/T0      USE W3ARRYMD, ONLY: PRT2DS
@@ -873,10 +882,17 @@
       ELSE
         CONST0=BBETA*DRAT/(kappa**2)
       END IF
-
+      WRITE(740+myrank,*) 'CONST0=', CONST0, ' BBETA=', BBETA
+      WRITE(740+myrank,*) 'DRAT=', DRAT, ' kappa=', kappa
+      
       DO IK=1, NK
         TAUPX=TAUX-ABS(TTAUWSHELTER)*STRESSSTAB(ISTAB,1)
         TAUPY=TAUY-ABS(TTAUWSHELTER)*STRESSSTAB(ISTAB,2)
+        WRITE(740+myrank,*) 'IK=', IK, ' TTAUWSHELTER=', TTAUWSHELTER
+        WRITE(740+myrank,*) 'TAUX=', TAUX, ' TAUY=', TAUY
+        WRITE(740+myrank,*) 'TAUPX=', TAUPX, ' TAUPY=', TAUPY
+        WRITE(740+myrank,*) 'STRESSSTAB=', STRESSSTAB(ISTAB,1), STRESSSTAB(ISTAB,2)
+        
 ! With MIN and MAX the bug should disappear.... but where did it come from?
         USTP=MIN((TAUPX**2+TAUPY**2)**0.25_rkind,MAX(UST,0.3_rkind))
         !WRITE(DBG%FHNDL,*) 'USTP', IK, USTP, STRESSSTAB(ISTAB,1), STRESSSTAB(ISTAB,2), TTAUWSHELTER
@@ -902,6 +918,11 @@
         SWELLCOEFV=-SSWELLF(5)*DRAT*2*K(IS)*SQRT(2*NU_AIR*SIG2(IS)) 
         SWELLCOEFT=-DRAT*SSWELLF(1)*16*SIG2(IS)**2/G9
 !
+        WRITE(740+myrank,*) 'TAUX=', TAUX, ' TAUY=', TAUY
+        WRITE(740+myrank,*) 'CM=', CM, ' UCN=', UCN, ' ZCN=', ZCN
+        WRITE(740+myrank,*) 'CONST2=', CONST, ' CONST=', CONST
+        WRITE(740+myrank,*) 'SWELLCOEFV=', SWELLCOEFV, ' SWELLCOEFT=', SWELLCOEFT
+        WRITE(740+myrank,*) 'SSWELLF(1)=', SSWELLF(1), ' SIG=', SIG2(IS)
         !WRITE(DBG%FHNDL,*) 'UCN', IK, IS, USTP, CM ,K(IK), DDEN2(IS), Z0
         DO ITH=1,NTH
           IS=ITH+(IK-1)*NTH
@@ -928,7 +949,7 @@
             ELSE
               DSTAB(ISTAB,IS) = 0.
               LLWS(IS)=.FALSE.
-              END IF
+            END IF
 
               !WRITE(DBG%FHNDL,*) 'DSTAB', DSTAB(ISTAB,IS), CONST,EXP(ZLOG),ZLOG**4,UCN**2,COSWIND,SSINTHP
 !
@@ -936,11 +957,11 @@
 !
             IF (28.*CM*USTAR*COSWIND.GE.1) THEN
               LLWS(IS)=.TRUE.
-              END IF
+            END IF
           ELSE  ! (COSWIND.LE.0.01) 
             DSTAB(ISTAB,IS) = 0.
             LLWS(IS)=.FALSE.
-            END IF 
+          END IF 
 !
           IF ((SSWELLF(1).NE.0.AND.DSTAB(ISTAB,IS).LT.1E-7*SIG2(IS)) &
               .OR.SSWELLF(3).GT.0) THEN  
@@ -949,7 +970,7 @@
               DTURB=SWELLCOEFT*(FW*UORB+(FU+FUD*COSWIND)*USTP)
 !
               DSTAB(ISTAB,IS) = DSTAB(ISTAB,IS) + PTURB*DTURB +  PVISC*DVISC
-            END IF
+          END IF
 !
 ! Sums up the wave-supported stress
 !
@@ -962,15 +983,15 @@
           ELSE
             STRESSSTAB(ISTAB,1)=STRESSSTAB(ISTAB,1)+TEMP2*ECOS(IS)
             STRESSSTAB(ISTAB,2)=STRESSSTAB(ISTAB,2)+TEMP2*ESIN(IS)
-            END IF
-          END DO
+          END IF
         END DO
+      END DO
 !
-        D(:)=DSTAB(3,:)
-        XSTRESS=STRESSSTAB (3,1)
-        YSTRESS=STRESSSTAB (3,2)
-        TAUWNX =STRESSSTABN(3,1)
-        TAUWNY =STRESSSTABN(3,2)
+      D(:)=DSTAB(3,:)
+      XSTRESS=STRESSSTAB (3,1)
+      YSTRESS=STRESSSTAB (3,2)
+      TAUWNX =STRESSSTABN(3,1)
+      TAUWNY =STRESSSTABN(3,2)
 !/STAB3        END DO 
 !/STAB3      D(:)=0.5*(DSTAB(1,:)+DSTAB(2,:))
 !/STAB3      XSTRESS=0.5*(STRESSSTAB(1,1)+STRESSSTAB(2,1))
