@@ -18,7 +18,7 @@
 
       INTEGER      :: IS, ID, ITH, IK, IS0
 
-      REAL(rkind)  :: AWW3(NSPEC), IMATRAWW3(MSC,MDC), IMATDAWW3(MSC,MDC)
+      REAL(rkind)  :: AWW3(NSPEC)
       REAL(rkind)  :: IMATDA1D(NSPEC), IMATRA1D(NSPEC), BRLAMBDA(NSPEC)
       REAL(rkind)  :: WN2(MSC*MDC), WHITECAP(1:4)
 
@@ -99,7 +99,6 @@
         REAL(rkind)                :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
         REAL(rkind)                :: AWW3(NSPEC), WN2(MSC*MDC), BRLAMBDA(NSPEC)
         REAL(rkind)                :: IMATDA1D(NSPEC), IMATRA1D(NSPEC), TMP_DS(MSC)
-        REAL(rkind)                :: IMATRAWW3(MSC,MDC), IMATDAWW3(MSC,MDC)
 
         REAL(rkind)                :: ETOT, FAVG, FMEAN1, WNMEAN, AS, FAVGWS
         REAL(rkind)                :: TAUWAX, TAUWAY, AMAX, WIND10, WINDTH

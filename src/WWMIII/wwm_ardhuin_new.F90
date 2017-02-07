@@ -93,12 +93,6 @@
       INTEGER,        PARAMETER      :: FAC_KD2 = 1000
       REAL(rkind),    PARAMETER      ::KDMAX=200000.
       REAL(rkind),    PARAMETER      :: kappa = 0.40       !Von Karman's constant
-! variables for negative wind input (beta from ST2)
-!
-      INTEGER, PARAMETER, PRIVATE :: NRSIGA =  400
-      INTEGER, PARAMETER, PRIVATE :: NRDRAG =   20
-      REAL(rkind), PARAMETER, PRIVATE    :: SIGAMX =   40._rkind
-      REAL(rkind), PARAMETER, PRIVATE    :: DRAGMX =    1.E-2
 !
 !     WWM FIELD INSERT ...
 !

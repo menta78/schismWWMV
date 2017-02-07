@@ -1,5 +1,5 @@
  &PROC
- PROCNAME        = limon   ,
+ PROCNAME        = "limon"   ,
  DIMMODE =           2,
  LSTEA   = F,
  LQSTEA  = F,
@@ -8,27 +8,30 @@
  LNAUTOUT        = T,
  LMONO_OUT       = F,
  LMONO_IN        = F,
- BEGTC   = 19980901.000000     ,
+ BEGTC   = "19980901.000000"     ,
  DELTC   =   60.0000000000000     ,
- UNITC   = SEC                 ,
- ENDTC   = 19980901.100000     ,
+ UNITC   = "SEC"                 ,
+ ENDTC   = "19980901.100000"     ,
  DMIN    =  1.000000000000000E-004,
  MULTIPLE_OUT_INFO       = T,
- MODEL_OUT_TYPE  = WW3                 ,
+ MODEL_OUT_TYPE  = "WW3"                 ,
  ABORT_BLOWUP    = F,
  LEVEL_HS_BLOW   =          50
  /
+ 
  &COUPL
  LCPL    = F,
  LROMS   = F,
  LTIMOR  = F,
  LSHYFEM = F,
- RADFLAG = LON,
+ RADFLAG = "LON",
  LETOT   = F,
  NLVT    =          10,
  DTCOUP  =   600.000000000000     ,
  IMET_DRY        =           0
  /
+
+
  &GRID
  LCIRD   = T,
  LSTAG   = T,
@@ -38,8 +41,7 @@
  FRLOW   =  4.000000000000000E-002,
  FRHIGH  =   1.00000000000000     ,
  MSC     =          12,
- FILEGRID        = hgrid.gr3                                                                                                         
-                           ,
+ FILEGRID        = "hgrid.gr3",
  IGRIDTYPE       =           3,
  LSLOP   = F,
  SLMAX   =  0.200000000000000     ,
@@ -51,11 +53,15 @@
  USE_EXACT_FORMULA_SPHERICAL_AREA        = F,
  LEXPORT_GRID_MOD_OUT    = F
  /
+
+
  &INIT
  LHOTR   = F,
  LINID   = F,
  INITSTYLE       =           1
  /
+
+
  &BOUC
  LBCSE   = F,
  LBCWA   = T,
@@ -64,15 +70,13 @@
  LBSP1D  = F,
  LBSP2D  = F,
  LBINTER = F,
- BEGTC   = 19980901.000000     ,
+ BEGTC   = "19980901.000000"     ,
  DELTC   =   5.00000000000000     ,
- UNITC   = SEC                 ,
- ENDTC   = 19980901.010000     ,
- FILEBOUND       = wwmbnd.gr3                                                                                                        
-                           ,
+ UNITC   = "SEC" ,
+ ENDTC   = "19980901.010000"     ,
+ FILEBOUND       = "wwmbnd.gr3",
  IBOUNDFORMAT    =           1,
- FILEWAVE        = wwmbnd.gr3                                                                                                        
-                           ,
+ FILEWAVE        = "wwmbnd.gr3",
  LINDSPRDEG      = F,
  LPARMDIR        = F,
  WBHS    =   1.00000000000000     ,
@@ -83,25 +87,24 @@
  WBDSMS  =   1.00000000000000     ,
  WBGAUSS =  0.100000000000000     ,
  WBPKEN  =   3.30000000000000     ,
- NCDF_HS_NAME    = hs                                      ,
- NCDF_DIR_NAME   = dir                                     ,
- NCDF_SPR_NAME   = spr                                     ,
- NCDF_FP_NAME    = fp                                      ,
- NCDF_F02_NAME   = t02                                     ,
+ NCDF_HS_NAME    = "hs"                                      ,
+ NCDF_DIR_NAME   = "dir"                                     ,
+ NCDF_SPR_NAME   = "spr"                                     ,
+ NCDF_FP_NAME    = "fp"                                      ,
+ NCDF_F02_NAME   = "t02"                                     ,
  MULTIPLE_IN     = T,
  NETCDF_OUT_PARAM        = T,
  NETCDF_OUT_SPECTRA      = T,
- NETCDF_OUT_FILE = boundary_out_spec.nc                                                                                              
-                           ,
+ NETCDF_OUT_FILE = "boundary_out_spec.nc",
  USE_SINGLE_OUT  = T,
- BEGTC_OUT       = 19980901.000000     ,
- DELTC_OUT       =   10.0000000000000     ,
- UNITC_OUT       = SEC                 ,
- ENDTC_OUT       = 19980901.000200     ,
+ BEGTC_OUT       = "19980901.000000" ,
+ DELTC_OUT       =   10.0000000000000 ,
+ UNITC_OUT       = "SEC" ,
+ ENDTC_OUT       = "19980901.000200" ,
  EXTRAPOLATION_ALLOWED   = F,
  HACK_HARD_SET_IOBP      = F,
  PARAMWRITE      = T,
- NETCDF_IN_FILE  = unset                                                                                                             
+ NETCDF_IN_FILE  = "unset"                                                                                                             
                            ,
  LEXPORT_BOUC_MOD_OUT    = F,
  EXPORT_BOUC_DELTC       =  0.000000000000000E+000
@@ -111,17 +114,16 @@
  LSTWD   = T,
  LCWIN   = T,
  LWDIR   = T,
- BEGTC   = 19980901.000000     ,
+ BEGTC   = "19980901.000000"  ,
  DELTC   =   5.00000000000000     ,
- UNITC   = SEC                 ,
- ENDTC   = 19980901.010000     ,
+ UNITC   = "SEC"                 ,
+ ENDTC   = "19980901.010000" ,
  LINTERWD        = T,
  WDIR    =   90.0000000000000     ,
  WVEL    =   30.0000000000000     ,
  CWINDX  =  0.000000000000000E+000,
  CWINDY  =  0.000000000000000E+000,
- FILEWIND        = wind.dat                                                                                                          
-                           ,
+ FILEWIND        = "wind.dat",
  WINDFAC =   1.00000000000000     ,
  IWINDFORMAT     =           1,
  LWINDFROMWWM    = T,
@@ -133,19 +135,20 @@
  EXPORT_WIND_DELTC       =  0.000000000000000E+000,
  LSAVE_INTERP_ARRAY      = F
  /
+
+
  &CURR
  LSECU   = F,
- BEGTC   = 19980901.000000     ,
+ BEGTC   = "19980901.000000"  ,
  DELTC   =   5.00000000000000     ,
- UNITC   = SEC                 ,
- ENDTC   = 19980901.010000     ,
+ UNITC   = "SEC"    ,
+ ENDTC   = "19980901.010000"  ,
  LINTERCU        = F,
  LSTCU   = F,
  LCCUR   = F,
  CCURTX  =  0.000000000000000E+000,
  CCURTY  =  0.000000000000000E+000,
- FILECUR = current.dat                                                                                                               
-                   ,
+ FILECUR = "current.dat",
  LERGINP = F,
  CURFAC  =   1.00000000000000     ,
  ICURRFORMAT     =           1,
@@ -153,12 +156,14 @@
  LEXPORT_CURR_MOD_OUT    = F,
  EXPORT_CURR_DELTC       =  0.000000000000000E+000
  /
+
+
  &WALV
  LSEWL   = F,
- BEGTC   = 19980901.000000     ,
+ BEGTC   = "19980901.000000"     ,
  DELTC   =   1.00000000000000     ,
- UNITC   = HR                  ,
- ENDTC   = 19980901.010000     ,
+ UNITC   = "HR"  ,
+ ENDTC   = "19980901.010000"  ,
  LINTERWL        = F,
  LSTWL   = F,
  LCWLV   = F,
@@ -170,6 +175,8 @@
  LEXPORT_WALV_MOD_OUT    = F,
  EXPORT_WALV_DELTC       =  0.000000000000000E+000
  /
+
+
  &ENGS
  ISOURCE =           1,
  MESNL   =           1,
@@ -189,6 +196,8 @@
  TRIRA   =   2.50000000000000     ,
  TRIURS  =  0.100000000000000     
  /
+
+
  &NUMS
  ICOMP   =           3,
  AMETHOD =           7,
@@ -262,17 +271,17 @@
  ZETA_METH       =           0,
  STP_SOLVERTHR   =  1.000000000000000E-010
  /
+
+
  &HISTORY
- BEGTC   = 19980901.000000     ,
+ BEGTC   = "19980901.000000"     ,
  DELTC   =   1.00000000000000     ,
- UNITC   = SEC                 ,
- ENDTC   = 19980902.000000     ,
+ UNITC   = "SEC"         ,
+ ENDTC   = "19980902.000000"     ,
  DEFINETC        =  0.000000000000000E+000,
- OUTSTYLE        = NC                 ,
- FILEOUT = field.dat                               ,
+ OUTSTYLE        = "NC"                 ,
+ FILEOUT = "field.dat"      ,
  LOUTITER        = F,
- IOBPD   = F,
- CG      = F,
  LENERGY = F,
  LWXFN   = F,
  GRIDWRITE       = T,
@@ -347,20 +356,22 @@
  NB_ITER_SOLV    = F,
  HMAX    = F
  /
+
+
  &STATION
- BEGTC   = 19980901.000000     ,
+ BEGTC   = "19980901.000000"     ,
  DELTC   =   20.0000000000000     ,
- UNITC   = SEC                 ,
- ENDTC   = 19980901.010000     ,
+ UNITC   = "SEC"                 ,
+ ENDTC   = "19980901.010000"  ,
  DEFINETC        =  -1.00000000000000     ,
- OUTSTYLE        = NC                  ,
+ OUTSTYLE        = "NC"                  ,
  USE_SINGLE_OUT  = T,
  MULTIPLEOUT     =           0,
  PARAMWRITE      = T,
- FILEOUT = misc.dat                                ,
+ FILEOUT = "misc.dat"                                ,
  LOUTITER        = F,
  IOUTS   =           0,
- NOUTS   = P-1
+ NOUTS   = "P-1"
  XOUTS   =   1950.00000000000     , 199*0.000000000000000E+000  ,
  YOUTS   =   304.000000000000     , 199*0.000000000000000E+000  ,
  CUTOFF  =  0.440000000000000     , 199*0.000000000000000E+000  ,
@@ -437,29 +448,25 @@
  NB_ITER_SOLV    = F,
  HMAX    = F
  /
+
+
  &HOTFILE
- BEGTC   = 19980901.000000     ,
+ BEGTC   = "19980901.000000" ,
  DELTC   =   5.00000000000000     ,
- UNITC   = SEC                 ,
- ENDTC   = 19980901.010000     ,
+ UNITC   = "SEC"    ,
+ ENDTC   = "19980901.010000"  ,
  LHOTF   = T,
  LCYCLEHOT       = F,
- FILEHOT_OUT     = hotfile_out.dat                                                                                                   
-                           ,
+ FILEHOT_OUT     = "hotfile_out.dat",
  HOTSTYLE_IN     =           2,
  HOTSTYLE_OUT    =           2,
  MULTIPLEIN      =           0,
  MULTIPLEOUT     =           0,
  IHOTPOS_IN      =           1,
- FILEHOT_IN      = hotfile_in.dat                                                                                                    
-                           
+ FILEHOT_IN      = "hotfile_in.dat",
  /
+
+
  &NESTING
  L_NESTING       = F,
- NB_GRID_NEST    =           0,
- LISTDELTC       = 20*0.000000000000000E+000  ,
- LISTIGRIDTYPE   = 20*0,
- L_HOTFILE       = F,
- L_BOUC_PARAM    = F,
- L_BOUC_SPEC     = F
  /
