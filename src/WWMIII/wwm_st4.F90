@@ -19,7 +19,7 @@
       INTEGER      :: IS, ID, ITH, IK, IS0
 
       REAL(rkind)  :: AWW3(NSPEC)
-      REAL(rkind)  :: IMATDA1D(NSPEC), IMATRA1D(NSPEC), BRLAMBDA(NSPEC)
+      REAL(rkind)  :: VDDS(NSPEC), VSDS(NSPEC), BRLAMBDA(NSPEC)
       REAL(rkind)  :: WN2(MSC*MDC), WHITECAP(1:4)
       REAL(rkind)  :: VSIN(NSPEC), VDIN(NSPEC)
 
@@ -60,11 +60,12 @@
         CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
         CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
         UFRIC(IP) = 1.E-5
-#ifdef DEBUG
+        LLWS=.TRUE.
+#ifdef DEBUGSRC
         WRITE(740+myrank,*) '1: input value USTAR=', UFRIC(IP), ' USTDIR=', USTDIR(IP)
 #endif
         CALL W3SPR4 ( AWW3, CG(:,IP), WK(:,IP), ETOT, FMEAN(IP), FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS(IP))
-#ifdef DEBUG
+#ifdef DEBUGSRC
         WRITE(740+myrank,*) '1: out value USTAR=', UFRIC(IP), ' USTDIR=', USTDIR(IP)
         WRITE(740+myrank,*) '1: out value EMEAN=', ETOT, ' FMEAN=', FMEAN(IP)
         WRITE(740+myrank,*) '1: out value FMEAN1=', FMEAN1, ' WNMEAN=', WNMEAN
@@ -73,7 +74,7 @@
 #endif
         IF (ETOT .LT. THR .AND. WIND10 .GT. THR) CALL SIN_LIN_CAV(IP,WINDTH,FPM,SSINL)
         CALL W3SIN4 ( IP, AWW3, CG(:,IP), WN2, WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, VSIN, VDIN, LLWS, BRLAMBDA)
-#ifdef DEBUG
+#ifdef DEBUGSRC
         WRITE(740+myrank,*) '1: WINDTH=', WINDTH, ' Z0=', Z0(IP), ' CD=', CD(IP)
         WRITE(740+myrank,*) '1: UFRIC=', UFRIC(IP), 'WIND10=', WIND10, ' RHOAW=', RHOAW
         WRITE(740+myrank,*) '1: TAUWX=', TAUWX(IP), ' TAUWY=', TAUWY(IP)
@@ -83,7 +84,7 @@
 #endif
         CALL W3SPR4 ( AWW3, CG(:,IP), WK(:,IP), ETOT, FMEAN(IP), FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS(IP))  
         CALL W3SIN4 ( IP, AWW3, CG(:,IP), WN2, WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, VSIN, VDIN, LLWS, BRLAMBDA)
-#ifdef DEBUG
+#ifdef DEBUGSRC
         WRITE(740+myrank,*) '2: W3SIN4min/max/sum(VSIN)=', minval(VSIN), maxval(VSIN), sum(VSIN)
         WRITE(740+myrank,*) '2: W3SIN4min/max/sum(VDIN)=', minval(VDIN), maxval(VDIN), sum(VDIN)
 #endif
@@ -93,8 +94,12 @@
       IF (MESNL .GT. 0) CALL SNL41(IP, KMWAM, ACLOC, SSNL4, DSSNL4)
 
       IF (MESDS .GT. 0) THEN
-        CALL W3SDS4(AWW3,WK(:,IP),CG(:,IP),UFRIC(IP),USTDIR(IP),DEP(IP),IMATRA1D,IMATDA1D,BRLAMBDA,WHITECAP)
-        CALL CONVERT_VS_VD_WWM(IP, IMATRA1D, IMATDA1D, SSDS, DSSDS)
+        CALL W3SDS4(AWW3,WK(:,IP),CG(:,IP),UFRIC(IP),USTDIR(IP),DEP(IP),VSDS,VDDS,BRLAMBDA,WHITECAP)
+#ifdef DEBUGSRC
+        WRITE(740+myrank,*) '2: W3SDS4min/max/sum(VSDS)=', minval(VSDS), maxval(VSDS), sum(VSDS)
+        WRITE(740+myrank,*) '2: W3SDS4min/max/sum(VDDS)=', minval(VDDS), maxval(VDDS), sum(VDDS)
+#endif
+        CALL CONVERT_VS_VD_WWM(IP, VSDS, VDDS, SSDS, DSSDS)
       ENDIF
 
       IMATRA = SSINL + SSINE + SSNL4 + SSDS

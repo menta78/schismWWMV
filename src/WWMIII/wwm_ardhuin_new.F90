@@ -289,8 +289,6 @@
 
         SSTXFTFTAIL  = 1/(FACHF-1.-WNMEANPTAIL*2) * SIG(NK)**(2+WNMEANPTAIL*2) * DTH
         SSTXFTWN = 1/(FACHF-1.-WNMEANP*2) * SIG(NK)**(2) * (SIG(NK)/SQRT(G9))**(WNMEANP*2) * DTH
-        WRITE(740+myrank,*) 'SSTXFTWN=', SSTXFTWN
-             
              
         
 !        WRITE(5001,*) 'FTE, FTF, FACHF, FACHFE'
@@ -887,9 +885,9 @@
           IS=ITH+(IK-1)*NTH
           EB(IK) = EB(IK) + A(ITH,IK)
           IF (LLWS(IS)) EB2(IK) = EB2(IK) + A(ITH,IK)
+!          WRITE(740+myrank,*) 'IK=', IK, ' ITH=', ITH, ' LLWS=', LLWS(IS)
           AMAX   = MAX ( AMAX , A(ITH,IK) )
         END DO
-        WRITE(740+myrank,*) 'IK=', IK, ' EB=', EB(IK)
           !          WRITE(DBG%FHNDL,*) IK, EB(IK), IK, ITH, A(ITH,IK)
       END DO
 !
@@ -907,7 +905,8 @@
         EMEANWS  = EMEANWS+ EB2(IK)
         FMEANWS  = FMEANWS+ EB2(IK)*(SIG(IK)**(2.*WNMEANPTAIL))
         END DO
-      WRITE(740+myrank,*) '1: FMEAN1=', FMEAN1
+!      WRITE(740+myrank,*) '1: FMEAN1=', FMEAN1
+!      WRITE(740+myrank,*) '1: FMEANWS=', FMEANWS
 !
 ! 3.  Add tail beyond discrete spectrum and get mean pars ------------ *
 !     ( DTH * SIG absorbed in FTxx )
@@ -916,12 +915,13 @@
       EMEAN  = EMEAN  + EBAND * FTE
       FMEAN  = FMEAN  + EBAND * FTF
       FMEAN1 = FMEAN1 + EBAND * SSTXFTFTAIL
-      WRITE(740+myrank,*) '2: FMEAN1=', FMEAN1, ' SSTXFTFTAIL=', SSTXFTFTAIL
+!      WRITE(740+myrank,*) '2: FMEAN1=', FMEAN1, ' SSTXFTFTAIL=', SSTXFTFTAIL
       WNMEAN = WNMEAN + EBAND * SSTXFTWN
-      WRITE(740+myrank,*) '2: WNMEAN=', WNMEAN, ' SSTXFTWN=', SSTXFTWN
+!      WRITE(740+myrank,*) '2: WNMEAN=', WNMEAN, ' SSTXFTWN=', SSTXFTWN
       EBAND  = EB2(NK) / DDEN(NK)
       EMEANWS = EMEANWS + EBAND * FTE
       FMEANWS = FMEANWS + EBAND * SSTXFTFTAIL
+!      WRITE(740+myrank,*) '2: FMEANWS=', FMEANWS, ' SSTXFTFTAIL=', SSTXFTFTAIL
 !
 ! 4.  Final processing
 !
