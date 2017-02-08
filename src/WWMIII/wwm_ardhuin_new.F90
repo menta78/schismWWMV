@@ -1098,9 +1098,9 @@
 !
       UORB=0.
       AORB=0.
-      DO IK=0,NK+1
-         WRITE(740+myrank,*) 'IK=', IK, ' DSIP=', DSIP(IK)
-      END DO
+!      DO IK=0,NK+1
+!         WRITE(740+myrank,*) 'IK=', IK, ' DSIP=', DSIP(IK)
+!      END DO
       
       DO IK=1, NK
         EB  = 0.
@@ -1115,9 +1115,9 @@
 !
         UORB = UORB + EB *SIG(IK)**2 * DDEN(IK) / CG(IK)
         AORB = AORB + EB             * DDEN(IK) / CG(IK)  !deep water only
-        WRITE(740+myrank,*) 'IK=', IK, ' SIG(IK)=', SIG(IK)
-        WRITE(740+myrank,*) 'DDEN=', DDEN(IK), ' CG=', CG(IK)
-        WRITE(740+myrank,*) 'DSII=', DSII(IK)
+!        WRITE(740+myrank,*) 'IK=', IK, ' SIG(IK)=', SIG(IK)
+!        WRITE(740+myrank,*) 'DDEN=', DDEN(IK), ' CG=', CG(IK)
+!        WRITE(740+myrank,*) 'DSII=', DSII(IK)
         END DO
 
 
@@ -1157,19 +1157,19 @@
         FUD=SSWELLF(2)
         AORB=2*SQRT(AORB)
         XI=(LOG10(MAX(AORB/Z0NOZ,3._rkind))-ABMIN)/DELAB
-        WRITE(740+myrank,*) 'Z0NOZ=', Z0NOZ, ' ABMIN=', ABMIN
-        WRITE(740+myrank,*) 'DELAB=', DELAB, ' XI=', XI
+!        WRITE(740+myrank,*) 'Z0NOZ=', Z0NOZ, ' ABMIN=', ABMIN
+!        WRITE(740+myrank,*) 'DELAB=', DELAB, ' XI=', XI
         IND  = MIN (SIZEFWTABLE-1, INT(XI))
         DELI1= MIN (ONE ,XI-MyREAL(IND))
         DELI2= ONE - DELI1
         !WRITE(DBG%FHNDL,'(A10,I10,5F15.8)') 'TEST IND',IND, XI, AORB, Z0NOZ, ABMIN, DELAB
         FW =FWTABLE(IND)*DELI2+FWTABLE(IND+1)*DELI1
-        WRITE(740+myrank,*) 'FWTABLE(IND)=', FWTABLE(IND), ' FWTABLE(IND+1)=', FWTABLE(IND+1)
+!        WRITE(740+myrank,*) 'FWTABLE(IND)=', FWTABLE(IND), ' FWTABLE(IND+1)=', FWTABLE(IND+1)
       END IF
-      WRITE(740+myrank,*) 'SSWELLF(2)=', SSWELLF(2)
-      WRITE(740+myrank,*) 'FU=', FU, ' FUD=', FUD
-      WRITE(740+myrank,*) 'FW=', FW, ' IND=', IND
-      WRITE(740+myrank,*) 'AORB=', AORB, ' UORB=', UORB
+!      WRITE(740+myrank,*) 'SSWELLF(2)=', SSWELLF(2)
+!      WRITE(740+myrank,*) 'FU=', FU, ' FUD=', FUD
+!      WRITE(740+myrank,*) 'FW=', FW, ' IND=', IND
+!      WRITE(740+myrank,*) 'AORB=', AORB, ' UORB=', UORB
       
 !
 ! 2.  Diagonal
@@ -1210,16 +1210,16 @@
       ELSE
         CONST0=BBETA*DRAT/(kappa**2)
       END IF
-      WRITE(740+myrank,*) 'CONST0=', CONST0, ' BBETA=', BBETA
-      WRITE(740+myrank,*) 'DRAT=', DRAT, ' kappa=', kappa
+!      WRITE(740+myrank,*) 'CONST0=', CONST0, ' BBETA=', BBETA
+!      WRITE(740+myrank,*) 'DRAT=', DRAT, ' kappa=', kappa
       
       DO IK=1, NK
         TAUPX=TAUX-ABS(TTAUWSHELTER)*STRESSSTAB(ISTAB,1)
         TAUPY=TAUY-ABS(TTAUWSHELTER)*STRESSSTAB(ISTAB,2)
-        WRITE(740+myrank,*) 'IK=', IK, ' TTAUWSHELTER=', TTAUWSHELTER
-        WRITE(740+myrank,*) 'TAUX=', TAUX, ' TAUY=', TAUY
-        WRITE(740+myrank,*) 'TAUPX=', TAUPX, ' TAUPY=', TAUPY
-        WRITE(740+myrank,*) 'STRESSSTAB=', STRESSSTAB(ISTAB,1), STRESSSTAB(ISTAB,2)
+!        WRITE(740+myrank,*) 'IK=', IK, ' TTAUWSHELTER=', TTAUWSHELTER
+!        WRITE(740+myrank,*) 'TAUX=', TAUX, ' TAUY=', TAUY
+!        WRITE(740+myrank,*) 'TAUPX=', TAUPX, ' TAUPY=', TAUPY
+!        WRITE(740+myrank,*) 'STRESSSTAB=', STRESSSTAB(ISTAB,1), STRESSSTAB(ISTAB,2)
         
 ! With MIN and MAX the bug should disappear.... but where did it come from?
         USTP=MIN((TAUPX**2+TAUPY**2)**0.25_rkind,MAX(UST,0.3_rkind))
@@ -1246,11 +1246,11 @@
         SWELLCOEFV=-SSWELLF(5)*DRAT*2*K(IS)*SQRT(2*NU_AIR*SIG2(IS)) 
         SWELLCOEFT=-DRAT*SSWELLF(1)*16*SIG2(IS)**2/G9
 !
-        WRITE(740+myrank,*) 'TAUX=', TAUX, ' TAUY=', TAUY
-        WRITE(740+myrank,*) 'CM=', CM, ' UCN=', UCN, ' ZCN=', ZCN
-        WRITE(740+myrank,*) 'CONST2=', CONST, ' CONST=', CONST
-        WRITE(740+myrank,*) 'SWELLCOEFV=', SWELLCOEFV, ' SWELLCOEFT=', SWELLCOEFT
-        WRITE(740+myrank,*) 'SSWELLF(1)=', SSWELLF(1), ' SIG=', SIG2(IS)
+!        WRITE(740+myrank,*) 'TAUX=', TAUX, ' TAUY=', TAUY
+!        WRITE(740+myrank,*) 'CM=', CM, ' UCN=', UCN, ' ZCN=', ZCN
+!        WRITE(740+myrank,*) 'CONST2=', CONST, ' CONST=', CONST
+!        WRITE(740+myrank,*) 'SWELLCOEFV=', SWELLCOEFV, ' SWELLCOEFT=', SWELLCOEFT
+!        WRITE(740+myrank,*) 'SSWELLF(1)=', SSWELLF(1), ' SIG=', SIG2(IS)
         !WRITE(DBG%FHNDL,*) 'UCN', IK, IS, USTP, CM ,K(IK), DDEN2(IS), Z0
         DO ITH=1,NTH
           IS=ITH+(IK-1)*NTH
@@ -1326,8 +1326,8 @@
 !/STAB3      YSTRESS=0.5*(STRESSSTAB(1,2)+STRESSSTAB(2,2))
 !/STAB3      TAUWNX=0.5*(STRESSSTABN(1,1)+STRESSSTABN(2,1))
 !/STAB3      TAUWNY=0.5*(STRESSSTABN(1,2)+STRESSSTABN(2,2))
-      WRITE(740+myrank,*) 'XSTRESS=', XSTRESS, ' YSTRESS=', YSTRESS
-      WRITE(740+myrank,*) 'TAUWNX=', TAUWNX, ' TAUWNY=', TAUWNY
+!      WRITE(740+myrank,*) 'XSTRESS=', XSTRESS, ' YSTRESS=', YSTRESS
+!      WRITE(740+myrank,*) 'TAUWNX=', TAUWNX, ' TAUWNY=', TAUWNY
 
         S = D * A
 !
@@ -1354,8 +1354,10 @@
          IS=ITH+(NK-1)*NTH
          COSWIND=(ECOS(IS)*COSU+ESIN(IS)*SINU)
          TEMP=TEMP+A(IS)*(MAX(COSWIND,ZERO))**3
+!         WRITE(740+myrank,*) 'ITH=', ITH, ' A=', A(IS), ' COSWIND=', COSWIND
          !WRITE(DBG%FHNDL,*) ITH, IS, A(IS), (MAX(COSWIND,ZERO))**3
          END DO
+!      WRITE(740+myrank,*) 'TEMP=', TEMP
 
       TAUPX=TAUX-ABS(TTAUWSHELTER)*XSTRESS
       TAUPY=TAUY-ABS(TTAUWSHELTER)*YSTRESS
@@ -1391,7 +1393,9 @@
          +(TAUHFT(IND,J+1)*DELI2+TAUHFT(IND+1,J+1)*DELI1)*DELJ1
         END IF
       TAUHF = CONST0*TEMP*UST**2*TAU1
-      WRITE(740+myrank,*) 'TAUHF=', TAUHF        
+!      WRITE(740+myrank,*) 'TAUHF=', TAUHF, 'CONST0=', CONST0
+!      WRITE(740+myrank,*) 'TEMP=', TEMP, ' UST=', UST, ' TAU1=', TAU1
+      
       TAUWX = XSTRESS+TAUHF*COS(USDIRP)
       TAUWY = YSTRESS+TAUHF*SIN(USDIRP)
 !      
