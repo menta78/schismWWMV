@@ -119,7 +119,6 @@
       REAL(rkind)                    :: DTH, FACHF, SXFR, XFR, FACHFE
       REAL(rkind)                    :: WNMEANP, WNMEANPTAIL
       REAL(rkind)                    :: FTE, FTF
-      REAL(rkind)                    :: STXFTF, STXFTWN
       REAL(rkind)                    :: SSTXFTF, SSTXFTWN, SSTXFTFTAIL
       REAL(rkind)                    :: SSWELLF(7) ,SSWELLFPAR
       REAL(rkind)                    :: SWELLFPAR, SSDSTH
@@ -285,11 +284,13 @@
         FACHFE = XFR**(-FACHF)
 
 !        STXFTFTAIL  = 1./(FACHF-1.-WNMEANPTAIL*2)
-        STXFTF      = 1./(FACHF-1.-WNMEANP*2)
-        STXFTWN     = 1./(FACHF-1.-WNMEANP*2) * SIG(NK)**(2)
+!        STXFTWN     = 1./(FACHF-1.-WNMEANP*2) * SIG(NK)**(2)
+!        STXFTF      = 1./(FACHF-1.-WNMEANP*2)
 
         SSTXFTFTAIL  = 1/(FACHF-1.-WNMEANPTAIL*2) * SIG(NK)**(2+WNMEANPTAIL*2) * DTH
-                                       
+        SSTXFTWN = 1/(FACHF-1.-WNMEANP*2) * SIG(NK)**(2) * (SIG(NK)/SQRT(G9))**(WNMEANP*2) * DTH
+        WRITE(740+myrank,*) 'SSTXFTWN=', SSTXFTWN
+             
              
         
 !        WRITE(5001,*) 'FTE, FTF, FACHF, FACHFE'
@@ -434,8 +435,8 @@
         & TTAUWSHELTER, SSWELLFPAR, SSWELLF,               &
         & ZZ0RAT, SSDSC1, SSDSC2, SSDSC3, SSDSC4, SSDSC5,  &
         & SSDSC6, SSDSISO, SSDSBR, SSDSBR2, SSDSBM, SSDSP, &
-        & SSDSCOS, SSDSDTH, SSTXFTF, &
-        & SSTXFTFTAIL, SSTXFTWN, SSTXFTF, SSTXFTWN,        &
+        & SSDSCOS, SSDSDTH, SSTXFTF,                       &
+        & SSTXFTFTAIL, SSTXFTWN,                           &
         & SSDSBRF1, SSDSBRF2, SSDSBRFDF,SSDSBCK, SSDSABK,  &
         & SSDSPBK, SSDSBINT, &
         & SSDSHCK, DELUST, DELTAIL, DELTAUW, &
@@ -917,6 +918,7 @@
       FMEAN1 = FMEAN1 + EBAND * SSTXFTFTAIL
       WRITE(740+myrank,*) '2: FMEAN1=', FMEAN1, ' SSTXFTFTAIL=', SSTXFTFTAIL
       WNMEAN = WNMEAN + EBAND * SSTXFTWN
+      WRITE(740+myrank,*) '2: WNMEAN=', WNMEAN, ' SSTXFTWN=', SSTXFTWN
       EBAND  = EB2(NK) / DDEN(NK)
       EMEANWS = EMEANWS + EBAND * FTE
       FMEANWS = FMEANWS + EBAND * SSTXFTFTAIL
@@ -1693,7 +1695,7 @@
      & ZZ0RAT, SSDSC1, SSDSC2, SSDSC3, SSDSC4, SSDSC5,                  &
      & SSDSC6, SSDSISO, SSDSBR, SSDSBR2, SSDSBM, SSDSP,                 &
      & SSDSCOS, SSDSDTH, SSTXFTF,                                       &
-     & SSTXFTFTAIL, SSTXFTWN, SSTXFTF, SSTXFTWN,                        &
+     & SSTXFTFTAIL, SSTXFTWN,                                           &
      & SSDSBRF1, SSDSBRF2, SSDSBRFDF,SSDSBCK, SSDSABK,                  &
      & SSDSPBK, SSDSBINT,                                               &
      & SSDSHCK, DELUST, DELTAIL, DELTAUW,                               &
