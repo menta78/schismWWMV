@@ -97,7 +97,7 @@
 !     WWM FIELD INSERT ...
 !
       LOGICAL                        :: FLICES = .FALSE.
-      REAL(rkind)                    :: TTAUWSHELTER = 1.
+      REAL(rkind)                    :: TTAUWSHELTER
       REAL(rkind)                    :: ZZ0RAT = 0.04_rkind
       REAL(rkind)                    :: SSINTHP    = 2.
       INTEGER                        :: NK, MK, NTH, MTH, MSPEC
@@ -229,10 +229,11 @@
 !        WRITE(5001,*) 'WNMEANP, WNMEANPTAIL'
 !        WRITE(5001,*) WNMEANP, WNMEANPTAIL
 
-        XFR = EXP(FRINTF) ! Check with Fabrice ... should be 1.1
+        XFR = SFAC ! Check with Fabrice ... should be 1.1
 
         SIGMA   = FR1 * TPI / XFR**2 ! What is going on here ?
         SXFR    = 0.5_rkind * (XFR-1./XFR)
+        WRITE(740+myrank,*) 'XFR=', XFR
 
 !        WRITE(5001,*) 'XFR, SIGMA, SXFR'
 !        WRITE(5001,*) XFR, SIGMA, SXFR
@@ -259,6 +260,7 @@
         DO IK=1, NK
           DDEN(IK) = DTH * DSII(IK) * SIG(IK)
         END DO
+        WRITE(740+myrank,*) 'DTH=', DTH
 
         DO ISP=1, NSPEC
           IK         = 1 + (ISP-1)/NTH
@@ -343,7 +345,8 @@
         SSINTHP    = 2.0_rkind
         SSWELLFPAR = 3
 
-        TTAUWSHELTER = 1.0_rkind
+!        TTAUWSHELTER = 1.0_rkind
+        TTAUWSHELTER = 0.3_rkind
         ZZ0RAT       = 0.04_rkind
 
         SSDSC1 = 0._rkind
@@ -786,7 +789,10 @@
 !
       UORB=0.
       AORB=0.
-
+      DO IK=0,NK+1
+         WRITE(740+myrank,*) 'IK=', IK, ' DSIP=', DSIP(IK)
+      END DO
+      
       DO IK=1, NK
         EB  = 0.
         EBX = 0.
@@ -800,8 +806,13 @@
 !
         UORB = UORB + EB *SIG(IK)**2 * DDEN(IK) / CG(IK)
         AORB = AORB + EB             * DDEN(IK) / CG(IK)  !deep water only
+        WRITE(740+myrank,*) 'IK=', IK, ' SIG(IK)=', SIG(IK)
+        WRITE(740+myrank,*) 'DDEN=', DDEN(IK), ' CG=', CG(IK)
+        WRITE(740+myrank,*) 'DSII=', DSII(IK)
         END DO
 
+
+        
       UORB = 2*SQRT(UORB)                  ! significant orbital amplitude
       AORB1 = 2*AORB**(1-0.5*SSWELLF(6))   ! half the significant wave height ... if SWELLF(6)=1
       RE = 4*UORB*AORB1 / NU_AIR           ! Reynolds number 
@@ -842,7 +853,11 @@
         DELI2= ONE - DELI1
         !WRITE(DBG%FHNDL,'(A10,I10,5F15.8)') 'TEST IND',IND, XI, AORB, Z0NOZ, ABMIN, DELAB
         FW =FWTABLE(IND)*DELI2+FWTABLE(IND+1)*DELI1
-        END IF
+      END IF
+      WRITE(740+myrank,*) 'FU=', FU, ' FUD=', FUD
+      WRITE(740+myrank,*) 'FW=', FW, ' IND=', IND
+      WRITE(740+myrank,*) 'AORB=', AORB, ' UORB=', UORB
+      
 !
 ! 2.  Diagonal
 !
@@ -998,6 +1013,8 @@
 !/STAB3      YSTRESS=0.5*(STRESSSTAB(1,2)+STRESSSTAB(2,2))
 !/STAB3      TAUWNX=0.5*(STRESSSTABN(1,1)+STRESSSTABN(2,1))
 !/STAB3      TAUWNY=0.5*(STRESSSTABN(1,2)+STRESSSTABN(2,2))
+      WRITE(740+myrank,*) 'XSTRESS=', XSTRESS, ' YSTRESS=', YSTRESS
+      WRITE(740+myrank,*) 'TAUWNX=', TAUWNX, ' TAUWNY=', TAUWNY
 
         S = D * A
 !
@@ -1061,6 +1078,7 @@
          +(TAUHFT(IND,J+1)*DELI2+TAUHFT(IND+1,J+1)*DELI1)*DELJ1
         END IF
       TAUHF = CONST0*TEMP*UST**2*TAU1
+      WRITE(740+myrank,*) 'TAUHF=', TAUHF        
       TAUWX = XSTRESS+TAUHF*COS(USDIRP)
       TAUWY = YSTRESS+TAUHF*SIN(USDIRP)
 !      
