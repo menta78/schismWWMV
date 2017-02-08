@@ -119,7 +119,7 @@
       REAL(rkind)                    :: DTH, FACHF, SXFR, XFR, FACHFE
       REAL(rkind)                    :: WNMEANP, WNMEANPTAIL
       REAL(rkind)                    :: FTE, FTF
-      REAL(rkind)                    :: STXFTF, STXFTWN, STXFTFTAIL
+      REAL(rkind)                    :: STXFTF, STXFTWN
       REAL(rkind)                    :: SSTXFTF, SSTXFTWN, SSTXFTFTAIL
       REAL(rkind)                    :: SSWELLF(7) ,SSWELLFPAR
       REAL(rkind)                    :: SWELLFPAR, SSDSTH
@@ -234,7 +234,7 @@
 
         SIGMA   = FR1 * TPI / XFR**2 ! What is going on here ?
         SXFR    = 0.5_rkind * (XFR-1./XFR)
-        WRITE(740+myrank,*) 'XFR=', XFR
+!        WRITE(740+myrank,*) 'XFR=', XFR
 
 !        WRITE(5001,*) 'XFR, SIGMA, SXFR'
 !        WRITE(5001,*) XFR, SIGMA, SXFR
@@ -261,7 +261,7 @@
         DO IK=1, NK
           DDEN(IK) = DTH * DSII(IK) * SIG(IK)
         END DO
-        WRITE(740+myrank,*) 'DTH=', DTH
+!        WRITE(740+myrank,*) 'DTH=', DTH
 
         DO ISP=1, NSPEC
           IK         = 1 + (ISP-1)/NTH
@@ -284,10 +284,14 @@
         FACHF  = 5.
         FACHFE = XFR**(-FACHF)
 
-        STXFTFTAIL  = 1./(FACHF-1.-WNMEANPTAIL*2)
+!        STXFTFTAIL  = 1./(FACHF-1.-WNMEANPTAIL*2)
         STXFTF      = 1./(FACHF-1.-WNMEANP*2)
         STXFTWN     = 1./(FACHF-1.-WNMEANP*2) * SIG(NK)**(2)
 
+        SSTXFTFTAIL  = 1/(FACHF-1.-WNMEANPTAIL*2) * SIG(NK)**(2+WNMEANPTAIL*2) * DTH
+                                       
+             
+        
 !        WRITE(5001,*) 'FTE, FTF, FACHF, FACHFE'
 !        WRITE(5001,*) FTE, FTF, FACHF, FACHFE
 
@@ -371,6 +375,8 @@
         SSDSC(5)   = SSDSC5
         SSDSC(6)   = SSDSC6
         SSDSC(7)   = WHITECAPWIDTH
+
+        
 
         SDSNTH  = MIN(NINT(SSDSDTH/(DTH*RADDEG)),NTH/2-1)
         DELAB   = (ABMAX-ABMIN)/MyREAL(SIZEFWTABLE)
@@ -831,7 +837,7 @@
 !
 !/ ------------------------------------------------------------------- /
       USE DATAPOOL, ONLY: INVPI2, PI2, RKIND, NSPEC
-      USE DATAPOOL, ONLY: ZERO, ONE
+      USE DATAPOOL, ONLY: ZERO, ONE, myrank
 !/T      USE W3ODATMD, ONLY: NDST
 !
       IMPLICIT NONE
@@ -881,9 +887,10 @@
           EB(IK) = EB(IK) + A(ITH,IK)
           IF (LLWS(IS)) EB2(IK) = EB2(IK) + A(ITH,IK)
           AMAX   = MAX ( AMAX , A(ITH,IK) )
-          END DO
-!          WRITE(DBG%FHNDL,*) IK, EB(IK), IK, ITH, A(ITH,IK)
         END DO
+        WRITE(740+myrank,*) 'IK=', IK, ' EB=', EB(IK)
+          !          WRITE(DBG%FHNDL,*) IK, EB(IK), IK, ITH, A(ITH,IK)
+      END DO
 !
 ! 2.  Integrate over directions -------------------------------------- *
 
@@ -899,6 +906,7 @@
         EMEANWS  = EMEANWS+ EB2(IK)
         FMEANWS  = FMEANWS+ EB2(IK)*(SIG(IK)**(2.*WNMEANPTAIL))
         END DO
+      WRITE(740+myrank,*) '1: FMEAN1=', FMEAN1
 !
 ! 3.  Add tail beyond discrete spectrum and get mean pars ------------ *
 !     ( DTH * SIG absorbed in FTxx )
@@ -907,6 +915,7 @@
       EMEAN  = EMEAN  + EBAND * FTE
       FMEAN  = FMEAN  + EBAND * FTF
       FMEAN1 = FMEAN1 + EBAND * SSTXFTFTAIL
+      WRITE(740+myrank,*) '2: FMEAN1=', FMEAN1, ' SSTXFTFTAIL=', SSTXFTFTAIL
       WNMEAN = WNMEAN + EBAND * SSTXFTWN
       EBAND  = EB2(NK) / DDEN(NK)
       EMEANWS = EMEANWS + EBAND * FTE

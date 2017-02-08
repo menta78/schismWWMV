@@ -56,14 +56,22 @@
       IF (MESIN .GT. 0) THEN
 
         CALL SET_WIND( IP, WIND10, WINDTH )
+        WINDTH=4.71238899
         CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
         CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
-        CALL W3SPR4 ( AWW3, CG(:,IP), WK(:,IP), ETOT, FMEAN(IP), FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS(IP))
-        IF (ETOT .LT. THR .AND. WIND10 .GT. THR) CALL SIN_LIN_CAV(IP,WINDTH,FPM,SSINL)
-        WINDTH=4.71238899
+        UFRIC(IP) = 1.E-5
 #ifdef DEBUG
-        WRITE(740+myrank,*) '1: input value UFRIC=', UFRIC(IP)
+        WRITE(740+myrank,*) '1: input value USTAR=', UFRIC(IP), ' USTDIR=', USTDIR(IP)
 #endif
+        CALL W3SPR4 ( AWW3, CG(:,IP), WK(:,IP), ETOT, FMEAN(IP), FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS(IP))
+#ifdef DEBUG
+        WRITE(740+myrank,*) '1: out value USTAR=', UFRIC(IP), ' USTDIR=', USTDIR(IP)
+        WRITE(740+myrank,*) '1: out value EMEAN=', ETOT, ' FMEAN=', FMEAN(IP)
+        WRITE(740+myrank,*) '1: out value FMEAN1=', FMEAN1, ' WNMEAN=', WNMEAN
+        WRITE(740+myrank,*) '1: out value CD=', CD(IP), ' Z0=', Z0(IP)
+        WRITE(740+myrank,*) '1: out value ALPHA=', ALPHA_CH(IP), ' FMEANWS=', FMEANWS(IP)
+#endif
+        IF (ETOT .LT. THR .AND. WIND10 .GT. THR) CALL SIN_LIN_CAV(IP,WINDTH,FPM,SSINL)
         CALL W3SIN4 ( IP, AWW3, CG(:,IP), WN2, WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, VSIN, VDIN, LLWS, BRLAMBDA)
 #ifdef DEBUG
         WRITE(740+myrank,*) '1: WINDTH=', WINDTH, ' Z0=', Z0(IP), ' CD=', CD(IP)
@@ -71,9 +79,7 @@
         WRITE(740+myrank,*) '1: TAUWX=', TAUWX(IP), ' TAUWY=', TAUWY(IP)
         WRITE(740+myrank,*) '1: TAUWAX=', TAUWAX, ' TAUWAY=', TAUWAY
         WRITE(740+myrank,*) '1: W3SIN4min/max/sum(VSIN)=', minval(VSIN), maxval(VSIN), sum(VSIN)
-        WRITE(740+myrank,*) '1: W3SIN4min/max/sum(VSIN)=', minval(VSIN), maxval(VSIN), sum(VSIN)
         WRITE(740+myrank,*) '1: W3SIN4min/max/sum(VDIN)=', minval(VDIN), maxval(VDIN), sum(VDIN)
-        
 #endif
         CALL W3SPR4 ( AWW3, CG(:,IP), WK(:,IP), ETOT, FMEAN(IP), FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS(IP))  
         CALL W3SIN4 ( IP, AWW3, CG(:,IP), WN2, WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, VSIN, VDIN, LLWS, BRLAMBDA)
