@@ -20,17 +20,11 @@
          REAL(rkind)  :: WIND10
          REAL(rkind)  :: FPM,WINDTH,TEMP
          REAL(rkind)  :: SC, SP, JAC
-
          REAL(rkind)                :: FL3(MDC,MSC), FL(MDC,MSC), SL(MDC,MSC)
-
-         SSINE = ZERO; DSSINE = ZERO
-         SSDS  = ZERO; DSSDS  = ZERO
-         SSNL4 = ZERO; DSSNL4 = ZERO
-         SSINL = ZERO
-
          DO IS = 1, MSC
+           JAC = PI2 * SPSIG(IS)
            DO ID = 1, MDC
-             FL3(ID,IS) = ACLOC(IS,ID) * PI2 * SPSIG(IS)
+             FL3(ID,IS) = ACLOC(IS,ID) * JAC
            END DO
          END DO
 
@@ -54,6 +48,8 @@
            CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
            CALL SIN_LIN_CAV(IP,WINDTH,FPM,SSINL)
            IMATRA = IMATRA + SSINL
+         ELSE
+           SSINL = ZERO
          ENDIF
 
       END SUBROUTINE
