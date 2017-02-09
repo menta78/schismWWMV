@@ -169,7 +169,7 @@
  EXPORT_WALV_DELTC       =  0.000000000000000E+000
  /
  &ENGS
- ISOURCE =           2,
+ ISOURCE =           3,
  MESNL   =           1,
  MESIN   =           1,
  IFRIC   =           1,
@@ -205,7 +205,7 @@
  LSIGBOUND       = F,
  LLIMT   = T,
  LIMFAK  =  0.100000000000000     ,
- MELIM   =           1,
+ MELIM   =  1,
  LDIFR   = F,
  IDIFFR  =           1,
  LADVTEST        = F,

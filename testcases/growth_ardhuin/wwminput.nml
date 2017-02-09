@@ -8,13 +8,15 @@
  LNAUTOUT        = F,
  LMONO_OUT       = F,
  LMONO_IN        = F,
- BEGTC   = 20030911.000000     ,
- DELTC   =   600.000000000000     ,
+ BEGTC   = 20030920.000000     ,
+ DELTC   = 100.000000000000     ,
  UNITC   = SEC                 ,
- ENDTC   = 20030921.000000     ,
+ ENDTC   = 20030930.000000     ,
  DMIN    =  0.100000000000000     ,
  MULTIPLE_OUT_INFO       = T,
- MODEL_OUT_TYPE  = WW3                 
+ MODEL_OUT_TYPE  = WW3                 ,
+ ABORT_BLOWUP    = F,
+ LEVEL_HS_BLOW   =          50
  /
  &COUPL
  LCPL    = F,
@@ -33,11 +35,9 @@
  MINDIR  =  0.000000000000000E+000,
  MAXDIR  =   360.000000000000     ,
  MDC     =          36,
- FRLOW   =  0.04,
- FRHIGH  =  1.00000000000000     ,
+ FRLOW   =  5.000000000000000E-002,
+ FRHIGH  =   1.00000000000000     ,
  MSC     =          36,
- USE_FRATIO      = F,
- FRATIO  =  0.000000000000000E+000,
  FILEGRID        = system.dat                                                                                                        
                            ,
  IGRIDTYPE       =           1,
@@ -117,7 +117,7 @@
  ENDTC   = 20031001.000000     ,
  LINTERWD        = T,
  WDIR    =  0.000000000000000E+000,
- WVEL    =  10.0000000000000     ,
+ WVEL    =   10.0000000000000     ,
  CWINDX  =  0.000000000000000E+000,
  CWINDY  =  0.000000000000000E+000,
  FILEWIND        = windfiles_narr.dat                                                                                                
@@ -169,6 +169,7 @@
  EXPORT_WALV_DELTC       =  0.000000000000000E+000
  /
  &ENGS
+ ISOURCE =           1,
  MESNL   =           1,
  MESIN   =           1,
  IFRIC   =           1,
@@ -178,8 +179,8 @@
  ICRIT   =           1,
  IBREAK  =           1,
  ALPBJ   =   1.00000000000000     ,
- BRHD    =  0.730000000000000     ,
- LMAXETOT        = F,
+ BRHD    =  0.700000000000000     ,
+ LMAXETOT        = T,
  MESDS   =           1,
  MESTR   =           1,
  TRICO   =   1.00000000000000     ,
@@ -187,10 +188,11 @@
  TRIURS  =  0.100000000000000     
  /
  &NUMS
- ICOMP   =           3,
- AMETHOD =           7,
+ ICOMP   =           0,
+ AMETHOD =           0,
  SMETHOD =           1,
  DMETHOD =           0,
+ IMPL_GEOADVECT  = T,
  LITERSPLIT      = F,
  LFILTERTH       = F,
  MAXCFLTH        =   1.00000000000000     ,
@@ -209,6 +211,7 @@
  LADVTEST        = F,
  LSOUBOUND       = F,
  LCFL    = F,
+ LCFL_CASD       = F,
  RTHETA  =  0.500000000000000     ,
  LEXPIMP = F,
  FREQEXP =  0.000000000000000E+000,
@@ -230,11 +233,9 @@
  NDYNITER_SNL3   =           1,
  NDYNITER_SBF    =           1,
  NB_BLOCK        =           3,
- MAXITER =          10,
- LNANINFCHK      = T,
- LSOURCESWAM     = F,
+ MAXITER =      100000,
+ LNANINFCHK      = F,
  PMIN    =  0.000000000000000E+000,
- LSOURCESWWIII   = F,
  BLOCK_GAUSS_SEIDEL      = T,
  LNONL   = F,
  L_SOLVER_NORM   = F,
@@ -261,7 +262,7 @@
  STP_SOLVERTHR   =  1.000000000000000E-010
  /
  &HISTORY
- BEGTC   = 20030910.000000     ,
+ BEGTC   = 18581117.000000     ,
  DELTC   =   600.000000000000     ,
  UNITC   = SEC                 ,
  ENDTC   = 20040930.000000     ,
@@ -270,6 +271,7 @@
  FILEOUT = field.dat                               ,
  LOUTITER        = F,
  IOBPD   = F,
+ CG      = F,
  LENERGY = F,
  LWXFN   = T,
  GRIDWRITE       = T,
@@ -277,6 +279,7 @@
  MULTIPLEOUT     =           0,
  USE_SINGLE_OUT  = T,
  PRINTMMA        = F,
+ TEXT_OUTPUT_PRINT       = F,
  HS      = T,
  TM01    = T,
  TM02    = F,
@@ -340,7 +343,8 @@
  CFL_CASD2       = F,
  CFL_CASD3       = F,
  CFL_CASD4       = F,
- NB_ITER_SOLV    = F
+ NB_ITER_SOLV    = F,
+ HMAX    = F
  /
  &STATION
  BEGTC   = 20030910.000000     ,
@@ -490,7 +494,8 @@
  CFL_CASD2       = F,
  CFL_CASD3       = F,
  CFL_CASD4       = F,
- NB_ITER_SOLV    = F
+ NB_ITER_SOLV    = F,
+ HMAX    = F
  /
  &HOTFILE
  BEGTC   = 20000101.000000     ,
