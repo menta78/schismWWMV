@@ -1751,6 +1751,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+!AR: needs to be rewritten ...
       SUBROUTINE CLSPEC( DEPLOC, CURTXYLOC, ACLOC, ACOUT_1D, ACOUT_2D )
          USE DATAPOOL
          IMPLICIT NONE

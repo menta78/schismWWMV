@@ -3,281 +3,6 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE PARAMENG(IP,ACLOC,SME01,SME10,KME01,KMWAM,KMWAM2,      &
-     &  WLM,URSELL,UBOT,ABRBOT,TMBOT,HS,ETOT,FP,TP,CP,KPP,LPP,DM,       &
-     &  DSPR,PEAKDSPR,PEAKDM)
-
-         USE DATAPOOL
-         IMPLICIT NONE
-
-         INTEGER, INTENT(IN)    :: IP
-         REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
-
-         REAL(rkind), INTENT(OUT)   :: SME01, SME10
-         REAL(rkind), INTENT(OUT)   :: KME01, KMWAM, KMWAM2, WLM
-         REAL(rkind), INTENT(OUT)   :: URSELL
-         REAL(rkind), INTENT(OUT)   :: UBOT, ABRBOT, TMBOT
-         REAL(rkind), INTENT(OUT)   :: HS, ETOT, KPP, FP, CP, DM, DSPR, TP, LPP
-         REAL(rkind), INTENT(OUT)   :: PEAKDSPR, PEAKDM
-
-         INTEGER             :: ID, IS
-
-         REAL(rkind)                :: SINHKD2(MSC), ACTOTDS(MSC), ETOTD0S(MSC)
-         REAL(rkind)                :: ETOTD1S(MSC)
-         REAL(rkind)                :: ETOTQKD(MSC), ETOTKSS(MSC), ETOTSKD(MSC)
-         REAL(rkind)                :: ETOTKDS(MSC), ETOTQKD2(MSC)
-!         REAL(rkind)                :: ETOT_DSIG(MSC)
-
-         REAL(rkind)                :: ACTOTDSbis(MSC), ETOTD0Sbis(MSC)
-         REAL(rkind)                :: ETOTSKDbis(MSC), ETOTKDSbis(MSC)
-
-         REAL(rkind)                :: ACTOT
-         REAL(rkind)                :: DKTOT, EKTOT
-         REAL(rkind)                :: ETOTC4, ETOTS4, PEAKFF
-         REAL(rkind)                :: ETOT1, ESUMAC, HQUOTP, HQUOT
-         REAL(rkind)                :: EAD, DS, EHFR, EFTAIL, DKTOT2
-         REAL(rkind)                :: UB2, AB2, CGP, ETOTF3, ETOTF4
-         REAL(rkind)                :: ETOTS, ETOTC, UB2bis, AB2bis, WVN
-         REAL(rkind)                :: FF, DEG, EDI, CKTAIL, CETAIL
-         REAL(rkind)                :: VEC2DEG, PPTAIL, SKK, SIG2
-
-         KMWAM   = 10.0_rkind
-         KMWAM2  = 10.0_rkind
-         KME01   = 10.0_rkind
-         SME01   = 10.0_rkind
-         SME10   = 10.0_rkind
-         HS      = ZERO
-         ABRBOT  = 0.001_rkind
-         UBOT    = ZERO
-         TMBOT   = ZERO
-
-         ETOT = ZERO
-         EFTAIL = ONE / (PTAIL(1)-ONE)
-         ESUMAC = ZERO
-         DO IS = 1, MSC
-           DO ID = 1, MDC
-             ESUMAC = ESUMAC + ACLOC(IS,ID)
-           END DO
-         END DO
-
-         IF (MSC .GE. 2) THEN
-            DO ID = 1, MDC
-              DO IS = 2, MSC
-                 DS = SPSIG(IS) - SPSIG(IS-1)
-                 EAD = ONEHALF*(SPSIG(IS)*ACLOC(IS,ID)+SPSIG(IS-1)*ACLOC(IS-1,ID))*DS*DDIR
-                 ETOT = ETOT + EAD
-              END DO
-              IF (MSC > 3) THEN
-                 EHFR = ACLOC(MSC,ID) * SPSIG(MSC)
-                 ETOT = ETOT + DDIR * EHFR * SPSIG(MSC) * EFTAIL
-              ENDIF
-           END DO
-         ELSE
-           DS = SGHIGH - SGLOW
-           DO ID = 1, MDC
-              EAD = ACLOC(1,ID) * DS * DDIR
-              ETOT = ETOT + EAD
-           END DO
-         END IF
-!
-! 2do ... check the influence of ETOT on the results ... 
-! this is the swan type integration which i do not like since
-! it is only of 1st order ...
-! I better like to use the trapezoid rule or rather simpson
-! type integration, this is the next step for MSC .GT. 3
-!
-!         ETOT_DSIG(:)  = SUM(ACLOC(:,:),DIM=2) * SIGPOW(:,2) * FDIR 
-!         ETOT1         = SUM(ETOT_DSIG)
-!         ETOT1 = ETOT1 + ETOT_DSIG(MSC) * PTAIL(6) / FRINTF
-
-!         ETOT = ETOT1
-         HS = MAX(VERYSMALL, 4.0_rkind * SQRT(ETOT))
-
-         IF (ETOT .GT. THR) THEN
-
-            SINHKD2(:) = SINH(MIN(KDMAX,WK(:,IP)*DEP(IP)))**2
-            ACTOTDS(:) = SUM(ACLOC(:,:),DIM=2) * SIGPOW(:,1) * FDIR
-            ETOTD0S(:) = ACTOTDS(:) * SIGPOW(:,1)
-            ETOTD1S(:) = ACTOTDS(:) * SIGPOW(:,2)
-            ETOTQKD(:) = ETOTD0S(:) / SQRT(WK(:,IP))
-            ETOTQKD2(:)= ETOTD0S(:) * SQRT(WK(:,IP))
-            ETOTKSS(:) = ETOTD0S(:) * WK(:,IP)
-            ETOTSKD(:) = ETOTD0S(:) / SINHKD2(:)
-            ETOTKDS(:) = ETOTSKD(:) * SIGPOW(:,2)
-
-            ACTOT = SUM(ACTOTDS)
-            ETOT1 = SUM(ETOTD1S)
-            DKTOT = SUM(ETOTQKD)
-            DKTOT2= SUM(ETOTQKD2)
-            EKTOT = SUM(ETOTKSS)
-            UB2   = SUM(ETOTSKD)
-            AB2   = SUM(ETOTKDS)
-
-            ACTOTDSbis(:) = SUM(ACLOC(:,:)/ESUMAC,DIM=2) * SIGPOW(:,1)
-            ETOTD0Sbis(:) = ACTOTDSbis(:) * SIGPOW(:,1)
-            ETOTSKDbis(:) = ETOTD0Sbis(:) / SINHKD2(:)
-            ETOTKDSbis(:) = ETOTSKDbis(:) * SIGPOW(:,2)
-            UB2bis   = SUM(ETOTSKDbis)
-            AB2bis   = SUM(ETOTKDSbis)
-
-            ACTOT   = ACTOT  + PTAIL(5)  * ACTOTDS(MSC) / FRINTF
-            ETOT1   = ETOT1  + PTAIL(7)  * ETOTD0S(MSC) * SIGPOW(MSC,1) / FRINTF
-            DKTOT   = DKTOT  + PTAIL(5)  * ETOTD0S(MSC) / (SQRT(WK(MSC,IP)) * FRINTF)
-            DKTOT2  = DKTOT2 + PTAIL(5)  * ETOTD0S(MSC) * (SQRT(WK(MSC,IP)) * FRINTF)
-            EKTOT   = EKTOT  + PTAIL(8)  * ETOTD0S(MSC) * WK(MSC,IP) / FRINTF
-
-            IF (ETOT > VERYSMALL) SME01  = ETOT1 / ETOT
-            IF (ETOT > VERySMALL) KME01  = EKTOT / ETOT
-            IF (ACTOT > VERySMALL) SME10  = ETOT / ACTOT
-            IF (DKTOT > VERySMALL) KMWAM    = (ETOT/DKTOT)**2
-            IF (DKTOT2 > VERySMALL) KMWAM2  = (DKTOT2/ETOT)**2
-            IF (UB2   > VERYSMALL) UBOT   = SQRT(UB2)
-            !IF (UB2   > SMALL) ORBITAL(IP)   = SQRT(UB2)
-            IF (AB2   > VERYSMALL) ABRBOT = SQRT(2*AB2)
-            IF (UB2bis .GT. THR) THEN
-              IF (AB2bis/UB2bis > THR) THEN
-                 TMBOT = PI2*SQRT(AB2bis/UB2bis)
-              END IF
-            END IF
-            URSELL = (G9*HS) / (TWO*SQRT(TWO)*SME01**2*DEP(IP)**2)
-         ELSE
-
-            HS           = THR
-            ABRBOT       = THR
-            UBOT         = THR
-            TMBOT        = THR
-            SME01        = 10.0_rkind
-            SME10        = 10.0_rkind
-            KME01        = 10.0_rkind
-            KMWAM        = 10.0_rkind
-            KMWAM2       = 10.0_rkind
-            URSELL       = THR 
-
-         END IF
-!
-! Peak period continues version... Taken from Thesis Alves ... correct citation is given there ... :)
-!
-         IF (ESUMAC.gt.VERYSMALL) THEN
-            ETOTF3 = ZERO
-            ETOTF4 = ZERO
-            ETOTC4 = ZERO
-            ETOTS4 = ZERO
-            DO IS = 1, MSC
-               DO ID = 1, MDC
-                  HQUOT=ACLOC(IS,ID)/ESUMAC
-                  HQUOTP=HQUOT**4
-                  ETOTF3 = ETOTF3 + SPSIG(IS) * HQUOTP * DS_BAND(IS)
-                  ETOTF4 = ETOTF4 +             HQUOTP * DS_BAND(IS)
-                  ETOTC4 = ETOTC4 + COSTH(ID) * HQUOTP * DS_BAND(IS)
-                  ETOTS4 = ETOTS4 + SINTH(ID) * HQUOTP * DS_BAND(IS)
-               END DO
-            END DO
-            IF(ETOTF4 .GT. VERYSMALL) THEN
-               FP = ETOTF3/ETOTF4*PI2 ! must be in sigma ...
-               CALL WAVEKCG(DEP(IP), FP, WVN, CP, KPP, CGP)
-               TP = ONE/(FP/PI2)
-               LPP = ONE/KPP*PI2
-            ELSE
-               TP  = ZERO 
-               FP  = ZERO
-               CP  = ZERO
-               KPP = 10.0_rkind
-               CGP = ZERO
-               LPP = ZERO
-            END IF
-            IF (ETOTF4 .gt. THR) THEN
-               PEAKDM    = VEC2DEG (ETOTC4, ETOTS4)
-               CALL DEG2NAUT(PEAKDM,DEG,LNAUTOUT)
-               PEAKDM = DEG
-               PEAKFF = MIN (ONE, SQRT(ETOTC4*ETOTC4+ETOTS4*ETOTS4)/ETOTF4)
-               PEAKDSPR = SQRT(2.0_rkind - 2.0_rkind*PEAKFF) * 180.0_rkind/PI
-            ELSE
-               FF = ZERO
-               PEAKDSPR = ZERO
-               PEAKDM = ZERO
-            END IF
-         ELSE
-            TP  = ZERO 
-            FP  = ZERO
-            CP  = ZERO
-            KPP = 10.0_rkind
-            CGP = ZERO
-            LPP = ZERO
-         END IF
-
-!         WRITE(*,*) FP, ETOTF3, ETOTF4
-         ETOTC = ZERO
-         ETOTS = ZERO
-         ETOT1  = ZERO
-         DO ID = 1, MDC
-           EAD = ZERO
-           IF (MSC .GE. 2) THEN
-             DO  IS = 2, MSC 
-               DS  = SPSIG(IS)-SPSIG(IS-1)
-               EDI = ONEHALF*(SPSIG(IS)*ACLOC(IS,ID)+SPSIG(IS-1)*ACLOC(IS-1,ID))*DS
-               EAD = EAD + EDI
-            END DO
-             IF (MSC .GT. 3) THEN
-               EHFR = ACLOC(MSC,ID) * SPSIG(MSC)
-               EAD = EAD + EHFR * SPSIG(MSC) * EFTAIL
-             ENDIF
-             EAD = EAD * DDIR
-             ETOT1 = ETOT1 + EAD
-             ETOTC  = ETOTC + EAD * COSTH(ID)
-             ETOTS  = ETOTS + EAD * SINTH(ID)
-           ELSE
-             DS = SGHIGH - SGLOW
-             EAD = ACLOC(1,ID) * DS * DDIR
-             EAD = EAD * DDIR
-             ETOT1 = ETOT1 + EAD
-             ETOTC  = ETOTC + EAD * COSTH(ID)
-             ETOTS  = ETOTS + EAD * SINTH(ID)
-           END IF
-         END DO
-
-         IF (ETOT > THR ) THEN
-           DM    = VEC2DEG (ETOTC, ETOTS)
-           CALL DEG2NAUT(DM,DEG,LNAUTOUT)
-           DM = DEG
-           FF = MIN (ONE, SQRT(ETOTC*ETOTC+ETOTS*ETOTS)/ETOT)
-           DSPR = SQRT(TWO-TWO*FF) * 180.0_rkind/PI
-         ELSE
-           FF = ZERO
-           DM = ZERO
-           DSPR = ZERO
-         END IF
-
-         ETOT1  = ZERO
-         EKTOT = ZERO
-         DO IS=1, MSC
-            SIG2 = SIGPOW(IS,2)
-            SKK  = SIG2 * (WK(IS,IP))**ONE!OUTPAR(3)
-            DO ID=1,MDC
-              ETOT1  = ETOT1 + SIG2 * ACLOC(IS,ID)
-              EKTOT = EKTOT + SKK * ACLOC(IS,ID)
-            ENDDO
-         ENDDO
-         ETOT1  = FRINTF * ETOT1
-         EKTOT = FRINTF * EKTOT
-         IF (MSC .GT. 3) THEN
-            PPTAIL = PTAIL(1) - ONE
-            CETAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
-            PPTAIL = PTAIL(1) - ONE - 2.0_rkind*ONE!OUTPAR(3)
-            CKTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
-            DO ID=1,MDC
-              ETOT1   = ETOT1 + CETAIL * SIG2 * ACLOC(MSC,ID)
-              EKTOT  = EKTOT + CKTAIL * SKK * ACLOC(MSC,ID)
-            ENDDO
-         ENDIF
-         IF (ETOT.GT.ZERO) THEN
-            WLM = PI2 * (ETOT1 / EKTOT) ** ONE!(1./OUTPAR(3))     
-         ELSE
-            WLM = ZERO
-         ENDIF
-      END SUBROUTINE
-!**********************************************************************:
-!*                                                                    *
-!**********************************************************************
       SUBROUTINE STOKES_DRIFT_SURFACE_BAROTROPIC(IP,STOKESBOTTX,STOKESBOTTY,STOKESSURFX,STOKESSURFY,STOKESBAROX,STOKESBAROY)
          USE DATAPOOL
          IMPLICIT NONE
@@ -396,6 +121,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
+!AR: This must be replaced by ST4_PRE or the certain WAM routine we are not consistent here this routine needs urgen deletion 
 
          USE DATAPOOL
          IMPLICIT NONE
@@ -545,6 +271,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+!AR: This must be replaced by ST4_PRE or the certain WAM routine we are not consistent here this routine needs urgen deletion
       SUBROUTINE MEAN_PARAMETER_BDCONS(ACLOC,HS,TM01,TM02)
 
       USE DATAPOOL
@@ -653,6 +380,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+!AR: This must be replaced by ST4_PRE or the certain WAM routine we are not consistent here this routine needs urgen deletion
       SUBROUTINE MEAN_PARAMETER(IP,ACLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
 
       USE DATAPOOL
@@ -837,6 +565,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+!AR: This must be replaced by ST4_PRE or the certain WAM routine we are not consistent here this routine needs urgen deletion
       SUBROUTINE MEAN_WAVE_PARAMETER_LOC(ACLOC,CURTXYLOC,DEPLOC,WKLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
 
          USE DATAPOOL
@@ -972,6 +701,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+!AR: This must be replaced by ST4_PRE or the certain WAM routine we are not consistent here this routine needs urgen deletion
       SUBROUTINE WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT,CALLFROM)
 
          USE DATAPOOL
@@ -1041,6 +771,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+!AR: This must be replaced by ST4_PRE or the certain WAM routine we are not consistent here this routine needs urgen deletion
       SUBROUTINE WAVE_CURRENT_PARAMETER_LOC(ACLOC,CURTXYLOC,DEPLOC,WKLOC,UBOT,ORBITAL,BOTEXPER,TMBOT)
          USE DATAPOOL
          IMPLICIT NONE
@@ -1108,6 +839,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+!AR: This must be replaced by ST4_PRE or the certain WAM routine we are not consistent here this routine needs urgen deletion
       SUBROUTINE URSELL_NUMBER(HS,SME,DEPTH,URSELL)
          USE DATAPOOL, ONLY : G9, DMIN, verysmall, rkind, ONE, TWO, ZERO
 
@@ -1125,6 +857,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+!AR: This must be replaced by ST4_PRE or the certain WAM routine we are not consistent here this routine needs urgen deletion
       SUBROUTINE WINDSEASWELLSEP( IP, ACLOC, TM_W, CGP_W, CP_W, TP_W, LP_W, HS_W, KP_W )
          USE DATAPOOL
          IMPLICIT NONE
@@ -1224,6 +957,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+!AR: This can remain ...
       SUBROUTINE PEAK_PARAMETER(IP,ACLOC,ISMAX,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
 
          USE DATAPOOL
@@ -1261,10 +995,8 @@
          END DO
 
          IF(ETOTF4 .GT. VERYSMALL .AND. ETOTF4 .GT. VERYSMALL) THEN
-!ALL THIS ARGUMENTS MUST BE CHECK WITH RESPECT TO THE DISPERSION RELATION
            FPP    = ETOTF3/ETOTF4*PI2
            CALL WAVEKCG(DEP(IP), FPP, WNPP, CPP, KPP, CGPP)
-           !CALL ALL_FROM_TABLE(FPP,DEP(IP),KPP,CGPP,WKDEPP,WNPP,CPP)
            TPP    = PI2/FPP
            LPP    = PI2/KPP
            PEAKDM = VEC2DEG (ETOTC4, ETOTS4)
@@ -1343,8 +1075,7 @@
        END DO
        IF (ISIGMP > 0) THEN
           TPPD = ONE/(SPSIG(ISIGMP)/PI2)
-          !CALL WAVEKCG(DEP(IP), SPSIG(ISIGMP), CPPD, KPPD, CGPD)
-          CALL ALL_FROM_TABLE(SPSIG(ISIGMP),DEP(IP),KPPD,CGPD,WKDEPD,WNPD,CPPD)
+          CALL WAVEKCG(DEP(IP), SPSIG(ISIGMP), CPPD, KPPD, CGPD)
        ELSE
           TPPD = ZERO
           CPPD  = ZERO
@@ -1352,7 +1083,6 @@
           CGPD  = ZERO
        END IF
 
-       !WRITE(*,'(11F15.4)') FPP, KPP, CGPP, WKDEPP, WNPP, CPP, TPP, LPP, PEAKDM, PEAKFF, PEAKDSPR 
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1479,6 +1209,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+!AR: This must be replaced by ST4_PRE or the certain WAM routine we are not consistent here this routine needs urgen deletion
       SUBROUTINE MEAN_DIRECTION_AND_SPREAD(IP,ACLOC,ISMAX,ETOTS,ETOTC,DM,DSPR)
          USE DATAPOOL
          IMPLICIT NONE
@@ -1530,6 +1261,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+!AR: This must be replaced by ST4_PRE or the certain WAM routine we are not consistent here this routine needs urgen deletion
       SUBROUTINE MEAN_DIRECTION_AND_SPREAD_LOC(ACLOC,ISMAX,ETOTS,ETOTC,DM,DSPR)
          USE DATAPOOL
          IMPLICIT NONE
@@ -1581,6 +1313,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+!AR: This must be replaced by ST4_PRE or the certain WAM routine we are not consistent here this routine needs urgen deletion
       SUBROUTINE MEAN_PARAMETER_LOC(ACLOC,CURTXYLOC,DEPLOC,WKLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
       USE DATAPOOL
       IMPLICIT NONE
@@ -1770,6 +1503,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+!AR: This is all computed in the soruce terms allready we need to get rid of all this shit!
       SUBROUTINE MEAN_FREQS(IP,ACLOC,SME01,SME10,ETOTWS,LWINDSEA)
 
          USE DATAPOOL
