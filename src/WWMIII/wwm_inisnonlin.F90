@@ -263,7 +263,4 @@
         WRITE(IU06,*) '*************************************'
         STOP!CALL ABORT1
       ENDIF
-
-!      IF (LHOOK) CALL DR_HOOK('INISNONLIN',1,ZHOOK_HANDLE)
-      RETURN
       END SUBROUTINE INISNONLIN

@@ -114,7 +114,8 @@
 
 !     ALLOCATED ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS
 
-      REAL(rkind),DIMENSION(NANG,NFRE) :: F, FL, SL
+      REAL(rkind),DIMENSION(NANG,NFRE),intent(in) :: F
+      REAL(rkind),DIMENSION(NANG,NFRE),intent(out) :: FL, SL
       REAL(rkind) :: THWNEW, USNEW, Z0NEW, ROAIRN, ZIDLNEW, WSTAR
  
       REAL(rkind),DIMENSION(NANG,NFRE) :: SSIN, DSSIN
@@ -138,11 +139,6 @@
       REAL(rkind), DIMENSION(NANG,NFRE) :: XLLWS
 
       LOGICAL, DIMENSION(NANG) :: LZ
-
-!      IF (LHOOK) CALL DR_HOOK('SINPUT',0,ZHOOK_HANDLE)
-
-! ----------------------------------------------------------------------
-
       CONST1   = BETAMAX/XKAPPA**2 
       CONST3   = 2.*XKAPPA/CONST1  ! SEE IDAMPING
       XKAPPAD  = 1.D0/XKAPPA
@@ -166,7 +162,6 @@
           LZ(K) = .FALSE.
           TEMPD(K) = 1.D0
         ENDIF
-        !IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111114,'(2I10,5F20.10)') M,K,TH(K),THWNEW(IJ)
       ENDDO
 
 
@@ -219,9 +214,6 @@
           XV1D = 1.D0/XV1
           XV2D = 1.D0/XV2
 
-           !IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111114,'(5F30.20)') UCN1(IJ),UCN2(IJ),ZCN(IJ)
-           !IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111114,'(5F30.20)') CNSN(IJ),XV1D(IJ),XV2D(IJ)
-
 !*    2.1 LOOP OVER DIRECTIONS.
 !         ---------------------
 
@@ -253,7 +245,6 @@
               UFAC2(K) = ZBETA1+ZBETA2
               XLLWS(K,M)= 0.
             ENDIF
-            !IF (LOUTWAM .AND. IJS == TESTNODE) WRITE(111114,'(2I10,10F15.7)') M, K, TEMPD(IJ,K) 
         ENDDO
 
 !*    2.2 ADDING INPUT SOURCE TERM TO NET SOURCE FUNCTION.

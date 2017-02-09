@@ -1,4 +1,4 @@
-      SUBROUTINE SDISSIP_LOCAL (IPP, F, FL, IG, SL, F1MEAN, XKMEAN, &
+      SUBROUTINE SDISSIP_LOCAL (IPP, F, FL, SL, F1MEAN, XKMEAN, &
      &                    PHIEPS, TAUWD, MIJ, SSDS, DSSDS)
 
 ! ----------------------------------------------------------------------
@@ -86,9 +86,10 @@
 
       INTEGER, INTENT(IN) :: IPP
 
-      INTEGER :: M, K, MIJ, IC, IG
+      INTEGER :: M, K, MIJ, IC
       REAL(rkind) :: SCDFM, ROG, ALPH, ARG, CONSD, CONSS, X, SDISS, EMAX, Q_OLD, Q, REL_ERR
-      REAL(rkind),DIMENSION(NANG,NFRE) :: F,FL,SL
+      REAL(rkind),DIMENSION(NANG,NFRE), intent(in) :: F
+      REAL(rkind),DIMENSION(NANG,NFRE), intent(out) :: FL,SL
       REAL(rkind),DIMENSION(NANG,NFRE) :: SSDS,DSSDS 
       REAL(rkind) :: F1MEAN, XKMEAN, PHIEPS, TAUWD, CM
       REAL(rkind) :: TEMP1, SDS
@@ -196,7 +197,6 @@
                Q_OLD = Q
              ENDDO
              SDS = COEF_B_J*ALPH*Q*F1MEAN
-             !IF (IJ == 339) write(*,'(I10,8F20.10)') IJ, DEP(IJ), SDS(IJ), Q, COEF_B_J, ALPH, F1MEAN(IJ), 4*SQRT(EMAX), 4*SQRT(EMEAN(IJ))
            ENDIF
    
           DO M=1,NFRE
@@ -217,7 +217,4 @@
       IF (LOUTWAM) WRITE(111119,'(2F30.20)') SUM(FL), SUM(SL)
       IF (LOUTWAM) WRITE(111119,*) '------- FINISHED DISSIPATION -------' 
 
-      !IF (LHOOK) CALL DR_HOOK('SDISSIP',1,ZHOOK_HANDLE)
-
-      RETURN
       END SUBROUTINE SDISSIP_LOCAL

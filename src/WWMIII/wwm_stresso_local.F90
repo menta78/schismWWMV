@@ -99,16 +99,12 @@
      &                      INDEP => DEP, &
      &                      ZERO, ONE, & 
      &                      ROWATER => RHOW
-
-! ----------------------------------------------------------------------
       IMPLICIT NONE
-
 !     ALLOCATABLE ARRAYS THAT ARE PASSED AS SUBROUTINE ARGUMENTS 
-
       INTEGER :: MIJ
       INTEGER, INTENT(IN) :: IPP
-
-      REAL(rkind),DIMENSION(NANG,NFRE) :: F,SL
+      REAL(rkind),DIMENSION(NANG,NFRE), intent(in) :: F
+      REAL(rkind),DIMENSION(NANG,NFRE), intent(inout) :: SL
       REAL(rkind) :: THWNEW, USNEW, Z0NEW, ROAIRN, TAUW, &
      &                           TAUX, TAUY, TAUPX, TAUPY, USDIRP, &
      &                           TAUWLF, PHIAW, PHIAWDIAG, &
@@ -307,7 +303,7 @@
 
       TAUW = MIN(TAUW,UST2-EPS1)
       TAUW = MAX(TAUW,0.)
-       IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111116,'(4F15.8)') XSTRESS, YSTRESS , TAUW, TAUHF(IPP)
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111116,'(4F15.8)') XSTRESS, YSTRESS , TAUW, TAUHF(IPP)
 !
 !*    4. UNRESOLVED PART ENERGY FLUX.
 !        ----------------------------

@@ -48,16 +48,9 @@
       IMPLICIT NONE
 
       INTEGER, INTENT(IN) :: IPP
- 
-      INTEGER     :: MIJ
-
+      REAL(rkind), intent(in) :: FM, FMWS
+      INTEGER, intent(out)     :: MIJ
       REAL(rkind) :: TAILFACTOR, FPMH, FPM4
-      REAL(rkind) :: FM, FMWS
-
-      !REAL ZHOOK_HANDLE
-
-      !IF (LHOOK) CALL DR_HOOK('FRCUTINDEX',0,ZHOOK_HANDLE)
-! ----------------------------------------------------------------------
 
 !*    COMPUTE LAST FREQUENCY INDEX OF PROGNOSTIC PART OF SPECTRUM.
 !*    FREQUENCIES LE 2.5*MAX(FMWS,FM) (ECMWF PHYSICS).

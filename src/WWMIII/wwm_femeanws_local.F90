@@ -58,10 +58,6 @@
      &                      NANG => MDC, &
      &                      NFRE => MSC, &
      &                      INDEP => DEP
-
-
-! ----------------------------------------------------------------------
-
       IMPLICIT NONE
 
       INTEGER, INTENT(IN) :: IPP

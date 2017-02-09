@@ -65,19 +65,13 @@
      &                      NANG => MDC, &
      &                      NFRE => MSC, &
      &                      INDEP => DEP
-
-
-! ----------------------------------------------------------------------
-
       IMPLICIT NONE
-
       INTEGER, INTENT(IN) :: IPP
-
+      REAL(rkind), intent(out) :: EM, FM1, F1, AK, XK
       INTEGER :: M,K
       REAL(rkind) :: DELT25, COEFM1, COEF1, COEFA, COEFX, SQRTK
       REAL(rkind) :: F(NANG,NFRE)
       REAL(rkind) :: TEMPA, TEMPX,  TEMP2
-      REAL(rkind) :: EM, FM1, F1, AK, XK
 
 !      REAL ZHOOK_HANDLE
 

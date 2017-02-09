@@ -1,4 +1,4 @@
-      SUBROUTINE SNONLIN_LOCAL (IPP, F, FL, IG, SL, AKMEAN, SSNL4, DSSNL4)
+      SUBROUTINE SNONLIN_LOCAL (IPP, F, FL, SL, AKMEAN, SSNL4, DSSNL4)
 
 
 ! ----------------------------------------------------------------------
@@ -85,7 +85,7 @@
 
       INTEGER                                  :: MFR1STFR, MFRLSTFR
       INTEGER                                  :: MP, MC1, MP1, MM, MM1, MC
-      INTEGER                                  :: IJ, IG, IP1, IC, IM, IM1, M , IP
+      INTEGER                                  :: IJ, IP1, IC, IM, IM1, M , IP
       INTEGER                                  :: K, K1, K2, KH, K11, K21
 
       REAL(rkind) :: FTEMP,AD,DELAD,DELAP,DELAM
@@ -105,12 +105,6 @@
       DSSNL4 = ZERO
        SSNL4 = ZERO
 
-
-!      REAL ZHOOK_HANDLE
-
-
-!      IF (LHOOK) CALL DR_HOOK('SNONLIN',0,ZHOOK_HANDLE)
-! ----------------------------------------------------------------------
 
 !*    1. SHALLOW WATER INITIALISATION (ONLY FOR THE OLD FORMULATION).
 !        ----------------------------- SEE INITMDL FOR THE NEW ONE
@@ -313,33 +307,21 @@
                   IF (MP .LE.NFRE) THEN
                       SL(K1 ,MP ) = SL(K1 ,MP ) + AD*FKLAMP1
                       SSNL4(K1,MP) = SSNL4(K1,MP) + AD*FKLAMP1
-                      FL(K1 ,MP ) = FL(K1 ,MP ) &
-     &                               + DELAP*FKLAP12
-                      DSSNL4(K1,MP) = DSSNL4(K1,MP) &
-     &                               + DELAP*FKLAP12
+                      FL(K1 ,MP ) = FL(K1 ,MP ) + DELAP*FKLAP12
+                      DSSNL4(K1,MP) = DSSNL4(K1,MP) + DELAP*FKLAP12
                       SL(K11,MP ) = SL(K11,MP ) + AD*FKLAMP2
                       SSNL4(K11,MP) = SSNL4(K11,MP) + AD*FKLAMP2
-                      FL(K11,MP ) = FL(K11,MP ) &
-     &                               + DELAP*FKLAP22
-                      DSSNL4(K11,MP) = DSSNL4(K11,MP) &
-     &                               + DELAP*FKLAP22
+                      FL(K11,MP ) = FL(K11,MP ) + DELAP*FKLAP22
+                      DSSNL4(K11,MP) = DSSNL4(K11,MP) + DELAP*FKLAP22
                     IF (MP1.LE.NFRE) THEN
-                      SL(K1 ,MP1) = SL(K1 ,MP1) &
-     &                               + AD*FKLAMPA
-                      SSNL4(K1 ,MP1) = SSNL4(K1 ,MP1) &
-                                     + AD*FKLAMPA
-                      FL(K1 ,MP1) = FL(K1 ,MP1) &
-     &                               + DELAP*FKLAPA2
-                      DSSNL4(K1 ,MP1) = DSSNL4(K1 ,MP1) &
-                                    + AD*FKLAMPA
-                      SL(K11,MP1) = SL(K11,MP1) &
-     &                               + AD*FKLAMPB
-                      SSNL4(K1 ,MP1) = SSNL4(K1 ,MP1) &
-     &                               + AD*FKLAMPB
-                      FL(K11,MP1) = FL(K11,MP1) &
-     &                              + DELAP*FKLAPB2
-                      DSSNL4(K11 ,MP1) = DSSNL4(K11 ,MP1) &
-     &                               + DELAP*FKLAPB2
+                      SL(K1 ,MP1)      = SL(K1 ,MP1)    + AD*FKLAMPA
+                      SSNL4(K1 ,MP1)   = SSNL4(K1 ,MP1) + AD*FKLAMPA
+                      FL(K1 ,MP1)      = FL(K1 ,MP1) + DELAP*FKLAPA2
+                      DSSNL4(K1 ,MP1)  = DSSNL4(K1 ,MP1) + AD*FKLAMPA
+                      SL(K11,MP1)      = SL(K11,MP1) + AD*FKLAMPB
+                      SSNL4(K1 ,MP1)   = SSNL4(K1 ,MP1) + AD*FKLAMPB
+                      FL(K11,MP1)      = FL(K11,MP1) + DELAP*FKLAPB2
+                      DSSNL4(K11 ,MP1) = DSSNL4(K11 ,MP1) + DELAP*FKLAPB2
                     ENDIF
                   ENDIF
                 ENDIF
@@ -356,10 +338,8 @@
               K11 = K11W(K,KH)
               K21 = K21W(K,KH)
 
-              SAP = GW1*F(K1 ,IP ) + GW2*F(K11,IP ) &
-     &            + GW3*F(K1 ,IP1) + GW4*F(K11,IP1)
-              SAM = GW5*F(K2 ,IM ) + GW6*F(K21,IM ) &
-     &            + GW7*F(K2 ,IM1) + GW8*F(K21,IM1)
+              SAP = GW1*F(K1 ,IP ) + GW2*F(K11,IP ) + GW3*F(K1 ,IP1) + GW4*F(K11,IP1)
+              SAM = GW5*F(K2 ,IM ) + GW6*F(K21,IM ) + GW7*F(K2 ,IM1) + GW8*F(K21,IM1)
               FIJ = F(K  ,IC )*FTAIL
               FAD1 = FIJ*(SAP+SAM)
               FAD2 = FAD1-2.*SAP*SAM
@@ -417,29 +397,4 @@
   
       ENDDO
 
-!      IF (ICOMP .GE. 2) THEN
-!        DO M = 1, NFRE
-!          DO K = 1, NANG 
-!            IF (SSNL4(K,M) .LT. ZERO) THEN
-!              SSNL4(K,M) = ZERO
-!              DSSNL4(K,M) = - DSSNL4(K,M)
-!            ELSE
-!              DSSNL4(K,M) = ZERO
-!            ENDIF
-!          END DO
-!        ENDDO
-!      ENDIF
-
-!        WRITE(111117,'(2F30.25)') & 
-!     &                  SUM(FL(:,:)),SUM(SL(:,:))
-!        WRITE(111117,*) 'NOW THE FULL THING'
-!        DO K = 1, NANG
-!          DO M = 1, NFRE
-!            WRITE(111117,'(2I10,2F30.25)') &
-!     &         K, M, FL(K,M), SL(K,M)
-!          ENDDO
-!        ENDDO
-
-!      IF (LHOOK) CALL DR_HOOK('SNONLIN',1,ZHOOK_HANDLE)
-      RETURN
       END SUBROUTINE SNONLIN_LOCAL

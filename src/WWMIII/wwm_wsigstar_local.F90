@@ -53,20 +53,13 @@
       IMPLICIT NONE
 
       INTEGER, INTENT(IN) :: IPP
-
+      REAL(rkind), intent(in) :: WSTAR, Z0NEW, USNEW
+      REAL(rkind), intent(out) :: SIG_N
       REAL, PARAMETER :: A = 0.8/1000.
       REAL, PARAMETER :: B = 0.08/1000.
 
       REAL(rkind) :: BG_GUST
       REAL(rkind) :: U10, C_D, DC_DDU, SIG_CONV
-      REAL(rkind) :: ZHOOK_HANDLE
-      REAL(rkind) :: USNEW, Z0NEW, WSTAR
-      REAL(rkind) :: SIG_N
-
-      !IF (LHOOK) CALL DR_HOOK('WSIGSTAR',0,ZHOOK_HANDLE)
-
-! ----------------------------------------------------------------------
-
       BG_GUST  = 0.        ! NO BACKGROUND GUSTINESS (S0 12. IS NOT USED)
 !
 !       IN THE FOLLOWING U10 IS ESTIMATED ASSUMING EVERYTHING IS
@@ -77,11 +70,5 @@
       DC_DDU = B
       SIG_CONV = 1. + 0.5*U10/C_D*DC_DDU
       SIG_N = MIN(0.5, SIG_CONV * &
-     &                      (BG_GUST*USNEW**3+ &
-     &                       0.5*XKAPPA*WSTAR**3)**ONETHIRD &
-     &                         /U10 &
-     &               )
-
-      !IF (LHOOK) CALL DR_HOOK('WSIGSTAR',1,ZHOOK_HANDLE)
-
+     &   (BG_GUST*USNEW**3+ 0.5*XKAPPA*WSTAR**3)**ONETHIRD /U10 )
       END SUBROUTINE WSIGSTAR_LOCAL

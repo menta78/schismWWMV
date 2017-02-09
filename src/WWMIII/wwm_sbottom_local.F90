@@ -55,7 +55,7 @@
      &                      INDEP => DEP
 
 ! ----------------------------------------------------------------------
-
+      IMPLICIT NONE
       PARAMETER (CONST = -2.0*0.076/G)
       REAL(rkind),DIMENSION(NANG,NFRE) :: F,FL,SL
       REAL(rkind),DIMENSION(NANG,NFRE) :: SSBF, DSSBF
