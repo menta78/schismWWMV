@@ -238,7 +238,8 @@
        DTMAX_GLOBAL_EXP = VERYLARGE
        DTMAX_GLOBAL_EXP_LOC = VERYLARGE
        
-       DO IP = 1, NP_RES ! Why over global? 
+       DO IP = 1, NP_RES 
+         IF (ABS(IOBP(IP)) .EQ. 1) CYCLE 
          DTMAX_EXP = SI(IP)/MAX(THR,KKSUM(IP))
          !DTMAX_EXP = SI(IP)/MAX(THR,KKMAX(IP))
          CXnorm=SQRT((C(1,IP)/INVSPHTRANS(IP,1))**2 + (C(2,IP)/INVSPHTRANS(IP,2))**2)
