@@ -82,7 +82,8 @@
       REAL(rkind)                    :: DELAB
       REAL(rkind),    PARAMETER      :: UMAX    = 50.
       REAL(rkind),    PARAMETER      :: TAUWMAX = 2.2361 !SQRT(5.)
-      REAL(rkind),    PARAMETER      :: ABMIN = 0.3
+!      REAL(rkind),    PARAMETER      :: ABMIN = 0.3
+      REAL(rkind),    PARAMETER      :: ABMIN = -1.0 ! new value in the w3src4md
       REAL(rkind),    PARAMETER      :: ABMAX = 8.
       REAL(rkind), parameter         :: nu_air=1.4E-5_rkind
       REAL(rkind), DIMENSION(:), ALLOCATABLE :: XSTRESS,YSTRESS
@@ -93,17 +94,11 @@
       INTEGER,        PARAMETER      :: FAC_KD2 = 1000
       REAL(rkind),    PARAMETER      ::KDMAX=200000.
       REAL(rkind),    PARAMETER      :: kappa = 0.40       !Von Karman's constant
-! variables for negative wind input (beta from ST2)
-!
-      INTEGER, PARAMETER, PRIVATE :: NRSIGA =  400
-      INTEGER, PARAMETER, PRIVATE :: NRDRAG =   20
-      REAL(rkind), PARAMETER, PRIVATE    :: SIGAMX =   40._rkind
-      REAL(rkind), PARAMETER, PRIVATE    :: DRAGMX =    1.E-2
 !
 !     WWM FIELD INSERT ...
 !
       LOGICAL                        :: FLICES = .FALSE.
-      REAL(rkind)                    :: TTAUWSHELTER = 1.
+      REAL(rkind)                    :: TTAUWSHELTER
       REAL(rkind)                    :: ZZ0RAT = 0.04_rkind
       REAL(rkind)                    :: SSINTHP    = 2.
       INTEGER                        :: NK, MK, NTH, MTH, MSPEC
@@ -124,7 +119,6 @@
       REAL(rkind)                    :: DTH, FACHF, SXFR, XFR, FACHFE
       REAL(rkind)                    :: WNMEANP, WNMEANPTAIL
       REAL(rkind)                    :: FTE, FTF
-      REAL(rkind)                    :: STXFTF, STXFTWN, STXFTFTAIL
       REAL(rkind)                    :: SSTXFTF, SSTXFTWN, SSTXFTFTAIL
       REAL(rkind)                    :: SSWELLF(7) ,SSWELLFPAR
       REAL(rkind)                    :: SWELLFPAR, SSDSTH
@@ -235,10 +229,11 @@
 !        WRITE(5001,*) 'WNMEANP, WNMEANPTAIL'
 !        WRITE(5001,*) WNMEANP, WNMEANPTAIL
 
-        XFR = EXP(FRINTF) ! Check with Fabrice ... should be 1.1
+        XFR = SFAC ! Check with Fabrice ... should be 1.1
 
         SIGMA   = FR1 * TPI / XFR**2 ! What is going on here ?
         SXFR    = 0.5_rkind * (XFR-1./XFR)
+!        WRITE(740+myrank,*) 'XFR=', XFR
 
 !        WRITE(5001,*) 'XFR, SIGMA, SXFR'
 !        WRITE(5001,*) XFR, SIGMA, SXFR
@@ -265,6 +260,7 @@
         DO IK=1, NK
           DDEN(IK) = DTH * DSII(IK) * SIG(IK)
         END DO
+!        WRITE(740+myrank,*) 'DTH=', DTH
 
         DO ISP=1, NSPEC
           IK         = 1 + (ISP-1)/NTH
@@ -287,26 +283,39 @@
         FACHF  = 5.
         FACHFE = XFR**(-FACHF)
 
-        STXFTFTAIL  = 1./(FACHF-1.-WNMEANPTAIL*2)
-        STXFTF      = 1./(FACHF-1.-WNMEANP*2)
-        STXFTWN     = 1./(FACHF-1.-WNMEANP*2) * SIG(NK)**(2)
+!        STXFTFTAIL  = 1./(FACHF-1.-WNMEANPTAIL*2)
+!        STXFTWN     = 1./(FACHF-1.-WNMEANP*2) * SIG(NK)**(2)
+!        STXFTF      = 1./(FACHF-1.-WNMEANP*2)
 
+        SSTXFTFTAIL  = 1/(FACHF-1.-WNMEANPTAIL*2) * SIG(NK)**(2+WNMEANPTAIL*2) * DTH
+        SSTXFTWN = 1/(FACHF-1.-WNMEANP*2) * SIG(NK)**(2) * (SIG(NK)/SQRT(G9))**(WNMEANP*2) * DTH
+             
+        
 !        WRITE(5001,*) 'FTE, FTF, FACHF, FACHFE'
 !        WRITE(5001,*) FTE, FTF, FACHF, FACHFE
 
-        SSWELLF(1) = 0.8_rkind
-        SSWELLF(2) = -0.018_rkind
-        SSWELLF(3) = 0.015_rkind
-        SSWELLF(4) = 1.E5
+        SSWELLF(1) = 0.66
+        SSWELLF(2) = -0.018
+        SSWELLF(3) = 0.022
+        SSWELLF(4) = 1.5E5
         SSWELLF(5) = 1.2
-        SSWELLF(6) = 0._rkind
-        SSWELLF(7) = 0._rkind
+        SSWELLF(6) = 0.
+        SSWELLF(7) = 360000.
+        
+!        SSWELLF(1) = 0.8_rkind
+!        SSWELLF(2) = -0.018_rkind
+!        SSWELLF(3) = 0.015_rkind
+!        SSWELLF(4) = 1.E5
+!        SSWELLF(5) = 1.2
+!        SSWELLF(6) = 0._rkind
+!        SSWELLF(7) = 0._rkind
 
 !        WRITE(5001,*) 'SSWELLF'
 !        WRITE(5001,*) SSWELLF
 
         AALPHA = 0.0095_rkind
-        BBETA  = 1.54_rkind ! 1.54 for ECMWF
+!        BBETA  = 1.54_rkind ! 1.54 for ECMWF
+        BBETA  = 1.52_rkind ! 1.52 as in WaveWatch III trunk
         ZZALP   = 0.006_rkind
         ZZWND   = 10._rkind
 
@@ -340,7 +349,8 @@
         SSINTHP    = 2.0_rkind
         SSWELLFPAR = 3
 
-        TTAUWSHELTER = 1.0_rkind
+!        TTAUWSHELTER = 1.0_rkind
+        TTAUWSHELTER = 0.3_rkind
         ZZ0RAT       = 0.04_rkind
 
         SSDSC1 = 0._rkind
@@ -364,6 +374,8 @@
         SSDSC(5)   = SSDSC5
         SSDSC(6)   = SSDSC6
         SSDSC(7)   = WHITECAPWIDTH
+
+        
 
         SDSNTH  = MIN(NINT(SSDSDTH/(DTH*RADDEG)),NTH/2-1)
         DELAB   = (ABMAX-ABMIN)/MyREAL(SIZEFWTABLE)
@@ -400,7 +412,7 @@
   
         INQUIRE(FILE='fort.5002',EXIST=LPRECOMP_EXIST)
         IF (.NOT. LPRECOMP_EXIST) THEN
-          CALL INSIN4(.TRUE.)
+          CALL INSIN4
         ELSE
           CALL READ_INSIN4
         END IF
@@ -416,13 +428,13 @@
 
       IF (LPRECOMP_EXIST) THEN
           READ (5002, IOSTAT=ISTAT)                        &
-        & MSC_TEST, MDC_TEST, & 
+        & FWTABLE, MSC_TEST, MDC_TEST, & 
         & ZZWND, AALPHA, ZZ0MAX, BBETA, SSINTHP, ZZALP,    &
         & TTAUWSHELTER, SSWELLFPAR, SSWELLF,               &
         & ZZ0RAT, SSDSC1, SSDSC2, SSDSC3, SSDSC4, SSDSC5,  &
         & SSDSC6, SSDSISO, SSDSBR, SSDSBR2, SSDSBM, SSDSP, &
-        & SSDSCOS, SSDSDTH, SSTXFTF, &
-        & SSTXFTFTAIL, SSTXFTWN, SSTXFTF, SSTXFTWN,        &
+        & SSDSCOS, SSDSDTH, SSTXFTF,                       &
+        & SSTXFTFTAIL, SSTXFTWN,                           &
         & SSDSBRF1, SSDSBRF2, SSDSBRFDF,SSDSBCK, SSDSABK,  &
         & SSDSPBK, SSDSBINT, &
         & SSDSHCK, DELUST, DELTAIL, DELTAUW, &
@@ -438,8 +450,316 @@
           CALL WWM_ABORT('THE fort.5002 file does not match your specifications. Remove and rerun')
         ENDIF
           
-        END IF
-     END SUBROUTINE
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE TABU_FW
+!/
+!/                  +-----------------------------------+
+!/                  | WAVEWATCH III           NOAA/NCEP |
+!/                  |            F. Ardhuin             |
+!/                  |                        FORTRAN 90 |
+!/                  | Last update :         28-Feb-2013 |
+!/                  +-----------------------------------+
+!/
+!/    19-Oct-2007 : Origination.                        ( version 3.13 )
+!/    28-Feb-2013 : Caps the friction factor to 0.5     ( version 4.08 )
+!/
+!  1. Purpose :
+!     TO estimate friction coefficients in oscillatory boundary layers
+!     METHOD.
+!      tabulation on Kelvin functions
+!
+!  2. Method :
+!
+!  3. Parameters :
+!
+!     Parameter list
+!     ----------------------------------------------------------------
+!     ----------------------------------------------------------------
+!
+!  4. Subroutines used :
+!
+!      Name      Type  Module   Description
+!     ----------------------------------------------------------------
+!      STRACE    Subr. W3SERVMD Subroutine tracing.
+!     ----------------------------------------------------------------
+!
+!  5. Called by :
+!
+!      Name      Type  Module   Description
+!     ----------------------------------------------------------------
+!      WW3_GRID  Prog. WW3_GRID Model grid initialization
+!     ----------------------------------------------------------------
+!
+!  6. Error messages :
+!
+!       None.
+!
+!  7. Remarks :
+!
+!  8. Structure :
+!
+!     See source code.
+!
+!  9. Switches :
+!
+!     !/S  Enable subroutine tracing.
+!
+! 10. Source code :
+!
+!/ ------------------------------------------------------------------- /
+      USE DATAPOOL, only : ONE, ZERO, rkind
+      IMPLICIT NONE
+      INTEGER, PARAMETER      :: NITER=100
+      REAL(rkind)   , PARAMETER      :: XM=0.50, EPS1=0.00001
+!     VARIABLE.   TYPE.     PURPOSE.
+!      *XM*        REAL      POWER OF TAUW/TAU IN ROUGHNESS LENGTH.
+!      *XNU*       REAL      KINEMATIC VISCOSITY OF AIR.
+!      *NITER*     INTEGER   NUMBER OF ITERATIONS TO OBTAIN TOTAL STRESS
+!      *EPS1*      REAL      SMALL NUMBER TO MAKE SURE THAT A SOLUTION
+!                            IS OBTAINED IN ITERATION WITH TAU>TAUW.
+! ----------------------------------------------------------------------
+      INTEGER I,ITER
+      REAL(rkind) KER, KEI
+      REAL(rkind) ABR,ABRLOG,L10,FACT,FSUBW,FSUBWMEMO,dzeta0,dzeta0memo
+!
+!
+!
+      DELAB   = (ABMAX-ABMIN)/REAL(SIZEFWTABLE)
+      L10=ALOG(10.)
+      DO I=0,SIZEFWTABLE
+!
+!  index I in this table corresponds to a normalized roughness z0/ABR = 10^ABMIN+REAL(I)*DELAB
+!
+         ABRLOG=ABMIN+REAL(I)*DELAB
+         ABR=EXP(ABRLOG*L10)
+         FACT=ONE/ABR/(21.2_rkind*KAPPA)
+         FSUBW=0.05_rkind
+         dzeta0=ZERO
+         DO ITER=1,NITER
+            fsubwmemo=fsubw
+            dzeta0memo=dzeta0
+            dzeta0=fact*fsubw**(-.5)
+            CALL KERKEI(2.*SQRT(dzeta0),ker,kei)
+            fsubw=.08_rkind/(ker**2+kei**2)
+            fsubw=.5*(fsubwmemo+fsubw)
+            dzeta0=.5_rkind*(dzeta0memo+dzeta0)
+         END DO
+!
+! Maximum value of 0.5 for fe is based on field 
+! and lab experiment by Lowe et al. JGR 2005, 2007 
+! 
+         FWTABLE(I)  = MIN(fsubw,0.5) 
+      END DO
+      END SUBROUTINE TABU_FW
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE KZEONE(Xin, Yin, RE0out, IM0out, RE1out, IM1out)
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind), intent(in) :: Xin, Yin
+      REAL(rkind), intent(out) :: RE0out, IM0out, RE1out, IM1out
+      DOUBLE PRECISION X, Y, RE0, IM0, RE1, IM1
+      X=DBLE(Xin)
+      Y=DBLE(Yin)
+      CALL KZEONE_KERNEL(X, Y, RE0, IM0, RE1, IM1)
+      RE0out = MyREAL(RE0)
+      IM0out = MyREAL(IM0)
+      RE1out = MyREAL(RE1)
+      IM1out = MyREAL(IM1)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE KZEONE_KERNEL(X, Y, RE0, IM0, RE1, IM1)
+!  June 1999 adaptation to CRESTb, all tests on range of (x,y) have been
+!  bypassed, we implicitly expect X to be positive or |x,y| non zero
+! 
+! This subroutine is copyright by ACM
+! see http://www.acm.org/pubs/copyright_policy/softwareCRnotice.html
+! ACM declines any responsibility of any kind
+! 
+! THE VARIABLES X AND Y ARE THE REAL AND IMAGINARY PARTS OF
+! THE ARGUMENT OF THE FIRST TWO MODIFIED BESSEL FUNCTIONS
+! OF THE SECOND KIND,K0 AND K1.  RE0,IM0,RE1 AND IM1 GIVE
+! THE REAL AND IMAGINARY PARTS OF EXP(X)*K0 AND EXP(X)*K1,
+! RESPECTIVELY.  ALTHOUGH THE REAL NOTATION USED IN THIS
+! SUBROUTINE MAY SEEM INELEGANT WHEN COMPARED WITH THE
+! COMPLEX NOTATION THAT FORTRAN ALLOWS, THIS VERSION RUNS
+! ABOUT 30 PERCENT FASTER THAN ONE WRITTEN USING COMPLEX
+! VARIABLES.
+! ACM Libraries
+! ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+      IMPLICIT NONE
+      DOUBLE PRECISION, intent(in) :: X, Y
+      DOUBLE PRECISION, intent(out) :: RE0, IM0, RE1, IM1
+      DOUBLE PRECISION X2, Y2, R1, R2, T1, T2, P1, P2, RTERM, ITERM, L
+   DOUBLE PRECISION , PARAMETER, DIMENSION(8) :: EXSQ = &
+         (/ 0.5641003087264D0,0.4120286874989D0,0.1584889157959D0, & 
+            0.3078003387255D-1,0.2778068842913D-2,0.1000044412325D-3, &
+            0.1059115547711D-5,0.1522475804254D-8 /)
+   DOUBLE PRECISION , PARAMETER, DIMENSION(8) :: TSQ = &
+         (/ 0.0D0,3.19303633920635D-1,1.29075862295915D0, &
+            2.95837445869665D0,5.40903159724444D0,8.80407957805676D0, &
+            1.34685357432515D1,2.02499163658709D1 /)
+   INTEGER N,M,K
+! THE ARRAYS TSQ AND EXSQ CONTAIN THE SQUARE OF THE
+! ABSCISSAS AND THE WEIGHT FACTORS USED IN THE GAUSS-
+! HERMITE QUADRATURE.
+      R2 = X*X + Y*Y
+      IF (R2.GE.1.96D2) GO TO 50
+      IF (R2.GE.1.849D1) GO TO 30
+! THIS SECTION CALCULATES THE FUNCTIONS USING THE SERIES
+! EXPANSIONS
+      X2 = X/2.0D0
+      Y2 = Y/2.0D0
+      P1 = X2*X2
+      P2 = Y2*Y2
+      T1 = -(DLOG(P1+P2)/2.0D0+0.5772156649015329D0)
+! THE CONSTANT IN THE PRECEDING STATEMENT IS EULER*S
+! CONSTANT
+      T2 = -DATAN2(Y,X)
+      X2 = P1 - P2
+      Y2 = X*Y2
+      RTERM = 1.0D0
+      ITERM = 0.0D0
+      RE0 = T1
+      IM0 = T2
+      T1 = T1 + 0.5D0
+      RE1 = T1
+      IM1 = T2
+      P2 = DSQRT(R2)
+      L = 2.106D0*P2 + 4.4D0
+      IF (P2.LT.8.0D-1) L = 2.129D0*P2 + 4.0D0
+      DO 20 N=1,INT(L)
+        P1 = N
+        P2 = N*N
+        R1 = RTERM
+        RTERM = (R1*X2-ITERM*Y2)/P2
+        ITERM = (R1*Y2+ITERM*X2)/P2
+        T1 = T1 + 0.5D0/P1
+        RE0 = RE0 + T1*RTERM - T2*ITERM
+        IM0 = IM0 + T1*ITERM + T2*RTERM
+        P1 = P1 + 1.0D0
+        T1 = T1 + 0.5D0/P1
+        RE1 = RE1 + (T1*RTERM-T2*ITERM)/P1
+        IM1 = IM1 + (T1*ITERM+T2*RTERM)/P1
+   20 CONTINUE
+      R1 = X/R2 - 0.5D0*(X*RE1-Y*IM1)
+      R2 = -Y/R2 - 0.5D0*(X*IM1+Y*RE1)
+      P1 = DEXP(X)
+      RE0 = P1*RE0
+      IM0 = P1*IM0
+      RE1 = P1*R1
+      IM1 = P1*R2
+      RETURN
+! THIS SECTION CALCULATES THE FUNCTIONS USING THE INTEGRAL
+! REPRESENTATION, EQN 3, EVALUATED WITH 15 POINT GAUSS-
+! HERMITE QUADRATURE
+   30 X2 = 2.0D0*X
+      Y2 = 2.0D0*Y
+      R1 = Y2*Y2
+      P1 = DSQRT(X2*X2+R1)
+      P2 = DSQRT(P1+X2)
+      T1 = EXSQ(1)/(2.0D0*P1)
+      RE0 = T1*P2
+      IM0 = T1/P2
+      RE1 = 0.0D0
+      IM1 = 0.0D0
+      DO 40 N=2,8
+        T2 = X2 + TSQ(N)
+        P1 = DSQRT(T2*T2+R1)
+        P2 = DSQRT(P1+T2)
+        T1 = EXSQ(N)/P1
+        RE0 = RE0 + T1*P2
+        IM0 = IM0 + T1/P2
+        T1 = EXSQ(N)*TSQ(N)
+        RE1 = RE1 + T1*P2
+        IM1 = IM1 + T1/P2
+   40 CONTINUE
+      T2 = -Y2*IM0
+      RE1 = RE1/R2
+      R2 = Y2*IM1/R2
+      RTERM = 1.41421356237309D0*DCOS(Y)
+      ITERM = -1.41421356237309D0*DSIN(Y)
+! THE CONSTANT IN THE PREVIOUS STATEMENTS IS,OF COURSE,
+! SQRT(2.0).
+      IM0 = RE0*ITERM + T2*RTERM
+      RE0 = RE0*RTERM - T2*ITERM
+      T1 = RE1*RTERM - R2*ITERM
+      T2 = RE1*ITERM + R2*RTERM
+      RE1 = T1*X + T2*Y
+      IM1 = -T1*Y + T2*X
+      RETURN
+! THIS SECTION CALCULATES THE FUNCTIONS USING THE
+! ASYMPTOTIC EXPANSIONS
+   50 RTERM = 1.0D0
+      ITERM = 0.0D0
+      RE0 = 1.0D0
+      IM0 = 0.0D0
+      RE1 = 1.0D0
+      IM1 = 0.0D0
+      P1 = 8.0D0*R2
+      P2 = DSQRT(R2)
+      L = 3.91D0+8.12D1/P2
+      R1 = 1.0D0
+      R2 = 1.0D0
+      M = -8
+      K = 3
+      DO 60 N=1,INT(L)
+        M = M + 8
+        K = K - M
+        R1 = FLOAT(K-4)*R1
+        R2 = FLOAT(K)*R2
+        T1 = FLOAT(N)*P1
+        T2 = RTERM
+        RTERM = (T2*X+ITERM*Y)/T1
+        ITERM = (-T2*Y+ITERM*X)/T1
+        RE0 = RE0 + R1*RTERM
+        IM0 = IM0 + R1*ITERM
+        RE1 = RE1 + R2*RTERM
+        IM1 = IM1 + R2*ITERM
+   60 CONTINUE
+      T1 = DSQRT(P2+X)
+      T2 = -Y/T1
+      P1 = 8.86226925452758D-1/P2
+! THIS CONSTANT IS SQRT(PI)/2.0, WITH PI=3.14159...
+      RTERM = P1*DCOS(Y)
+      ITERM = -P1*DSIN(Y)
+      R1 = RE0*RTERM - IM0*ITERM
+      R2 = RE0*ITERM + IM0*RTERM
+      RE0 = T1*R1 - T2*R2
+      IM0 = T1*R2 + T2*R1
+      R1 = RE1*RTERM - IM1*ITERM
+      R2 = RE1*ITERM + IM1*RTERM
+      RE1 = T1*R1 - T2*R2
+      IM1 = T1*R2 + T2*R1
+      RETURN
+      END SUBROUTINE KZEONE_KERNEL
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE KERKEI(X,KER,KEI)
+!**********************************************************************
+! Computes the values of the zeroth order Kelvin function Ker and Kei
+! These functions are used to determine the friction factor fw as a 
+! function of the bottom roughness length assuming a linear profile
+! of eddy viscosity (See Grant and Madsen, 1979)
+!**********************************************************************
+      USE DATAPOOL
+      IMPLICIT NONE
+      REAL(rkind) ZR,ZI,CYR,CYI,CYR1,CYI1
+      REAL(rkind) X,KER,KEI
+      ZR=X*.50_rkind*SQRT(2.0_rkind)
+      ZI=ZR
+      CALL KZEONE(ZR, ZI, CYR, CYI,CYR1,CYI1)
+      KER=CYR/EXP(ZR)
+      KEI=CYI/EXP(ZR)
+      END SUBROUTINE KERKEI
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -516,7 +836,7 @@
 !
 !/ ------------------------------------------------------------------- /
       USE DATAPOOL, ONLY: INVPI2, PI2, RKIND, NSPEC
-      USE DATAPOOL, ONLY: ZERO, ONE
+      USE DATAPOOL, ONLY: ZERO, ONE, myrank
 !/T      USE W3ODATMD, ONLY: NDST
 !
       IMPLICIT NONE
@@ -565,10 +885,11 @@
           IS=ITH+(IK-1)*NTH
           EB(IK) = EB(IK) + A(ITH,IK)
           IF (LLWS(IS)) EB2(IK) = EB2(IK) + A(ITH,IK)
+!          WRITE(740+myrank,*) 'IK=', IK, ' ITH=', ITH, ' LLWS=', LLWS(IS)
           AMAX   = MAX ( AMAX , A(ITH,IK) )
-          END DO
-!          WRITE(DBG%FHNDL,*) IK, EB(IK), IK, ITH, A(ITH,IK)
         END DO
+          !          WRITE(DBG%FHNDL,*) IK, EB(IK), IK, ITH, A(ITH,IK)
+      END DO
 !
 ! 2.  Integrate over directions -------------------------------------- *
 
@@ -584,6 +905,8 @@
         EMEANWS  = EMEANWS+ EB2(IK)
         FMEANWS  = FMEANWS+ EB2(IK)*(SIG(IK)**(2.*WNMEANPTAIL))
         END DO
+!      WRITE(740+myrank,*) '1: FMEAN1=', FMEAN1
+!      WRITE(740+myrank,*) '1: FMEANWS=', FMEANWS
 !
 ! 3.  Add tail beyond discrete spectrum and get mean pars ------------ *
 !     ( DTH * SIG absorbed in FTxx )
@@ -592,10 +915,13 @@
       EMEAN  = EMEAN  + EBAND * FTE
       FMEAN  = FMEAN  + EBAND * FTF
       FMEAN1 = FMEAN1 + EBAND * SSTXFTFTAIL
+!      WRITE(740+myrank,*) '2: FMEAN1=', FMEAN1, ' SSTXFTFTAIL=', SSTXFTFTAIL
       WNMEAN = WNMEAN + EBAND * SSTXFTWN
+!      WRITE(740+myrank,*) '2: WNMEAN=', WNMEAN, ' SSTXFTWN=', SSTXFTWN
       EBAND  = EB2(NK) / DDEN(NK)
       EMEANWS = EMEANWS + EBAND * FTE
       FMEANWS = FMEANWS + EBAND * SSTXFTFTAIL
+!      WRITE(740+myrank,*) '2: FMEANWS=', FMEANWS, ' SSTXFTFTAIL=', SSTXFTFTAIL
 !
 ! 4.  Final processing
 !
@@ -715,7 +1041,7 @@
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
-      USE DATAPOOL, ONLY : G9, PI2, RADDEG, RKIND, NSPEC, ZERO, ONE, DBG, THR8
+      USE DATAPOOL, ONLY : G9, PI2, RADDEG, RKIND, NSPEC, ZERO, ONE, DBG, THR8, myrank
 !/S      USE W3SERVMD, ONLY: STRACE
 !/T      USE W3ODATMD, ONLY: NDST
 !/T0      USE W3ARRYMD, ONLY: PRT2DS
@@ -783,7 +1109,10 @@
 !
       UORB=0.
       AORB=0.
-
+!      DO IK=0,NK+1
+!         WRITE(740+myrank,*) 'IK=', IK, ' DSIP=', DSIP(IK)
+!      END DO
+      
       DO IK=1, NK
         EB  = 0.
         EBX = 0.
@@ -797,8 +1126,13 @@
 !
         UORB = UORB + EB *SIG(IK)**2 * DDEN(IK) / CG(IK)
         AORB = AORB + EB             * DDEN(IK) / CG(IK)  !deep water only
+!        WRITE(740+myrank,*) 'IK=', IK, ' SIG(IK)=', SIG(IK)
+!        WRITE(740+myrank,*) 'DDEN=', DDEN(IK), ' CG=', CG(IK)
+!        WRITE(740+myrank,*) 'DSII=', DSII(IK)
         END DO
 
+
+        
       UORB = 2*SQRT(UORB)                  ! significant orbital amplitude
       AORB1 = 2*AORB**(1-0.5*SSWELLF(6))   ! half the significant wave height ... if SWELLF(6)=1
       RE = 4*UORB*AORB1 / NU_AIR           ! Reynolds number 
@@ -834,12 +1168,20 @@
         FUD=SSWELLF(2)
         AORB=2*SQRT(AORB)
         XI=(LOG10(MAX(AORB/Z0NOZ,3._rkind))-ABMIN)/DELAB
+!        WRITE(740+myrank,*) 'Z0NOZ=', Z0NOZ, ' ABMIN=', ABMIN
+!        WRITE(740+myrank,*) 'DELAB=', DELAB, ' XI=', XI
         IND  = MIN (SIZEFWTABLE-1, INT(XI))
         DELI1= MIN (ONE ,XI-MyREAL(IND))
         DELI2= ONE - DELI1
         !WRITE(DBG%FHNDL,'(A10,I10,5F15.8)') 'TEST IND',IND, XI, AORB, Z0NOZ, ABMIN, DELAB
         FW =FWTABLE(IND)*DELI2+FWTABLE(IND+1)*DELI1
-        END IF
+!        WRITE(740+myrank,*) 'FWTABLE(IND)=', FWTABLE(IND), ' FWTABLE(IND+1)=', FWTABLE(IND+1)
+      END IF
+!      WRITE(740+myrank,*) 'SSWELLF(2)=', SSWELLF(2)
+!      WRITE(740+myrank,*) 'FU=', FU, ' FUD=', FUD
+!      WRITE(740+myrank,*) 'FW=', FW, ' IND=', IND
+!      WRITE(740+myrank,*) 'AORB=', AORB, ' UORB=', UORB
+      
 !
 ! 2.  Diagonal
 !
@@ -879,10 +1221,17 @@
       ELSE
         CONST0=BBETA*DRAT/(kappa**2)
       END IF
-
+!      WRITE(740+myrank,*) 'CONST0=', CONST0, ' BBETA=', BBETA
+!      WRITE(740+myrank,*) 'DRAT=', DRAT, ' kappa=', kappa
+      
       DO IK=1, NK
         TAUPX=TAUX-ABS(TTAUWSHELTER)*STRESSSTAB(ISTAB,1)
         TAUPY=TAUY-ABS(TTAUWSHELTER)*STRESSSTAB(ISTAB,2)
+!        WRITE(740+myrank,*) 'IK=', IK, ' TTAUWSHELTER=', TTAUWSHELTER
+!        WRITE(740+myrank,*) 'TAUX=', TAUX, ' TAUY=', TAUY
+!        WRITE(740+myrank,*) 'TAUPX=', TAUPX, ' TAUPY=', TAUPY
+!        WRITE(740+myrank,*) 'STRESSSTAB=', STRESSSTAB(ISTAB,1), STRESSSTAB(ISTAB,2)
+        
 ! With MIN and MAX the bug should disappear.... but where did it come from?
         USTP=MIN((TAUPX**2+TAUPY**2)**0.25_rkind,MAX(UST,0.3_rkind))
         !WRITE(DBG%FHNDL,*) 'USTP', IK, USTP, STRESSSTAB(ISTAB,1), STRESSSTAB(ISTAB,2), TTAUWSHELTER
@@ -908,6 +1257,11 @@
         SWELLCOEFV=-SSWELLF(5)*DRAT*2*K(IS)*SQRT(2*NU_AIR*SIG2(IS)) 
         SWELLCOEFT=-DRAT*SSWELLF(1)*16*SIG2(IS)**2/G9
 !
+!        WRITE(740+myrank,*) 'TAUX=', TAUX, ' TAUY=', TAUY
+!        WRITE(740+myrank,*) 'CM=', CM, ' UCN=', UCN, ' ZCN=', ZCN
+!        WRITE(740+myrank,*) 'CONST2=', CONST, ' CONST=', CONST
+!        WRITE(740+myrank,*) 'SWELLCOEFV=', SWELLCOEFV, ' SWELLCOEFT=', SWELLCOEFT
+!        WRITE(740+myrank,*) 'SSWELLF(1)=', SSWELLF(1), ' SIG=', SIG2(IS)
         !WRITE(DBG%FHNDL,*) 'UCN', IK, IS, USTP, CM ,K(IK), DDEN2(IS), Z0
         DO ITH=1,NTH
           IS=ITH+(IK-1)*NTH
@@ -934,7 +1288,7 @@
             ELSE
               DSTAB(ISTAB,IS) = 0.
               LLWS(IS)=.FALSE.
-              END IF
+            END IF
 
               !WRITE(DBG%FHNDL,*) 'DSTAB', DSTAB(ISTAB,IS), CONST,EXP(ZLOG),ZLOG**4,UCN**2,COSWIND,SSINTHP
 !
@@ -942,11 +1296,11 @@
 !
             IF (28.*CM*USTAR*COSWIND.GE.1) THEN
               LLWS(IS)=.TRUE.
-              END IF
+            END IF
           ELSE  ! (COSWIND.LE.0.01) 
             DSTAB(ISTAB,IS) = 0.
             LLWS(IS)=.FALSE.
-            END IF 
+          END IF 
 !
           IF ((SSWELLF(1).NE.0.AND.DSTAB(ISTAB,IS).LT.1E-7*SIG2(IS)) &
               .OR.SSWELLF(3).GT.0) THEN  
@@ -955,7 +1309,7 @@
               DTURB=SWELLCOEFT*(FW*UORB+(FU+FUD*COSWIND)*USTP)
 !
               DSTAB(ISTAB,IS) = DSTAB(ISTAB,IS) + PTURB*DTURB +  PVISC*DVISC
-            END IF
+          END IF
 !
 ! Sums up the wave-supported stress
 !
@@ -968,21 +1322,23 @@
           ELSE
             STRESSSTAB(ISTAB,1)=STRESSSTAB(ISTAB,1)+TEMP2*ECOS(IS)
             STRESSSTAB(ISTAB,2)=STRESSSTAB(ISTAB,2)+TEMP2*ESIN(IS)
-            END IF
-          END DO
+          END IF
         END DO
+      END DO
 !
-        D(:)=DSTAB(3,:)
-        XSTRESS=STRESSSTAB (3,1)
-        YSTRESS=STRESSSTAB (3,2)
-        TAUWNX =STRESSSTABN(3,1)
-        TAUWNY =STRESSSTABN(3,2)
+      D(:)=DSTAB(3,:)
+      XSTRESS=STRESSSTAB (3,1)
+      YSTRESS=STRESSSTAB (3,2)
+      TAUWNX =STRESSSTABN(3,1)
+      TAUWNY =STRESSSTABN(3,2)
 !/STAB3        END DO 
 !/STAB3      D(:)=0.5*(DSTAB(1,:)+DSTAB(2,:))
 !/STAB3      XSTRESS=0.5*(STRESSSTAB(1,1)+STRESSSTAB(2,1))
 !/STAB3      YSTRESS=0.5*(STRESSSTAB(1,2)+STRESSSTAB(2,2))
 !/STAB3      TAUWNX=0.5*(STRESSSTABN(1,1)+STRESSSTABN(2,1))
 !/STAB3      TAUWNY=0.5*(STRESSSTABN(1,2)+STRESSSTABN(2,2))
+!      WRITE(740+myrank,*) 'XSTRESS=', XSTRESS, ' YSTRESS=', YSTRESS
+!      WRITE(740+myrank,*) 'TAUWNX=', TAUWNX, ' TAUWNY=', TAUWNY
 
         S = D * A
 !
@@ -1009,8 +1365,10 @@
          IS=ITH+(NK-1)*NTH
          COSWIND=(ECOS(IS)*COSU+ESIN(IS)*SINU)
          TEMP=TEMP+A(IS)*(MAX(COSWIND,ZERO))**3
+!         WRITE(740+myrank,*) 'ITH=', ITH, ' A=', A(IS), ' COSWIND=', COSWIND
          !WRITE(DBG%FHNDL,*) ITH, IS, A(IS), (MAX(COSWIND,ZERO))**3
          END DO
+!      WRITE(740+myrank,*) 'TEMP=', TEMP
 
       TAUPX=TAUX-ABS(TTAUWSHELTER)*XSTRESS
       TAUPY=TAUY-ABS(TTAUWSHELTER)*YSTRESS
@@ -1046,6 +1404,9 @@
          +(TAUHFT(IND,J+1)*DELI2+TAUHFT(IND+1,J+1)*DELI1)*DELJ1
         END IF
       TAUHF = CONST0*TEMP*UST**2*TAU1
+!      WRITE(740+myrank,*) 'TAUHF=', TAUHF, 'CONST0=', CONST0
+!      WRITE(740+myrank,*) 'TEMP=', TEMP, ' UST=', UST, ' TAU1=', TAU1
+      
       TAUWX = XSTRESS+TAUHF*COS(USDIRP)
       TAUWY = YSTRESS+TAUHF*SIN(USDIRP)
 !      
@@ -1070,7 +1431,7 @@
 !/
       END SUBROUTINE
 !/ ------------------------------------------------------------------- /
-      SUBROUTINE INSIN4(FLTABS)
+      SUBROUTINE INSIN4
 !/
 !/                  +-----------------------------------+
 !/                  | WAVEWATCH III           NOAA/NCEP |
@@ -1133,7 +1494,6 @@
 !/ ------------------------------------------------------------------- /
 !/ Parameter list
 !/
-      LOGICAL, INTENT(IN)     :: FLTABS
 !/
 !/ ------------------------------------------------------------------- /
 !/
@@ -1160,14 +1520,13 @@
 ! These precomputed tables are written in mod_def.ww3 
 !
 !      WRITE(6,*) 'INSIN4:',FLTABS, SSDSDTH, SSDSC3, SSDSBCK
-      IF (FLTABS) THEN   
-        CALL TABU_STRESS
-        CALL TABU_TAUHF   !tabulate high-frequency stress
-        IF (TTAUWSHELTER.GT.0) THEN
-          WRITE(STAT%FHNDL,*) 'Computing 3D lookup table... please wait ...'
-          CALL TABU_TAUHF2 !tabulate high-frequency stress
-          END IF
-        END IF
+      CALL TABU_STRESS
+      CALL TABU_TAUHF   !tabulate high-frequency stress
+      IF (TTAUWSHELTER.GT.0) THEN
+        WRITE(STAT%FHNDL,*) 'Computing 3D lookup table... please wait ...'
+        CALL TABU_TAUHF2 !tabulate high-frequency stress
+      END IF
+      CALL TABU_FW
 !
 ! 2.  SPONTANEOUS BREAKING
 ! 2.a Precomputes the indices for integrating the spectrum to get saturation (TEST 4xx )
@@ -1330,13 +1689,13 @@
 
    IF (.NOT. LPRECOMP_EXIST) THEN
      WRITE (5002)                                                       &
-     & MSC,MDC,                                                         &
+     & FWTABLE, MSC,MDC,                                                &
      & ZZWND, AALPHA, ZZ0MAX, BBETA, SSINTHP, ZZALP,                    &
      & TTAUWSHELTER, SSWELLFPAR, SSWELLF,                               &
      & ZZ0RAT, SSDSC1, SSDSC2, SSDSC3, SSDSC4, SSDSC5,                  &
      & SSDSC6, SSDSISO, SSDSBR, SSDSBR2, SSDSBM, SSDSP,                 &
      & SSDSCOS, SSDSDTH, SSTXFTF,                                       &
-     & SSTXFTFTAIL, SSTXFTWN, SSTXFTF, SSTXFTWN,                        &
+     & SSTXFTFTAIL, SSTXFTWN,                                           &
      & SSDSBRF1, SSDSBRF2, SSDSBRFDF,SSDSBCK, SSDSABK,                  &
      & SSDSPBK, SSDSBINT,                                               &
      & SSDSHCK, DELUST, DELTAIL, DELTAUW,                               &

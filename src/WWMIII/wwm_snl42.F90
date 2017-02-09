@@ -171,14 +171,13 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SNL41(IP,KMESPC, ACLOC, IMATRA, IMATDA, SFNL, DSNL)
+      SUBROUTINE SNL41(IP,KMESPC, ACLOC, SFNL, DSNL)
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN) :: IP
          REAL(rkind),    INTENT(IN) :: KMESPC
          REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
-         REAL(rkind), INTENT(INOUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
          REAL(rkind), INTENT(OUT)   :: SFNL(MSC,MDC), DSNL(MSC,MDC)
          INTEGER             :: ISHGH, ISCLW, ISCHG, IDLOW, IDHGH
          INTEGER             :: IDP, IDP1, IDM, IDM1
@@ -398,13 +397,9 @@
      &        + SWG7 * ( DA1M(I-ISM ,J+IDM1) + DA2M(I-ISM ,J-IDM1) )  &
      &        + SWG8 * ( DA1M(I-ISM ,J+IDM ) + DA2M(I-ISM ,J-IDM ) )
               IF (SOURCE_IMPL) THEN
-                IMATRA(I,J) = IMATRA(I,J) + SFNL(I,J) / SIGPI
-                IMATDA(I,J) = IMATDA(I,J) - DSNL(I,J) / PI3
                 SFNL(I,J)   =   SFNL(I,J) / SIGPI
                 DSNL(I,J)   = - DSNL(I,J) / PI3
               ELSE
-                IMATRA(I,J) = IMATRA(I,J) + SFNL(I,J) / SIGPI
-                IMATDA(I,J) = IMATDA(I,J) + DSNL(I,J) / PI3
                 SFNL(I,J)   = SFNL(I,J) / SIGPI
                 DSNL(I,J)   = DSNL(I,J) / PI3
               END IF

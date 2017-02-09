@@ -428,7 +428,7 @@
 
       IF (LOPTSIG) THEN
         SFAC   = 1.1_rkind
-        FRINTF = 0.1_rkind
+        FRINTF = LOG(SFAC)
         FRHIGH = FRLOW
         DO IS=2,MSC
           FRHIGH = FRHIGH * SFAC
