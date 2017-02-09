@@ -36,8 +36,6 @@
  FRLOW   =  5.000000000000000E-002,
  FRHIGH  =   1.00000000000000     ,
  MSC     =          36,
- USE_FRATIO      = F,
- FRATIO  =  0.000000000000000E+000,
  FILEGRID        = system.dat                                                                                                        
                            ,
  IGRIDTYPE       =           1,
@@ -231,9 +229,7 @@
  NB_BLOCK        =           3,
  MAXITER =      100000,
  LNANINFCHK      = F,
- LSOURCESWAM     = F,
  PMIN    =  0.000000000000000E+000,
- LSOURCESWWIII   = F,
  BLOCK_GAUSS_SEIDEL      = T,
  LNONL   = F,
  L_SOLVER_NORM   = F,
