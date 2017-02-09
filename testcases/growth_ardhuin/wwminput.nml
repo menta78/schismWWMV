@@ -44,7 +44,7 @@
  LSLOP   = F,
  SLMAX   =  0.200000000000000     ,
  LVAR1D  = F,
- LOPTSIG = F,
+ LOPTSIG = T,
  CART2LATLON     = F,
  LATLON2CART     = F,
  APPLY_DXP_CORR  = F,
@@ -187,8 +187,8 @@
  TRIURS  =  0.100000000000000     
  /
  &NUMS
- ICOMP   =           0,
- AMETHOD =           0,
+ ICOMP   =           3,
+ AMETHOD =           7,
  SMETHOD =           1,
  DMETHOD =           0,
  LITERSPLIT      = F,
