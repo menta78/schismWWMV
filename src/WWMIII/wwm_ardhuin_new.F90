@@ -315,7 +315,7 @@
 
         AALPHA = 0.0095_rkind
 !        BBETA  = 1.54_rkind ! 1.54 for ECMWF
-        BBETA  = 1.52_rkind ! 1.52 as in WaveWatch III trunk
+        BBETA  = 1.32_rkind ! 1.52 as in WaveWatch III trunk
         ZZALP   = 0.006_rkind
         ZZWND   = 10._rkind
 
