@@ -1,8 +1,4 @@
       SUBROUTINE SNONLIN_LOCAL (IPP, F, FL, SL, AKMEAN, SSNL4, DSSNL4)
-
-
-! ----------------------------------------------------------------------
-
 !**** *SNONLIN* - COMPUTATION OF NONLINEAR TRANSFER RATE AND ITS
 !****             FUNCTIONAL DERIVATIVE (DIAGONAL TERMS ONLY) AND
 !****             ADDITION TO CORRESPONDING NET EXPRESSIONS.
@@ -90,17 +86,15 @@
 
       REAL(rkind) :: FTEMP,AD,DELAD,DELAP,DELAM
       REAL(rkind) :: AKMEAN,ENHFR
-      REAL(rkind),DIMENSION(NANG,NFRE) :: F,FL,SL
-      REAL(rkind),DIMENSION(NANG,NFRE) :: DSSNL4, SSNL4 
+      REAL(rkind),DIMENSION(NANG,NFRE), intent(in)  :: F
+      REAL(rkind),DIMENSION(NANG,NFRE), intent(inout) :: FL,SL
+      REAL(rkind),DIMENSION(NANG,NFRE), intent(out) :: DSSNL4, SSNL4 
 
       REAL(rkind)                              :: FKLAMMA, FKLAMMB, FKLAMM2, FKLAMA2, FKLAMB2, FKLAM12, FKLAM22
       REAL(rkind)                              :: FKLAMP2, FKLAPA2, FKLAPB2, FKLAP12, FKLAP22, FKLAMM, FKLAMM1
-      REAL(rkind)                              :: FKLAMP, FKLAMP1, FKLAMPA, FKLAMPB, FLSUM, SLSUM
+      REAL(rkind)                              :: FKLAMP, FKLAMP1, FKLAMPA, FKLAMPB
       REAL(rkind)                              :: GW1, GW2, GW3, GW4, GW5, GW6, GW7, GW8
       REAL(rkind)                              :: FIJ, SAP, SAM , FAD1, FAD2, FCEN, FTAIL
-
-      FLSUM = 0.d0
-      SLSUM = 0.d0
 
       DSSNL4 = ZERO
        SSNL4 = ZERO
@@ -216,41 +210,23 @@
               DELAP = (FIJ-2.*SAM)*DAL1*FCEN
               DELAM = (FIJ-2.*SAP)*DAL2*FCEN
 
-              SL(K  ,MC ) = SL(K  ,MC ) - 2.*AD
               SSNL4(K,MC ) = SSNL4(K,MC ) - 2.*AD
-              FL(K  ,MC ) = FL(K  ,MC ) - 2.*DELAD
               DSSNL4(K,MC ) = DSSNL4(K,MC ) - 2.*DELAD
-              SL(K2 ,MM ) = SL(K2 ,MM ) + AD*FKLAMM1
               SSNL4(K2,MM) = SSNL4(K2,MM) + AD*FKLAMM1
-              FL(K2 ,MM ) = FL(K2 ,MM ) + DELAM*FKLAM12
               DSSNL4(K2,MM) = DSSNL4(K2,MM)  + DELAM*FKLAM12
-              SL(K21,MM ) = SL(K21,MM ) + AD*FKLAMM2
               SSNL4(K21,MM) = SSNL4(K21,MM) + AD*FKLAMM2
-              FL(K21,MM ) = FL(K21,MM ) + DELAM*FKLAM22
               DSSNL4(K21,MM) = DSSNL4(K21,MM) + DELAM*FKLAM22
-              SL(K2 ,MM1) = SL(K2 ,MM1) + AD*FKLAMMA
               SSNL4(K2,MM1) = SSNL4(K2,MM1) + AD*FKLAMMA
-              FL(K2 ,MM1) = FL(K2 ,MM1) + DELAM*FKLAMA2
               DSSNL4(K2,MM1) = DSSNL4(K2,MM1) + DELAM*FKLAMA2
-              SL(K21,MM1) = SL(K21,MM1) + AD*FKLAMMB
               SSNL4(K21,MM1) = SSNL4(K21,MM1) + AD*FKLAMMB
-              FL(K21,MM1) = FL(K21,MM1) + DELAM*FKLAMB2
               DSSNL4(K21,MM1) = DSSNL4(K21,MM1) + DELAM*FKLAMB2 
-              SL(K1 ,MP ) = SL(K1 ,MP ) + AD*FKLAMP1
               SSNL4(K1,MP) = SSNL4(K1,MP) + AD*FKLAMP1
-              FL(K1 ,MP ) = FL(K1 ,MP ) + DELAP*FKLAP12
               DSSNL4(K1,MP) = DSSNL4(K1,MP) + DELAP*FKLAP12
-              SL(K11,MP ) = SL(K11,MP ) + AD*FKLAMP2
               SSNL4(K11,MP) = SSNL4(K11,MP) + AD*FKLAMP2
-              FL(K11,MP ) = FL(K11,MP ) + DELAP*FKLAP22
               DSSNL4(K11,MP) = DSSNL4(K11,MP) + AD*FKLAMP2
-              SL(K1 ,MP1) = SL(K1 ,MP1) + AD*FKLAMPA
               SSNL4(K1,MP1) = SSNL4(K1,MP1) + AD*FKLAMPA 
-              FL(K1 ,MP1) = FL(K1 ,MP1) + DELAP*FKLAPA2
               DSSNL4(K1,MP1) = DSSNL4(K1,MP1) + DELAP*FKLAPA2
-              SL(K11,MP1) = SL(K11,MP1) + AD*FKLAMPB
               SSNL4(K11,MP1) = SSNL4(K11,MP1) + AD*FKLAMPB
-              FL(K11,MP1) = FL(K11,MP1) + DELAP*FKLAPB2
               DSSNL4(K11,MP1) = DSSNL4(K11,MP1) + DELAP*FKLAPB2
             ENDDO
           ENDDO
@@ -281,46 +257,27 @@
 !              WRITE(111117,'(6F20.10)') FAD1,FAD2,FCEN,DELAD(IJ)
 !              WRITE(111117,'(5F20.15)') DELAM(IJ),FIJ
 !              WRITE(111117,'(5F30.20)') FCEN, FTEMP(IJ), FIJ, FTAIL
-              SL(K2 ,MM ) = SL(K2 ,MM ) + AD*FKLAMM1
               SSNL4(K2,MM) = SSNL4(K2,MM) + AD*FKLAMM1
-              FL(K2 ,MM ) = FL(K2 ,MM ) + DELAM*FKLAM12
               DSSNL4(K2,MM) = DSSNL4(K2,MM) +  DELAM*FKLAM12
-              SL(K21,MM ) = SL(K21,MM ) + AD*FKLAMM2
               SSNL4(K21,MM) = SSNL4(K21,MM) +  AD*FKLAMM1
-              FL(K21,MM ) = FL(K21,MM ) + DELAM*FKLAM22
               DSSNL4(K21,MM) = DSSNL4(K21,MM) + DELAM*FKLAM22
               IF (MM1.LE.NFRE) THEN
-                SL(K2 ,MM1) = SL(K2 ,MM1) + AD*FKLAMMA
                 SSNL4(K2,MM1) = SSNL4(K2,MM1) + AD*FKLAMMA
-                FL(K2 ,MM1) = FL(K2 ,MM1) + DELAM*FKLAMA2
                 DSSNL4(K2,MM1) = DSSNL4(K2,MM1) + DELAM*FKLAMA2
-                SL(K21,MM1) = SL(K21,MM1) + AD*FKLAMMB
                 SSNL4(K21,MM1) = SSNL4(K21,MM1) + AD*FKLAMMB
-                FL(K21,MM1) = FL(K21,MM1) + DELAM*FKLAMB2
                 DSSNL4(K21,MM1) = DSSNL4(K21,MM1) + DELAM*FKLAMB2
                 IF (MC .LE.NFRE) THEN
-                  SL(K  ,MC ) = SL(K  ,MC ) - 2.*AD
                   SSNL4(K,MC) = SSNL4(K,MC) - 2.*AD
-                  FL(K  ,MC ) = FL(K  ,MC ) - 2.*DELAD
                   DSSNL4(K,MC) = DSSNL4(K,MC) - 2.*DELAD
-
                   IF (MP .LE.NFRE) THEN
-                      SL(K1 ,MP ) = SL(K1 ,MP ) + AD*FKLAMP1
                       SSNL4(K1,MP) = SSNL4(K1,MP) + AD*FKLAMP1
-                      FL(K1 ,MP ) = FL(K1 ,MP ) + DELAP*FKLAP12
                       DSSNL4(K1,MP) = DSSNL4(K1,MP) + DELAP*FKLAP12
-                      SL(K11,MP ) = SL(K11,MP ) + AD*FKLAMP2
                       SSNL4(K11,MP) = SSNL4(K11,MP) + AD*FKLAMP2
-                      FL(K11,MP ) = FL(K11,MP ) + DELAP*FKLAP22
                       DSSNL4(K11,MP) = DSSNL4(K11,MP) + DELAP*FKLAP22
                     IF (MP1.LE.NFRE) THEN
-                      SL(K1 ,MP1)      = SL(K1 ,MP1)    + AD*FKLAMPA
                       SSNL4(K1 ,MP1)   = SSNL4(K1 ,MP1) + AD*FKLAMPA
-                      FL(K1 ,MP1)      = FL(K1 ,MP1) + DELAP*FKLAPA2
                       DSSNL4(K1 ,MP1)  = DSSNL4(K1 ,MP1) + AD*FKLAMPA
-                      SL(K11,MP1)      = SL(K11,MP1) + AD*FKLAMPB
                       SSNL4(K1 ,MP1)   = SSNL4(K1 ,MP1) + AD*FKLAMPB
-                      FL(K11,MP1)      = FL(K11,MP1) + DELAP*FKLAPB2
                       DSSNL4(K11 ,MP1) = DSSNL4(K11 ,MP1) + DELAP*FKLAPB2
                     ENDIF
                   ENDIF
@@ -351,50 +308,27 @@
               DELAM = (FIJ-2.*SAP)*DAL2*FCEN
 
               IF (MM1.GE.1) THEN
-                SL(K2 ,MM1) = SL(K2 ,MM1) + AD*FKLAMMA
                 SSNL4(K2,MM1) = SSNL4(K2,MM1) + AD*FKLAMMA
-                FL(K2 ,MM1) = FL(K2 ,MM1) + DELAM*FKLAMA2
                 DSSNL4(K2,MM1) = DSSNL4(K2,MM1) + DELAM*FKLAMA2
-                SL(K21,MM1) = SL(K21,MM1) + AD*FKLAMMB
                 SSNL4(K21,MM1) = SSNL4(K21,MM1) + AD*FKLAMMB
-                FL(K21,MM1) = FL(K21,MM1) + DELAM*FKLAMB2
                 DSSNL4(K21,MM1) = DSSNL4(K21,MM1) + DELAM*FKLAMB2
               ENDIF
 
-              SL(K  ,MC ) = SL(K  ,MC ) - 2.*AD
               SSNL4(K,MC) = SSNL4(K,MC) - 2.*AD
-              FL(K  ,MC ) = FL(K  ,MC ) - 2.*DELAD
               DSSNL4(K,MC) = DSSNL4(K,MC) - 2.*DELAD
-              SL(K1 ,MP ) = SL(K1 ,MP ) + AD*FKLAMP1
               SSNL4(K1,MP) = SSNL4(K1,MP) + AD*FKLAMP1
-              FL(K1 ,MP ) = FL(K1 ,MP ) + DELAP*FKLAP12
               DSSNL4(K1,MP) = DSSNL4(K1,MP) + DELAP*FKLAP12
-              SL(K11,MP ) = SL(K11,MP ) + AD*FKLAMP2
               SSNL4(K11,MP) = SSNL4(K11,MP) + AD*FKLAMP2
-              FL(K11,MP ) = FL(K11,MP ) + DELAP*FKLAP22
               DSSNL4(K11,MP) = DSSNL4(K11,MP) + DELAP*FKLAP22
-              SL(K1 ,MP1) = SL(K1 ,MP1) + AD*FKLAMPA
               SSNL4(K1,MP1)  = SSNL4(K1,MP1) + AD*FKLAMPA
-              FL(K1 ,MP1) = FL(K1 ,MP1) + DELAP*FKLAPA2
               DSSNL4(K1,MP1)  = DSSNL4(K1,MP1) + DELAP*FKLAPA2
-              SL(K11,MP1) = SL(K11,MP1) + AD*FKLAMPB
               SSNL4(K11,MP1)  = SSNL4(K11,MP1) + AD*FKLAMPB
-              FL(K11,MP1) = FL(K11,MP1) + DELAP*FKLAPB2
               DSSNL4(K11,MP1)  = DSSNL4(K11,MP1) + DELAP*FKLAPB2
             ENDDO
           ENDDO
 
         ENDIF
-
-!*    BRANCH BACK TO 2. FOR NEXT FREQUENCY.
-          IF (MC.LE.NFRE) THEN
-                     FLSUM = FLSUM + SUM(FL(:,MC))
-                     SLSUM = SLSUM + SUM(SL(:,MC))
-!            WRITE(111117,'(I10,4F30.25)') MC, &
-!     &                  SUM(FL(:,MC)),SUM(SL(:,MC))
-!     &                  FLSUM, SLSUM
-          ENDIF
-  
       ENDDO
-
+      FL = FL + DSSNL4
+      SL = SL + SSNL4
       END SUBROUTINE SNONLIN_LOCAL

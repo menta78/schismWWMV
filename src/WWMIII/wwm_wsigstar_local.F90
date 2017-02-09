@@ -46,12 +46,8 @@
 
 !      USE YOWCOUP  , ONLY : XKAPPA
 !      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-
-     USE DATAPOOL, ONLY : XKAPPA, RKIND, ONETHIRD
-
-! ----------------------------------------------------------------------
+      USE DATAPOOL, ONLY : XKAPPA, RKIND, ONETHIRD
       IMPLICIT NONE
-
       INTEGER, INTENT(IN) :: IPP
       REAL(rkind), intent(in) :: WSTAR, Z0NEW, USNEW
       REAL(rkind), intent(out) :: SIG_N
