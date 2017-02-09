@@ -8,15 +8,10 @@
  LNAUTOUT        = F,
  LMONO_OUT       = F,
  LMONO_IN        = F,
-<<<<<<< HEAD
  BEGTC   = 20030911.000000     ,
  DELTC   =   600.000000000000     ,
-=======
- BEGTC   = 20030910.000000     ,
- DELTC   =   10.000000000000     ,
->>>>>>> b73266613ab46c7c10fe9079134763c134b9ac1c
  UNITC   = SEC                 ,
- ENDTC   = 20030911.000000     ,
+ ENDTC   = 20030921.000000     ,
  DMIN    =  0.100000000000000     ,
  MULTIPLE_OUT_INFO       = T,
  MODEL_OUT_TYPE  = WW3                 
@@ -59,11 +54,7 @@
  &INIT
  LHOTR   = F,
  LINID   = F,
-<<<<<<< HEAD
  INITSTYLE       =           1
-=======
- INITSTYLE = 1, 
->>>>>>> b73266613ab46c7c10fe9079134763c134b9ac1c
  /
  &BOUC
  LBCSE   = F,
@@ -126,11 +117,7 @@
  ENDTC   = 20031001.000000     ,
  LINTERWD        = T,
  WDIR    =  0.000000000000000E+000,
-<<<<<<< HEAD
- WVEL    =   20.0000000000000     ,
-=======
- WVEL    =   10.0000000000000     ,
->>>>>>> b73266613ab46c7c10fe9079134763c134b9ac1c
+ WVEL    =  10.0000000000000     ,
  CWINDX  =  0.000000000000000E+000,
  CWINDY  =  0.000000000000000E+000,
  FILEWIND        = windfiles_narr.dat                                                                                                
@@ -157,8 +144,6 @@
  LCCUR   = F,
  CCURTX  =  0.000000000000000E+000,
  CCURTY  =  0.000000000000000E+000,
- FILECUR =                                                                                                                           
-                   ,
  LERGINP = T,
  CURFAC  =   1.00000000000000     ,
  ICURRFORMAT     =           1,
@@ -176,8 +161,6 @@
  LSTWL   = F,
  LCWLV   = F,
  CWATLV  =  0.000000000000000E+000,
- FILEWATL        =                                                                                                                   
-                           ,
  LERGINP = T,
  WALVFAC =   1.00000000000000     ,
  IWATLVFORMAT    =           1,
@@ -247,17 +230,11 @@
  NDYNITER_SNL3   =           1,
  NDYNITER_SBF    =           1,
  NB_BLOCK        =           3,
-<<<<<<< HEAD
  MAXITER =          10,
  LNANINFCHK      = T,
  LSOURCESWAM     = F,
  PMIN    =  0.000000000000000E+000,
  LSOURCESWWIII   = F,
-=======
- MAXITER =      100000,
- LNANINFCHK      = F,
- PMIN    =  0.000000000000000E+000,
->>>>>>> b73266613ab46c7c10fe9079134763c134b9ac1c
  BLOCK_GAUSS_SEIDEL      = T,
  LNONL   = F,
  L_SOLVER_NORM   = F,
