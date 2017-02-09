@@ -320,7 +320,7 @@
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32b')
          MIJ = 0
          ENH = 1.d0
-         ALLOCATE( USOLD(MNP,1), THWOLD(MNP,1), THWNEW(MNP), Z0OLD(MNP,1), Z0NEW(MNP), ROAIRO(MNP,1), ROAIRN(MNP), U10OLD(MNP,1), stat=istat)
+         ALLOCATE( USOLD(MNP,1), THWOLD(MNP), THWNEW(MNP), Z0OLD(MNP), Z0NEW(MNP), ROAIRO(MNP,1), ROAIRN(MNP), U10OLD(MNP,1), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32c')
          U10OLD = ZERO
          USOLD = ZERO
