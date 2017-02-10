@@ -134,7 +134,7 @@
  IWATLVFORMAT   = 1,                 
 /
 
-&ENGS          
+&ENGS
  MESNL          = 0,                 
  MESIN          = 0,                 
  IFRIC          = 1,                 
@@ -152,7 +152,15 @@
  TRIURS         = 0.0100000000000000, 
 /
 
-&NUMS          
+&SIN4
+/
+
+&SDS4
+/
+
+
+
+&NUMS
  ICOMP          = 0,                 
  AMETHOD        = 1,                 
  SMETHOD        = 3,                 

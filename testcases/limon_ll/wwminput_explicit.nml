@@ -134,6 +134,9 @@
  WALVFAC =   1.00000000000000     ,
  IWATLVFORMAT    =           1
  /
+
+
+
  &ENGS
  MESNL   =          0,
  MESIN   =          0,
@@ -151,6 +154,15 @@
  TRIRA   =   2.50000000000000     ,
  TRIURS  =  0.100000000000000     
  /
+
+
+&SIN4
+/
+
+&SDS4
+/
+
+
  &NUMS
  ICOMP   =           0,
  AMETHOD =           1,

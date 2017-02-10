@@ -170,7 +170,7 @@
  EXPORT_WALV_DELTC = 0.000000000000000E+000, 
 /
 
-&ENGS          
+&ENGS
  ISOURCE        = 1,                 
  MESNL          = 1,                 
  MESIN          = 1,                 
@@ -190,7 +190,15 @@
  TRIURS         = 0.100000000000000, 
 /
 
-&NUMS          
+&SIN4
+/
+
+&SDS4
+/
+
+
+
+&NUMS
  ICOMP          = 0,                 
  AMETHOD        = 0,                 
  SMETHOD        = 1,                 

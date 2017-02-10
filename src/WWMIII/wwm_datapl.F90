@@ -323,6 +323,16 @@
          REAL(rkind) :: BETAMAX, SINTHP, SWELLF, SWELLFPAR
          REAL(rkind) :: SWELLF2, SWELLF3, SWELLF4, SWELLF5
          REAL(rkind) :: SWELLF6, SWELLF7, TAUWSHELTER, ZALP, SINBR
+!
+! SIN4 parameters
+!
+         REAL(rkind) :: SDSC1, FXPM3, FXFM3
+         REAL(rkind) :: FXFMAGE, SDSC2, SDSCUM, SDSSTRAIN, SDSC4
+         REAL(rkind) :: SDSC5, SDSC6, SDSBR, SDSBR2, SDSP, SDSISO
+         REAL(rkind) :: SDSBCK, SDSABK, SDSPBK, SDSBINT, SDSHCK
+         REAL(rkind) :: SDSDTH, SDSCOS, SDSBRF1, SDSBRFDF
+         REAL(rkind) :: SDSBM0, SDSBM1, SDSBM2, SDSBM3, SDSBM4
+         REAL(rkind) :: SDSHFGEN, SDSLFGEN, WHITECAPWIDTH, FXINCUT, FXDSCUT
          
 ! Entries needed for output of spectra
          LOGICAL    :: EXTRAPOLATION_ALLOWED_BOUC = .FALSE.

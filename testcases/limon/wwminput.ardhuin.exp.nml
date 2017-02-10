@@ -157,6 +157,14 @@
  TRIURS         = 0.100000000000000, 
 /
 
+&SIN4
+/
+
+&SDS4
+/
+
+
+
 &NUMS          
  ICOMP          = 0,                 
  AMETHOD        = 1,                 

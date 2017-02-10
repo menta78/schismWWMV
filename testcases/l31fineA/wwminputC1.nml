@@ -126,6 +126,8 @@
  WALVFAC =   1.000000    ,
  IWATLVFORMAT     = 1, 
  /
+
+
  &ENGS
  MESNL   =           0,
  MESIN   =           0,
@@ -144,6 +146,15 @@
  TRIURS  =  0.1000000    ,
  LPRECOMPST4     = .F., 
  /
+
+&SIN4
+/
+
+&SDS4
+/
+
+
+
  &NUMS
  ICOMP   =           0,
  AMETHOD =           1,

@@ -162,6 +162,8 @@
  LEXPORT_WALV_WW3        = F,
  EXPORT_WALV_DELTC       =  0.000000000000000E+000
  /
+
+
  &ENGS
  MESNL   =           1,
  MESIN   =           5,
@@ -180,6 +182,15 @@
  TRIRA   =   2.50000000000000     ,
  TRIURS  =  0.100000000000000     
  /
+
+&SIN4
+/
+
+&SDS4
+/
+
+
+
  &NUMS
  ICOMP   =           0,
  AMETHOD =           3,

@@ -100,7 +100,7 @@
       LOGICAL                        :: FLICES = .FALSE.
       REAL(rkind)                    :: TTAUWSHELTER
       REAL(rkind)                    :: ZZ0RAT = 0.04_rkind
-      REAL(rkind)                    :: SSINTHP    = 2.
+      REAL(rkind)                    :: SSINTHP
       INTEGER                        :: NK, MK, NTH, MTH, MSPEC
       INTEGER, ALLOCATABLE           :: IKTAB(:,:)
       INTEGER, ALLOCATABLE           :: SATINDICES(:,:)
@@ -121,14 +121,14 @@
       REAL(rkind)                    :: FTE, FTF
       REAL(rkind)                    :: SSTXFTF, SSTXFTWN, SSTXFTFTAIL
       REAL(rkind)                    :: SSWELLF(7) ,SSWELLFPAR
-      REAL(rkind)                    :: SWELLFPAR, SSDSTH
+      REAL(rkind)                    :: SSDSTH
       REAL(rkind)                    :: SSDSDTH, SSDSCOS, SSDSHCK
       INTEGER                        :: SDSNTH ! This is wrongly globally defined ...
       REAL(rkind)                    :: SSDSBCK, SSDSBINT, SSDSPBK, SSDSABK
-      REAL(rkind)                    :: SSDSC1, SSDSC2, SSDSC3, SSDSC4
+      REAL(rkind)                    :: SSDSC1, SSDSC2, SSDSC4
       REAL(rkind)                    :: SSDSC5, SSDSC6, SSDSCUM
-      REAL(rkind)                    :: SSDSBR, SSDSBRF1, SSDSBRF2
-      REAL(rkind)                    :: SSDSBR2, WHITECAPWIDTH
+      REAL(rkind)                    :: SSDSBR, SSDSBRF1
+      REAL(rkind)                    :: SSDSBR2
       REAL(rkind)                    :: SSDSP
       INTEGER                        :: SSDSISO, SSDSBRFDF
       REAL(rkind)                    :: SSDSBM(0:4)
@@ -215,19 +215,8 @@
           END DO
         END DO
 
-!        WRITE(5001,*) 'DTH'
-!        WRITE(5001,*) DTH
-!        WRITE(5001,*) 'FR1'
-!        WRITE(5001,*) FR1
-!        WRITE(5001,*) 'TH'
-!        WRITE(5001,*) TH
-!        WRITE(5001,*) 'ESIN, ECOS, EC2'
-!        WRITE(5001,*) ESIN, ECOS, EC2
-
         WNMEANP = 0.5_rkind
         WNMEANPTAIL = -0.5_rkind
-!        WRITE(5001,*) 'WNMEANP, WNMEANPTAIL'
-!        WRITE(5001,*) WNMEANP, WNMEANPTAIL
 
         XFR = SFAC ! Check with Fabrice ... should be 1.1
 
@@ -235,21 +224,11 @@
         SXFR    = 0.5_rkind * (XFR-1./XFR)
 !        WRITE(740+myrank,*) 'XFR=', XFR
 
-!        WRITE(5001,*) 'XFR, SIGMA, SXFR'
-!        WRITE(5001,*) XFR, SIGMA, SXFR
-
         DO IK=0, NK+1
          SIGMA    = SIGMA * XFR ! What is going on here ...
          SIG (IK) = SIGMA
          DSIP(IK) = SIGMA * SXFR
         END DO
-
-!        WRITE(5001,*) 'SIGMA'
-!        WRITE(5001,*)  SIGMA
-!        WRITE(5001,*) 'SIG'
-!        WRITE(5001,*)  SIG
-!        WRITE(5001,*) 'DSIP'
-!        WRITE(5001,*)  DSIP
 
         DSII(1) = 0.5_rkind * SIG( 1) * (XFR-1.)
         DO IK = 2, NK - 1
@@ -268,39 +247,22 @@
           DDEN2(ISP) = DDEN(IK)
         END DO
 
-!        WRITE(5001,*) 'SIG2'
-!        WRITE(5001,*) SIG2
-!        WRITE(5001,*) 'DSII'
-!        WRITE(5001,*) DSII
-!        WRITE(5001,*) 'DDEN'
-!        WRITE(5001,*) DDEN
-!        WRITE(5001,*) 'DDEN2'
-!        WRITE(5001,*) DDEN2
-
         FTE = 0.25_rkind * SIG(NK) * DTH * SIG(NK)
         FTF = 0.20_rkind           * DTH * SIG(NK)
 
         FACHF  = 5.
         FACHFE = XFR**(-FACHF)
 
-!        STXFTFTAIL  = 1./(FACHF-1.-WNMEANPTAIL*2)
-!        STXFTWN     = 1./(FACHF-1.-WNMEANP*2) * SIG(NK)**(2)
-!        STXFTF      = 1./(FACHF-1.-WNMEANP*2)
-
         SSTXFTFTAIL  = 1/(FACHF-1.-WNMEANPTAIL*2) * SIG(NK)**(2+WNMEANPTAIL*2) * DTH
         SSTXFTWN = 1/(FACHF-1.-WNMEANP*2) * SIG(NK)**(2) * (SIG(NK)/SQRT(G9))**(WNMEANP*2) * DTH
              
-        
-!        WRITE(5001,*) 'FTE, FTF, FACHF, FACHFE'
-!        WRITE(5001,*) FTE, FTF, FACHF, FACHFE
-
-        SSWELLF(1) = 0.66
-        SSWELLF(2) = -0.018
-        SSWELLF(3) = 0.022
-        SSWELLF(4) = 1.5E5
-        SSWELLF(5) = 1.2
-        SSWELLF(6) = 0.
-        SSWELLF(7) = 360000.
+        SSWELLF(1) = SWELLF
+        SSWELLF(2) = SWELLF2
+        SSWELLF(3) = SWELLF3
+        SSWELLF(4) = SWELLF4
+        SSWELLF(5) = SWELLF5
+        SSWELLF(6) = SWELLF6
+        SSWELLF(7) = SWELLF7
         
 !        SSWELLF(1) = 0.8_rkind
 !        SSWELLF(2) = -0.018_rkind
@@ -310,62 +272,59 @@
 !        SSWELLF(6) = 0._rkind
 !        SSWELLF(7) = 0._rkind
 
-!        WRITE(5001,*) 'SSWELLF'
-!        WRITE(5001,*) SSWELLF
-
-        AALPHA = 0.0095_rkind
+        AALPHA = ALPHA0
 !        BBETA  = 1.54_rkind ! 1.54 for ECMWF
-        BBETA  = 1.32_rkind ! 1.52 as in WaveWatch III trunk
-        ZZALP   = 0.006_rkind
-        ZZWND   = 10._rkind
+        BBETA  = BETAMAX ! 1.52 as in WaveWatch III trunk
+        ZZALP   = ZALP
+        ZZWND   = ZWND
 
-        SWELLFPAR = 1
+        SSDSBRF1   = SDSBRF1
+        SSDSHCK    = SDSHCK
+        SSDSBCK    = SDSBCK
+        SSDSBINT   = SDSBINT
+        SSDSPBK    = SDSPBK
+        SSDSABK    = SDSABK
 
-        SSDSBRF1   = 0.5_rkind
-        SSDSHCK    = 1._rkind
-        SSDSBCK    = 0._rkind
-        SSDSBINT   = 0.3_rkind
-        SSDSPBK    = 4._rkind
-        SSDSABK    = 1.5_rkind
+        SSDSBR     = SDSBR
+        SSDSBRFDF  = SDSBRFDF
+        SSDSBR2    = SDSBR2
 
-        SSDSBR     = 9.E-4_rkind
-        SSDSBRFDF  = 0
-        SSDSBRF1   = 0.5_rkind
-        SSDSBRF2   = 0._rkind
-        SSDSBR2    = 0.8_rkind
+        SSDSP      = SDSP
+        SSDSPBK    = SDSPBK
 
-        SSDSP      = 2.
-        SSDSPBK    = 4.
+        SSDSISO     = SDSISO
 
-        SSDSISO     = 2
+!        SSDSBM(0)  = 1.
+!        SSDSBM(1)  = 02428._rkind
+!        SSDSBM(2)  = 1.995_rkind
+!        SSDSBM(3)  = -2.5709_rkind
+!        SSDSBM(4)  = 1.3286_rkind
 
-        SSDSBM(0)  = 1.
-        SSDSBM(1)  = 02428._rkind
-        SSDSBM(2)  = 1.995_rkind
-        SSDSBM(3)  = -2.5709_rkind
-        SSDSBM(4)  = 1.3286_rkind
+        SSDSBM(0)  = SDSBM0
+        SSDSBM(1)  = SDSBM1
+        SSDSBM(2)  = SDSBM2
+        SSDSBM(3)  = SDSBM3
+        SSDSBM(4)  = SDSBM4
 
-        ZZ0MAX     = 0.002_rkind
-        SSINTHP    = 2.0_rkind
-        SSWELLFPAR = 3
+        ZZ0MAX     = Z0MAX
+        SSINTHP    = SINTHP
+        SSWELLFPAR = SWELLFPAR
 
 !        TTAUWSHELTER = 1.0_rkind
-        TTAUWSHELTER = 0.3_rkind
-        ZZ0RAT       = 0.04_rkind
+        TTAUWSHELTER = TAUWSHELTER
+        ZZ0RAT       = Z0RAT
 
-        SSDSC1 = 0._rkind
-        SSDSC2 = -2.2E-5_rkind ! AR: was originally 2.2
-        !SSDSC3 = -0.80_rkind  ! overwritten by SSDSCUM
-        SSDSC4 = 1._rkind
-        SSDSC5 = 0._rkind
-        SSDSC6 = 0.30_rkind
+        SSDSC1 = SDSC1
+        SSDSC2 = SDSC2
+        SSDSC4 = SDSC4
+        SSDSC5 = SDSC5
+        SSDSC6 = SDSC6
 
-        WHITECAPWIDTH = 0.8_rkind
+!        WHITECAPWIDTH = 0.8_rkind
 
-        SSDSCUM = -0.40344_rkind
-        SSDSDTH = 80._rkind ! not used ...
-        SSDSCOS = 2._rkind
-        SSDSISO = 2 !AR: changes to isotropic breaking ...
+        SSDSCUM = SDSCUM
+        SSDSDTH = SDSDTH
+        SSDSCOS = SDSCOS
 
         SSDSC(1)   = SSDSC1
         SSDSC(2)   = SSDSC2
@@ -431,11 +390,11 @@
         & FWTABLE, MSC_TEST, MDC_TEST, & 
         & ZZWND, AALPHA, ZZ0MAX, BBETA, SSINTHP, ZZALP,    &
         & TTAUWSHELTER, SSWELLFPAR, SSWELLF,               &
-        & ZZ0RAT, SSDSC1, SSDSC2, SSDSC3, SSDSC4, SSDSC5,  &
+        & ZZ0RAT, SSDSC1, SSDSC2, SSDSC4, SSDSC5,          &
         & SSDSC6, SSDSISO, SSDSBR, SSDSBR2, SSDSBM, SSDSP, &
         & SSDSCOS, SSDSDTH, SSTXFTF,                       &
         & SSTXFTFTAIL, SSTXFTWN,                           &
-        & SSDSBRF1, SSDSBRF2, SSDSBRFDF,SSDSBCK, SSDSABK,  &
+        & SSDSBRF1,SSDSBRFDF,SSDSBCK, SSDSABK,             &
         & SSDSPBK, SSDSBINT, &
         & SSDSHCK, DELUST, DELTAIL, DELTAUW, &
         & DELU, DELALP, DELAB, TAUT, TAUHFT, TAUHFT2,      &
@@ -738,7 +697,6 @@
       R2 = RE1*ITERM + IM1*RTERM
       RE1 = T1*R1 - T2*R2
       IM1 = T1*R2 + T2*R1
-      RETURN
       END SUBROUTINE KZEONE_KERNEL
 !**********************************************************************
 !*                                                                    *
@@ -1420,15 +1378,6 @@
         TAUWX=TAUWX*TAUWB/TAUW
         TAUWY=TAUWY*TAUWB/TAUW
         END IF
-! 
-      RETURN
-!
-! Formats
-!
-!/T 9000 FORMAT (' TEST W3SIN4 : COMMON FACT.: ',3E10.3)
-!/
-!/ End of W3SIN3 ----------------------------------------------------- /
-!/
       END SUBROUTINE
 !/ ------------------------------------------------------------------- /
       SUBROUTINE INSIN4
@@ -1519,7 +1468,6 @@
 !
 ! These precomputed tables are written in mod_def.ww3 
 !
-!      WRITE(6,*) 'INSIN4:',FLTABS, SSDSDTH, SSDSC3, SSDSBCK
       CALL TABU_STRESS
       CALL TABU_TAUHF   !tabulate high-frequency stress
       IF (TTAUWSHELTER.GT.0) THEN
@@ -1692,11 +1640,11 @@
      & FWTABLE, MSC,MDC,                                                &
      & ZZWND, AALPHA, ZZ0MAX, BBETA, SSINTHP, ZZALP,                    &
      & TTAUWSHELTER, SSWELLFPAR, SSWELLF,                               &
-     & ZZ0RAT, SSDSC1, SSDSC2, SSDSC3, SSDSC4, SSDSC5,                  &
+     & ZZ0RAT, SSDSC1, SSDSC2, SSDSC4, SSDSC5,                          &
      & SSDSC6, SSDSISO, SSDSBR, SSDSBR2, SSDSBM, SSDSP,                 &
      & SSDSCOS, SSDSDTH, SSTXFTF,                                       &
      & SSTXFTFTAIL, SSTXFTWN,                                           &
-     & SSDSBRF1, SSDSBRF2, SSDSBRFDF,SSDSBCK, SSDSABK,                  &
+     & SSDSBRF1, SSDSBRFDF,SSDSBCK, SSDSABK,                            &
      & SSDSPBK, SSDSBINT,                                               &
      & SSDSHCK, DELUST, DELTAIL, DELTAUW,                               &
      & DELU, DELALP, DELAB, TAUT, TAUHFT, TAUHFT2,                      &
@@ -1834,11 +1782,6 @@
       DO I=0,ITAUMAX
         TAUT(I,0)=0.0
       END DO
-!
-! Write test output ... WWM
-!
-
-      RETURN
       END SUBROUTINE TABU_STRESS
 !/ ------------------------------------------------------------------- /
       SUBROUTINE TABU_TAUHF
@@ -2754,10 +2697,6 @@
 !
 !  COMPUTES WHITECAP PARAMETERS
 !
-      IF (.false.) THEN
-        RETURN
-        END IF
-!
       WHITECAP(1:2) = 0.
 !
 ! precomputes integration of Lambda over direction 
@@ -2806,16 +2745,6 @@
           WHITECAP(2) = WHITECAP(2) + COEF4(IK) * MFT
           END DO
         END IF
-!
-! End of output computing
-!
-      RETURN
-!
-! Formats
-!
-!/
-!/ End of W3SDS4 ----------------------------------------------------- /
-!/
       END SUBROUTINE W3SDS4
 
 

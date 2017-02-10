@@ -1097,7 +1097,10 @@
          READ(INP%FHNDL, NML = ENGS)
          wwm_print_namelist(ENGS)
          FLUSH(CHK%FHNDL)
-
+!
+!     *** Source term ST4 parameterization
+!
+         CALL READ_SIN4_SDS4()
 !
 !     *** NUMS section
 !
@@ -1208,13 +1211,21 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE READ_SIN4()
+      SUBROUTINE READ_SIN4_SDS4()
       USE DATAPOOL
       IMPLICIT NONE
       NAMELIST /SIN4/ ZWND, ALPHA0, Z0MAX, BETAMAX, SINTHP, ZALP,     &
                       TAUWSHELTER, SWELLFPAR, SWELLF,                 &
                       SWELLF2, SWELLF3, SWELLF4, SWELLF5, SWELLF6,    &
                       SWELLF7, Z0RAT, SINBR
+      NAMELIST /SDS4/ SDSC1, FXPM3, FXFM3,                            &
+                      FXFMAGE, SDSC2, SDSCUM, SDSSTRAIN, SDSC4,       &
+                      SDSC5, SDSC6, SDSBR, SDSBR2, SDSP, SDSISO,      &
+                      SDSBCK, SDSABK, SDSPBK, SDSBINT, SDSHCK,        &
+                      SDSDTH, SDSCOS, SDSBRF1, SDSBRFDF,              &
+                      SDSBM0, SDSBM1, SDSBM2, SDSBM3, SDSBM4,         &
+                      SDSHFGEN, SDSLFGEN, WHITECAPWIDTH, FXINCUT,     &
+                      FXDSCUT
       ZWND   =   10.
       ALPHA0 = 0.0095
       Z0MAX = 0.0
@@ -1233,6 +1244,41 @@
       ZALP   = 0.006
       SINBR   = 0.
       READ(INP%FHNDL, NML = SIN4)
+      SDSC1  = 0.0     ! not used in ST4, should be cleaned up
+      FXFM3 = 2.5
+      FXFMAGE = 0.
+      FXINCUT = 0.
+      FXDSCUT = 0.
+      FXPM3 = 4.
+      SDSC2     = -2.2E-5
+      SDSCUM     = -0.40344
+      SDSC4     = 1.
+      SDSC5     = 0.
+      SDSC6     = 0.3
+      SDSBR     = 0.90E-3
+      SDSBRFDF  = 0
+      SDSBRF1   = 0.5
+      SDSP      = 2.   ! this is now fixed in w3sds4, should be cleaned up
+      SDSDTH    = 80.
+      SDSCOS    = 2.
+      SDSISO    = 2
+      SDSBM0    = 1.
+      SDSBM1    = 0.
+      SDSBM2    = 0.
+      SDSBM3    = 0.
+      SDSBM4    = 0.
+      SDSBR2    = 0.8
+      SDSBCK    = 0.
+      SDSABK    = 1.5
+      SDSPBK    = 4.
+      SDSBINT   = 0.3
+      SDSHCK    = 1.5
+      WHITECAPWIDTH = 0.3
+      SDSSTRAIN = 0.
+      SDSHFGEN  = 0.
+      SDSLFGEN  = 0.
+      READ(INP%FHNDL, NML = SDS4)
+      
       
       END SUBROUTINE
 !**********************************************************************

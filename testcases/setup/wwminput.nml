@@ -169,6 +169,14 @@
  /
 
 
+&SIN4
+/
+
+&SDS4
+/
+
+
+
  &NUMS
  ICOMP   =           0,
  AMETHOD =           1,

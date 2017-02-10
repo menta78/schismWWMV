@@ -200,6 +200,14 @@
  /
 
 
+&SIN4
+/
+
+&SDS4
+/
+
+
+
  &NUMS
  ICOMP   =           3,
  AMETHOD =           7,

@@ -179,7 +179,15 @@
  EXPORT_WALV_DELTC = 0.000000000000000E+000, 
 /
 
-&ENGS          
+&SIN4
+/
+
+&SDS4
+/
+
+
+
+&ENGS
  MESNL          = 1,                 
  MESIN          = 1,                 
  IFRIC          = 1,                 
