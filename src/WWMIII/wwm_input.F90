@@ -1208,6 +1208,36 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE READ_SIN4()
+      USE DATAPOOL
+      IMPLICIT NONE
+      NAMELIST /SIN4/ ZWND, ALPHA0, Z0MAX, BETAMAX, SINTHP, ZALP,     &
+                      TAUWSHELTER, SWELLFPAR, SWELLF,                 &
+                      SWELLF2, SWELLF3, SWELLF4, SWELLF5, SWELLF6,    &
+                      SWELLF7, Z0RAT, SINBR
+      ZWND   =   10.
+      ALPHA0 = 0.0095
+      Z0MAX = 0.0
+      Z0RAT = 0.04
+      BETAMAX   = 1.43
+      SINTHP    = 2.
+      SWELLF    = 0.66
+      SWELLFPAR = 1
+      SWELLF2 = -0.018
+      SWELLF3 = 0.022
+      SWELLF4 = 1.5E5
+      SWELLF5 = 1.2
+      SWELLF6 = 0.
+      SWELLF7 = 360000.
+      TAUWSHELTER = 0.3
+      ZALP   = 0.006
+      SINBR   = 0.
+      READ(INP%FHNDL, NML = SIN4)
+      
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE CHECK_LOGICS()
          USE DATAPOOL
          IMPLICIT NONE

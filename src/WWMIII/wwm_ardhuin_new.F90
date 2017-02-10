@@ -422,7 +422,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE READ_INSIN4
-      USE DATAPOOL, ONLY : LPRECOMP_EXIST, DBG, MSC, MDC, SWELLFT
+      USE DATAPOOL, ONLY : LPRECOMP_EXIST, DBG, MSC, MDC
       IMPLICIT NONE
       INTEGER :: MSC_TEST, MDC_TEST, ISTAT
 
@@ -439,7 +439,7 @@
         & SSDSPBK, SSDSBINT, &
         & SSDSHCK, DELUST, DELTAIL, DELTAUW, &
         & DELU, DELALP, DELAB, TAUT, TAUHFT, TAUHFT2,      &
-        & SWELLFT, IKTAB, DCKI, SATINDICES, SATWEIGHTS, &
+        & IKTAB, DCKI, SATINDICES, SATWEIGHTS,             &
         & DIKCUMUL, CUMULW, QBI
         IF (ISTAT /= 0) CALL WWM_ABORT('Remove fort.5002 Error while trying to read precomputed array')
         
@@ -1700,7 +1700,7 @@
      & SSDSPBK, SSDSBINT,                                               &
      & SSDSHCK, DELUST, DELTAIL, DELTAUW,                               &
      & DELU, DELALP, DELAB, TAUT, TAUHFT, TAUHFT2,                      &
-     & SWELLFT, IKTAB, DCKI, SATINDICES, SATWEIGHTS,                    &
+     & IKTAB, DCKI, SATINDICES, SATWEIGHTS,                             &
      & DIKCUMUL, CUMULW, QBI
    END IF
    call flush(5002)

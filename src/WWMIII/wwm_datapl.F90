@@ -316,7 +316,14 @@
          LOGICAL    :: MULTIPLE_IN_WATLEV = .TRUE.
          LOGICAL    :: MULTIPLE_IN_CURR = .TRUE.
          LOGICAL    :: MULTIPLE_OUT_INFO = .TRUE.
-
+!
+! SIN4 parameters
+!
+         REAL(rkind) :: ZWND, ALPHA0, Z0MAX, Z0RAT
+         REAL(rkind) :: BETAMAX, SINTHP, SWELLF, SWELLFPAR
+         REAL(rkind) :: SWELLF2, SWELLF3, SWELLF4, SWELLF5
+         REAL(rkind) :: SWELLF6, SWELLF7, TAUWSHELTER, ZALP, SINBR
+         
 ! Entries needed for output of spectra
          LOGICAL    :: EXTRAPOLATION_ALLOWED_BOUC = .FALSE.
          integer, allocatable :: CF_IX_BOUC(:)
@@ -1212,7 +1219,6 @@
          REAL(rkind), PARAMETER       :: FRTAIL = 0.2
          REAL(rkind), PARAMETER       :: WP1TAIL = 1./3.
          REAL(rkind), PARAMETER       :: USTARM = 5.
-         REAL(rkind)                  :: SINBR   = 0.
 
          INTEGER, PARAMETER           :: ISHALLO = 0  ! ISHALLO = 1 is not working yet ...
          INTEGER, ALLOCATABLE         :: MSC_HF(:)
@@ -1295,10 +1301,7 @@
          REAL(rkind)            :: DELALP
          REAL(rkind)            :: DELTAIL 
          REAL(rkind)            :: DELTR
-         REAL(rkind)            :: ZALP
-         REAL(rkind)            :: BETAMAX
          REAL(rkind)            :: ALPHA
-         REAL(rkind)            :: TAUWSHELTER
 !
 ! Data types for the forcing exchanges
 !
