@@ -966,11 +966,11 @@
          INTEGER, INTENT(IN)           :: IP, ISMAX
          REAL(rkind), INTENT(IN)       :: ACLOC(MSC,MDC)
          REAL(rkind), INTENT(OUT)      :: KPP, FPP, CPP, WNPP, CGPP, TPP, LPP, PEAKDSPR,PEAKDM,DPEAK
-         REAL(rkind), INTENT(OUT)      :: TPPD,KPPD,CGPD,CPPD,CPWN
+         REAL(rkind), INTENT(OUT)      :: TPPD,KPPD,CGPD,CPPD
 
          INTEGER                       :: IS, ID, IDIRM, ISIGMP
          REAL(rkind)                   :: HQUOT, HQUOTP, ETOTF3, ETOTF4, ETOTC4, ETOTS4, PEAKFF,WKDEPD,WNPD
-         REAL(rkind)                   :: DEG, VEC2DEG, MAXAC, E1, E2, DS, EAD, ETOTT, WKDEPP
+         REAL(rkind)                   :: DEG, VEC2DEG, MAXAC, E1, E2, DS, EAD, ETOTT, WKDEPP, CPWN
 !
 ! Peak period continues version... Taken from Thesis Henriques Alves ... correct citation is given there ... :)
 !
