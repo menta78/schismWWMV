@@ -966,7 +966,7 @@
          INTEGER, INTENT(IN)           :: IP, ISMAX
          REAL(rkind), INTENT(IN)       :: ACLOC(MSC,MDC)
          REAL(rkind), INTENT(OUT)      :: KPP, FPP, CPP, WNPP, CGPP, TPP, LPP, PEAKDSPR,PEAKDM,DPEAK
-         REAL(rkind), INTENT(OUT)      :: TPPD,KPPD,CGPD,CPPD
+         REAL(rkind), INTENT(OUT)      :: TPPD,KPPD,CGPD,CPPD,CPWN
 
          INTEGER                       :: IS, ID, IDIRM, ISIGMP
          REAL(rkind)                   :: HQUOT, HQUOTP, ETOTF3, ETOTF4, ETOTC4, ETOTS4, PEAKFF,WKDEPD,WNPD
@@ -1075,7 +1075,7 @@
        END DO
        IF (ISIGMP > 0) THEN
           TPPD = ONE/(SPSIG(ISIGMP)/PI2)
-          CALL WAVEKCG(DEP(IP), SPSIG(ISIGMP), CPPD, KPPD, CGPD)
+          CALL WAVEKCG(DEP(IP), SPSIG(ISIGMP), CPWN, CPPD, KPPD, CGPD)
        ELSE
           TPPD = ZERO
           CPPD  = ZERO

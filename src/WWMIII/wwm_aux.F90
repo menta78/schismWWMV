@@ -442,6 +442,7 @@
          REAL(rkind) :: SGDLS , AUX1, AUX2
          REAL(rkind) :: WKDEP
 ! 
+
          WVC = 0.
          WVK = 0.
          WVCG2 = 0.
