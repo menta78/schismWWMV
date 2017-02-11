@@ -244,7 +244,11 @@
 
        ALLOCATE( UFRIC(MNP), ALPHA_CH(MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 26')
-       UFRIC = zero
+       IF (ISOURCE .eq. 1) THEN
+         UFRIC = 1.e-5_rkind
+       ELSE
+         UFRIC = zero
+       END IF
        ALPHA_CH = zero
 !       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 18'
 !       FLUSH(STAT%FHNDL)

@@ -56,7 +56,7 @@
       IF (MESIN .GT. 0) THEN
 
         CALL SET_WIND( IP, WIND10, WINDTH )
-        CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
+!        CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
         LLWS=.TRUE.
 #ifdef DEBUGSRC
         WRITE(740+myrank,*) '1: input value USTAR=', UFRIC(IP), ' USTDIR=', USTDIR(IP)
