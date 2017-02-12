@@ -150,7 +150,6 @@
             DO ITER=1,NITER
               X      = ZTAUW/TAUOLD
               UST    = SQRT(TAUOLD)
-              Print *, 'ALPHA=', ALPHA
               Z0     = ALPHA*TAUOLD/(G)/(1.-X)**XM
               F      = UST-XKAPPA*UTOP/(LOG(XL/Z0))
               DELF   = 1.-XKAPPA*UTOP/(LOG(XL/Z0))**2*2./UST* &

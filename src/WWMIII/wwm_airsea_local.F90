@@ -113,8 +113,8 @@
       UST2 = USwork**2
       ARG = MAX(1.-(TAUW/UST2),EPS1) 
       Z0  = ALPHA*UST2/G/SQRT(ARG) 
-      Print *, 'US=', US, ' USwork=', USwork, ' UST2=', UST2
-      Print *, 'TAUW=', TAUW, ' EPS1=', EPS1, ' ARG=', ARG
-      Print *, 'Z0=', Z0, ' ALPHA=', ALPHA
+!      Print *, 'US=', US, ' USwork=', USwork, ' UST2=', UST2
+!      Print *, 'TAUW=', TAUW, ' EPS1=', EPS1, ' ARG=', ARG
+!      Print *, 'Z0=', Z0, ' ALPHA=', ALPHA
       IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111115,'(5F15.8)') US, ARG, TAUW, EPS1, Z0
       END SUBROUTINE AIRSEA_LOCAL
