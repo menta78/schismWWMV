@@ -565,6 +565,45 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE MEAN_PARAMETER_OUTPUT(IP,ACLOC,HS,TM01,TM02,TM10,KLM,WLM)
+      USE DATAPOOL
+      USE W3SRC4MD
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: IP
+      REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
+      REAL(rkind), INTENT(OUT)   :: HS,TM01,TM02,KLM,WLM,TM10
+      INTEGER ISMAX, ID, IS
+      REAL(rkind) AWW3(NSPEC), FL3(MDC,MSC)
+      REAL(rkind) WIND10, WINDTH, JAC
+      REAL(rkind) FMEAN1, WNMEAN, AMAX
+      REAL(rkind) F1MEAN, AKMEAN, XKMEAN
+      ISMAX = MSC
+      CALL MEAN_PARAMETER(IP,ACLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
+      IF (ISOURCE .eq. 1) THEN
+        DO IS = 1, MSC
+          DO ID = 1, MDC
+            AWW3(ID + (IS-1) * MDC) = ACLOC(IS,ID) * CG(IS,IP)
+          END DO
+        END DO
+        LLWS = .TRUE.
+        CALL SET_WIND( IP, WIND10, WINDTH )
+        CALL W3SPR4 ( AWW3, CG(:,IP), WK(:,IP), EMEAN(IP), FMEAN(IP), FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS(IP))
+        HS = 4.0_rkind * SQRT(EMEAN(IP))
+      END IF
+      IF (ISOURCE .eq. 2) THEN
+        DO IS = 1, MSC
+          JAC = PI2 * SPSIG(IS)
+          DO ID = 1, MDC
+            FL3(ID,IS) = ACLOC(IS,ID) * JAC
+          END DO
+        END DO
+        CALL FKMEAN_LOCAL(IP, FL3, EMEAN(IP), FMEAN(IP), F1MEAN, AKMEAN, XKMEAN)
+        HS = 4.0_rkind * SQRT(EMEAN(IP))
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
 !AR: This must be replaced by ST4_PRE or the certain WAM routine we are not consistent here this routine needs urgen deletion
       SUBROUTINE MEAN_WAVE_PARAMETER_LOC(ACLOC,CURTXYLOC,DEPLOC,WKLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
 

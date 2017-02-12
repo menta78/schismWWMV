@@ -795,8 +795,6 @@
 !/ ------------------------------------------------------------------- /
       USE DATAPOOL, ONLY: INVPI2, PI2, RKIND, NSPEC
       USE DATAPOOL, ONLY: ZERO, ONE, myrank
-!/T      USE W3ODATMD, ONLY: NDST
-!
       IMPLICIT NONE
 !/
 !/ ------------------------------------------------------------------- /
@@ -862,9 +860,7 @@
         WNMEAN   = WNMEAN + EB(IK) *(WN(IK)**WNMEANP)
         EMEANWS  = EMEANWS+ EB2(IK)
         FMEANWS  = FMEANWS+ EB2(IK)*(SIG(IK)**(2.*WNMEANPTAIL))
-        END DO
-!      WRITE(740+myrank,*) '1: FMEAN1=', FMEAN1
-!      WRITE(740+myrank,*) '1: FMEANWS=', FMEANWS
+      END DO
 !
 ! 3.  Add tail beyond discrete spectrum and get mean pars ------------ *
 !     ( DTH * SIG absorbed in FTxx )

@@ -113,7 +113,6 @@
           EM = EM+DFIM(M)*TEMP2
           FM1= FM1+DFIMOFR(M)*TEMP2
           F1 = F1+DFFR(M)*TEMP2
-            !WRITE(111118,'(4F20.10)') EM(IJ), FM1(IJ), TEMP2(IJ)
         ENDDO
 
       ELSE
