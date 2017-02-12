@@ -182,9 +182,9 @@
  MESNL   =           1,
  MESIN   =           1,
  IFRIC   =           1,
- MESBF   =           0,
+ MESBF   =           1,
  FRICC   =  6.700000000000000E-002,
- MESBR   =           0,
+ MESBR   =           1,
  ICRIT   =           1,
  IBREAK  =           1,
  ALPBJ   =   1.00000000000000     ,
@@ -206,7 +206,7 @@
 
 
 
- &NUMS
+&NUMS
  ICOMP   =           3,
  AMETHOD =           7,
  SMETHOD =           1,
@@ -278,7 +278,7 @@
  LZETA_SETUP     = F,
  ZETA_METH       =           0,
  STP_SOLVERTHR   =  1.000000000000000E-010
- /
+/
 
 
  &HISTORY
@@ -287,7 +287,7 @@
  UNITC   = "SEC"         ,
  ENDTC   = "19980902.000000"     ,
  DEFINETC        =  0.000000000000000E+000,
- OUTSTYLE        = "NC"                 ,
+ OUTSTYLE        = "XFN"                 ,
  FILEOUT = "field.dat"      ,
  LOUTITER        = F,
  LENERGY = F,
