@@ -795,8 +795,6 @@
 !/ ------------------------------------------------------------------- /
       USE DATAPOOL, ONLY: INVPI2, PI2, RKIND, NSPEC
       USE DATAPOOL, ONLY: ZERO, ONE, myrank
-!/T      USE W3ODATMD, ONLY: NDST
-!
       IMPLICIT NONE
 !/
 !/ ------------------------------------------------------------------- /
@@ -862,9 +860,7 @@
         WNMEAN   = WNMEAN + EB(IK) *(WN(IK)**WNMEANP)
         EMEANWS  = EMEANWS+ EB2(IK)
         FMEANWS  = FMEANWS+ EB2(IK)*(SIG(IK)**(2.*WNMEANPTAIL))
-        END DO
-!      WRITE(740+myrank,*) '1: FMEAN1=', FMEAN1
-!      WRITE(740+myrank,*) '1: FMEANWS=', FMEANWS
+      END DO
 !
 ! 3.  Add tail beyond discrete spectrum and get mean pars ------------ *
 !     ( DTH * SIG absorbed in FTxx )
@@ -889,7 +885,7 @@
       ELSE
         FMEAN1  = INVPI2 *( MAX ( 1.E-7_rkind , FMEAN1 )                &
      &            / MAX ( 1.E-7_rkind , EMEAN ))**(1.d0/(2.*WNMEANPTAIL))
-        ENDIF
+      ENDIF
       WNMEAN = ( MAX ( 1.E-7_rkind , WNMEAN )                           &
      &           / MAX ( 1.E-7_rkind , EMEAN ) )**(1.d0/WNMEANP)
       IF (FMEANWS.LT.1.E-7.OR.EMEANWS.LT.1.E-7) THEN 
@@ -897,7 +893,7 @@
       ELSE
         FMEANWS  = INVPI2 *( MAX ( 1.E-7_rkind , FMEANWS )              &
      &         / MAX ( 1.E-7_rkind , EMEANWS ))**(1/(2.*WNMEANPTAIL))
-        END IF
+      END IF
 !
 ! 5.  Cd and z0 ----------------------------------------------- *
 !
@@ -908,16 +904,6 @@
       UNZ    = MAX ( 0.01_rkind , U )
       CD     = (USTAR/UNZ)**2
       USDIR = UDIR
-!
-! 6.  Final test output ---------------------------------------------- *
-!
-!/T      WRITE (NDST,9060) EMEAN, WNMEAN, TPIINV, CP, CD, Z0
-!
-!/T 9060 FORMAT (' TEST W3SPR3 : E,WN MN :',F8.3,F8.4/                  &
-!/T              '        FP, CP, CD, Z0 :',F8.3,F7.2,1X,2F9.5)
-!/
-!/ End of W3SPR3 ----------------------------------------------------- /
-!/
       END SUBROUTINE
 !/ ------------------------------------------------------------------- /
       SUBROUTINE W3SIN4 (IP, A, CG, K, U, USTAR, DRAT, AS, USDIR, Z0, CD, TAUWX, TAUWY, TAUWNX, TAUWNY, S, D, LLWS, BRLAMBDA)
@@ -1000,11 +986,6 @@
 !
 !/ ------------------------------------------------------------------- /
       USE DATAPOOL, ONLY : G9, PI2, RADDEG, RKIND, NSPEC, ZERO, ONE, DBG, THR8, myrank
-!/S      USE W3SERVMD, ONLY: STRACE
-!/T      USE W3ODATMD, ONLY: NDST
-!/T0      USE W3ARRYMD, ONLY: PRT2DS
-!/T1      USE W3ARRYMD, ONLY: OUTMAT
-!
       IMPLICIT NONE
 !/
 !/ ------------------------------------------------------------------- /
@@ -1377,7 +1358,7 @@
       IF (TAUWB.LT.TAUW) THEN 
         TAUWX=TAUWX*TAUWB/TAUW
         TAUWY=TAUWY*TAUWB/TAUW
-        END IF
+      END IF
       END SUBROUTINE
 !/ ------------------------------------------------------------------- /
       SUBROUTINE INSIN4

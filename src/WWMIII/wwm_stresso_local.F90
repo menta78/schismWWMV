@@ -130,14 +130,10 @@
 
       IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111116,*) '------- STARTING STRESSO ---------'
 
-      !REAL ZHOOK_HANDLE
-
-      !IF (LHOOK) CALL DR_HOOK('STRESSO',0,ZHOOK_HANDLE)
-! ----------------------------------------------------------------------
-
 !*    1. PRECOMPUTE FREQUENCY SCALING.
 !        -----------------------------
 
+!      Print *, 'Stresso_Local, step 1'
       CONST = DELTH*(ZPI)**4/G**2
       ROG   = ROWATER*G
 
@@ -152,12 +148,13 @@
 !     !!!! CONSTFM is only defined up to M=MIJ(IJ)
       SCDFM = 0.5*DELTH*(1.-1./FRATIO)
 !       !!!! CONSTFM is only defined up to M=MIJ(IJ)
-        DO M=1,MIJ-1
-          CONSTFM(M) = ZPIROFR(M)*DFIM(M)
-        ENDDO
-        CONSTFM(MIJ) = ZPIROFR(MIJ)*SCDFM*FR(MIJ)
-        IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111116,'(10F15.8)') SCDFM, CONSTFM(MIJ) 
+      DO M=1,MIJ-1
+        CONSTFM(M) = ZPIROFR(M)*DFIM(M)
+      ENDDO
+      CONSTFM(MIJ) = ZPIROFR(MIJ)*SCDFM*FR(MIJ)
+      IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111116,'(10F15.8)') SCDFM, CONSTFM(MIJ) 
 
+!      Print *, 'Stresso_Local, step 2'
 
 !!!!!!!!! CONSTFT and CONSTFE are only used if LCFLX is true
       IF (LCFLX) THEN
@@ -175,6 +172,7 @@
           CONSTFE(M) = ROG*DFIM(M)
         ENDDO
       ENDIF
+!      Print *, 'Stresso_Local, step 3'
 
 !*    2. COMPUTE WAVE STRESS OF ACTUEL BLOCK.
 !        ------------------------------------
@@ -190,6 +188,7 @@
           YSTRESS = YSTRESS+CNST*COSTH(K)
         ENDDO
       ENDDO
+!      Print *, 'Stresso_Local, step 4'
 
       IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111116,'(2F15.8)') XSTRESS, YSTRESS
 
@@ -207,6 +206,7 @@
           ENDDO
         ENDDO
       ENDIF
+!      Print *, 'Stresso_Local, step 5'
 
       XSTRESS = XSTRESS/MAX(ROAIRN,1.)
       YSTRESS = YSTRESS/MAX(ROAIRN,1.)
@@ -223,6 +223,7 @@
         TAUPY=TAUY-ABS(TAUWSHELTER)*YSTRESS
         USDIRP=ATAN2(TAUPX,TAUPY)
       ENDIF
+!      Print *, 'Stresso_Local, step 6'
 
       K=1
       COSW     = MAX(COS(TH(K)-THWNEW),0.)
@@ -235,8 +236,10 @@
         TEMP2 = TEMP2+F(K,NFRE)*COSW**2
         IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111116,'(4F15.8)') USDIRP, COSW, TEMP1, TEMP2
       ENDDO
+!      Print *, 'Stresso_Local, step 6.1'
 
       IF (TAUWSHELTER.LE.0.) THEN
+!        Print *, 'Stresso_Local, step 6.2a'
         UST   = MAX(USNEW,0.000001)
         UST2 = UST**2
         XI    = UST / DELUST
@@ -263,6 +266,7 @@
         IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111116,'(A10,4F20.10)') 'T2', DELI2, DELI1, DELJ2, DELJ1
         IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111116,'(A10,4F20.10)') 'T3', CONST0, TEMP1, UST2, TAU1
       ELSE
+!        Print *, 'Stresso_Local, step 6.2b'
         UST   = MAX(USNEW,0.000001)
         UST2 = UST**2
         XI    = UST / DELUST
@@ -271,18 +275,22 @@
         I     = MAX (0, I)
         DELI1 = MIN (1. ,XI-REAL(I))
         DELI2   = 1. - DELI1
+!        Print *, 'Stresso_Local, step 6.3'
 
+!        Print *, 'Stresso_Local, DELALP=', DELALP
         XJ    = (G*Z0NEW/UST2-ALPHA) / DELALP
         XJ    = MIN(REAL(IALPHA),XJ)
         J     = MIN (IALPHA-1, INT(XJ))
         J     = MAX (0, J)
         DELJ1 = MAX(MIN (1. ,XJ-REAL(J)),0.)
         DELJ2   = 1. - DELJ1
+!        Print *, 'Stresso_Local, step 6.4'
 
         XK=CONST0*TEMP1/DELTAIL
         II=MIN(ILEVTAIL-1,INT(XK))
         DELK1= MIN (1. ,XK-FLOAT(II))
         DELK2=1. -DELK1
+!        Print *, 'Stresso_Local, step 6.5'
 
         TAU1 = ( (TAUHFT2(I  ,J  ,II  )*DELI2 + &
      &            TAUHFT2(I+1,J  ,II  )*DELI1 )*DELJ2 + &
@@ -293,9 +301,11 @@
      &            TAUHFT2(I+1,J  ,II+1)*DELI1 )*DELJ2+ &
      &           (TAUHFT2(I  ,J+1,II+1)*DELI2 + &
      &            TAUHFT2(I+1,J+1,II+1)*DELI1)*DELJ1 ) * DELK1
+!        Print *, 'Stresso_Local, step 6.6'
 
         TAUHF(IPP) = CONST0*TEMP1*UST2*TAU1
       ENDIF
+!      Print *, 'Stresso_Local, step 7'
 
       XSTRESS = XSTRESS+TAUHF(IPP)*SIN(USDIRP)
       YSTRESS = YSTRESS+TAUHF(IPP)*COS(USDIRP)
@@ -315,9 +325,7 @@
         CONSTPHI     = CONST*ROAIRN
         PHIAWUNR = CONSTPHI*USNEW**2*TEMP2
       ENDIF
+!      Print *, 'Stresso_Local, step 8'
 
       IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111116,*) '------- END OF STRESSO ---------'
-
-      !IF (LHOOK) CALL DR_HOOK('STRESSO',1,ZHOOK_HANDLE)
-
       END SUBROUTINE STRESSO_LOCAL

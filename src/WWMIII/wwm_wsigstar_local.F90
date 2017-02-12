@@ -61,7 +61,11 @@
 !       IN THE FOLLOWING U10 IS ESTIMATED ASSUMING EVERYTHING IS
 !       BASED ON U*
 !
+!      Print *, 'USNEW=', USNEW
+!      Print *, 'XKAPPA=', XKAPPA
+!      Print *, ' Z0NEW=', Z0NEW
       U10 = USNEW/XKAPPA*LOG(10./Z0NEW)
+!      Print *, 'U10=', U10
       C_D = A+B*U10
       DC_DDU = B
       SIG_CONV = 1. + 0.5*U10/C_D*DC_DDU

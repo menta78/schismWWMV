@@ -1342,7 +1342,8 @@
       OUTPAR    = 0.
 
       IF (VAROUT_HISTORY%ComputeMean) THEN
-        CALL MEAN_PARAMETER(IP,ACLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
+!        CALL MEAN_PARAMETER(IP,ACLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
+        CALL MEAN_PARAMETER_OUTPUT(IP,ACLOC,HS,TM01,TM02,TM10,KLM,WLM)
         IF (LMONO_OUT) HS = HS/SQRT(2.)
         OUTPAR(1) = HS         ! Significant wave height
         OUTPAR(2) = TM01       ! Mean average period
@@ -1921,7 +1922,6 @@
       USE DATAPOOL
       USE NETCDF
       IMPLICIT NONE
-      INTEGER            :: IP
       REAL(rkind), allocatable  :: OUTT(:,:)
       REAL(rkind)  :: eTimeDay
       INTEGER :: LPOS

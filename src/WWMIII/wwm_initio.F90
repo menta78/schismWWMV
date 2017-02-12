@@ -244,7 +244,11 @@
 
        ALLOCATE( UFRIC(MNP), ALPHA_CH(MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 26')
-       UFRIC = zero
+       IF (ISOURCE .eq. 1) THEN
+         UFRIC = 1.e-5_rkind
+       ELSE
+         UFRIC = zero
+       END IF
        ALPHA_CH = zero
 !       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 18'
 !       FLUSH(STAT%FHNDL)
@@ -345,39 +349,39 @@
 !
 !      init source term parameter 
 !      
-!      IF (IPHYS.EQ.0) THEN
+      IF (IPHYS.EQ.0) THEN
 !       ECMWF PHYSICS:
 !        BETAMAX = 1.52
 !        ZALP    = 0.008
 !        TAUWSHELTER=0.0
-!        IF(MSC.GT.30) THEN
-!          ALPHA   = 0.0060
-!        ELSE
-!          ALPHA   = 0.0075
-!        ENDIF
-!      ELSE IF (IPHYS.EQ.1) THEN
+        IF(MSC.GT.30) THEN
+          ALPHA   = 0.0060
+        ELSE
+          ALPHA   = 0.0075
+        ENDIF
+      ELSE IF (IPHYS.EQ.1) THEN
 !       METEO FRANCE PHYSICS:
 !        BETAMAX = 1.52
 !        ZALP    = 0.0060
 !        TAUWSHELTER=0.6
-!        IF(MSC.GT.30) THEN
-!          ALPHA   = 0.0090
-!        ELSE
-!          ALPHA   = 0.0095
-!        ENDIF
-!      ELSE IF (IPHYS.EQ.2) THEN
+        IF(MSC.GT.30) THEN
+          ALPHA   = 0.0090
+        ELSE
+          ALPHA   = 0.0095
+        ENDIF
+      ELSE IF (IPHYS.EQ.2) THEN
 !      COMBINED ECMWF/METEO FRANCE PHYSICS:
 !        BETAMAX = 1.52
 !        ZALP    = 0.0060
 !        TAUWSHELTER=0.0
-!        IF(MSC.GT.30) THEN
-!          ALPHA   = 0.003
-!        ELSE
-!          ALPHA   = 0.004
-!        ENDIF
-!      ELSE
-!         CALL WWM_ABORT('UKNOWN PHYSICS SELECTION') 
-!      ENDIF ! IPHYS
+        IF(MSC.GT.30) THEN
+          ALPHA   = 0.003
+        ELSE
+          ALPHA   = 0.004
+        ENDIF
+      ELSE
+         CALL WWM_ABORT('UKNOWN PHYSICS SELECTION') 
+      ENDIF ! IPHYS
 
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'LEAVING INIT_ARRAYS'
       FLUSH(STAT%FHNDL)

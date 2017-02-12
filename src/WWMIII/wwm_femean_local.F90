@@ -126,6 +126,4 @@
         FM = EM/FM
 
       ENDIF
-
-      RETURN
       END SUBROUTINE FEMEAN_LOCAL
