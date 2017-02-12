@@ -349,39 +349,39 @@
 !
 !      init source term parameter 
 !      
-!      IF (IPHYS.EQ.0) THEN
+      IF (IPHYS.EQ.0) THEN
 !       ECMWF PHYSICS:
 !        BETAMAX = 1.52
 !        ZALP    = 0.008
 !        TAUWSHELTER=0.0
-!        IF(MSC.GT.30) THEN
-!          ALPHA   = 0.0060
-!        ELSE
-!          ALPHA   = 0.0075
-!        ENDIF
-!      ELSE IF (IPHYS.EQ.1) THEN
+        IF(MSC.GT.30) THEN
+          ALPHA   = 0.0060
+        ELSE
+          ALPHA   = 0.0075
+        ENDIF
+      ELSE IF (IPHYS.EQ.1) THEN
 !       METEO FRANCE PHYSICS:
 !        BETAMAX = 1.52
 !        ZALP    = 0.0060
 !        TAUWSHELTER=0.6
-!        IF(MSC.GT.30) THEN
-!          ALPHA   = 0.0090
-!        ELSE
-!          ALPHA   = 0.0095
-!        ENDIF
-!      ELSE IF (IPHYS.EQ.2) THEN
+        IF(MSC.GT.30) THEN
+          ALPHA   = 0.0090
+        ELSE
+          ALPHA   = 0.0095
+        ENDIF
+      ELSE IF (IPHYS.EQ.2) THEN
 !      COMBINED ECMWF/METEO FRANCE PHYSICS:
 !        BETAMAX = 1.52
 !        ZALP    = 0.0060
 !        TAUWSHELTER=0.0
-!        IF(MSC.GT.30) THEN
-!          ALPHA   = 0.003
-!        ELSE
-!          ALPHA   = 0.004
-!        ENDIF
-!      ELSE
-!         CALL WWM_ABORT('UKNOWN PHYSICS SELECTION') 
-!      ENDIF ! IPHYS
+        IF(MSC.GT.30) THEN
+          ALPHA   = 0.003
+        ELSE
+          ALPHA   = 0.004
+        ENDIF
+      ELSE
+         CALL WWM_ABORT('UKNOWN PHYSICS SELECTION') 
+      ENDIF ! IPHYS
 
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'LEAVING INIT_ARRAYS'
       FLUSH(STAT%FHNDL)

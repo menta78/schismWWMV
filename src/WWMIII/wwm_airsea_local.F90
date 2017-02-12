@@ -74,6 +74,7 @@
       INTEGER                :: I, J, ILEV
       REAL(rkind), PARAMETER :: EPS1 = 0.00001
       REAL(rkind)            :: XI, XJ, DELI1, DELI2, DELJ1, DELJ2, UST2, ARG, SQRTCDM1
+      REAL(rkind)            :: USwork
 
 ! ----------------------------------------------------------------------
 
@@ -108,15 +109,12 @@
 !        ---------------------------
 !!!        SQRTCDM1  = MIN(U10(IJ)/US(IJ),100.0)
 !!!        Z0(IJ)  = XNLEV(ILEV)*EXP(-XKAPPA*SQRTCDM1)
-      IF (US .GT. THR) THEN
-        UST2 = US**2
-        ARG = MAX(1.-(TAUW/UST2),EPS1) 
-        Z0  = ALPHA*UST2/G/SQRT(ARG) 
-      ELSE
-        Z0 = ZERO
-      ENDIF
+      USwork=MAX(US, THR)
+      UST2 = USwork**2
+      ARG = MAX(1.-(TAUW/UST2),EPS1) 
+      Z0  = ALPHA*UST2/G/SQRT(ARG) 
+      Print *, 'US=', US, ' USwork=', USwork, ' UST2=', UST2
+      Print *, 'TAUW=', TAUW, ' EPS1=', EPS1, ' ARG=', ARG
+      Print *, 'Z0=', Z0, ' ALPHA=', ALPHA
       IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111115,'(5F15.8)') US, ARG, TAUW, EPS1, Z0
-
-!      IF (LHOOK) CALL DR_HOOK('AIRSEA',1,ZHOOK_HANDLE)
-      RETURN
       END SUBROUTINE AIRSEA_LOCAL
