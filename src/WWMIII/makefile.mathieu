@@ -9,7 +9,7 @@ MPI = on
 # Put PETSC = on for compiling with petsc, nothing if no petsc is wished.
 PETSC =
 # Put NETCDF = on for compiling with netcdf, nothing if no netcdf is wished.
-NETCDF = on
+NETCDF =
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 OPENMP =
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
@@ -17,7 +17,7 @@ DARKO =
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 SNL4_TSA = 
 # Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
-GRIB = on
+GRIB =
 # Put TIMINGS = on for timings with
 TIME = on
 # Put PDLIB = on for using the pdlib library.
@@ -53,10 +53,10 @@ F90 = $(WWM_COMPILER)
 #F90OPTI = -g -O3 -ffree-line-length-0 -fbacktrace -Wall -fcheck=all
 #F90OPTI = -O3 -ffree-line-length-0
 #F90OPTI    = -Wall -O0 -g -ggdb -ffree-line-length-none -fcheck=all -fsanitize=thread -fbacktrace -fstack-protector-all -ffpe-trap=invalid,zero,overflow
- F90OPTI    = -Wall -O0 -g -ggdb -ffree-line-length-none -fcheck=all -fsanitize=address -fsanitize=undefined   -fbacktrace -fstack-protector-all -ffpe-trap=invalid,zero,overflow
+#F90OPTI    = -Wall -O0 -g -ggdb -ffree-line-length-none -fcheck=all -fsanitize=address -fsanitize=undefined   -fbacktrace -fstack-protector-all -ffpe-trap=invalid,zero,overflow
 #F90OPTI    = -Wall -O3 -g -ggdb -ffree-line-length-none -ffpe-trap=invalid,zero,overflow -DDEBUG
 #F90OPTI    = -Wall -O3 -g -ggdb -ffree-line-length-none -ffpe-trap=invalid,zero,overflow
-#F90OPTI    = -Wall -O9 -ffree-line-length-none
+ F90OPTI    = -Wall -O9 -ffree-line-length-none
 
 
 OBJSELFE = elfe_glbl.o elfe_msgp.o solver_subs.o io_subs.o grid_subs.o misc_subs.o
@@ -104,7 +104,7 @@ endif
 ifdef MPI
   LIBS += $(MPI_LINK) $(METIS_PATH)/lib/libparmetis.a $(METIS_PATH)/lib/libmetis.a
 #  LIBS += $(MPI_LINK) -L$(METIS_PATH)/lib -Wl,-rpath,$(METIS_PATH)/lib -lparmetis
-  MPIFLAG  = -DWWM_MPI -DMPIVERSION=2 -DUSE_WWM -DSHYFEM_COUPLING $(MPI_INCLUDE)
+  MPIFLAG  = -DWWM_MPI -DMPIVERSION=2 -DUSE_WWM -DSHYFEM_COUPLING $(MPI_SPECIFIC_ADDI_INCLUDE)
   ifdef PDLIB
     OBJS= wwm_pdlib.o $(OBJWWM)
   else
