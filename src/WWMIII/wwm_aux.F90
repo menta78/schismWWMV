@@ -2916,7 +2916,11 @@
 !      WRITE(STAT%FHNDL,*) 'IPglob=', IPglob
       idxcall=idxcall+1
       DO IP=1,MNP
+#ifdef MPI_PARALL_GRID
         IPmap=iplg(IP)
+#else
+        IPmap=IP
+#endif
         IF (IPmap .eq. IPglob) THEN
           WRITE(STAT%FHNDL,*) 'Begin of LOCAL_NODE_PRINT idxcall=', idxcall
           WRITE(STAT%FHNDL,*) 'IP=', IP, ' IPglob=', IPglob
