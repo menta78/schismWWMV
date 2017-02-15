@@ -432,7 +432,6 @@
          APTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
          PPTAIL = PTAIL(1) - ONE
          EPTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
-
          DO ID = 1, MDC
            DO IS = 1, ISMAX
              APTOT = APTOT + SPSIG(IS)    * ACLOC(IS,ID)
@@ -445,10 +444,10 @@
 
          IF (MSC .GT. 3  .AND. .NOT. LSIGMAX) THEN
            DO ID = 1, MDC
-           AHFR  = SPSIG(MSC) * ACLOC(MSC,ID)
-           APTOT = APTOT + APTAIL * AHFR
-           EHFR  = SPSIG(MSC) * AHFR
-           EPTOT = EPTOT + EPTAIL * EHFR
+             AHFR  = SPSIG(MSC) * ACLOC(MSC,ID)
+             APTOT = APTOT + APTAIL * AHFR
+             EHFR  = SPSIG(MSC) * AHFR
+             EPTOT = EPTOT + EPTAIL * EHFR
            ENDDO
          ENDIF
 
