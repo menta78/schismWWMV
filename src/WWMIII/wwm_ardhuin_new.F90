@@ -827,7 +827,7 @@
       EMEAN  = ZERO
       EMEANWS= ZERO
       FMEANWS= ZERO
-      FMEAN  = ZERO      
+      FMEAN  = ZERO
       FMEAN1 = ZERO
       WNMEAN = ZERO
       AMAX   = ZERO
@@ -842,16 +842,21 @@
           EB(IK) = EB(IK) + A(ITH,IK)
           IF (LLWS(IS)) EB2(IK) = EB2(IK) + A(ITH,IK)
 !          WRITE(740+myrank,*) 'IK=', IK, ' ITH=', ITH, ' LLWS=', LLWS(IS)
+!          WRITE(740+myrank,*) '   EB=', EB(IK), ' A=', A(ITH,IK)
           AMAX   = MAX ( AMAX , A(ITH,IK) )
         END DO
           !          WRITE(DBG%FHNDL,*) IK, EB(IK), IK, ITH, A(ITH,IK)
       END DO
+!      WRITE(740+myrank,*) '2.  Integrate over directions'
+!      FLUSH(740+myrank)
 !
 ! 2.  Integrate over directions -------------------------------------- *
 
 !
       DO IK=1, NK
         ALFA(IK) = 2. * DTH * SIG(IK) * EB(IK) * WN(IK)**3
+!        WRITE(740+myrank,*) 'IK=', IK, ' DDEN=', DDEN(IK), ' CG=', CG(IK)
+!        FLUSH(740+myrank)
         EB(IK)   = EB(IK) * DDEN(IK) / CG(IK)
         EB2(IK)   = EB2(IK) * DDEN(IK) / CG(IK)
         EMEAN    = EMEAN  + EB(IK)

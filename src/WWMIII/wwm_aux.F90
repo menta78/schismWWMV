@@ -608,10 +608,12 @@
          DO IP = 1, MNP
            !DEPLOC = MAX(DMIN,DEP(IP))
            DEPLOC = DEP(IP)
+!           WRITE(740+myrank,*) 'IP=', IP, ' DEPLOC=', DEPLOC
            DO IS = 1, MSC
              SPSIGLOC = SPSIG(IS)
 !             CALL ALL_FROM_TABLE(SPSIGLOC,DEPLOC,WVK,WVCG,WVKDEP,WVN,WVC)
              CALL WAVEKCG(DEPLOC,SPSIGLOC,WVN,WVC,WVK,WVCG)
+!             WRITE(740+myrank,*) '  IS=', IS, 'WVK/WVCG/WVC=', WVK, WVCG, WVC
              WK(IS,IP) = WVK
              CG(IS,IP) = WVCG
              WC(IP,IS) = WVC

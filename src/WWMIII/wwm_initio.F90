@@ -757,7 +757,11 @@
 #ifdef MPI_PARALL_GRID
       CALL EXCHANGE_P4D_WWM(AC2)
 #endif
+!      WRITE(740+myrank,*) 'Before call to GENERAL_OUTPUT'
+!      FLUSH(740+myrank)
       CALL GENERAL_OUTPUT(ZERO)
+!      WRITE(740+myrank,*) 'End call to GENERAL_OUTPUT'
+!      FLUSH(740+myrank)
       IF (LWXFN) THEN
         CALL WRINPGRD_XFN
       ELSE IF(LWSHP) THEN
@@ -1053,6 +1057,8 @@
          IMPLICIT NONE
          INTEGER IQGRID, INODE
          integer ierr_xnl
+!         WRITE(740+myrank,*) 'Beginning of INITIATE_WAVE_PARAMETER'
+!         FLUSH(740+myrank)
 
          WRITE(STAT%FHNDL,*) 'START WAVE PARAMETER'
          FLUSH(STAT%FHNDL)
@@ -1127,6 +1133,8 @@
          ENDIF
 
          IF (MESTR == 6) CALL GRAD_CG_K 
+!         WRITE(740+myrank,*) 'End of INITIATE_WAVE_PARAMETER'
+!         FLUSH(740+myrank)
 
        END SUBROUTINE
 !**********************************************************************
