@@ -169,6 +169,11 @@
          REAL(rkind)                        :: DSIGTAB
          INTEGER, ALLOCATABLE               :: NumberIterationSolver(:)
 !
+! WW3 diagonalization 
+!
+         REAL(rkind)                        :: WW3_XP
+         REAL(rkind)                        :: WW3_FACP
+!
 ! Fundamental data types 
 !
          TYPE VAR_NETCDF_CF

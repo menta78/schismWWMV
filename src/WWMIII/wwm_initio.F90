@@ -385,6 +385,18 @@
 
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'LEAVING INIT_ARRAYS'
       FLUSH(STAT%FHNDL)
+      CALL INIT_WAVEWATCHIII_LIMITER
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE INIT_WAVEWATCHIII_LIMITER
+      USE DATAPOOL
+      IMPLICIT NONE
+      ! adapted from the ww3_grid.ftn source code
+      WW3_XP     = 0.15
+      WW3_XP     = MAX ( 1.E-6_rkind , WW3_XP )
+      WW3_FACP   = WW3_XP / PI * 0.62E-3 * PI2**4 / G9**2
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
