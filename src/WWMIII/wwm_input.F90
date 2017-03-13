@@ -1245,6 +1245,8 @@
       ZALP   = 0.006
       SINBR   = 0.
       READ(INP%FHNDL, NML = SIN4)
+      wwm_print_namelist(SIN4)
+      FLUSH(CHK%FHNDL)
       SDSC1  = 0.0     ! not used in ST4, should be cleaned up
       FXFM3 = 2.5
       FXFMAGE = 0.
@@ -1279,6 +1281,8 @@
       SDSHFGEN  = 0.
       SDSLFGEN  = 0.
       READ(INP%FHNDL, NML = SDS4)
+      wwm_print_namelist(SDS4)
+      FLUSH(CHK%FHNDL)
       
       
       END SUBROUTINE
