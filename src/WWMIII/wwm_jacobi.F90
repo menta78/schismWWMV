@@ -744,9 +744,11 @@
       CALL WAV_MY_WTIME(TIME4)
 #endif
 !
-      DO IP = 1, MNP
-        IF (DEP(IP) .GT. DMIN) CALL LIMITER(IP,AC1(:,:,IP),AC2(:,:,IP)) 
-      END DO
+      IF ((.NOT. WW3_STYLE_LIMIT_SRC_TERM) .and. LLIMT) THEN
+         DO IP = 1, MNP
+            IF (DEP(IP) .GT. DMIN) CALL LIMITER(IP,AC1(:,:,IP),AC2(:,:,IP)) 
+         END DO
+      END IF
 #ifdef DEBUG
       CALL LOCAL_NODE_PRINT(20506, "After limiter")
 #endif
@@ -787,18 +789,34 @@
       REAL(rkind)              :: IMATRA(MSC,MDC)
       REAL(rkind)              :: IMATDA(MSC,MDC)
       REAL(rkind)              :: eVal
-
-
+      REAL(rkind)              :: eIMATRA, TheFactor, DVS1, DVS2
+      REAL(rkind)              :: DAM(MSC), MAXDAC
+      INTEGER IS, ID
       IMATRA=ZERO
       IMATDA=ZERO
-
       IF (LNONL) THEN
          CALL SOURCES_IMPLICIT 
       ELSE
         IMATDA = IMATDAA(:,:,IP)
         IMATRA = IMATRAA(:,:,IP)
       END IF
+      IF (LLIMT .and. WW3_STYLE_LIMIT_SRC_TERM) THEN
+         DO IS=1,MSC
+            DAM(IS) = WW3_FACP / (WW3_SIG(IS) * WK(IS,IP)**3)
+         END DO
+         DO ID=1,MDC
+            DO IS=1,MSC
+               MAXDAC = DAM(IS)
+               TheFactor = DT4A / MAX(ONE, ONE - DT4A * IMATDA(IS,ID))
+               DVS1 = IMATRA(IS,ID) * TheFactor
+               DVS2 = SIGN(MIN(MAXDAC, ABS(DVS1)), DVS1)
+               eIMATRA = DVS2 / TheFactor
+               IMATRA(IS,ID)  = eIMATRA
+            END DO
+         END DO
+      END IF
 
+      
       eVal = SI(IP) * DT4A
 
       CALL GET_BLOCAL(IP, ACin1, BLOC)

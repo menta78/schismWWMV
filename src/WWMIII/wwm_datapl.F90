@@ -173,6 +173,8 @@
 !
          REAL(rkind)                        :: WW3_XP
          REAL(rkind)                        :: WW3_FACP
+         REAL(rkind), allocatable           :: WW3_SIG(:)
+         LOGICAL                            :: WW3_STYLE_LIMIT_SRC_TERM = .FALSE.
 !
 ! Fundamental data types 
 !
@@ -951,7 +953,6 @@
          REAL(rkind), ALLOCATABLE      :: DISSIPATION(:)
          REAL(rkind), ALLOCATABLE      :: AIRMOMENTUM(:)
 
-         INTEGER                :: MELIM   = 1
          INTEGER                :: IDIFFR  = 1
 !
 !  nonlinear interactions ...
