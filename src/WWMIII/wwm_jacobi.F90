@@ -807,7 +807,7 @@
          DO ID=1,MDC
             DO IS=1,MSC
                MAXDAC = DAM(IS)
-               TheFactor = DT4A / MAX(ONE, ONE - DT4A * IMATDA(IS,ID))
+               TheFactor = DT4A * CG(IS, IP) / MAX(ONE, ONE - DT4A * IMATDA(IS,ID))
                DVS1 = IMATRA(IS,ID) * TheFactor
                DVS2 = SIGN(MIN(MAXDAC, ABS(DVS1)), DVS1)
                eIMATRA = DVS2 / TheFactor
