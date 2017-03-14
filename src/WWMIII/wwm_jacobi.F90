@@ -748,6 +748,10 @@
          DO IP = 1, MNP
             IF (DEP(IP) .GT. DMIN) CALL LIMITER(IP,AC1(:,:,IP),AC2(:,:,IP)) 
          END DO
+      ELSE
+         DO IP = 1, MNP
+            AC2(:,:,IP) = MAX(ZERO, AC2(:,:,IP))
+         END DO
       END IF
 #ifdef DEBUG
       CALL LOCAL_NODE_PRINT(20506, "After limiter")
