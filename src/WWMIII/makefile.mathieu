@@ -56,7 +56,7 @@ F90 = $(WWM_COMPILER)
 #F90OPTI    = -Wall -O0 -g -ggdb -ffree-line-length-none -fcheck=all -fsanitize=address -fsanitize=undefined   -fbacktrace -fstack-protector-all -ffpe-trap=invalid,zero,overflow
 #F90OPTI    = -Wall -O3 -g -ggdb -ffree-line-length-none -ffpe-trap=invalid,zero,overflow -DDEBUG
 #F90OPTI    = -Wall -O3 -g -ggdb -ffree-line-length-none -ffpe-trap=invalid,zero,overflow
- F90OPTI    = -Wall -O9 -ffree-line-length-none
+ F90OPTI    = -Wall -O9 -ffree-line-length-none -g
 #F90OPTI    = -g -Wall -O9 -ffree-line-length-none -ffpe-trap=invalid,zero,overflow
 
 
