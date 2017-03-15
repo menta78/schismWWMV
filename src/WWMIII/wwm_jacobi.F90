@@ -2,8 +2,8 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-#define DEBUG
 #undef DEBUG
+#define DEBUG
 #define DEBUG_ITERATION_LOOP
 #undef DEBUG_ITERATION_LOOP
 !AR:todo: code duplication ... and buggy since boundary pointer are not taken into account 
@@ -793,7 +793,7 @@
       REAL(rkind)              :: IMATDA(MSC,MDC)
       REAL(rkind)              :: eVal
       REAL(rkind)              :: eIMATRA, TheFactor, DVS1, DVS2
-      REAL(rkind)              :: DAM(MSC), MAXDAC
+      REAL(rkind)              :: DAM(MSC), MAXDAC, eDAM
       INTEGER IS, ID
       IMATRA=ZERO
       IMATDA=ZERO
@@ -805,7 +805,11 @@
       END IF
       IF (LLIMT .and. WW3_STYLE_LIMIT_SRC_TERM) THEN
          DO IS=1,MSC
-            DAM(IS) = WW3_FACP / (WW3_SIG(IS) * WK(IS,IP)**3)
+            eDAM = WW3_FACP / (WW3_SIG(IS) * WK(IS,IP)**3)
+#ifdef DEBUG
+            WRITE(DBG%FHNDL,*) 'IS=', IS, ' eDAM=', eDAM, ' SIG=', WW3_SIG(IS), ' WK=', WK(IS,IP)
+#endif
+            DAM(IS) = eDAM
          END DO
          DO ID=1,MDC
             DO IS=1,MSC

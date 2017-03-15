@@ -835,13 +835,22 @@
       WW3_XP     = 0.15
       WW3_XP     = MAX ( 1.E-6_rkind , WW3_XP )
       WW3_FACP   = WW3_XP / PI * 0.62E-3 * PI2**4 / G9**2
+#ifdef DEBUG
+      WRITE(DBG%FHNDL,*) 'WW3_FACP=', WW3_FACP
+#endif
       allocate(WW3_SIG(0:MSC+1), stat=istat)
       FR1   = SPSIG(1)/PI2
       SIGMA   = FR1 * TPI / SFAC**2
       DO IS=0, MSC+1
          SIGMA    = SIGMA * SFAC
          WW3_SIG (IS) = SIGMA
+#ifdef DEBUG
+         WRITE(DBG%FHNDL,*) 'IS=', IS, WW3_SIG(IS)
+#endif
       END DO
+#ifdef DEBUG
+      FLUSH(DBG%FHNDL)
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
