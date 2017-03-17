@@ -235,7 +235,7 @@
 !         MAXDAC = ZERO
  
          DO IS = 1, MSC
-           LIMFAK = 0.1
+!           LIMFAK = 0.1
            MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
            IF ((ISOURCE .EQ. 1).or.(ISOURCE .EQ. 2)) THEN
               IF (ISOURCE .EQ. 1) THEN

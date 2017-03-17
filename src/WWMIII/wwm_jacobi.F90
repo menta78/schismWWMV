@@ -794,7 +794,7 @@
       REAL(rkind)              :: eVal
       REAL(rkind)              :: eIMATRA, TheFactor, DVS1, DVS2
       REAL(rkind)              :: DAM(MSC), MAXDAC, eDAM
-      REAL(rkind)              :: DELFL(MSC)
+      REAL(rkind)              :: DELFL(MSC), eFric, USFM
       INTEGER IS, ID
       IMATRA=ZERO
       IMATDA=ZERO
@@ -807,7 +807,7 @@
       IF (LLIMT .and. WW3_STYLE_LIMIT_SRC_TERM) THEN
          DELFL  = COFRM4*DT4S
          DO IS=1,MSC
-            LIMFAK = 0.1
+!            LIMFAK = 0.1
             MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
             IF ((ISOURCE .EQ. 1).or.(ISOURCE .EQ. 2)) THEN
                IF (ISOURCE .EQ. 1) THEN
