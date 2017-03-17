@@ -2,8 +2,8 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-#undef DEBUG
 #define DEBUG
+#undef DEBUG
 #define DEBUG_ITERATION_LOOP
 #undef DEBUG_ITERATION_LOOP
 !AR:todo: code duplication ... and buggy since boundary pointer are not taken into account 
@@ -794,6 +794,7 @@
       REAL(rkind)              :: eVal
       REAL(rkind)              :: eIMATRA, TheFactor, DVS1, DVS2
       REAL(rkind)              :: DAM(MSC), MAXDAC, eDAM
+      REAL(rkind)              :: DELFL(MSC)
       INTEGER IS, ID
       IMATRA=ZERO
       IMATDA=ZERO
@@ -804,19 +805,23 @@
         IMATRA = IMATRAA(:,:,IP)
       END IF
       IF (LLIMT .and. WW3_STYLE_LIMIT_SRC_TERM) THEN
+         DELFL  = COFRM4*DT4S
          DO IS=1,MSC
-            eDAM = WW3_FACP / (WW3_SIG(IS) * WK(IS,IP)**3)
-#ifdef DEBUG
-            WRITE(DBG%FHNDL,*) 'IS=', IS, ' eDAM=', eDAM, ' SIG=', WW3_SIG(IS), ' WK=', WK(IS,IP)
-#endif
-            DAM(IS) = eDAM
-         END DO
-         DO ID=1,MDC
-            DO IS=1,MSC
-               MAXDAC = DAM(IS)
-!               TheFactor = DT4A * CG(IS, IP) / MAX(ONE, ONE - DT4A * IMATDA(IS,ID))
-               TheFactor = (DT4A / CG(IS,IP)) / MAX(ONE, ONE - DT4A * IMATDA(IS,ID))
-!               TheFactor = DT4A / MAX(ONE, ONE - DT4A * IMATDA(IS,ID))
+            LIMFAK = 0.1
+            MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
+            IF ((ISOURCE .EQ. 1).or.(ISOURCE .EQ. 2)) THEN
+               IF (ISOURCE .EQ. 1) THEN
+                  eFric=UFRIC(IP)
+               ELSE
+                  eFric=USNEW(IP)
+               END IF
+               IF (eFric .GT. SMALL) THEN
+                  USFM   = eFric*MAX(FMEANWS(IP),FMEAN(IP))
+                  MAXDAC = USFM*DELFL(IS)/PI2/SPSIG(IS)
+               END IF
+            END IF
+            DO ID=1,MDC
+               TheFactor = DT4A / MAX(ONE, ONE - DT4A * IMATDA(IS,ID))
                DVS1 = IMATRA(IS,ID) * TheFactor
                DVS2 = SIGN(MIN(MAXDAC, ABS(DVS1)), DVS1)
                eIMATRA = DVS2 / TheFactor

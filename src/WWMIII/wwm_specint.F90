@@ -226,13 +226,13 @@
          REAL(rkind)                :: NEWDAC, OLDAC, NEWAC, DELT, XIMP, DELFL(MSC)
          REAL(rkind)                :: MAXDAC, CONST, SND, DELT5, USFM, eFric
 
-         CONST  = PI2**2*3.0*1.0E-7*DT4S*SPSIG(MSC)
-         SND    = PI2*5.6*1.0E-3
+!         CONST  = PI2**2*3.0*1.0E-7*DT4S*SPSIG(MSC)
+!         SND    = PI2*5.6*1.0E-3
          DELT   = DT4S
-         XIMP   = 1._rkind
-         DELT5  = XIMP*DELT
+!         XIMP   = 1._rkind
+!         DELT5  = XIMP*DELT
          DELFL  = COFRM4*DELT
-         MAXDAC = ZERO
+!         MAXDAC = ZERO
  
          DO IS = 1, MSC
            LIMFAK = 0.1
