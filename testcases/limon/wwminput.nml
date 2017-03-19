@@ -1,22 +1,4 @@
  &PROC
- PROCNAME        = "limon"   ,
- DIMMODE =           2,
- LSTEA   = F,
- LQSTEA  = F,
- LSPHE   = F,
- LNAUTIN = T,
- LNAUTOUT        = T,
- LMONO_OUT       = F,
- LMONO_IN        = F,
- BEGTC   = "19980901.000000"     ,
- DELTC   =   60.0000000000000     ,
- UNITC   = "SEC"                 ,
- ENDTC   = "19980901.100000"     ,
- DMIN    =  1.000000000000000E-004,
- MULTIPLE_OUT_INFO       = T,
- MODEL_OUT_TYPE  = "WW3"                 ,
- ABORT_BLOWUP    = F,
- LEVEL_HS_BLOW   =          50
  /
  
  &COUPL

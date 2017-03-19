@@ -1703,56 +1703,6 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-#ifdef DARKO
-      SUBROUTINE OUTPUT_HISTORY_SHP( TIME )
-!
-!     OUTPUT DARKO CSV
-!
-         USE DATAPOOL
-         IMPLICIT NONE
-         REAL(rkind), INTENT(IN) :: TIME
-         INTEGER :: IP, IE, IT
-         CHARACTER(LEN=15) :: CTIME
-         REAL(rkind) :: ACLOC(MSC,MDC), OUTPAR(OUTVARS)
-         REAL(rkind) :: OUTT(MNP,OUTVARS)
-
-         IF (TIME .LT. THR) THEN
-           OPEN( 4001, FILE = 'depth.dat' )
-           OPEN( 4002, FILE = 'hs.dat' )
-         END IF
-
-         CALL MJD2CT(MAIN%TMJD, CTIME)
-         DO IP = 1, MNP
-            ACLOC(:,:) = AC2(:,:,IP)
-            CALL INTPAR( IP, MSC, ACLOC, OUTPAR )
-            OUTT(IP,:) = OUTPAR(:)
-         END DO
-
-         IF (TIME .LT. THR) THEN
-           WRITE(OUT%FHNDL,'(4A10)') 'ID', 'X', 'Y', 'Z'
-           DO IE = 1, MNE
-             WRITE(4001,110) IE,',',XP(INE(1,IE)),',',YP(INE(1,IE)),',',DEP(INE(1,IE))
-             WRITE(4001,110) IE,',',XP(INE(2,IE)),',',YP(INE(2,IE)),',',DEP(INE(2,IE))
-             WRITE(4001,110) IE,',',XP(INE(3,IE)),',',YP(INE(3,IE)),',',DEP(INE(3,IE))
-           END DO
-         END IF
-
-         WRITE(4002,'(4A10)') 'ID', 'X', 'Y', 'HS'
-         DO IE = 1, MNE
-           WRITE(4002,110) IE,',',XP(INE(1,IE)),',',YP(INE(1,IE)),',',OUTT(INE(1,IE),1)
-           WRITE(4002,110) IE,',',XP(INE(2,IE)),',',YP(INE(2,IE)),',',OUTT(INE(2,IE),1)
-           WRITE(4002,110) IE,',',XP(INE(3,IE)),',',YP(INE(3,IE)),',',OUTT(INE(3,IE),1)
-         END DO
-
-110      FORMAT (2X,I10,3(A2,F15.8))
-
-        WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY_SHP'
-        FLUSH(STAT%FHNDL)
-      END SUBROUTINE
-#endif
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
 !AR: needs to be rewritten ...
       SUBROUTINE CLSPEC( DEPLOC, CURTXYLOC, ACLOC, ACOUT_1D, ACOUT_2D )
          USE DATAPOOL

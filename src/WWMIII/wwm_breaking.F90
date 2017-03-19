@@ -26,7 +26,7 @@
       REAL(rkind) :: SBRD, WS, SURFA0, SURFA1, COEFF_B, SURFSEL
 
       REAL(rkind), PARAMETER :: GAM_D = 0.14_rkind
-      INTEGER, PARAMETER     :: IQBWW3 = 1
+      INTEGER, PARAMETER     :: IQB = 1
 
       INTEGER :: IS, ID
 
@@ -80,41 +80,41 @@
 ! 2.b. Iterate to obtain actual breaking fraction
 !
 
-    IF(IQB == 1) THEN
-      IF ( BETA .LT. 0.2_rkind ) THEN
-        QB     = ZERO
-      ELSE IF ( BETA .LT. ONE ) THEN
-        ARG    = EXP  (( QQ - 1. ) / BETA2 )
-        QB     = QQ - BETA2 * ( QQ - ARG ) / ( BETA2 - ARG )
-        DO IS = 1, 3
-          QB     = EXP((QB-1.)/BETA2)
-        END DO
-      ELSE
-        QB = ONE - 10.E-10
-      END IF
-    ELSE IF (IQB == 2) THEN
-     IF (BETA .LT. 0.2D0) THEN
-        QB = 0.0D0
-      ELSE IF (BETA .LT. 1.0D0) THEN
-        AUX   = EXP((QQ-1.0d0)/BETA2)
-        QB    = QQ-BETA2*(QQ-AUX)/(BETA2-AUX)
-      ELSE
-        QB = 1.0D0
-      END IF
-    ELSE IF (IQB == 3) THEN
-      IF ( BETA .LT. 0.2_rkind ) THEN
-        QB     = ZERO
-      ELSE IF ( BETA .LT. ONE ) THEN
-        ARG    = EXP  (( QQ - 1. ) / BETA2 )
-        QB     = QQ - BETA2 * ( QQ - ARG ) / ( BETA2 - ARG )
-        DO IS = 1, 3
-          QB     = EXP((QB-1.)/BETA2)
-        END DO
-      ELSE
-        QB = ONE - 10.E-10
+      IF(IQB == 1) THEN
+        IF ( BETA .LT. 0.2_rkind ) THEN
+          QB     = ZERO
+        ELSE IF ( BETA .LT. ONE ) THEN
+          ARG    = EXP  (( QQ - 1. ) / BETA2 )
+          QB     = QQ - BETA2 * ( QQ - ARG ) / ( BETA2 - ARG )
+          DO IS = 1, 3
+            QB     = EXP((QB-1.)/BETA2)
+          END DO
+        ELSE
+          QB = ONE - 10.E-10
+        END IF
+      ELSE IF (IQB == 2) THEN
+       IF (BETA .LT. 0.2D0) THEN
+          QB = 0.0D0
+        ELSE IF (BETA .LT. 1.0D0) THEN
+          AUX   = EXP((QQ-1.0d0)/BETA2)
+          QB    = QQ-BETA2*(QQ-AUX)/(BETA2-AUX)
+        ELSE
+          QB = 1.0D0
+        END IF
+      ELSE IF (IQB == 3) THEN
+        IF ( BETA .LT. 0.2_rkind ) THEN
+          QB     = ZERO
+        ELSE IF ( BETA .LT. ONE ) THEN
+          ARG    = EXP  (( QQ - 1. ) / BETA2 )
+          QB     = QQ - BETA2 * ( QQ - ARG ) / ( BETA2 - ARG )
+          DO IS = 1, 3
+            QB     = EXP((QB-1.)/BETA2)
+          END DO
+        ELSE
+          QB = ONE - 10.E-10
+        ENDIF
       ENDIF
-    ENDIF
-
+ 
       QBLOCAL(IP) = QB
 
       IF (IBREAK == 1) THEN ! Battjes & Janssen
@@ -176,8 +176,7 @@
           ENDIF
         ENDIF
       ENDIF
-
-
+!
 #ifdef DEBUG
       IF (iplg(IP) .eq. 20506) THEN
         WRITE(STAT%FHNDL, *) 'idxcall=', idxcall
@@ -190,19 +189,15 @@
         idxcall=idxcall+1
       END IF
 #endif
-
+!
       DO IS = 1, MSC
         DO ID = 1, MDC
           IF (ICOMP .GE. 2) THEN
             DSSBR(IS,ID)  = SURFA1
             SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID)
-            IMATDA(IS,ID) = IMATDA(IS,ID) + SURFA1
-            IMATRA(IS,ID) = IMATRA(IS,ID) + SSBR(IS,ID)
           ELSE IF (ICOMP .LT. 2) THEN
             DSSBR(IS,ID)  = SURFA0
             SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID)
-            IMATDA(IS,ID) = IMATDA(IS,ID) + SURFA0
-            IMATRA(IS,ID) = IMATRA(IS,ID) + SSBR(IS,ID)
           END IF
         END DO
       END DO 
