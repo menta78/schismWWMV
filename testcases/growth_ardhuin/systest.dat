@@ -1,1 +1,27 @@
 C system.dat, made by tri2sys
+C Number of Boundary Nodes:
+         0
+C Number of Domain Nodes:
+         5
+C Koordinaten und Skalarwerte der Knoten
+C --------------------------------------
+C Zuerst die Randknoten  (Anzahl s.o.),
+C dann die Gebietsknoten (Anzahl s.o.).
+C ------------+-------------+-------------+---------------
+C     Nr.     |  x-Koord.   |   y-Koord.  | Skalarwert
+C ------------+-------------+-------------+---------------
+         0          0.00000000          0.00000000     10000.0000
+         1          0.00000000        500.00000000     10000.0000
+         2        500.00000000        500.00000000     10000.0000
+         3        500.00000000          0.00000000     10000.0000
+         4        250.00000000        250.00000000     10000.0000
+C ------------------------------------------------------------
+C Anzahl der Elemente:
+          4
+C Elementverzeichnis
+C ------------------------------------------------------------
+C    Knoten i  Knoten j  Knoten k   Kennung     Nr.
+         4         0         3         0         0
+         4         3         2         0         1
+         4         2         1         0         2
+         4         1         0         0         3
