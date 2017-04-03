@@ -277,7 +277,7 @@
        RSYY = zero
        FORCEXY = zero
 
-       IF (LCFL) THEN
+       IF (LCFL .or. (ICOMP .eq. 0) ) THEN
          ALLOCATE (CFLCXY(3,MNP), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 30')
          CFLCXY(1,:) = ZERO

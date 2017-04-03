@@ -53,10 +53,10 @@ F90 = $(WWM_COMPILER)
 #F90OPTI = -g -O3 -ffree-line-length-0 -fbacktrace -Wall -fcheck=all
 #F90OPTI = -O3 -ffree-line-length-0
 #F90OPTI    = -Wall -O0 -g -ggdb -ffree-line-length-none -fcheck=all -fsanitize=thread -fbacktrace -fstack-protector-all -ffpe-trap=invalid,zero,overflow
-#F90OPTI    = -Wall -O0 -g -ggdb -ffree-line-length-none -fcheck=all -fsanitize=address -fsanitize=undefined   -fbacktrace -fstack-protector-all -ffpe-trap=invalid,zero,overflow
+ F90OPTI    = -Wall -O0 -g -ggdb -ffree-line-length-none -fcheck=all -fsanitize=address -fsanitize=undefined   -fbacktrace -fstack-protector-all -ffpe-trap=invalid,zero,overflow
 #F90OPTI    = -Wall -O3 -g -ggdb -ffree-line-length-none -ffpe-trap=invalid,zero,overflow -DDEBUG
 #F90OPTI    = -Wall -O3 -g -ggdb -ffree-line-length-none -ffpe-trap=invalid,zero,overflow
- F90OPTI    = -Wall -O9 -ffree-line-length-none -g -DDEBUG
+#F90OPTI    = -g -Wall -O9 -ffree-line-length-none
 #F90OPTI    = -g -Wall -O9 -ffree-line-length-none -ffpe-trap=invalid,zero,overflow
 
 
