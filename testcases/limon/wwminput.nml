@@ -78,7 +78,7 @@
  WBHS    =   4.00000000000000     ,
  WBTP    =   8.00000000000000     ,
  WBDM    =   90.0000000000000     ,
- WBDS    =   20.00000000000000     ,
+ WBDS    =   20.0000000000000     ,
  WBSS    =   2.00000000000000     ,
  WBDSMS  =   1.00000000000000     ,
  WBGAUSS =  0.100000000000000     ,
@@ -189,17 +189,6 @@
  TRIRA   =   2.50000000000000     ,
  TRIURS  =  0.100000000000000     
  /
-
-&SIN4
-/
-
-&SDS4
-/
-
-
-&NUMS
- ICOMP   =           3,
- AMETHOD =           7,
  &SIN4
  ZWND    =   10.0000000000000     ,
  ALPHA0  =  9.499999694526196E-003,
@@ -255,23 +244,23 @@
  FXDSCUT =  0.000000000000000E+000
  /
  &NUMS
- ICOMP   =           0,
- AMETHOD =           1,
+ ICOMP   =           3,
+ AMETHOD =           7,
  SMETHOD =           1,
- DMETHOD =           1,
+ DMETHOD =           2,
  IMPL_GEOADVECT  = T,
  LITERSPLIT      = F,
  LFILTERTH       = F,
  MAXCFLTH        =   1.00000000000000     ,
  LTHBOUND        = F,
- FMETHOD =           0,
+ FMETHOD =           1,
  LFILTERCXY      = F,
  MAXCFLCXY       =   1.00000000000000     ,
  LFILTERSIG      = F,
  MAXCFLSIG       =   1.00000000000000     ,
  LSIGBOUND       = F,
  LLIMT   = T,
- LIMFAK  =  0.100000000000000     ,
+ LIMFAK  =  0.100000001490116     ,
  WW3_STYLE_LIMIT_SRC_TERM        = F,
  LDIFR   = F,
  IDIFFR  =           1,
@@ -282,7 +271,7 @@
  LCFL_CASD       = F,
  RTHETA  =  0.500000000000000     ,
  LEXPIMP = F,
- FREQEXP =  0.100000000000000     ,
+ FREQEXP =  0.000000000000000E+000,
  LVECTOR = F,
  IVECTOR =           2,
  DTMIN_DYN       =   1.00000000000000     ,
@@ -313,12 +302,12 @@
  JGS_DIFF_SOLVERTHR      =  9.999999747378752E-006,
  LCONV   = F,
  LCHKCONV        = T,
- NQSITER =          10,
- QSCONV1 =  0.980000000000000     ,
- QSCONV2 =  0.980000000000000     ,
- QSCONV3 =  0.980000000000000     ,
- QSCONV4 =  0.980000000000000     ,
- QSCONV5 =  0.980000000000000     ,
+ NQSITER =           1,
+ QSCONV1 =  0.970000028610229     ,
+ QSCONV2 =  0.970000028610229     ,
+ QSCONV3 =  0.970000028610229     ,
+ QSCONV4 =  0.970000028610229     ,
+ QSCONV5 =  0.970000028610229     ,
  EPSH1   =  1.000000000000000E-002,
  EPSH2   =  1.000000000000000E-002,
  EPSH3   =  1.000000000000000E-002,
@@ -327,8 +316,6 @@
  LZETA_SETUP     = F,
  ZETA_METH       =           0,
  STP_SOLVERTHR   =  1.000000000000000E-010
-/
-
  /
  &HISTORY
  BEGTC   = 19980901.000000     ,
@@ -429,36 +416,6 @@
  LOUTITER        = F,
  IOUTS   =           1,
  NOUTS   = P-1                                                                                                                       
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                   ,
  XOUTS   =   1950.00000000000     , 199*0.000000000000000E+000  ,
  YOUTS   =   304.000000000000     , 199*0.000000000000000E+000  ,
  CUTOFF  =  0.440000000000000     , 199*0.000000000000000E+000  ,
@@ -467,37 +424,6 @@
  LSP2D   = F,
  LLOUTS  = F,
  ILOUTS  =           1,
- NLOUTS  = P-1                                                                                                                       
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                                                                                                     
-                                                   ,
  AC      = F,
  WK      = F,
  ACOUT_1D        = F,
@@ -585,7 +511,6 @@
  /
  &NESTING
  L_NESTING       = F,
- NB_GRID_NEST    =           0,
  L_HOTFILE       = F,
  L_BOUC_PARAM    = F,
  L_BOUC_SPEC     = F
