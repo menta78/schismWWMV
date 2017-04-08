@@ -73,15 +73,17 @@
          WRITE(740+myrank,*) 'HS=', HS, ' TM01=', TM01
       END IF
 #endif
-      
-      
+!
       CALL DEEP_WATER(IP, ACLOC, IMATRA, IMATDA, SSINE, DSSINE, SSDS, DSSDS, SSNL4, DSSNL4, SSINL)
+!
 #ifdef DEBUG
       IF (IP .eq. TESTNODE) THEN
          WRITE(740+myrank,*) 'sum(SSINE)=', sum(SSINE), ' sum(DSSINE)=', sum(DSSINE)
       END IF
 #endif
+!
       IF (ISHALLOW(IP) .EQ. 1) CALL SHALLOW_WATER(IP, ACLOC, IMATRA, IMATDA, SSBR, DSSBR, SSBF, DSSBF, SSBRL, SSNL3, DSSNL3)
+!
 #ifdef DEBUG
       IF (IP .eq. TESTNODE) THEN
          WRITE(740+myrank,*) 'After integration ISOURCE=', ISOURCE
@@ -224,7 +226,7 @@
          REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
          REAL(rkind), INTENT(IN)    :: ACOLD(MSC,MDC)
          REAL(rkind)                :: NEWDAC, OLDAC, NEWAC, DELT, XIMP, DELFL(MSC)
-         REAL(rkind)                :: MAXDAC, CONST, SND, DELT5, USFM, eFric
+         REAL(rkind)                :: MAXDAC, CONST, SND, DELT5, USFM, eFric, PHILMAXDAC
 
 !         CONST  = PI2**2*3.0*1.0E-7*DT4S*SPSIG(MSC)
 !         SND    = PI2*5.6*1.0E-3
@@ -232,21 +234,17 @@
 !         XIMP   = 1._rkind
 !         DELT5  = XIMP*DELT
          DELFL  = COFRM4*DELT
-!         MAXDAC = ZERO
  
          DO IS = 1, MSC
-!           LIMFAK = 0.1
-           MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
-           IF ((ISOURCE .EQ. 1).or.(ISOURCE .EQ. 2)) THEN
-              IF (ISOURCE .EQ. 1) THEN
-                 eFric=UFRIC(IP)
-              ELSE
-                 eFric=USNEW(IP)
-              END IF
-              IF (eFric .GT. SMALL) THEN
-                 USFM   = eFric*MAX(FMEANWS(IP),FMEAN(IP))
-                 MAXDAC = USFM*DELFL(IS)/PI2/SPSIG(IS)
-              END IF
+           PHILMAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
+           IF (ISOURCE .EQ. 1) THEN
+              USFM   = UFRIC(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+              MAXDAC = MAX(PHILMAXDAC,USFM*DELFL(IS)/PI2/SPSIG(IS))
+           ELSE IF (ISOURCE .EQ. 2) THEN
+              USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+              MAXDAC = MAX(PHILMAXDAC,USFM*DELFL(IS)/PI2/SPSIG(IS))
+           ELSE IF (ISOURCE .EQ. 3) THEN
+              MAXDAC = PHILMAXDAC
            END IF
            DO ID = 1, MDC
              NEWAC  = ACLOC(IS,ID)

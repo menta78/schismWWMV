@@ -746,7 +746,7 @@
 !
       IF ((.NOT. WW3_STYLE_LIMIT_SRC_TERM) .and. LLIMT) THEN
         DO IP = 1, MNP
-           IF (DEP(IP) .GT. DMIN) CALL LIMITER(IP,AC1(:,:,IP),AC2(:,:,IP)) 
+          IF (DEP(IP) .GT. DMIN) CALL LIMITER(IP,AC1(:,:,IP),AC2(:,:,IP)) 
         END DO
       ELSE
         DO IP = 1, MNP
