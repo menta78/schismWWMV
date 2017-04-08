@@ -432,7 +432,6 @@
          APTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
          PPTAIL = PTAIL(1) - ONE
          EPTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
-
          DO ID = 1, MDC
            DO IS = 1, ISMAX
              APTOT = APTOT + SPSIG(IS)    * ACLOC(IS,ID)
@@ -445,10 +444,10 @@
 
          IF (MSC .GT. 3  .AND. .NOT. LSIGMAX) THEN
            DO ID = 1, MDC
-           AHFR  = SPSIG(MSC) * ACLOC(MSC,ID)
-           APTOT = APTOT + APTAIL * AHFR
-           EHFR  = SPSIG(MSC) * AHFR
-           EPTOT = EPTOT + EPTAIL * EHFR
+             AHFR  = SPSIG(MSC) * ACLOC(MSC,ID)
+             APTOT = APTOT + APTAIL * AHFR
+             EHFR  = SPSIG(MSC) * AHFR
+             EPTOT = EPTOT + EPTAIL * EHFR
            ENDDO
          ENDIF
 
@@ -579,26 +578,30 @@
       REAL(rkind) F1MEAN, AKMEAN, XKMEAN
       ISMAX = MSC
       CALL MEAN_PARAMETER(IP,ACLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
-      IF (ISOURCE .eq. 1) THEN
-        DO IS = 1, MSC
-          DO ID = 1, MDC
-            AWW3(ID + (IS-1) * MDC) = ACLOC(IS,ID) * CG(IS,IP)
+      IF (DEP(IP) .gt. 0) THEN
+        IF (ISOURCE .eq. 1) THEN
+          DO IS = 1, MSC
+            DO ID = 1, MDC
+              AWW3(ID + (IS-1) * MDC) = ACLOC(IS,ID) * CG(IS,IP)
+            END DO
           END DO
-        END DO
-        LLWS = .TRUE.
-        CALL SET_WIND( IP, WIND10, WINDTH )
-        CALL W3SPR4 ( AWW3, CG(:,IP), WK(:,IP), EMEAN(IP), FMEAN(IP), FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS(IP))
-        HS = 4.0_rkind * SQRT(EMEAN(IP))
-      END IF
-      IF (ISOURCE .eq. 2) THEN
-        DO IS = 1, MSC
-          JAC = PI2 * SPSIG(IS)
-          DO ID = 1, MDC
-            FL3(ID,IS) = ACLOC(IS,ID) * JAC
+          LLWS = .TRUE.
+          CALL SET_WIND( IP, WIND10, WINDTH )
+          CALL W3SPR4 ( AWW3, CG(:,IP), WK(:,IP), EMEAN(IP), FMEAN(IP), FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS(IP))
+          HS = 4.0_rkind * SQRT(EMEAN(IP))
+        END IF
+        IF (ISOURCE .eq. 2) THEN
+          DO IS = 1, MSC
+            JAC = PI2 * SPSIG(IS)
+            DO ID = 1, MDC
+              FL3(ID,IS) = ACLOC(IS,ID) * JAC
+            END DO
           END DO
-        END DO
-        CALL FKMEAN_LOCAL(IP, FL3, EMEAN(IP), FMEAN(IP), F1MEAN, AKMEAN, XKMEAN)
-        HS = 4.0_rkind * SQRT(EMEAN(IP))
+          CALL FKMEAN_LOCAL(IP, FL3, EMEAN(IP), FMEAN(IP), F1MEAN, AKMEAN, XKMEAN)
+          HS = 4.0_rkind * SQRT(EMEAN(IP))
+        END IF
+      ELSE
+        HS = ZERO
       END IF
       END SUBROUTINE
 !**********************************************************************

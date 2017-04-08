@@ -1,5 +1,4 @@
 #include "wwm_functions.h"
-#define WW3_QB
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -19,9 +18,7 @@
 #ifdef DEBUG
       integer, save :: idxcall = 0
 #endif
-#ifdef WAN_QB
-      REAL(rkind) :: AUX
-#endif      
+      REAL(rkind) :: AUX     
 #ifdef SCHISM
       REAL(rkind) :: COST, SINT
 #endif
@@ -29,6 +26,7 @@
       REAL(rkind) :: SBRD, WS, SURFA0, SURFA1, COEFF_B, SURFSEL
 
       REAL(rkind), PARAMETER :: GAM_D = 0.14_rkind
+      INTEGER, PARAMETER     :: IQB = 1
 
       INTEGER :: IS, ID
 
@@ -82,40 +80,41 @@
 ! 2.b. Iterate to obtain actual breaking fraction
 !
 
-#ifdef WW3_QB
-      IF ( BETA .LT. 0.2_rkind ) THEN
-        QB     = ZERO
-      ELSE IF ( BETA .LT. ONE ) THEN
-        ARG    = EXP  (( QQ - 1. ) / BETA2 )
-        QB     = QQ - BETA2 * ( QQ - ARG ) / ( BETA2 - ARG )
-        DO IS = 1, 3
-          QB     = EXP((QB-1.)/BETA2)
-        END DO
-      ELSE
-        QB = ONE - 10.E-10
-      END IF
-#elif SWAN_QB
-     IF (BETA .LT. 0.2D0) THEN
-        QB = 0.0D0
-      ELSE IF (BETA .LT. 1.0D0) THEN
-        AUX   = EXP((QQ-1.0d0)/BETA2)
-        QB    = QQ-BETA2*(QQ-AUX)/(BETA2-AUX)
-      ELSE
-        QB = 1.0D0
-      END IF
-# else
-      IF ( BETA .LT. 0.2_rkind ) THEN
-        QB     = ZERO
-      ELSE IF ( BETA .LT. ONE ) THEN
-        ARG    = EXP  (( QQ - 1. ) / BETA2 )
-        QB     = QQ - BETA2 * ( QQ - ARG ) / ( BETA2 - ARG )
-        DO IS = 1, 3
-          QB     = EXP((QB-1.)/BETA2)
-        END DO
-      ELSE
-        QB = ONE - 10.E-10
-      END IF
-#endif
+      IF(IQB == 1) THEN
+        IF ( BETA .LT. 0.2_rkind ) THEN
+          QB     = ZERO
+        ELSE IF ( BETA .LT. ONE ) THEN
+          ARG    = EXP  (( QQ - 1. ) / BETA2 )
+          QB     = QQ - BETA2 * ( QQ - ARG ) / ( BETA2 - ARG )
+          DO IS = 1, 3
+            QB     = EXP((QB-1.)/BETA2)
+          END DO
+        ELSE
+          QB = ONE - 10.E-10
+        END IF
+      ELSE IF (IQB == 2) THEN
+       IF (BETA .LT. 0.2D0) THEN
+          QB = 0.0D0
+        ELSE IF (BETA .LT. 1.0D0) THEN
+          AUX   = EXP((QQ-1.0d0)/BETA2)
+          QB    = QQ-BETA2*(QQ-AUX)/(BETA2-AUX)
+        ELSE
+          QB = 1.0D0
+        END IF
+      ELSE IF (IQB == 3) THEN
+        IF ( BETA .LT. 0.2_rkind ) THEN
+          QB     = ZERO
+        ELSE IF ( BETA .LT. ONE ) THEN
+          ARG    = EXP  (( QQ - 1. ) / BETA2 )
+          QB     = QQ - BETA2 * ( QQ - ARG ) / ( BETA2 - ARG )
+          DO IS = 1, 3
+            QB     = EXP((QB-1.)/BETA2)
+          END DO
+        ELSE
+          QB = ONE - 10.E-10
+        ENDIF
+      ENDIF
+ 
       QBLOCAL(IP) = QB
 
       IF (IBREAK == 1) THEN ! Battjes & Janssen
@@ -177,11 +176,7 @@
           ENDIF
         ENDIF
       ENDIF
-      IF (ICOMP .ge. 2) THEN
-        SURFSEL=SURFA1
-      ELSE
-        SURFSEL=SURFA0
-      END IF
+!
 #ifdef DEBUG
       IF (iplg(IP) .eq. 20506) THEN
         WRITE(STAT%FHNDL, *) 'idxcall=', idxcall
@@ -194,16 +189,18 @@
         idxcall=idxcall+1
       END IF
 #endif
-      DSSBR = SURFSEL
+!
       DO IS = 1, MSC
         DO ID = 1, MDC
-          SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID)
+          IF (ICOMP .GE. 2) THEN
+            DSSBR(IS,ID)  = SURFA1
+            SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID)
+          ELSE IF (ICOMP .LT. 2) THEN
+            DSSBR(IS,ID)  = SURFA0
+            SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID)
+          END IF
         END DO
       END DO 
-
-      !IF (ABS(SURFA0) .GT. 0. .OR. ABS(SURFA1) .GT. 0.) THEN
-      !  IF (DEP(IP) .LT. 0.21 .AND. DEP(IP) .GT. 0.19) WRITE(3333,'(110F20.10)') SURFA0, SURFA1, QB, BETA2, SME/PI, KME, DEP(IP), ETOT, HMAX(IP)
-      !ENDIF
 
 #ifdef SCHISM
       DO IS=1,MSC

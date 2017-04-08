@@ -169,6 +169,13 @@
          REAL(rkind)                        :: DSIGTAB
          INTEGER, ALLOCATABLE               :: NumberIterationSolver(:)
 !
+! WW3 diagonalization 
+!
+         REAL(rkind)                        :: WW3_XP
+         REAL(rkind)                        :: WW3_FACP
+         REAL(rkind), allocatable           :: WW3_SIG(:)
+         LOGICAL                            :: WW3_STYLE_LIMIT_SRC_TERM = .FALSE.
+!
 ! Fundamental data types 
 !
          TYPE VAR_NETCDF_CF
@@ -962,6 +969,7 @@
          INTEGER, PARAMETER     :: OUTVARS  = 35 
          INTEGER, PARAMETER     :: CURRVARS = 5
          INTEGER, PARAMETER     :: WINDVARS = 10 
+!AR: potential bug to selfe in the trunk it is 59
 
          INTEGER, PARAMETER     :: OUTVARS_COMPLETE  = 65
          LOGICAL                :: PARAMWRITE_HIS = .TRUE.

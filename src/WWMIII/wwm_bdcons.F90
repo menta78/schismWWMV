@@ -40,8 +40,7 @@
       REAL(rkind) :: ETOTS, ETOTC, DSPR
       REAL(rkind) :: SPSIGLOC, WVN, WVC, WVK, WVCG
       integer ISMAX, IS
-      DEPLOC=10000
-!AR: What is happening here?!
+
       ISMAX=MSC
       CURTXYLOC=ZERO
       DO IS=1,MSC
@@ -1767,7 +1766,7 @@
       WRITE(STAT%FHNDL,*) 'DIRECTION NUMBER IN WW3 SPECTRUM:',MDC_WW3
       WRITE(STAT%FHNDL,*) 'FREQUENCY NUMBER IN WW3 SPECTRUM:',MSC_WW3
       WRITE(STAT%FHNDL,'("+TRACE...",A)')'DONE READSPEC2D_WW3_INIT_SPEC'
-      IF ((MDC_WW3 .gt. 10000).or.(MSC_WW3 .gt. 10000)) THEN
+      IF ((MDC_WW3 .gt. 360).or.(MSC_WW3 .gt. 1000)) THEN
         CALL WWM_ABORT('MDC_WW3 or MSC_WW3 are too large to be reasonable')
       END IF
       END SUBROUTINE
@@ -3006,7 +3005,8 @@
              eCLATS = 1
            END IF
            DO IK=1,NK
-!Mathieu: here is the bug SPSIGLOC is not defined please correct this
+!AR: BUG here was a bug SPSIGLOC was not defined ... must be verified!
+             SPSIGLOC = FR(IK) * PI2
              CALL ALL_FROM_TABLE(SPSIGLOC,DEPLOC,WVK,WVCG,WVKDEP,WVN,WVC)
              eCG = WVCG              
              DO ITH=1,NTH

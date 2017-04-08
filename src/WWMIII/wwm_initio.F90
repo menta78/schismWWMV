@@ -277,7 +277,7 @@
        RSYY = zero
        FORCEXY = zero
 
-       IF (LCFL) THEN
+       IF (LCFL .or. (ICOMP .eq. 0) ) THEN
          ALLOCATE (CFLCXY(3,MNP), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 30')
          CFLCXY(1,:) = ZERO
@@ -757,7 +757,11 @@
 #ifdef MPI_PARALL_GRID
       CALL EXCHANGE_P4D_WWM(AC2)
 #endif
+!      WRITE(740+myrank,*) 'Before call to GENERAL_OUTPUT'
+!      FLUSH(740+myrank)
       CALL GENERAL_OUTPUT(ZERO)
+!      WRITE(740+myrank,*) 'End call to GENERAL_OUTPUT'
+!      FLUSH(740+myrank)
       IF (LWXFN) THEN
         CALL WRINPGRD_XFN
       ELSE IF(LWSHP) THEN
@@ -815,6 +819,38 @@
       FLUSH(STAT%FHNDL)
       AC1 = AC2
       CALL Print_SumAC2("Leaving INITIALIZE_WWM")
+      IF (WW3_STYLE_LIMIT_SRC_TERM) THEN
+        CALL INIT_WAVEWATCHIII_LIMITER
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE INIT_WAVEWATCHIII_LIMITER
+      USE DATAPOOL
+      IMPLICIT NONE
+      ! adapted from the ww3_grid.ftn source code
+      INTEGER IS
+      REAL(rkind) FR1, SIGMA
+      WW3_XP     = 0.15
+      WW3_XP     = MAX ( 1.E-6_rkind , WW3_XP )
+      WW3_FACP   = WW3_XP / PI * 0.62E-3 * PI2**4 / G9**2
+#ifdef DEBUG
+      WRITE(DBG%FHNDL,*) 'WW3_FACP=', WW3_FACP
+#endif
+      allocate(WW3_SIG(0:MSC+1), stat=istat)
+      FR1   = SPSIG(1)/PI2
+      SIGMA   = FR1 * TPI / SFAC**2
+      DO IS=0, MSC+1
+         SIGMA    = SIGMA * SFAC
+         WW3_SIG (IS) = SIGMA
+#ifdef DEBUG
+         WRITE(DBG%FHNDL,*) 'IS=', IS, WW3_SIG(IS)
+#endif
+      END DO
+#ifdef DEBUG
+      FLUSH(DBG%FHNDL)
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1053,6 +1089,8 @@
          IMPLICIT NONE
          INTEGER IQGRID, INODE
          integer ierr_xnl
+!         WRITE(740+myrank,*) 'Beginning of INITIATE_WAVE_PARAMETER'
+!         FLUSH(740+myrank)
 
          WRITE(STAT%FHNDL,*) 'START WAVE PARAMETER'
          FLUSH(STAT%FHNDL)
@@ -1127,6 +1165,8 @@
          ENDIF
 
          IF (MESTR == 6) CALL GRAD_CG_K 
+!         WRITE(740+myrank,*) 'End of INITIATE_WAVE_PARAMETER'
+!         FLUSH(740+myrank)
 
        END SUBROUTINE
 !**********************************************************************

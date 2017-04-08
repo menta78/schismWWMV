@@ -744,9 +744,15 @@
       CALL WAV_MY_WTIME(TIME4)
 #endif
 !
-      DO IP = 1, MNP
-        IF (DEP(IP) .GT. DMIN) CALL LIMITER(IP,AC1(:,:,IP),AC2(:,:,IP)) 
-      END DO
+      IF ((.NOT. WW3_STYLE_LIMIT_SRC_TERM) .and. LLIMT) THEN
+        DO IP = 1, MNP
+           IF (DEP(IP) .GT. DMIN) CALL LIMITER(IP,AC1(:,:,IP),AC2(:,:,IP)) 
+        END DO
+      ELSE
+        DO IP = 1, MNP
+           AC2(:,:,IP) = MAX(ZERO, AC2(:,:,IP))
+        END DO
+      END IF
 #ifdef DEBUG
       CALL LOCAL_NODE_PRINT(20506, "After limiter")
 #endif
@@ -776,7 +782,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE GET_BSIDE_DIAG(IP, ACin1, ACin2, BSIDE, DIAG, BLOC)
-      USE DATAPOOL
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
       REAL(rkind), intent(in)  :: ACin1(MSC,MDC,MNP)
@@ -787,18 +792,45 @@
       REAL(rkind)              :: IMATRA(MSC,MDC)
       REAL(rkind)              :: IMATDA(MSC,MDC)
       REAL(rkind)              :: eVal
-
-
+      REAL(rkind)              :: eIMATRA, TheFactor, DVS1, DVS2
+      REAL(rkind)              :: DAM(MSC), MAXDAC, eDAM
+      REAL(rkind)              :: DELFL(MSC), eFric, USFM
+      INTEGER IS, ID
       IMATRA=ZERO
       IMATDA=ZERO
-
       IF (LNONL) THEN
          CALL SOURCES_IMPLICIT 
       ELSE
         IMATDA = IMATDAA(:,:,IP)
         IMATRA = IMATRAA(:,:,IP)
       END IF
+      IF (LLIMT .and. WW3_STYLE_LIMIT_SRC_TERM) THEN
+         DELFL  = COFRM4*DT4S
+         DO IS=1,MSC
+!            LIMFAK = 0.1
+            MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
+            IF ((ISOURCE .EQ. 1).or.(ISOURCE .EQ. 2)) THEN
+               IF (ISOURCE .EQ. 1) THEN
+                  eFric=UFRIC(IP)
+               ELSE
+                  eFric=USNEW(IP)
+               END IF
+               IF (eFric .GT. SMALL) THEN
+                  USFM   = eFric*MAX(FMEANWS(IP),FMEAN(IP))
+                  MAXDAC = USFM*DELFL(IS)/PI2/SPSIG(IS)
+               END IF
+            END IF
+            DO ID=1,MDC
+               TheFactor = DT4A / MAX(ONE, ONE - DT4A * IMATDA(IS,ID))
+               DVS1 = IMATRA(IS,ID) * TheFactor
+               DVS2 = SIGN(MIN(MAXDAC, ABS(DVS1)), DVS1)
+               eIMATRA = DVS2 / TheFactor
+               IMATRA(IS,ID)  = eIMATRA
+            END DO
+         END DO
+      END IF
 
+      
       eVal = SI(IP) * DT4A
 
       CALL GET_BLOCAL(IP, ACin1, BLOC)
@@ -819,7 +851,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE GET_BLOCAL(IP, Ac1in, BLOC)
-      USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: IP
       REAL(rkind), intent(in)  :: AC1in(MSC,MDC,MNP)
@@ -838,7 +869,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE LINEAR_ASPAR_LOCAL(IP, ASPAR_LOC, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
-      USE DATAPOOL
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
       REAL(rkind), intent(out) :: ASPAR_LOC(MSC,MDC,MAX_DEG)
@@ -1239,7 +1269,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE COMPUTE_JACOBI_SOLVER_ERROR(MaxNorm, SumNorm)
-      USE DATAPOOL
       IMPLICIT NONE
       real(rkind), intent(out) :: MaxNorm, SumNorm
       integer IP
@@ -1426,7 +1455,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE NEGATIVE_PART_B(IP, NEG_P, ASPAR_DIAG)
-      USE DATAPOOL
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
       REAL(rkind), intent(out) :: NEG_P(MSC,MDC)
@@ -1586,7 +1614,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE NEGATIVE_PART(IP, NEG_P, ASPAR_DIAG)
-      USE DATAPOOL
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
       REAL(rkind), intent(out) :: NEG_P(MSC,MDC)
@@ -1780,7 +1807,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE COMPUTE_K_CRFS_XYU
-      USE DATAPOOL
       IMPLICIT NONE
       INTEGER :: IP, J, ICON, IPie
       REAL(rkind) :: FL11_X, FL12_X, FL21_X, FL22_X, FL31_X, FL32_X
@@ -1896,7 +1922,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE NEGATIVE_PART_C(J, IP, NEG_P, ASPAR_DIAG)
-      USE DATAPOOL
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
       INTEGER, intent(inout) :: J
@@ -2009,7 +2034,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE NEGATIVE_PART_D(J, IP, NEG_P, ASPAR_DIAG)
-      USE DATAPOOL
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
       INTEGER, intent(inout) :: J
@@ -2119,7 +2143,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE NEGATIVE_PART_E(J, IP, NEG_P, ASPAR_DIAG)
-      USE DATAPOOL
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
       INTEGER, intent(inout) :: J
@@ -2243,7 +2266,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE NEGATIVE_PART_F(IP, NEG_P, ASPAR_DIAG)
-      USE DATAPOOL
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
       REAL(rkind), intent(out) :: NEG_P(MSC,MDC)
@@ -2437,7 +2459,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE NEGATIVE_PART_G(IP, NEG_P, ASPAR_DIAG)
-      USE DATAPOOL
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
       REAL(rkind), intent(out) :: NEG_P(MSC,MDC)
@@ -2632,7 +2653,6 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE NEGATIVE_PART_H(IP, NEG_P, ASPAR_DIAG)
-      USE DATAPOOL
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
       REAL(rkind), intent(out) :: NEG_P(MSC,MDC)

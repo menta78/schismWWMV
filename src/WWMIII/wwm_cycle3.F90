@@ -55,8 +55,8 @@
            ENDDO
          ENDIF
 
-         WRITE(*,*) 'wind, th, fpm and sum sources'
-         WRITE(*,*) WIND10, WINDTH, FPM, SUM(IMATRA), SUM(IMATDA)
+         !WRITE(*,*) 'wind, th, fpm and sum sources'
+         !WRITE(*,*) WIND10, WINDTH, FPM, SUM(IMATRA), SUM(IMATDA)
 
       END SUBROUTINE
 !**********************************************************************

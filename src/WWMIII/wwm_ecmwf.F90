@@ -39,7 +39,7 @@
            DO IS = 1, MSC 
              JAC = ONE/PI2/SPSIG(IS)
              IMATRA(IS,ID) = SL(ID,IS)*JAC
-             IMATDA(IS,ID) = FL(ID,IS)/PI2
+             IMATDA(IS,ID) = FL(ID,IS)
            ENDDO
          ENDDO
 

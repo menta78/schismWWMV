@@ -753,8 +753,9 @@
      &      IMPL_GEOADVECT,                                             &
      &      LITERSPLIT, LFILTERTH, MAXCFLTH, LTHBOUND, FMETHOD,         &
      &      LFILTERCXY, MAXCFLCXY, LFILTERSIG, MAXCFLSIG, LSIGBOUND,    &
-     &      LLIMT, LIMFAK, MELIM, LDIFR, IDIFFR, LADVTEST, LSOUBOUND,   &
-     &      LCFL, LCFL_CASD, RTHETA, LEXPIMP, FREQEXP, LVECTOR,IVECTOR, LGSE,      &
+     &      LLIMT, LIMFAK, WW3_STYLE_LIMIT_SRC_TERM,                    &
+     &      LDIFR, IDIFFR, LADVTEST, LSOUBOUND, LGSE,                   &
+     &      LCFL, LCFL_CASD, RTHETA, LEXPIMP, FREQEXP, LVECTOR,IVECTOR, &
      &      DTMIN_DYN, NDYNITER, DTMIN_SIN, DTMIN_SNL4,                 &
      &      DTMIN_SDS, DTMIN_SNL3, DTMIN_SBR, DTMIN_SBF,                &
      &      NDYNITER_SIN, NDYNITER_SNL4, NDYNITER_SDS, NDYNITER_SBR,    &
@@ -806,6 +807,7 @@
          MAIN%DELT   = DELTC
          MAIN%UNIT   = UNITC
          MAIN%ENDT   = ENDTC
+         write(*,*) MAIN%BEGT, MAIN%BMJD
          CALL CT2MJD(MAIN%BEGT, MAIN%BMJD)
          CALL CT2MJD(MAIN%ENDT, MAIN%EMJD)
          CALL CU2SEC(MAIN%UNIT, MAIN%DELT)
@@ -1244,6 +1246,8 @@
       ZALP   = 0.006
       SINBR   = 0.
       READ(INP%FHNDL, NML = SIN4)
+      wwm_print_namelist(SIN4)
+      FLUSH(CHK%FHNDL)
       SDSC1  = 0.0     ! not used in ST4, should be cleaned up
       FXFM3 = 2.5
       FXFMAGE = 0.
@@ -1278,6 +1282,8 @@
       SDSHFGEN  = 0.
       SDSLFGEN  = 0.
       READ(INP%FHNDL, NML = SDS4)
+      wwm_print_namelist(SDS4)
+      FLUSH(CHK%FHNDL)
       
       
       END SUBROUTINE

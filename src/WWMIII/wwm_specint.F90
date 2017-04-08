@@ -224,36 +224,29 @@
          REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
          REAL(rkind), INTENT(IN)    :: ACOLD(MSC,MDC)
          REAL(rkind)                :: NEWDAC, OLDAC, NEWAC, DELT, XIMP, DELFL(MSC)
-         REAL(rkind)                :: MAXDAC, CONST, SND, DELT5, USFM
+         REAL(rkind)                :: MAXDAC, CONST, SND, DELT5, USFM, eFric
 
-         CONST  = PI2**2*3.0*1.0E-7*DT4S*SPSIG(MSC)
-         SND    = PI2*5.6*1.0E-3
+!         CONST  = PI2**2*3.0*1.0E-7*DT4S*SPSIG(MSC)
+!         SND    = PI2*5.6*1.0E-3
          DELT   = DT4S
-         XIMP   = 1._rkind
-         DELT5  = XIMP*DELT
+!         XIMP   = 1._rkind
+!         DELT5  = XIMP*DELT
          DELFL  = COFRM4*DELT
-         MAXDAC = ZERO
+!         MAXDAC = ZERO
  
          DO IS = 1, MSC
-           IF (ISOURCE .EQ. 1) THEN
-             IF (UFRIC(IP) .GT. SMALL) THEN
-               USFM   = UFRIC(IP)*MAX(FMEANWS(IP),FMEAN(IP))
-               MAXDAC = USFM*DELFL(IS)/PI2/SPSIG(IS)
-             ELSE
-               LIMFAK = 0.1
-               MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
-             END IF
-           ELSE IF (ISOURCE .EQ. 2) THEN
-             IF (USNEW(IP) .GT. SMALL) THEN
-               USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
-               MAXDAC = USFM*DELFL(IS)/PI2/SPSIG(IS)
-             ELSE
-               LIMFAK = 0.1
-               MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
-             END IF
-           ELSE IF (ISOURCE .EQ. 3) THEN
-             LIMFAK = 0.1
-             MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
+!           LIMFAK = 0.1
+           MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
+           IF ((ISOURCE .EQ. 1).or.(ISOURCE .EQ. 2)) THEN
+              IF (ISOURCE .EQ. 1) THEN
+                 eFric=UFRIC(IP)
+              ELSE
+                 eFric=USNEW(IP)
+              END IF
+              IF (eFric .GT. SMALL) THEN
+                 USFM   = eFric*MAX(FMEANWS(IP),FMEAN(IP))
+                 MAXDAC = USFM*DELFL(IS)/PI2/SPSIG(IS)
+              END IF
            END IF
            DO ID = 1, MDC
              NEWAC  = ACLOC(IS,ID)

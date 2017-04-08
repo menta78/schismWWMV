@@ -56,7 +56,8 @@ F90 = $(WWM_COMPILER)
  F90OPTI    = -Wall -O0 -g -ggdb -ffree-line-length-none -fcheck=all -fsanitize=address -fsanitize=undefined   -fbacktrace -fstack-protector-all -ffpe-trap=invalid,zero,overflow
 #F90OPTI    = -Wall -O3 -g -ggdb -ffree-line-length-none -ffpe-trap=invalid,zero,overflow -DDEBUG
 #F90OPTI    = -Wall -O3 -g -ggdb -ffree-line-length-none -ffpe-trap=invalid,zero,overflow
-#F90OPTI    = -Wall -O9 -ffree-line-length-none
+#F90OPTI    = -g -Wall -O9 -ffree-line-length-none
+#F90OPTI    = -g -Wall -O9 -ffree-line-length-none -ffpe-trap=invalid,zero,overflow
 
 
 OBJSELFE = elfe_glbl.o elfe_msgp.o solver_subs.o io_subs.o grid_subs.o misc_subs.o
@@ -104,7 +105,7 @@ endif
 ifdef MPI
   LIBS += $(MPI_LINK) $(METIS_PATH)/lib/libparmetis.a $(METIS_PATH)/lib/libmetis.a
 #  LIBS += $(MPI_LINK) -L$(METIS_PATH)/lib -Wl,-rpath,$(METIS_PATH)/lib -lparmetis
-  MPIFLAG  = -DWWM_MPI -DMPIVERSION=2 -DUSE_WWM -DSHYFEM_COUPLING $(MPI_INCLUDE)
+  MPIFLAG  = -DWWM_MPI -DMPIVERSION=2 -DUSE_WWM -DSHYFEM_COUPLING $(MPI_SPECIFIC_ADDI_INCLUDE)
   ifdef PDLIB
     OBJS= wwm_pdlib.o $(OBJWWM)
   else
