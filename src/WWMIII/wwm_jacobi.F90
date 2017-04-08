@@ -829,7 +829,6 @@
             END DO
          END DO
       END IF
-
       
       eVal = SI(IP) * DT4A
 

@@ -26,7 +26,7 @@
       REAL(rkind) :: SBRD, WS, SURFA0, SURFA1, COEFF_B, SURFSEL
 
       REAL(rkind), PARAMETER :: GAM_D = 0.14_rkind
-      INTEGER, PARAMETER     :: IQB = 1
+      INTEGER, PARAMETER     :: IQB = 3
 
       INTEGER :: IS, ID
 
@@ -121,10 +121,10 @@
         IF (ICOMP .GE. 2) THEN ! linearized source terms ...
           IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
             IF ( BETA2 .LT. ONE - 10.E-10) THEN
-              WS   = - ( ALPBJ / PI) *  QB * SME / BETA2
+              WS   = (ALPBJ / PI) *  QB * SME / BETA2
               SbrD =   WS * (ONE - QB) / (BETA2 - QB)
             ELSE
-              WS   = - (ALPBJ/PI)*SME !
+              WS   = (ALPBJ/PI)*SME !
               SbrD = ZERO 
             END IF
             SURFA0 = SbrD
