@@ -62,13 +62,18 @@
 
       DO IS = 1, MSC
         KDEP = WK(IS,IP)*DEP(IP)
-!AR: SSBF is in the implicit only used to compute the total dissipation 
         DSSBF(IS,:) = CFBOT * (SPSIG(IS) / SINH(MIN(20.0_rkind,KDEP)))**2
         DO ID = 1, MDC
           IF (ICOMP .GE. 2) THEN
-            SSBF(IS,ID)   = - DSSBF(IS,ID) * ACLOC(IS,ID)
+            IF (optioncall .eq. 1) then
+              SSBF(IS,ID)   =  ZERO!DSSBF(IS,ID) * ACLOC(IS,ID)
+            ELSE IF (optioncall .eq. 2) then
+              DSSBF(IS,ID)  = - DSSBF(IS,ID)
+              SSBF(IS,ID)   = DSSBF(IS,ID) * ACLOC(IS,ID)
+            ENDIF
           ELSE IF (ICOMP .LT. 2) THEN
-            SSBF(IS,ID)   = - DSSBF(IS,ID) * ACLOC(IS,ID)
+            DSSBF(IS,ID)  = - DSSBF(IS,ID)
+            SSBF(IS,ID)   = DSSBF(IS,ID) * ACLOC(IS,ID)
           END IF
         END DO
       END DO

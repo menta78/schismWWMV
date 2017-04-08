@@ -135,7 +135,15 @@
             SURFA1 = ZERO 
           END IF
           ELSE IF (optionCall .eq. 2) THEN
-            STOP 'NOT READY' 
+            IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
+              IF ( BETA2 .LT. ONE - 10.E-10) THEN
+                SURFA0  = - ( ALPBJ / PI) *  QB * SME / BETA2
+              ELSE
+                SURFA0  = - (ALPBJ/PI)*SME
+              END IF
+            ELSE
+              SURFA0 = 0.
+            END IF
           ENDIF
         ELSE ! not linearized ... 
           IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
