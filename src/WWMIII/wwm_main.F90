@@ -43,13 +43,14 @@
 ! Copyright: 2008 - 2014 Z&P (Aron Roland, IT&E, Frankfurt, Zanke&Partner, Hannover, Germany)
 ! All Rights Reserved                                     
 !
-! License: Redistribution of any files contained in this package is strictly prohibited
-! Any kind of usage is only allowed with permission of Zanke & Partner (aaronroland@gmx.de)
-! This includes commerical as well as academic usage. Developers and Contributers 
-! are not subject to this licese condition and can use this code as they wish. The code is not 
-! allowed to be redistributed, except by VIMS, which allowed to distribute this code subject to the above 
-! condtions together with SCHISM.
-! For any kind of questions or licence inquries please contact: aaronroland@gmx.de
+! http://www.apache.org/licenses/LICENSE-2.0
+!
+! Unless required by applicable law or agreed to in writing, software
+! distributed under the License is distributed on an "AS IS" BASIS,
+! WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+! See the License for the specific language governing permissions and
+! limitations under the License.
+!
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************

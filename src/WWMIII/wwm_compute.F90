@@ -272,6 +272,22 @@
         CALL WAV_MY_WTIME(TIME5)
 #endif
 
+        IF (LNANINFCHK) THEN
+          WRITE(DBG%FHNDL,*) 'AFTER LIMITER',  SUM(AC2)
+          IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 5')
+        ENDIF
+
+!AR: this routine was somehow deleted must check why ... 
+!        IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche
+
+        IF (LNANINFCHK) THEN
+          WRITE(DBG%FHNDL,*) 'AFTER BREAK_LIMIT_ALL',  SUM(AC2)
+          IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 6')
+        ENDIF
+
+#ifdef TIMINGS
+        CALL WAV_MY_WTIME(TIME7)
+#endif
 #ifdef TIMINGS
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----IMPLICIT -----'
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'DIFFRACTION                      ', TIME2-TIME1

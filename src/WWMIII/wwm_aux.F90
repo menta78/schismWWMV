@@ -606,8 +606,8 @@
          REAL(rkind)    :: WVK,WVCG,WVKDEP,WVN,WVC,SPSIGLOC
 
          DO IP = 1, MNP
-           !DEPLOC = MAX(DMIN,DEP(IP))
-           DEPLOC = DEP(IP)
+            DEPLOC = MAX(DMIN,DEP(IP))
+!           DEPLOC = DEP(IP)
 !           WRITE(740+myrank,*) 'IP=', IP, ' DEPLOC=', DEPLOC
            DO IS = 1, MSC
              SPSIGLOC = SPSIG(IS)

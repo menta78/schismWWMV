@@ -953,6 +953,7 @@
          REAL(rkind), ALLOCATABLE      :: DISSIPATION(:)
          REAL(rkind), ALLOCATABLE      :: AIRMOMENTUM(:)
 
+         INTEGER                :: MELIM   = 1
          INTEGER                :: IDIFFR  = 1
 !
 !  nonlinear interactions ...
@@ -968,6 +969,7 @@
          INTEGER, PARAMETER     :: OUTVARS  = 35 
          INTEGER, PARAMETER     :: CURRVARS = 5
          INTEGER, PARAMETER     :: WINDVARS = 10 
+!AR: potential bug to selfe in the trunk it is 59
 
          INTEGER, PARAMETER     :: OUTVARS_COMPLETE  = 65
          LOGICAL                :: PARAMWRITE_HIS = .TRUE.
