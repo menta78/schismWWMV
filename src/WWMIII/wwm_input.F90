@@ -33,7 +33,7 @@
 
          IMPLICIT NONE
          CHARACTER(LEN=40)  :: FILEOUT
-         INTEGER, PARAMETER :: INUMOUTS = 200 
+         INTEGER, PARAMETER :: INUMOUTS = 30 
          CHARACTER(LEN=20)  :: BEGTC, UNITC, ENDTC, NOUTS(INUMOUTS), NLOUTS(INUMOUTS)
          REAL(rkind)        :: XOUTS(INUMOUTS), YOUTS(INUMOUTS), CUTOFF(INUMOUTS)
          REAL(rkind)        :: XLOUTS(INUMOUTS), YLOUTS(INUMOUTS)
@@ -1028,6 +1028,7 @@
 !     *** CURR section
 !
          MULTIPLE_IN=MULTIPLE_IN_CURR
+         FILECUR =''
          READ(INP%FHNDL, NML = CURR)
          wwm_print_namelist(CURR)
          FLUSH(CHK%FHNDL)
@@ -1063,6 +1064,7 @@
 !     *** water level section
 !
          MULTIPLE_IN_WATLEV=MULTIPLE_IN
+         FILEWATL=''
          READ(INP%FHNDL, NML = WALV)
          wwm_print_namelist(WALV)
          FLUSH(CHK%FHNDL)
@@ -1205,6 +1207,15 @@
 !
 ! NESTING section
 !
+      ListBEGTC =''
+      ListDELTC = ZERO
+      ListUNITC =''
+      ListENDTC =''
+      ListIGRIDTYPE =0
+      ListFILEGRID =''
+      ListFILEBOUND =''
+      ListPrefix =''
+
          READ(INP%FHNDL, NML = NESTING)
          wwm_print_namelist(NESTING)
          FLUSH(CHK%FHNDL)

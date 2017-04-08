@@ -654,7 +654,7 @@
          !
          LOGICAL                          :: L_NESTING = .FALSE.
          INTEGER                          :: NB_GRID_NEST = 0
-         integer, parameter               :: MaxNbNest = 20
+         integer, parameter               :: MaxNbNest = 3 
          character(len=20)                :: ListBEGTC(MaxNbNest)
          REAL(rkind)                      :: ListDELTC(MaxNbNest)
          character(len=20)                :: ListUNITC(MaxNbNest)
