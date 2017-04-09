@@ -1383,8 +1383,6 @@
 !
 ! Variables for the JACOBI SOLVER
 !
-!      REAL(rkind), allocatable :: A_THE(:,:,:), C_THE(:,:,:)
-!      REAL(rkind), allocatable :: A_SIG(:,:,:), C_SIG(:,:,:)
          REAL(rkind), allocatable :: CAD_THE(:,:,:), CAS_SIG(:,:,:)
 
 #ifdef WWM_SOLVER
