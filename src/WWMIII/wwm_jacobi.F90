@@ -265,7 +265,7 @@
             DO IS=1,NUMSIG
               B_SIG(IS)=eFact*(CP_SIG(IS)/DS_INCR(IS-1) - CM_SIG(IS) /DS_INCR(IS))
             END DO
-            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * PTAIL(5)
+            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * TAIL_ARR(5)
             ASPAR(:,ID,I_DIAG(IP))=ASPAR(:,ID,I_DIAG(IP)) + B_SIG
           END DO
         END DO
@@ -295,7 +295,7 @@
 !* 
 !* Boundary condition: For low frequency, energy disappear. For
 !* high frequency, we prolongate the energy by using a parametrization
-!* of the tail: PTAIL(5).
+!* of the tail: TAIL_ARR(5).
 !* 
 !* Grid: the gridsize is variable. DS_INCR(IS) is essentially defined
 !* as  DS_INCR(IS) = SPSIG(IS) - SPSIG(IS-1)
@@ -329,7 +329,7 @@
 !*       + N_(i+1)^(n+1) [    Delta t { -u_(i+1,+)/DS_(i+1)   }    ]
 !* 
 !* The boundary conditions are expressed as
-!* N_0^{n+1}=0 and N_{NUMSIG+1}^{n+1} = N_{NUMSIG}^{n+1} PTAIL(5)
+!* N_0^{n+1}=0 and N_{NUMSIG+1}^{n+1} = N_{NUMSIG}^{n+1} TAIL_ARR(5)
 !* 
 !* 
 !**********************************************************************
@@ -393,7 +393,7 @@
             CM_SIG=CAS(IS,ID) * FM
             B_SIG(IS)=eFact*(CP_SIG/DS_INCR(IS+1) - CM_SIG/DS_INCR(IS))
             IF (IS .eq. NUMSIG) THEN
-              CP_SIG_ip1=CAS(NUMSIG,ID)*FP*PTAIL(5)
+              CP_SIG_ip1=CAS(NUMSIG,ID)*FP*TAIL_ARR(5)
               B_SIG(NUMSIG)=B_SIG(NUMSIG) - eFact*CP_SIG_ip1/DS_INCR(IS)
             END IF
             IF (IS .gt. 1) THEN
@@ -1033,7 +1033,7 @@
           DO IS=1,NUMSIG-1
             C_SIG(IS,ID) = eFact*CM_SIG(IS+1)/DS_INCR(IS)
           END DO
-          B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * PTAIL(5)
+          B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * TAIL_ARR(5)
           ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
         END DO
       ELSE
@@ -1605,7 +1605,7 @@
             DO IS=1,NUMSIG-1
               NEG_P(IS,ID)=NEG_P(IS,ID) + eFact*CM_SIG(IS+1)/DS_INCR(IS)*AC2(IS+1,ID,IP)
             END DO
-            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * PTAIL(5)
+            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * TAIL_ARR(5)
             ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
           END DO
         END IF
@@ -1798,7 +1798,7 @@
             DO IS=1,NUMSIG-1
               NEG_P(IS,ID)=NEG_P(IS,ID) + eFact*CM_SIG(IS+1)/DS_INCR(IS)*AC2(IS+1,ID,IP)
             END DO
-            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * PTAIL(5)
+            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * TAIL_ARR(5)
             ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
           END DO
         END IF
@@ -2025,7 +2025,7 @@
             DO IS=1,NUMSIG-1
               NEG_P(IS,ID)=NEG_P(IS,ID) + eFact*CM_SIG(IS+1)/DS_INCR(IS)*AC2(IS+1,ID,IP)
             END DO
-            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * PTAIL(5)
+            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * TAIL_ARR(5)
             ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
           END DO
         END IF
@@ -2134,7 +2134,7 @@
             DO IS=1,NUMSIG-1
               NEG_P(IS,ID)=NEG_P(IS,ID) + eFact*CM_SIG(IS+1)/DS_INCR(IS)*AC2(IS+1,ID,IP)
             END DO
-            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * PTAIL(5)
+            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * TAIL_ARR(5)
             ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
           END DO
         END IF
@@ -2257,7 +2257,7 @@
             DO IS=1,NUMSIG-1
               NEG_P(IS,ID)=NEG_P(IS,ID) + eFact*CM_SIG(IS+1)/DS_INCR(IS)*AC2(IS+1,ID,IP)
             END DO
-            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * PTAIL(5)
+            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * TAIL_ARR(5)
             ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
           END DO
         END IF
@@ -2450,7 +2450,7 @@
             DO IS=1,NUMSIG-1
               NEG_P(IS,ID)=NEG_P(IS,ID) + eFact*CM_SIG(IS+1)/DS_INCR(IS)*AC2(IS+1,ID,IP)
             END DO
-            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * PTAIL(5)
+            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * TAIL_ARR(5)
             ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
           END DO
         END IF
@@ -2644,7 +2644,7 @@
             DO IS=1,NUMSIG-1
               NEG_P(IS,ID)=NEG_P(IS,ID) + eFact*CM_SIG(IS+1)/DS_INCR(IS)*AC2(IS+1,ID,IP)
             END DO
-            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * PTAIL(5)
+            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * TAIL_ARR(5)
             ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
           END DO
         END IF
@@ -2857,7 +2857,7 @@
             DO IS=1,NUMSIG-1
               NEG_P(IS,ID)=NEG_P(IS,ID) + eFact*CM_SIG(IS+1)/DS_INCR(IS)*AC2(IS+1,ID,IP)
             END DO
-            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * PTAIL(5)
+            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * TAIL_ARR(5)
             ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
           END DO
         END IF

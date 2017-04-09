@@ -521,7 +521,7 @@
           END DO
           DS    = SPSIG(NUMSIG) - SPSIG(NUMSIG-1)
           ETAIL = SUM(WALOC(NUMSIG,:)) * SIGPOW(NUMSIG,2) * DDIR * DS
-          ETOT  = ETOT + PTAIL(6) * ETAIL
+          ETOT  = ETOT + TAIL_ARR(6) * ETAIL
           HS_WWM = 4*SQRT(MAX(0.0, ETOT))
           IF (ETOT .gt. 0) THEN
             quot = EM/ETOT

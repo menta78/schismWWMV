@@ -273,7 +273,7 @@
          REAL(rkind)                 :: DINTSPEC
 
          ETOT   = 0.0
-         EFTAIL = 1.0 / (PTAIL(1)-1.0)
+         EFTAIL = 1.0 / (TAIL_ARR(1)-1.0)
 
          ETOT = DINTSPEC(IP,WALOC)
 

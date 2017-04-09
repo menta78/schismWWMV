@@ -2944,7 +2944,7 @@
           END DO
           DS    = SPSIG(NUMSIG) - SPSIG(NUMSIG-1)
           ETAIL = SUM(AC2(NUMSIG,:,IP)) * SIGPOW(NUMSIG,2) * DDIR * DS
-          ETOT  = ETOT + PTAIL(6) * ETAIL
+          ETOT  = ETOT + TAIL_ARR(6) * ETAIL
           HS=4.0_rkind * SQRT(ETOT)
           !
           WRITE(STAT%FHNDL,*) 'HS=', HS, ' idxcall=', idxcall

@@ -117,7 +117,7 @@
       REAL(rkind)                    :: FWTABLE(0:SIZEFWTABLE)
       REAL(rkind)                    :: ZZWND, AALPHA, BBETA, ZZALP
       REAL(rkind)                    :: DTH, FACHF, SXFR, XFR, FACHFE
-      REAL(rkind)                    :: WNMEANP, WNMEANPTAIL
+      REAL(rkind)                    :: WNMEANP, WNMEANTAIL_ARR
       REAL(rkind)                    :: FTE, FTF
       REAL(rkind)                    :: SSTXFTF, SSTXFTWN, SSTXFTFTAIL
       REAL(rkind)                    :: SSWELLF(7) ,SSWELLFPAR
@@ -216,7 +216,7 @@
         END DO
 
         WNMEANP = 0.5_rkind
-        WNMEANPTAIL = -0.5_rkind
+        WNMEANTAIL_ARR = -0.5_rkind
 
         XFR = SFAC ! Check with Fabrice ... should be 1.1
 
@@ -253,7 +253,7 @@
         FACHF  = 5.
         FACHFE = XFR**(-FACHF)
 
-        SSTXFTFTAIL  = 1/(FACHF-1.-WNMEANPTAIL*2) * SIG(NK)**(2+WNMEANPTAIL*2) * DTH
+        SSTXFTFTAIL  = 1/(FACHF-1.-WNMEANTAIL_ARR*2) * SIG(NK)**(2+WNMEANTAIL_ARR*2) * DTH
         SSTXFTWN = 1/(FACHF-1.-WNMEANP*2) * SIG(NK)**(2) * (SIG(NK)/SQRT(G9))**(WNMEANP*2) * DTH
              
         SSWELLF(1) = SWELLF
@@ -861,10 +861,10 @@
         EB2(IK)   = EB2(IK) * DDEN(IK) / CG(IK)
         EMEAN    = EMEAN  + EB(IK)
         FMEAN    = FMEAN  + EB(IK) /SIG(IK)
-        FMEAN1   = FMEAN1 + EB(IK) *(SIG(IK)**(2.*WNMEANPTAIL))
+        FMEAN1   = FMEAN1 + EB(IK) *(SIG(IK)**(2.*WNMEANTAIL_ARR))
         WNMEAN   = WNMEAN + EB(IK) *(WN(IK)**WNMEANP)
         EMEANWS  = EMEANWS+ EB2(IK)
-        FMEANWS  = FMEANWS+ EB2(IK)*(SIG(IK)**(2.*WNMEANPTAIL))
+        FMEANWS  = FMEANWS+ EB2(IK)*(SIG(IK)**(2.*WNMEANTAIL_ARR))
       END DO
 !
 ! 3.  Add tail beyond discrete spectrum and get mean pars ------------ *
@@ -889,7 +889,7 @@
         FMEAN1=INVPI2 * SIG(NK)
       ELSE
         FMEAN1  = INVPI2 *( MAX ( 1.E-7_rkind , FMEAN1 )                &
-     &            / MAX ( 1.E-7_rkind , EMEAN ))**(1.d0/(2.*WNMEANPTAIL))
+     &            / MAX ( 1.E-7_rkind , EMEAN ))**(1.d0/(2.*WNMEANTAIL_ARR))
       ENDIF
       WNMEAN = ( MAX ( 1.E-7_rkind , WNMEAN )                           &
      &           / MAX ( 1.E-7_rkind , EMEAN ) )**(1.d0/WNMEANP)
@@ -897,7 +897,7 @@
         FMEANWS=INVPI2 * SIG(NK)
       ELSE
         FMEANWS  = INVPI2 *( MAX ( 1.E-7_rkind , FMEANWS )              &
-     &         / MAX ( 1.E-7_rkind , EMEANWS ))**(1/(2.*WNMEANPTAIL))
+     &         / MAX ( 1.E-7_rkind , EMEANWS ))**(1/(2.*WNMEANTAIL_ARR))
       END IF
 !
 ! 5.  Cd and z0 ----------------------------------------------- *

@@ -891,7 +891,7 @@
         use datapool, only: IOBP, I_DIAG, SI, LBCSP, LBCWA, LINHOM
         use datapool, only: NP_RES, NNZ, MNE, WBAC
         use datapool, only: rkind, np_global, np, npg, inp, iplg
-        use datapool, only: DT4F, DS_INCR, DT4D, DDIR, PTAIL
+        use datapool, only: DT4F, DS_INCR, DT4D, DDIR, TAIL_ARR
         use petscpool
         implicit none
         integer, intent(in) :: IP
@@ -1096,7 +1096,7 @@
         use datapool, only: IOBP, I_DIAG, SI, LBCSP, LBCWA, LINHOM
         use datapool, only: NP_RES, NNZ, MNE, WBAC
         use datapool, only: rkind, np_global, np, npg, inp, iplg
-        use datapool, only: DT4F, DS_INCR, DT4D, DDIR, PTAIL
+        use datapool, only: DT4F, DS_INCR, DT4D, DDIR, TAIL_ARR
         USE DATAPOOL, ONLY : REFRACTION_IMPL, FREQ_SHIFT_IMPL
         use petscpool
         implicit none
@@ -1217,7 +1217,7 @@
             DO ISS=1,NUMSIG-1
               C_SIG(ISS,IDD) = DT4F*CM_SIG(ISS+1)/DS_INCR(ISS)
             END DO
-            B_SIG(NUMSIG,IDD) = B_SIG(NUMSIG,IDD) + DT4F*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * PTAIL(5)
+            B_SIG(NUMSIG,IDD) = B_SIG(NUMSIG,IDD) + DT4F*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * TAIL_ARR(5)
           END DO
         END IF
         IF (REFRACTION_IMPL) THEN

@@ -117,8 +117,8 @@
       REAL(rkind), ALLOCATABLE       :: ECOS(:), EC2(:), ES2(:), ESC(:)
       REAL(rkind)                    :: ZZWND, AALPHA, BBETA, ZZALP
       REAL(rkind)                    :: DTH, FACHF, SXFR, XFR, FACHFE
-      REAL(rkind)                    :: WWNMEANP, WWNMEANPTAIL, WNMEANP
-      REAL(rkind)                    :: WNMEANPTAIL, STXFTFTAIL
+      REAL(rkind)                    :: WWNMEANP, WWNMEANTAIL_ARR, WNMEANP
+      REAL(rkind)                    :: WNMEANTAIL_ARR, STXFTFTAIL
       REAL(rkind)                    :: FTE, FTF
       REAL(rkind)                    :: STXFTF, STXFTWN
       REAL(rkind)                    :: SSTXFTF, SSTXFTWN, SSTXFTFTAIL
@@ -217,9 +217,9 @@
 !        TAUWSHELTER = 1. ! This maybe even too big ... wave supportesed are ...
 
         WNMEANP = 0.5
-        WNMEANPTAIL = -0.5
-!        WRITE(5001,*) 'WNMEANP, WNMEANPTAIL'
-!        WRITE(5001,*) WNMEANP, WNMEANPTAIL
+        WNMEANTAIL_ARR = -0.5
+!        WRITE(5001,*) 'WNMEANP, WNMEANTAIL_ARR'
+!        WRITE(5001,*) WNMEANP, WNMEANTAIL_ARR
 
         XFR = EXP(FRINTF) ! Check with Fabrice ... should be 1.1
 
@@ -271,7 +271,7 @@
         FACHF  = 5.
         FACHFE = XFR**(-FACHF)
 
-        STXFTFTAIL  = 1./(FACHF-1.-WNMEANPTAIL*2)
+        STXFTFTAIL  = 1./(FACHF-1.-WNMEANTAIL_ARR*2)
         STXFTF      = 1./(FACHF-1.-WNMEANP*2)
         STXFTWN     = 1./(FACHF-1.-WNMEANP*2) * SIG(NK)**(2)
 
@@ -402,7 +402,7 @@
      &     TTAUWSHELTER, SSWELLFPAR, SSWELLF,                           &
      &     ZZ0RAT, SSDSC1, SSDSC2, SSDSC3, SSDSC4, SSDSC5,              &
      &     SSDSC6, SSDSISO, SSDSBR, SSDSBR2, SSDSBM, SSDSP,             &
-     &     SSDSCOS, SSDSDTH, WWNMEANP, WWNMEANPTAIL, SSTXFTF,           &
+     &     SSDSCOS, SSDSDTH, WWNMEANP, WWNMEANTAIL_ARR, SSTXFTF,           &
      &     SSTXFTFTAIL, SSTXFTWN, SSTXFTF, SSTXFTWN,                    &
      &     SSDSBRF1, SSDSBRF2, SSDSBRFDF,SSDSBCK, SSDSABK,              &
      &     SSDSPBK, SSDSBINT,                                           &
@@ -550,10 +550,10 @@
         EB(IK)   = EB(IK) * DDEN(IK) / CG(IK)
         EB2(IK)   = EB2(IK) * DDEN(IK) / CG(IK)
         EMEAN    = EMEAN  + EB(IK)
-        FMEAN    = FMEAN  + EB(IK) *(SIG(IK)**(2.*WNMEANPTAIL))
+        FMEAN    = FMEAN  + EB(IK) *(SIG(IK)**(2.*WNMEANTAIL_ARR))
         WNMEAN   = WNMEAN + EB(IK) *(WN(IK)**WNMEANP)
         EMEANWS  = EMEANWS+ EB2(IK)
-        FMEANWS  = FMEANWS+ EB2(IK)*(SIG(IK)**(2.*WNMEANPTAIL))
+        FMEANWS  = FMEANWS+ EB2(IK)*(SIG(IK)**(2.*WNMEANTAIL_ARR))
         END DO
 !
 ! 3.  Add tail beyond discrete spectrum and get mean pars ------------ *
@@ -573,7 +573,7 @@
         FMEAN = INVPI2 * SIG(NK)
       ELSE
         FMEAN = INVPI2 *( MAX ( 1.E-7_rkind , FMEAN )                   &
-     &           / MAX ( 1.E-7_rkind , EMEAN ))**(1/(2.*WWNMEANPTAIL))
+     &           / MAX ( 1.E-7_rkind , EMEAN ))**(1/(2.*WWNMEANTAIL_ARR))
         ENDIF
       WNMEAN = ( MAX ( 1.E-7_rkind , WNMEAN )                           &
      &           / MAX ( 1.E-7_rkind , EMEAN ) )**(1/WWNMEANP)
@@ -581,7 +581,7 @@
         FMEANWS = INVPI2 * SIG(NK)
       ELSE
         FMEANWS = INVPI2 *( MAX ( 1.E-7_rkind , FMEANWS )               &
-     &           / MAX ( 1.E-7_rkind , EMEANWS ))**(1/(2.*WWNMEANPTAIL))
+     &           / MAX ( 1.E-7_rkind , EMEANWS ))**(1/(2.*WWNMEANTAIL_ARR))
         END IF
 !
 ! 5.  Cd and z0 ----------------------------------------------- *
@@ -1326,7 +1326,7 @@
      &    TTAUWSHELTER, SSWELLFPAR, SSWELLF,                            &
      &    ZZ0RAT, SSDSC1, SSDSC2, SSDSC3, SSDSC4, SSDSC5,               &
      &    SSDSC6, SSDSISO, SSDSBR, SSDSBR2, SSDSBM, SSDSP,              &
-     &    SSDSCOS, SSDSDTH, WWNMEANP, WWNMEANPTAIL, SSTXFTF,            &
+     &    SSDSCOS, SSDSDTH, WWNMEANP, WWNMEANTAIL_ARR, SSTXFTF,            &
      &    SSTXFTFTAIL, SSTXFTWN, SSTXFTF, SSTXFTWN,                     &
      &    SSDSBRF1, SSDSBRF2, SSDSBRFDF,SSDSBCK, SSDSABK,               &
      &    SSDSPBK, SSDSBINT,                                            &

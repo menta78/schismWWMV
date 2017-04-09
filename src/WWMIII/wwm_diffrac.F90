@@ -418,10 +418,10 @@
                 CCG(IP) = ZERO
               ELSE
                 IF (NUMSIG > 3) THEN
-                  ETOT   = ETOT   + PTAIL(2)*EAD
-                  EWKTOT = EWKTOT + PTAIL(4)*EAD
-                  EWCTOT = EWCTOT + PTAIL(4)*EAD
-                  ECGTOT = ECGTOT + PTAIL(4)*EAD
+                  ETOT   = ETOT   + TAIL_ARR(2)*EAD
+                  EWKTOT = EWKTOT + TAIL_ARR(4)*EAD
+                  EWCTOT = EWCTOT + TAIL_ARR(4)*EAD
+                  ECGTOT = ECGTOT + TAIL_ARR(4)*EAD
                 END IF
                 EWK(IP) = EWKTOT / ETOT
                 EWC(IP) = EWCTOT / ETOT

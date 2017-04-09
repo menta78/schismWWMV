@@ -529,7 +529,7 @@ MODULE WWMaOCN_PGMCL
       real(rkind) zMid, HS, ETOT, MinVal_MFACT, MaxVal_MFACT, MaxVal_eQuot1
       real(rkind) MinVal_MFACT_gl, MaxVal_MFACT_gl, MaxHS, SumHS, AvgHS
       real(rkind) WLM, KLM, AvgStokesNormA, AvgStokesNormB
-      real(rkind) PPTAIL, CETAIL, CKTAIL
+      real(rkind) PTAIL_ARR, CETAIL, CKTAIL
       real(rkind) ETOT1, EKTOT
       real(rkind) eQuotDispersion, eMaxAC, TotSumAC, eQuotAC, eQuotK
       real(rkind) StokesNormA, StokesNormB, cPhase

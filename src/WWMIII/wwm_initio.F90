@@ -1010,7 +1010,7 @@
          IMPLICIT NONE
 
          INTEGER :: IP
-         REAL(rkind)    :: PPTAIL
+         REAL(rkind)    :: PTAIL_ARR
 !
 !2do: Check with WAM parameterization and WW3
 !
@@ -1027,17 +1027,17 @@
 !
 ! High frequency tail integration factors as defined in the SWAN model.
 !
-         PTAIL(1) = 4._rkind
-         PTAIL(2) = 2.5_rkind
-         PTAIL(3) = PTAIL(1) + 1._rkind
+         TAIL_ARR(1) = 4._rkind
+         TAIL_ARR(2) = 2.5_rkind
+         TAIL_ARR(3) = TAIL_ARR(1) + 1._rkind
          IF (ISOURCE .EQ. 2) THEN
-           PTAIL(1) = 5._rkind
-           PTAIL(3) = PTAIL(1) + 1._rkind
+           TAIL_ARR(1) = 5._rkind
+           TAIL_ARR(3) = TAIL_ARR(1) + 1._rkind
          ENDIF
-         PTAIL(4) = 3._rkind
+         TAIL_ARR(4) = 3._rkind
          DO IP = 0, 3
-           PPTAIL = PTAIL(1) - MyREAL(IP)
-           PTAIL(5+IP) = 1. / (PPTAIL * (1. + PPTAIL * (FRINTH-1.)))
+           PTAIL_ARR = TAIL_ARR(1) - MyREAL(IP)
+           TAIL_ARR(5+IP) = 1. / (PTAIL_ARR * (1. + PTAIL_ARR * (FRINTH-1.)))
          ENDDO
 !
 ! Output Variables ... LVARS, NVARS

@@ -19,7 +19,7 @@
 
 !$OMP PARALLEL DEFAULT(NONE) &
 !$OMP&         SHARED(AC2,WK,DEP,CURTXY,DS_BAND,DS_INCR,IOBP,DT4F,    &
-!$OMP&         IITERSPLIT,LSIGBOUND,DDIR,PTAIL,MNP,                   & 
+!$OMP&         IITERSPLIT,LSIGBOUND,DDIR,TAIL_ARR,MNP,                   & 
 !$OMP&         NUMSIG,NUMDIR,DMIN,DAC_SIG,DAC_ADV,DAC_THE,DAC_SOU)          &
 !$OMP&         PRIVATE(IP,IS,DT4FI,                                   &
 !$OMP&         ITER,CFLCAS,REST,CASS,CAS,ACQ,LITERSPLIT)
@@ -48,7 +48,7 @@
                ACQ(0)      = ACQ(1)
 ! Flux at the lower boundary ... no incoming flux.
 ! zero gradient outgoing flux....
-               ACQ(NUMSIG+1)  = ACQ(NUMSIG) * PTAIL(5)
+               ACQ(NUMSIG+1)  = ACQ(NUMSIG) * TAIL_ARR(5)
                CALL QUICKEST_FREQ(NUMSIG,ACQ,CASS,DT4FI,DS_BAND,DS_INCR)
              END DO ! end Interation
 !             IF (LITERSPLIT) THEN
@@ -104,7 +104,7 @@
           CM = MIN(ZERO,CASS)
           DO IT = 1, ITER
             ACQ(0)      = ACQ(1)
-            ACQ(NUMSIG+1)  = ACQ(NUMSIG) * PTAIL(5)
+            ACQ(NUMSIG+1)  = ACQ(NUMSIG) * TAIL_ARR(5)
             DO IS = 1, NUMSIG
               IS1 = IS - 1
               IS2 = IS + 1
@@ -154,7 +154,7 @@
           DO IS=1,NUMSIG-1
             C(IS) = DT4F*CM(IS+1)/DS_INCR(IS)
           END DO
-          B(NUMSIG) = B(NUMSIG) + DT4F*CM(NUMSIG+1)/DS_INCR(NUMSIG) * PTAIL(5)
+          B(NUMSIG) = B(NUMSIG) + DT4F*CM(NUMSIG+1)/DS_INCR(NUMSIG) * TAIL_ARR(5)
           !
           CALL SOLVE_TRIDIAG(A,B,C,ACQ,TMP,NUMSIG)
           AC2(:,ID,IP) = MAX(ZERO,TMP)

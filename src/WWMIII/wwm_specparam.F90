@@ -237,12 +237,12 @@
 !
 ! tail factors ...
 !
-           ACTOT       = ACTOT        + PTAIL(5)  * ATAIL 
-           ETOT        = ETOT         + PTAIL(6)  * ETAIL 
-           ETOT_SPSIG  = ETOT_SPSIG   + PTAIL(7)  * ETAIL 
-           ETOT_ISQ_WK = ETOT_ISQ_WK  + PTAIL(5)  * ETAIL / (SQRT(WK(NUMSIG,IP)))
-           ETOT_SQ_WK  = ETOT_SQ_WK   + PTAIL(5)  * ETAIL * (SQRT(WK(NUMSIG,IP)))
-           ETOT_WK     = ETOT_WK      + PTAIL(8)  * ETAIL * WK(NUMSIG,IP)
+           ACTOT       = ACTOT        + TAIL_ARR(5)  * ATAIL 
+           ETOT        = ETOT         + TAIL_ARR(6)  * ETAIL 
+           ETOT_SPSIG  = ETOT_SPSIG   + TAIL_ARR(7)  * ETAIL 
+           ETOT_ISQ_WK = ETOT_ISQ_WK  + TAIL_ARR(5)  * ETAIL / (SQRT(WK(NUMSIG,IP)))
+           ETOT_SQ_WK  = ETOT_SQ_WK   + TAIL_ARR(5)  * ETAIL * (SQRT(WK(NUMSIG,IP)))
+           ETOT_WK     = ETOT_WK      + TAIL_ARR(8)  * ETAIL * WK(NUMSIG,IP)
 !
 ! integral parameters ...
 !
@@ -285,8 +285,8 @@
       REAL(rkind)                :: Y(NUMSIG)
       REAL(rkind)                :: DS, ETAIL
       REAL(rkind)                :: OMEG2, EAD, ETOT
-      REAL(rkind)                :: EFTAIL,PPTAIL,EFTOT,EPTAIL
-      REAL(rkind)                :: EHFR,AHFR,APTAIL,EPTOT,APTOT
+      REAL(rkind)                :: EFTAIL,PTAIL_ARR,EFTOT,ETAIL_ARR
+      REAL(rkind)                :: EHFR,AHFR,ATAIL_ARR,EPTOT,APTOT
       REAL(rkind)                :: tmp(NUMSIG),actmp(NUMSIG)
 !
 ! total energy ...
@@ -310,16 +310,16 @@
 !
          DS    = SPSIG(NUMSIG) - SPSIG(NUMSIG-1)
          ETAIL = SUM(WALOC(NUMSIG,:)) * SIGPOW(NUMSIG,2) * DDIR * DS
-         ETOT  = ETOT + PTAIL(6) * ETAIL
+         ETOT  = ETOT + TAIL_ARR(6) * ETAIL
 
          HS = 4*SQRT(ETOT)
 
          APTOT = ZERO
          EPTOT = ZERO
-         PPTAIL = PTAIL(1)
-         APTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
-         PPTAIL = PTAIL(1) - ONE
-         EPTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
+         PTAIL_ARR = TAIL_ARR(1)
+         ATAIL_ARR = ONE / (PTAIL_ARR * (ONE + PTAIL_ARR * (FRINTH-ONE)))
+         PTAIL_ARR = TAIL_ARR(1) - ONE
+         ETAIL_ARR = ONE / (PTAIL_ARR * (ONE + PTAIL_ARR * (FRINTH-ONE)))
 
          DO ID = 1, NUMDIR
            DO IS = 1, NUMSIG
@@ -334,9 +334,9 @@
          IF (NUMSIG .GT. 3  .AND. .NOT. LSIGMAX) THEN
            DO ID = 1, NUMDIR
            AHFR  = SPSIG(NUMSIG) * WALOC(NUMSIG,ID)
-           APTOT = APTOT + APTAIL * AHFR
+           APTOT = APTOT + ATAIL_ARR * AHFR
            EHFR  = SPSIG(NUMSIG) * AHFR
-           EPTOT = EPTOT + EPTAIL * EHFR
+           EPTOT = EPTOT + ETAIL_ARR * EHFR
            ENDDO
          ENDIF
 
@@ -348,10 +348,10 @@
 
          ETOT  = ZERO
          EFTOT = ZERO
-         PPTAIL = PTAIL(1) - ONE
-         ETAIL  = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
-         PPTAIL = PTAIL(1) - 3.
-         EFTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
+         PTAIL_ARR = TAIL_ARR(1) - ONE
+         ETAIL  = ONE / (PTAIL_ARR * (ONE + PTAIL_ARR * (FRINTH-ONE)))
+         PTAIL_ARR = TAIL_ARR(1) - 3.
+         EFTAIL = ONE / (PTAIL_ARR * (ONE + PTAIL_ARR * (FRINTH-ONE)))
          DO ID=1, NUMDIR
             DO IS = 1, NUMSIG
               EAD  = SIGPOW(IS,2) * WALOC(IS,ID) * FRINTF
@@ -396,8 +396,8 @@
       REAL(rkind)                :: Y(NUMSIG)
       REAL(rkind)                :: DS, ETAIL
       REAL(rkind)                :: OMEG2,OMEG,EAD,UXD, ETOT
-      REAL(rkind)                :: EFTAIL,PPTAIL,EFTOT,EPTAIL
-      REAL(rkind)                :: EHFR,AHFR,APTAIL,EPTOT,APTOT
+      REAL(rkind)                :: EFTAIL,PTAIL_ARR,EFTOT,ETAIL_ARR
+      REAL(rkind)                :: EHFR,AHFR,ATAIL_ARR,EPTOT,APTOT
       REAL(rkind)                :: CKTAIL, ETOT1, SIG22, EKTOT, CETAIL
       REAL(rkind)                :: tmp(NUMSIG),actmp(NUMSIG), SKK
 !
@@ -422,16 +422,16 @@
 !
          DS    = SPSIG(NUMSIG) - SPSIG(NUMSIG-1)
          ETAIL = SUM(WALOC(NUMSIG,:)) * SIGPOW(NUMSIG,2) * DDIR * DS
-         ETOT  = ETOT + PTAIL(6) * ETAIL
+         ETOT  = ETOT + TAIL_ARR(6) * ETAIL
 
          HS = 4*SQRT(ETOT)
 
          APTOT = ZERO
          EPTOT = ZERO
-         PPTAIL = PTAIL(1)
-         APTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
-         PPTAIL = PTAIL(1) - ONE
-         EPTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
+         PTAIL_ARR = TAIL_ARR(1)
+         ATAIL_ARR = ONE / (PTAIL_ARR * (ONE + PTAIL_ARR * (FRINTH-ONE)))
+         PTAIL_ARR = TAIL_ARR(1) - ONE
+         ETAIL_ARR = ONE / (PTAIL_ARR * (ONE + PTAIL_ARR * (FRINTH-ONE)))
          DO ID = 1, NUMDIR
            DO IS = 1, ISMAX
              APTOT = APTOT + SPSIG(IS)    * WALOC(IS,ID)
@@ -445,9 +445,9 @@
          IF (NUMSIG .GT. 3  .AND. .NOT. LSIGMAX) THEN
            DO ID = 1, NUMDIR
              AHFR  = SPSIG(NUMSIG) * WALOC(NUMSIG,ID)
-             APTOT = APTOT + APTAIL * AHFR
+             APTOT = APTOT + ATAIL_ARR * AHFR
              EHFR  = SPSIG(NUMSIG) * AHFR
-             EPTOT = EPTOT + EPTAIL * EHFR
+             EPTOT = EPTOT + ETAIL_ARR * EHFR
            ENDDO
          ENDIF
 
@@ -459,10 +459,10 @@
 
          ETOT  = ZERO
          EFTOT = ZERO
-         PPTAIL = PTAIL(1) - ONE
-         ETAIL  = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
-         PPTAIL = PTAIL(1) - 3.
-         EFTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
+         PTAIL_ARR = TAIL_ARR(1) - ONE
+         ETAIL  = ONE / (PTAIL_ARR * (ONE + PTAIL_ARR * (FRINTH-ONE)))
+         PTAIL_ARR = TAIL_ARR(1) - 3.
+         EFTAIL = ONE / (PTAIL_ARR * (ONE + PTAIL_ARR * (FRINTH-ONE)))
          DO ID=1, NUMDIR
             IF (LSECU .OR. LSTCU) THEN
               UXD  = CURTXY(IP,1)*COSTH(ID) + CURTXY(IP,2)*SINTH(ID)
@@ -495,10 +495,10 @@
 !
 ! tail ratios same
 !
-         PPTAIL = PTAIL(1) - ONE
-         CETAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
-         PPTAIL = PTAIL(1) - ONE - 2*ONE
-         CKTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
+         PTAIL_ARR = TAIL_ARR(1) - ONE
+         CETAIL = ONE / (PTAIL_ARR * (ONE + PTAIL_ARR * (FRINTH-ONE)))
+         PTAIL_ARR = TAIL_ARR(1) - ONE - 2*ONE
+         CKTAIL = ONE / (PTAIL_ARR * (ONE + PTAIL_ARR * (FRINTH-ONE)))
 
          DO IS = 1, ISMAX
            SIG22 = SIGPOW(IS,2)
@@ -537,15 +537,15 @@
          APTOT = APTOT * FRINTF
          EPTOT = EPTOT * FRINTF
          IF (NUMSIG .GT. 3) THEN
-           PPTAIL = PTAIL(1)
-           APTAIL = 1. / (PPTAIL * (1. + PPTAIL * (FRINTH-1.)))
-           PPTAIL = PTAIL(1) - 1.
-           EPTAIL = 1. / (PPTAIL * (1. + PPTAIL * (FRINTH-1.)))
+           PTAIL_ARR = TAIL_ARR(1)
+           ATAIL_ARR = 1. / (PTAIL_ARR * (1. + PTAIL_ARR * (FRINTH-1.)))
+           PTAIL_ARR = TAIL_ARR(1) - 1.
+           ETAIL_ARR = 1. / (PTAIL_ARR * (1. + PTAIL_ARR * (FRINTH-1.)))
            DO ID = 1, NUMDIR
              AHFR = SPSIG(NUMSIG) * WALOC(NUMSIG,ID)
-             APTOT = APTOT + APTAIL * AHFR
+             APTOT = APTOT + ATAIL_ARR * AHFR
              EHFR = SPSIG(NUMSIG) * AHFR
-             EPTOT = EPTOT + EPTAIL * EHFR
+             EPTOT = EPTOT + ETAIL_ARR * EHFR
            ENDDO
          ENDIF
          TM10 = 2.*PI * APTOT / EPTOT
@@ -711,12 +711,12 @@
 !
 ! tail factors ...
 !
-           ACTOT       = ACTOT        + PTAIL(5)  * ATAIL 
-           ETOT        = ETOT         + PTAIL(6)  * ETAIL 
-           ETOT_SPSIG  = ETOT_SPSIG   + PTAIL(7)  * ETAIL 
-           ETOT_ISQ_WK = ETOT_ISQ_WK  + PTAIL(5)  * ETAIL / SQRT(WKLOC(NUMSIG))
-           ETOT_SQ_WK  = ETOT_SQ_WK   + PTAIL(5)  * ETAIL * SQRT(WKLOC(NUMSIG))
-           ETOT_WK     = ETOT_WK      + PTAIL(8)  * ETAIL * WKLOC(NUMSIG) 
+           ACTOT       = ACTOT        + TAIL_ARR(5)  * ATAIL 
+           ETOT        = ETOT         + TAIL_ARR(6)  * ETAIL 
+           ETOT_SPSIG  = ETOT_SPSIG   + TAIL_ARR(7)  * ETAIL 
+           ETOT_ISQ_WK = ETOT_ISQ_WK  + TAIL_ARR(5)  * ETAIL / SQRT(WKLOC(NUMSIG))
+           ETOT_SQ_WK  = ETOT_SQ_WK   + TAIL_ARR(5)  * ETAIL * SQRT(WKLOC(NUMSIG))
+           ETOT_WK     = ETOT_WK      + TAIL_ARR(8)  * ETAIL * WKLOC(NUMSIG) 
 !
 ! integral parameters ...
 !
@@ -912,13 +912,13 @@
 
          REAL(rkind)                   :: ETOT
          REAL(rkind)                   :: VEC2RAD, EFTOT, OMEG, WINDTH
-         REAL(rkind)                   :: EAD, DS, EHFR, EFTAIL, ETAIL, PPTAIL, ACWIND(NUMSIG,NUMDIR)
+         REAL(rkind)                   :: EAD, DS, EHFR, EFTAIL, ETAIL, PTAIL_ARR, ACWIND(NUMSIG,NUMDIR)
          REAL(rkind)                   :: UXD, ETOTF3, ETOTF4, FP, WN_W, WVC, WKDEP_W
 
          WINDTH = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
 
          ETOT = ZERO
-         EFTAIL = ONE / (PTAIL(1)-ONE)
+         EFTAIL = ONE / (TAIL_ARR(1)-ONE)
 
          DO ID  = 1, NUMDIR            ! Calculate wind sea energy ... weak criterion
            DO IS = 1, NUMSIG
@@ -972,10 +972,10 @@
 
          ETOT = ZERO
          EFTOT = ZERO
-         PPTAIL = PTAIL(1) - ONE
-         ETAIL  = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
-         PPTAIL = PTAIL(1) - 2.
-         EFTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
+         PTAIL_ARR = TAIL_ARR(1) - ONE
+         ETAIL  = ONE / (PTAIL_ARR * (ONE + PTAIL_ARR * (FRINTH-ONE)))
+         PTAIL_ARR = TAIL_ARR(1) - 2.
+         EFTAIL = ONE / (PTAIL_ARR * (ONE + PTAIL_ARR * (FRINTH-ONE)))
          DO ID = 1, NUMDIR
             UXD = CURTXY(IP,1)*COSTH(ID) + CURTXY(IP,2)*SINTH(ID)
             DO IS = 1, NUMSIG
@@ -1268,7 +1268,7 @@
          ETOTS = ZERO
          ETOT1 = ZERO
 
-         EFTAIL = ONE / (PTAIL(1)-ONE)
+         EFTAIL = ONE / (TAIL_ARR(1)-ONE)
 
          DO ID = 1, NUMDIR
            EAD = ZERO
@@ -1321,7 +1321,7 @@
          ETOTS = ZERO
          ETOT1  = ZERO
 
-         EFTAIL = ONE / (PTAIL(1)-ONE)
+         EFTAIL = ONE / (TAIL_ARR(1)-ONE)
 
          DO ID = 1, NUMDIR
            EAD = ZERO
@@ -1371,8 +1371,8 @@
 
          REAL(rkind)                :: DS,ETAIL
          REAL(rkind)                :: OMEG2,OMEG,EAD,UXD, ETOT
-         REAL(rkind)                :: EFTAIL,PPTAIL,EFTOT,EPTAIL
-         REAL(rkind)                :: EHFR,AHFR,APTAIL,EPTOT,APTOT
+         REAL(rkind)                :: EFTAIL,PTAIL_ARR,EFTOT,ETAIL_ARR
+         REAL(rkind)                :: EHFR,AHFR,ATAIL_ARR,EPTOT,APTOT
          REAL(rkind)                :: SKK, CKTAIL, ETOT1, SIG22, EKTOT, CETAIL
          REAL(rkind)                :: tmp(NUMSIG)
 !
@@ -1394,7 +1394,7 @@
 !
          DS    = SPSIG(NUMSIG) - SPSIG(NUMSIG-1)
          ETAIL = SUM(WALOC(NUMSIG,:)) * SIGPOW(NUMSIG,2) * DDIR * DS
-         ETOT  = ETOT + PTAIL(6) * ETAIL
+         ETOT  = ETOT + TAIL_ARR(6) * ETAIL
 
          HS = 4*SQRT(ETOT)
 
@@ -1403,10 +1403,10 @@
 !
 ! tail ratios same as in swan ...
 !
-         PPTAIL = PTAIL(1)
-         APTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
-         PPTAIL = PTAIL(1) - ONE
-         EPTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
+         PTAIL_ARR = TAIL_ARR(1)
+         ATAIL_ARR = ONE / (PTAIL_ARR * (ONE + PTAIL_ARR * (FRINTH-ONE)))
+         PTAIL_ARR = TAIL_ARR(1) - ONE
+         ETAIL_ARR = ONE / (PTAIL_ARR * (ONE + PTAIL_ARR * (FRINTH-ONE)))
 
          DO ID = 1, NUMDIR
            DO IS = 1, ISMAX
@@ -1421,9 +1421,9 @@
          IF (NUMSIG .GT. 3  .AND. .NOT. LSIGMAX) THEN
            DO ID = 1, NUMDIR
              AHFR  = SPSIG(NUMSIG) * WALOC(NUMSIG,ID)
-             APTOT = APTOT + APTAIL * AHFR
+             APTOT = APTOT + ATAIL_ARR * AHFR
              EHFR  = SPSIG(NUMSIG) * AHFR
-             EPTOT = EPTOT + EPTAIL * EHFR
+             EPTOT = EPTOT + ETAIL_ARR * EHFR
            ENDDO
          ENDIF
 
@@ -1436,10 +1436,10 @@
          ETOT  = ZERO
          EFTOT = ZERO
 
-         PPTAIL = PTAIL(1) - ONE
-         ETAIL  = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
-         PPTAIL = PTAIL(1) - 3.
-         EFTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
+         PTAIL_ARR = TAIL_ARR(1) - ONE
+         ETAIL  = ONE / (PTAIL_ARR * (ONE + PTAIL_ARR * (FRINTH-ONE)))
+         PTAIL_ARR = TAIL_ARR(1) - 3.
+         EFTAIL = ONE / (PTAIL_ARR * (ONE + PTAIL_ARR * (FRINTH-ONE)))
 !
 ! tail ratios same as in swan ...
 !
@@ -1475,10 +1475,10 @@
 !
 ! tail ratios
 !
-         PPTAIL = PTAIL(1) - ONE
-         CETAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
-         PPTAIL = PTAIL(1) - ONE - 2.*ONE
-         CKTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
+         PTAIL_ARR = TAIL_ARR(1) - ONE
+         CETAIL = ONE / (PTAIL_ARR * (ONE + PTAIL_ARR * (FRINTH-ONE)))
+         PTAIL_ARR = TAIL_ARR(1) - ONE - 2.*ONE
+         CKTAIL = ONE / (PTAIL_ARR * (ONE + PTAIL_ARR * (FRINTH-ONE)))
 
          DO IS = 1, ISMAX
            SIG22 = SIGPOW(IS,2)
@@ -1518,15 +1518,15 @@
          APTOT = APTOT * FRINTF
          EPTOT = EPTOT * FRINTF
          IF (NUMSIG .GT. 3) THEN
-           PPTAIL = PTAIL(1)
-           APTAIL = 1. / (PPTAIL * (1. + PPTAIL * (FRINTH-1.)))
-           PPTAIL = PTAIL(1) - 1.
-           EPTAIL = 1. / (PPTAIL * (1. + PPTAIL * (FRINTH-1.)))
+           PTAIL_ARR = TAIL_ARR(1)
+           ATAIL_ARR = 1. / (PTAIL_ARR * (1. + PTAIL_ARR * (FRINTH-1.)))
+           PTAIL_ARR = TAIL_ARR(1) - 1.
+           ETAIL_ARR = 1. / (PTAIL_ARR * (1. + PTAIL_ARR * (FRINTH-1.)))
            DO ID = 1, NUMDIR
              AHFR = SPSIG(NUMSIG) * WALOC(NUMSIG,ID)
-             APTOT = APTOT + APTAIL * AHFR
+             APTOT = APTOT + ATAIL_ARR * AHFR
              EHFR = SPSIG(NUMSIG) * AHFR
-             EPTOT = EPTOT + EPTAIL * EHFR
+             EPTOT = EPTOT + ETAIL_ARR * EHFR
            ENDDO
          ENDIF
          TM10 = PI2 * APTOT / EPTOT
@@ -1616,9 +1616,9 @@
 !
 ! tail factors ...
 !
-           ACTOT       = ACTOT        + PTAIL(5)  * ATAIL 
-           ETOT        = ETOT         + PTAIL(6)  * ETAIL 
-           ETOT_SPSIG  = ETOT_SPSIG   + PTAIL(7)  * ETAIL 
+           ACTOT       = ACTOT        + TAIL_ARR(5)  * ATAIL 
+           ETOT        = ETOT         + TAIL_ARR(6)  * ETAIL 
+           ETOT_SPSIG  = ETOT_SPSIG   + TAIL_ARR(7)  * ETAIL 
 !
 ! integral parameters ...
 !
@@ -1740,12 +1740,12 @@
 !
 ! tail factors ... borowed from SWAN
 !
-           ACTOT       = ACTOT        + PTAIL(5)  * ATAIL 
-           ETOT        = ETOT         + PTAIL(6)  * ETAIL 
-           ETOT_SPSIG  = ETOT_SPSIG   + PTAIL(7)  * ETAIL 
-           ETOT_ISQ_WK = ETOT_ISQ_WK  + PTAIL(5)  * ETAIL / (SQRT(WK(NUMSIG,IP)))
-           ETOT_SQ_WK  = ETOT_SQ_WK   + PTAIL(5)  * ETAIL * (SQRT(WK(NUMSIG,IP)))
-           ETOT_WK     = ETOT_WK      + PTAIL(8)  * ETAIL * WK(NUMSIG,IP)
+           ACTOT       = ACTOT        + TAIL_ARR(5)  * ATAIL 
+           ETOT        = ETOT         + TAIL_ARR(6)  * ETAIL 
+           ETOT_SPSIG  = ETOT_SPSIG   + TAIL_ARR(7)  * ETAIL 
+           ETOT_ISQ_WK = ETOT_ISQ_WK  + TAIL_ARR(5)  * ETAIL / (SQRT(WK(NUMSIG,IP)))
+           ETOT_SQ_WK  = ETOT_SQ_WK   + TAIL_ARR(5)  * ETAIL * (SQRT(WK(NUMSIG,IP)))
+           ETOT_WK     = ETOT_WK      + TAIL_ARR(8)  * ETAIL * WK(NUMSIG,IP)
 !
 ! integral parameters ...
 !

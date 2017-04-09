@@ -161,7 +161,7 @@
       REAL(rkind) ::  COEFF, SYF , MPER, PKPER, DIFPER, EHFR
       REAL(rkind) ::  MS, DEG, ETOTS, ETOTC, FF, CPSHAP, PPSHAP, DM, EAD, DS
       REAL(rkind) ::  RA, SALPHA, SF, SF4, SF5, FPK, FPK4, EFTAIL, CDIR
-      REAL(rkind) ::  GAMMA_FUNC, DSPR, AACOS, ADIR, EPTAIL, APTAIL, PPTAIL
+      REAL(rkind) ::  GAMMA_FUNC, DSPR, AACOS, ADIR, ETAIL_ARR, ATAIL_ARR, PTAIL_ARR
       REAL(rkind) ::  OMEG, EFTOT, ETOTT, CTOT, TM1, TPEAK
       LOGICAL  LOGPM, LINCOUT
 !     SPPARM(1), WBHS: Hs, sign. wave height
@@ -302,12 +302,12 @@
           AM1 = AM1 + AS3
         ENDDO
 !       contribution of tail to total energy density
-        PPTAIL = PTAIL(1) - 1.
-        APTAIL = 1. / (PPTAIL * (1. + PPTAIL * (FRINTH-1.)))
-        AM0 = AM0 * FRINTF + APTAIL * AS2
-        PPTAIL = PTAIL(1) - 2.
-        EPTAIL = 1. / (PPTAIL * (1. + PPTAIL * (FRINTH-1.)))
-        AM1 = AM1 * FRINTF + EPTAIL * AS3
+        PTAIL_ARR = TAIL_ARR(1) - 1.
+        ATAIL_ARR = 1. / (PTAIL_ARR * (1. + PTAIL_ARR * (FRINTH-1.)))
+        AM0 = AM0 * FRINTF + ATAIL_ARR * AS2
+        PTAIL_ARR = TAIL_ARR(1) - 2.
+        ETAIL_ARR = 1. / (PTAIL_ARR * (1. + PTAIL_ARR * (FRINTH-1.)))
+        AM1 = AM1 * FRINTF + ETAIL_ARR * AS3
 !       Mean period:
         IF ( AM1.GT.THR) THEN
           MPER = PI2 * AM0 / AM1
@@ -378,7 +378,7 @@
         ETOTC = 0.
         ETOTS = 0.
  
-        EFTAIL = 1.0 / (PTAIL(1)-1.0)
+        EFTAIL = 1.0 / (TAIL_ARR(1)-1.0)
 
         IF (NUMSIG .GE. 2) THEN
           DO ID = 1, NUMDIR
@@ -417,7 +417,7 @@
 
         ETOTT = 0.0
         EFTOT = 0.0
-        EFTAIL = PTAIL(3)
+        EFTAIL = TAIL_ARR(3)
 
         DO ID = 1, NUMDIR
           DO IS = 1, NUMSIG
@@ -484,7 +484,7 @@
       REAL(rkind)                :: CTOT(NUMSIG), CDIRT, CDIR(NUMDIR), CTOT1, CDIR1
       REAL(rkind)                :: DDACOS, DEG, DX, DIFFDX, YINTER
       REAL(rkind)                :: GAMMA_FUNC, ETOT, TM2
-      REAL(rkind)                :: EFTOT, TM1, OMEG, PPTAIL, OMEG2
+      REAL(rkind)                :: EFTOT, TM1, OMEG, PTAIL_ARR, OMEG2
       REAL(rkind)                :: RA, ETAIL, EFTAIL
       REAL(rkind)                :: THD(NUMDIR)
       REAL(rkind)                :: DTHD, RTH0 
@@ -654,10 +654,10 @@
 
       ETOT = 0.
       EFTOT = 0.
-      PPTAIL = PTAIL(1) - 1.
-      ETAIL  = 1. / (PPTAIL * (1. + PPTAIL * (FRINTH-1.)))
-      PPTAIL = PTAIL(1) - 2.
-      EFTAIL = 1. / (PPTAIL * (1. + PPTAIL * (FRINTH-1.)))
+      PTAIL_ARR = TAIL_ARR(1) - 1.
+      ETAIL  = 1. / (PTAIL_ARR * (1. + PTAIL_ARR * (FRINTH-1.)))
+      PTAIL_ARR = TAIL_ARR(1) - 2.
+      EFTAIL = 1. / (PTAIL_ARR * (1. + PTAIL_ARR * (FRINTH-1.)))
 
       DO ID=1, NUMDIR
          DO IS = 1, NUMSIG
@@ -681,10 +681,10 @@
 
       ETOT  = 0.
       EFTOT = 0.
-      PPTAIL = PTAIL(1) - 1.
-      ETAIL  = 1. / (PPTAIL * (1. + PPTAIL * (FRINTH-1.)))
-      PPTAIL = PTAIL(1) - 3.
-      EFTAIL = 1. / (PPTAIL * (1. + PPTAIL * (FRINTH-1.)))
+      PTAIL_ARR = TAIL_ARR(1) - 1.
+      ETAIL  = 1. / (PTAIL_ARR * (1. + PTAIL_ARR * (FRINTH-1.)))
+      PTAIL_ARR = TAIL_ARR(1) - 3.
+      EFTAIL = 1. / (PTAIL_ARR * (1. + PTAIL_ARR * (FRINTH-1.)))
       DO ID=1, NUMDIR
          DO IS=1,NUMSIG
            EAD  = SIGPOW(IS,2) * WALOC(IS,ID) * FRINTF

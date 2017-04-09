@@ -161,7 +161,7 @@
          DA2M = 0.
          DSNL = 0.
 
-         PWTAIL = PTAIL(1)
+         PWTAIL = TAIL_ARR(1)
 
          JACOBI = PI2
 

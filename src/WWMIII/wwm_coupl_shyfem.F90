@@ -434,7 +434,7 @@
         SYY3D(:,:) = ZERO
         SXY3D(:,:) = ZERO
 
-        EFTAIL = ONE / (PTAIL(1)-ONE)
+        EFTAIL = ONE / (TAIL_ARR(1)-ONE)
 
         ETOT = ZERO
         MDIR = ZERO

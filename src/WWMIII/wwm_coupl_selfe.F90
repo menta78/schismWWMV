@@ -15,7 +15,7 @@
         real(rkind) :: eOmega, eMult, kD, eSinc
         real(rkind) :: USTOKESpart, VSTOKESpart, eJPress
         real(rkind) :: eWk, eSigma, eLoc, eSinhkd, eSinh2kd, eSinhkd2
-        real(rkind) :: PPTAIL, CETAIL, CKTAIL
+        real(rkind) :: PTAIL_ARR, CETAIL, CKTAIL
         logical     :: DoTail
         real(rkind) :: eWkReal
         real(rkind) :: SumHeight
@@ -117,7 +117,7 @@
         SYY3D(:,:) = ZERO
         SXY3D(:,:) = ZERO
 
-        EFTAIL = ONE / (PTAIL(1) - ONE)
+        EFTAIL = ONE / (TAIL_ARR(1) - ONE)
 
         ETOT = ZERO
         MDIR = ZERO
