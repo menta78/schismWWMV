@@ -396,13 +396,8 @@
      &        + SWG6 * ( DA1M(I-ISM1,J+IDM ) + DA2M(I-ISM1,J-IDM ) )  &
      &        + SWG7 * ( DA1M(I-ISM ,J+IDM1) + DA2M(I-ISM ,J-IDM1) )  &
      &        + SWG8 * ( DA1M(I-ISM ,J+IDM ) + DA2M(I-ISM ,J-IDM ) )
-              IF (SOURCE_IMPL) THEN
-                SFNL(I,J)   =   SFNL(I,J) / SIGPI
-                DSNL(I,J)   = - DSNL(I,J) / PI3
-              ELSE
-                SFNL(I,J)   = SFNL(I,J) / SIGPI
-                DSNL(I,J)   = DSNL(I,J) / PI3
-              END IF
+              SFNL(I,J)   =   SFNL(I,J) / SIGPI
+              DSNL(I,J)   = - DSNL(I,J) / PI3
            END DO
          END DO
       END SUBROUTINE

@@ -20,7 +20,8 @@
          REAL(rkind)  :: WIND10
          REAL(rkind)  :: FPM,WINDTH,TEMP
          REAL(rkind)  :: SC, SP, JAC
-         REAL(rkind)                :: FL3(MDC,MSC), FL(MDC,MSC), SL(MDC,MSC)
+         REAL(rkind)  :: FL3(MDC,MSC), FL(MDC,MSC), SL(MDC,MSC)
+
          DO IS = 1, MSC
            JAC = PI2 * SPSIG(IS)
            DO ID = 1, MDC

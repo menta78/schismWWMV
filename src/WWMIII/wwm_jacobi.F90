@@ -833,6 +833,7 @@
       eVal = SI(IP) * DT4A
 
       CALL GET_BLOCAL(IP, ACin1, BLOC)
+!
       IF (optionCall .eq. 1) THEN
         BSIDE = eVal * IMATRA
         DIAG  = eVal * IMATDA
@@ -840,6 +841,7 @@
         BSIDE =  eVal * (IMATRA - MIN(ZERO,IMATDA) * Acin2(:,:,IP))
         DIAG  = -eVal * MIN(ZERO,IMATDA)
       END IF
+!
 
 #ifdef DEBUG_SOURCE_TERM
       WRITE(*,'(I10,10G20.10,A40)') IP, SUM(ACin1), SUM(ACin2), SUM(IMATRA), SUM(IMATDA), SUM(BSIDE), SUM(DIAG), SUM(BLOC), eval, 'GET_BSIDE_DIAG'

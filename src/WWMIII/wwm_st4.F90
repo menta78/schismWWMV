@@ -101,9 +101,20 @@
 #endif
         CALL CONVERT_VS_VD_WWM(IP, VSDS, VDDS, SSDS, DSSDS)
       ENDIF
-
-      IMATRA = SSINL + SSINE + SSNL4 + SSDS
-      IMATDA = DSSINE + DSSNL4 + DSSDS
+!
+      IF (ICOMP .GE. 2) THEN
+        IF (optionCall .eq. 1) then
+          IMATRA = SSINL + SSINE  + SSNL4  + SSDS
+          IMATDA =                - DSSNL4 - DSSDS 
+        ELSEIF (optionCall .eq. 2) then
+          IMATRA = SSINL + SSINE  + SSNL4  + SSDS
+          IMATDA =         DSSINE + DSSNL4 + DSSDS
+        ENDIF
+      ELSE 
+        IMATRA = SSINL + SSINE  + SSNL4  + SSDS
+        IMATDA =         DSSINE + DSSNL4 + DSSDS
+      ENDIF
+!
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

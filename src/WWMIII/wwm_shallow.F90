@@ -44,8 +44,18 @@
            ENDDO
          ENDIF
 
-         IMATDA = IMATDA + DSSBR + DSSNL3 + DSSBF
-         IMATRA = IMATRA + SSBR  + SSNL3  + SSBF
+         IF (ICOMP .GE. 2) THEN
+           IF (optionCall .EQ. 1) THEN
+             IMATDA = IMATDA + DSSBR + DSSNL3 + DSSBF
+             IMATRA = IMATRA + SSBR  + SSNL3  + SSBF
+           ELSE IF (optionCall .EQ. 2) THEN 
+             IMATDA = IMATDA + DSSBR + DSSNL3 + DSSBF
+             IMATRA = IMATRA + SSBR  + SSNL3  + SSBF
+           ENDIF
+         ELSE 
+           IMATDA = IMATDA + DSSBR + DSSNL3 + DSSBF
+           IMATRA = IMATRA + SSBR  + SSNL3  + SSBF
+         ENDIF
 
       END SUBROUTINE
 !**********************************************************************
