@@ -2,52 +2,52 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SEMI_IMPLICIT_INTEGRATION(IP,DT,ACLOC)
+      SUBROUTINE SEMI_IMPLICIT_INTEGRATION(IP,DT,WALOC)
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: IP
       REAL(rkind), INTENT(IN) :: DT
-      REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
+      REAL(rkind), INTENT(INOUT) :: WALOC(NUMSIG,NUMDIR)
       INTEGER       :: IS, ID
-      REAL(rkind)   :: NEWDAC, SSBR(MSC,MDC)
-      REAL(rkind)   :: PHI(MSC,MDC), DPHIDN(MSC,MDC), ACOLD(MSC,MDC)
+      REAL(rkind)   :: NEWDAC, SSBR(NUMSIG,NUMDIR)
+      REAL(rkind)   :: PHI(NUMSIG,NUMDIR), DPHIDN(NUMSIG,NUMDIR), ACOLD(NUMSIG,NUMDIR)
 
-      ACOLD = ACLOC
-      CALL INT_PATANKAR(IP,ACLOC,PHI,DPHIDN)
-      DO IS = 1, MSC
-        DO ID = 1, MDC
+      ACOLD = WALOC
+      CALL INT_PATANKAR(IP,WALOC,PHI,DPHIDN)
+      DO IS = 1, NUMSIG
+        DO ID = 1, NUMDIR
           NEWDAC = PHI(IS,ID) * DT / (ONE-DT*MIN(ZERO,DPHIDN(IS,ID)))
 !          write(*,*) NEWDAC / ( PHI(IS,ID) * DT )
-          ACLOC(IS,ID) = MAX( ZERO, ACOLD(IS,ID) + NEWDAC )
+          WALOC(IS,ID) = MAX( ZERO, ACOLD(IS,ID) + NEWDAC )
         END DO
       END DO
-      !CALL POST_INTEGRATION(IP,ACLOC)
-      IF (LLIMT) CALL LIMITER(IP,ACOLD,ACLOC)
-      IF (LMAXETOT) CALL BREAK_LIMIT(IP,ACLOC,SSBR)
+      !CALL POST_INTEGRATION(IP,WALOC)
+      IF (LLIMT) CALL LIMITER(IP,ACOLD,WALOC)
+      IF (LMAXETOT) CALL BREAK_LIMIT(IP,WALOC,SSBR)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INT_PATANKAR(IP,ACLOC,PHI,DPHIDN)
+      SUBROUTINE INT_PATANKAR(IP,WALOC,PHI,DPHIDN)
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(IN)      :: IP
-      REAL(rkind), INTENT(IN)  :: ACLOC(MSC,MDC)
-      REAL(rkind), INTENT(OUT) :: PHI(MSC,MDC), DPHIDN(MSC,MDC)
-      REAL(rkind)   :: SSINL(MSC,MDC)
-      REAL(rkind)   :: SSINE(MSC,MDC),DSSINE(MSC,MDC)
-      REAL(rkind)   :: SSDS(MSC,MDC),DSSDS(MSC,MDC)
-      REAL(rkind)   :: SSNL3(MSC,MDC),DSSNL3(MSC,MDC)
-      REAL(rkind)   :: SSNL4(MSC,MDC),DSSNL4(MSC,MDC)
-      REAL(rkind)   :: SSBR(MSC,MDC),DSSBR(MSC,MDC)
-      REAL(rkind)   :: SSBRL(MSC,MDC)
-      REAL(rkind)   :: SSBF(MSC,MDC),DSSBF(MSC,MDC)
+      REAL(rkind), INTENT(IN)  :: WALOC(NUMSIG,NUMDIR)
+      REAL(rkind), INTENT(OUT) :: PHI(NUMSIG,NUMDIR), DPHIDN(NUMSIG,NUMDIR)
+      REAL(rkind)   :: SSINL(NUMSIG,NUMDIR)
+      REAL(rkind)   :: SSINE(NUMSIG,NUMDIR),DSSINE(NUMSIG,NUMDIR)
+      REAL(rkind)   :: SSDS(NUMSIG,NUMDIR),DSSDS(NUMSIG,NUMDIR)
+      REAL(rkind)   :: SSNL3(NUMSIG,NUMDIR),DSSNL3(NUMSIG,NUMDIR)
+      REAL(rkind)   :: SSNL4(NUMSIG,NUMDIR),DSSNL4(NUMSIG,NUMDIR)
+      REAL(rkind)   :: SSBR(NUMSIG,NUMDIR),DSSBR(NUMSIG,NUMDIR)
+      REAL(rkind)   :: SSBRL(NUMSIG,NUMDIR)
+      REAL(rkind)   :: SSBF(NUMSIG,NUMDIR),DSSBF(NUMSIG,NUMDIR)
       REAL(rkind)   :: HS,TM01,TM02,TM10,KLM,WLM
 #ifdef DEBUG
-      REAL(rkind)   :: SSINL_WW3(MSC,MDC), SSINE_WW3(MSC,MDC)
-      REAL(rkind)   :: SSBRL_WW3(MSC,MDC), SSDS_WW3(MSC,MDC)
-      REAL(rkind)   :: SSNL4_WW3(MSC,MDC), SSBF_WW3(MSC,MDC)
-      REAL(rkind)   :: SSBR_WW3(MSC,MDC)
+      REAL(rkind)   :: SSINL_WW3(NUMSIG,NUMDIR), SSINE_WW3(NUMSIG,NUMDIR)
+      REAL(rkind)   :: SSBRL_WW3(NUMSIG,NUMDIR), SSDS_WW3(NUMSIG,NUMDIR)
+      REAL(rkind)   :: SSNL4_WW3(NUMSIG,NUMDIR), SSBF_WW3(NUMSIG,NUMDIR)
+      REAL(rkind)   :: SSBR_WW3(NUMSIG,NUMDIR)
 #endif
       DPHIDN = ZERO; PHI = ZERO
 
@@ -68,13 +68,13 @@
 #ifdef DEBUG
       IF (IP .eq. TESTNODE) THEN
          WRITE(740+myrank,*) 'Before integration'
-         WRITE(740+myrank,*) 'sum(ACLOC)=', sum(ACLOC)
-         CALL MEAN_PARAMETER(IP,ACLOC,MSC,HS,TM01,TM02,TM10,KLM,WLM)
+         WRITE(740+myrank,*) 'sum(WALOC)=', sum(WALOC)
+         CALL MEAN_PARAMETER(IP,WALOC,NUMSIG,HS,TM01,TM02,TM10,KLM,WLM)
          WRITE(740+myrank,*) 'HS=', HS, ' TM01=', TM01
       END IF
 #endif
 !
-      CALL DEEP_WATER(IP, ACLOC, PHI, DPHIDN, SSINE, DSSINE, SSDS, DSSDS, SSNL4, DSSNL4, SSINL)
+      CALL DEEP_WATER(IP, WALOC, PHI, DPHIDN, SSINE, DSSINE, SSDS, DSSDS, SSNL4, DSSNL4, SSINL)
 !
 #ifdef DEBUG
       IF (IP .eq. TESTNODE) THEN
@@ -82,13 +82,13 @@
       END IF
 #endif
 !
-      IF (ISHALLOW(IP) .EQ. 1) CALL SHALLOW_WATER(IP, ACLOC, PHI, DPHIDN, SSBR, DSSBR, SSBF, DSSBF, SSBRL, SSNL3, DSSNL3)
+      IF (ISHALLOW(IP) .EQ. 1) CALL SHALLOW_WATER(IP, WALOC, PHI, DPHIDN, SSBR, DSSBR, SSBF, DSSBF, SSBRL, SSNL3, DSSNL3)
 !
 #ifdef DEBUG
       IF (IP .eq. TESTNODE) THEN
          WRITE(740+myrank,*) 'After integration ISOURCE=', ISOURCE
-         WRITE(740+myrank,*) 'sum(ACLOC)=', sum(ACLOC)
-         CALL MEAN_PARAMETER(IP,ACLOC,MSC,HS,TM01,TM02,TM10,KLM,WLM)
+         WRITE(740+myrank,*) 'sum(WALOC)=', sum(WALOC)
+         CALL MEAN_PARAMETER(IP,WALOC,NUMSIG,HS,TM01,TM02,TM10,KLM,WLM)
          WRITE(740+myrank,*) 'HS=', HS, ' TM01=', TM01
          CALL CONVERT_VS_WWM_TO_WW3(IP, SSINL, SSINL_WW3)
          WRITE(740+myrank,*) 'WW3 : LINEAR INPUT =', SUM(SSINL_WW3), MINVAL(SSINL_WW3), MAXVAL(SSINL_WW3)
@@ -105,7 +105,7 @@
          CALL CONVERT_VS_WWM_TO_WW3(IP, SSBR, SSBR_WW3)
          WRITE(740+myrank,*) 'WW3 : BREAKING     =', SUM(SSBR_WW3), MINVAL(SSBR_WW3), MAXVAL(SSBR_WW3)
          
-         WRITE(740+myrank,*) 'WAVE ACTION      =', SUM(ACLOC), MINVAL(ACLOC), MAXVAL(ACLOC)
+         WRITE(740+myrank,*) 'WAVE ACTION      =', SUM(WALOC), MINVAL(WALOC), MAXVAL(WALOC)
          WRITE(740+myrank,*) 'LINEAR INPUT     =', SUM(SSINL), MINVAL(SSINL), MAXVAL(SSINL)
          WRITE(740+myrank,*) 'BREAKING LIMITER =', SUM(SSBRL), MINVAL(SSBRL), MAXVAL(SSBRL)
          WRITE(740+myrank,*) 'EXP INPUT(SSINE) =', SUM(SSINE),  MINVAL(SSINE),  MAXVAL(SSINE)
@@ -125,7 +125,7 @@
 
 
 #ifdef DEBUG_SOURCE_TERM
-      WRITE(*,'(A20,6E20.10)') 'WAVE ACTION', SUM(ACLOC), MINVAL(ACLOC), MAXVAL(ACLOC)
+      WRITE(*,'(A20,6E20.10)') 'WAVE ACTION', SUM(WALOC), MINVAL(WALOC), MAXVAL(WALOC)
       WRITE(*,'(A20,6E20.10)') 'LINEAR INPUT', SUM(SSINL), MINVAL(SSINL), MAXVAL(SSINL)
       WRITE(*,'(A20,6E20.10)') 'BREAKING LIMITER', SUM(SSBRL), MINVAL(SSBRL), MAXVAL(SSBRL)
       WRITE(*,'(A20,6E20.10)') 'EXP INPUT', SUM(SSINE), SUM(DSSINE), MINVAL(SSINE), MAXVAL(SSINE), MINVAL(DSSINE), MAXVAL(DSSINE)
@@ -143,11 +143,11 @@
       USE DATAPOOL
       IMPLICIT NONE
       integer IP
-      REAL(rkind), intent(in) :: VS_WWM(MSC,MDC)
-      REAL(rkind), intent(out) :: VS_WW3(MSC,MDC)
+      REAL(rkind), intent(in) :: VS_WWM(NUMSIG,NUMDIR)
+      REAL(rkind), intent(out) :: VS_WW3(NUMSIG,NUMDIR)
       INTEGER ID,IS
-      DO ID=1,MDC
-        DO IS=1,MSC
+      DO ID=1,NUMDIR
+        DO IS=1,NUMSIG
           VS_WW3(IS,ID) = CG(IS,IP) * VS_WWM(IS,ID)
         END DO
       END DO
@@ -155,19 +155,19 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE POST_INTEGRATION(IP, ACLOC)
+      SUBROUTINE POST_INTEGRATION(IP, WALOC)
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)       :: IP
-         REAL(rkind),INTENT(INOUT) :: ACLOC(MSC,MDC)
-         REAL(rkind)               :: SSINE(MSC,MDC),DSSINE(MSC,MDC), SSINL(MSC,MDC)
-         REAL(rkind)               :: SSDS(MSC,MDC),DSSDS(MSC,MDC)
+         REAL(rkind),INTENT(INOUT) :: WALOC(NUMSIG,NUMDIR)
+         REAL(rkind)               :: SSINE(NUMSIG,NUMDIR),DSSINE(NUMSIG,NUMDIR), SSINL(NUMSIG,NUMDIR)
+         REAL(rkind)               :: SSDS(NUMSIG,NUMDIR),DSSDS(NUMSIG,NUMDIR)
 
          IF (ISOURCE == 1) THEN
-           CALL ST4_POST(IP, ACLOC, SSINE, DSSINE, SSDS, DSSDS, SSINL)
+           CALL ST4_POST(IP, WALOC, SSINE, DSSINE, SSDS, DSSDS, SSINL)
          ELSE IF (ISOURCE == 2) THEN
-           CALL ECMWF_POST(IP, ACLOC)
+           CALL ECMWF_POST(IP, WALOC)
          ELSE IF (ISOURCE == 3) THEN
 !2do write some post code for cycle3
          ENDIF
@@ -179,14 +179,14 @@
          USE DATAPOOL
          IMPLICIT NONE
          INTEGER :: IP
-         REAL(rkind) :: ACLOC(MSC,MDC)
+         REAL(rkind) :: WALOC(NUMSIG,NUMDIR)
 
          IF (SMETHOD .gt. 0) THEN
            DO IP = 1, MNP
              IF (IOBDP(IP) .EQ. 1) THEN
-               ACLOC = AC2(:,:,IP)
-               CALL SEMI_IMPLICIT_INTEGRATION(IP,DT4S,ACLOC)
-               AC2(:,:,IP) = ACLOC
+               WALOC = AC2(:,:,IP)
+               CALL SEMI_IMPLICIT_INTEGRATION(IP,DT4S,WALOC)
+               AC2(:,:,IP) = WALOC
              ENDIF
            ENDDO
          ENDIF
@@ -199,12 +199,12 @@
          USE DATAPOOL
          IMPLICIT NONE
          INTEGER     :: IP
-         REAL(rkind) :: ACLOC(MSC,MDC),PHI(MSC,MDC),DPHIDN(MSC,MDC)
+         REAL(rkind) :: WALOC(NUMSIG,NUMDIR),PHI(NUMSIG,NUMDIR),DPHIDN(NUMSIG,NUMDIR)
 
          DO IP = 1, MNP
-           ACLOC = AC2(:,:,IP)
+           WALOC = AC2(:,:,IP)
            IF (SMETHOD == 1) THEN
-             CALL INT_PATANKAR(IP,ACLOC,PHI,DPHIDN)
+             CALL INT_PATANKAR(IP,WALOC,PHI,DPHIDN)
            ENDIF
            PHIA(:,:,IP) = PHI
            DPHIDNA(:,:,IP) = DPHIDN
@@ -217,25 +217,25 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-         SUBROUTINE LIMITER(IP,ACOLD,ACLOC)
+         SUBROUTINE LIMITER(IP,ACOLD,WALOC)
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)        :: IP
          INTEGER                    :: IS, ID
-         REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
-         REAL(rkind), INTENT(IN)    :: ACOLD(MSC,MDC)
-         REAL(rkind)                :: NEWDAC, OLDAC, NEWAC, DELT, XIMP, DELFL(MSC)
+         REAL(rkind), INTENT(INOUT) :: WALOC(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(IN)    :: ACOLD(NUMSIG,NUMDIR)
+         REAL(rkind)                :: NEWDAC, OLDAC, NEWAC, DELT, XIMP, DELFL(NUMSIG)
          REAL(rkind)                :: MAXDAC, CONST, SND, DELT5, USFM, eFric, PHILMAXDAC
 
-!         CONST  = PI2**2*3.0*1.0E-7*DT4S*SPSIG(MSC)
+!         CONST  = PI2**2*3.0*1.0E-7*DT4S*SPSIG(NUMSIG)
 !         SND    = PI2*5.6*1.0E-3
          DELT   = DT4S
 !         XIMP   = 1._rkind
 !         DELT5  = XIMP*DELT
          DELFL  = COFRM4*DELT
  
-         DO IS = 1, MSC
+         DO IS = 1, NUMSIG
            PHILMAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
            IF (ISOURCE .EQ. 1) THEN
               USFM   = UFRIC(IP)*MAX(FMEANWS(IP),FMEAN(IP))
@@ -246,12 +246,12 @@
            ELSE IF (ISOURCE .EQ. 3) THEN
               MAXDAC = PHILMAXDAC
            END IF
-           DO ID = 1, MDC
-             NEWAC  = ACLOC(IS,ID)
+           DO ID = 1, NUMDIR
+             NEWAC  = WALOC(IS,ID)
              OLDAC  = ACOLD(IS,ID)
              NEWDAC = NEWAC - OLDAC
              NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)), NEWDAC)
-             ACLOC(IS,ID) = MAX( ZERO, OLDAC + NEWDAC )
+             WALOC(IS,ID) = MAX( ZERO, OLDAC + NEWDAC )
            END DO
          END DO
 
@@ -259,14 +259,14 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-         SUBROUTINE BREAK_LIMIT(IP,ACLOC,SSBRL)
+         SUBROUTINE BREAK_LIMIT(IP,WALOC,SSBRL)
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)  :: IP
 
-         REAL(rkind), INTENT(INOUT)  :: ACLOC(MSC,MDC)
-         REAL(rkind), INTENT(OUT)    :: SSBRL(MSC,MDC)
+         REAL(rkind), INTENT(INOUT)  :: WALOC(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(OUT)    :: SSBRL(NUMSIG,NUMDIR)
 
          REAL(rkind)                 :: EFTAIL, HS
          REAL(rkind)                 :: EMAX, RATIO, ETOT
@@ -275,7 +275,7 @@
          ETOT   = 0.0
          EFTAIL = 1.0 / (PTAIL(1)-1.0)
 
-         ETOT = DINTSPEC(IP,ACLOC)
+         ETOT = DINTSPEC(IP,WALOC)
 
          HS = 4.*SQRT(ETOT)
 
@@ -285,8 +285,8 @@
 
          IF (ETOT .GT. EMAX .AND. ETOT .GT. THR) THEN
            RATIO = EMAX/ETOT
-           SSBRL = ACLOC - RATIO * ACLOC
-           ACLOC = RATIO * ACLOC
+           SSBRL = WALOC - RATIO * WALOC
+           WALOC = RATIO * WALOC
          END IF
          END SUBROUTINE
 !**********************************************************************
@@ -301,11 +301,11 @@
          LOGICAL :: ENEG
 
          DO IP = 1, MNP
-            DO IS = 1, MSC
+            DO IS = 1, NUMSIG
                ETOTAL = ZERO 
                EPOSIT = ZERO 
                ENEG   = .FALSE.
-               DO ID = 1, MDC
+               DO ID = 1, NUMDIR
                   ETOTAL = ETOTAL + AC2(IS,ID,IP)
                   IF (AC2(IS,ID,IP) > ZERO) THEN
                      EPOSIT = EPOSIT + AC2(IS,ID,IP)
@@ -319,7 +319,7 @@
                   ELSE 
                     FACTOR = 0.
                   END IF
-                  DO ID = 1, MDC
+                  DO ID = 1, NUMDIR
                      IF (AC2(IS,ID,IP) < ZERO) AC2(IS,ID,IP) = ZERO 
                      IF (FACTOR >= ZERO)  AC2(IS,ID,IP) = AC2(IS,ID,IP)*FACTOR
                      AC2(IS,ID,IP) = MAX(zero,AC2(IS,ID,IP))

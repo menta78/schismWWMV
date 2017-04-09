@@ -168,7 +168,7 @@
 #ifdef MPI_PARALL_GRID
       IF (myrank .eq. 0) THEN
 #endif
-        allocate(ACwrite(MSC,MDC,np_write), VAR_ONEDwrite(nbOned, np_write), stat=istat)
+        allocate(ACwrite(NUMSIG,NUMDIR,np_write), VAR_ONEDwrite(nbOned, np_write), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
 #ifdef MPI_PARALL_GRID
       END IF
@@ -180,7 +180,7 @@
           nbMatch = nbMatch + 1
         END IF
       END DO
-      allocate(Listmatch(nbMatch), ACsend(MSC,MDC,nbMatch), VAR_ONEDsend(nbOned, nbMatch), stat=istat)
+      allocate(Listmatch(nbMatch), ACsend(NUMSIG,NUMDIR,nbMatch), VAR_ONEDsend(nbOned, nbMatch), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
       ACsend=0
       VAR_ONEDsend=0
@@ -250,10 +250,10 @@
         DO iProc=2,nproc
           CALL MPI_RECV(eInt, 1, itype, iProc-1, 2401, comm, istatus, ierr)
           nbMatchLoc=eInt(1)
-          allocate(ListMatch(nbMatchLoc), ACsend(MSC,MDC,nbMatchLoc), VAR_ONEDsend(nbOned, nbMatchLoc), stat=istat)
+          allocate(ListMatch(nbMatchLoc), ACsend(NUMSIG,NUMDIR,nbMatchLoc), VAR_ONEDsend(nbOned, nbMatchLoc), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
           CALL MPI_RECV(ListMatch, nbMatchLoc, itype, iProc-1, 2402, comm, istatus, ierr)
-          CALL MPI_RECV(ACsend, MSC*MDC*nbMatchLoc, rtype, iProc-1, 2403, comm, istatus, ierr)
+          CALL MPI_RECV(ACsend, NUMSIG*NUMDIR*nbMatchLoc, rtype, iProc-1, 2403, comm, istatus, ierr)
           CALL MPI_RECV(VAR_ONEDsend, nbOned*nbMatchLoc, rtype, iProc-1, 2404, comm, istatus, ierr)
           DO idx=1,nbMatchLoc
             IP=ListMatch(idx)
@@ -269,7 +269,7 @@
         eInt(1)=nbMatch
         CALL MPI_SEND(eInt, 1, itype, 0, 2401, comm, ierr)
         CALL MPI_SEND(ListMatch, nbMatch, itype, 0, 2402, comm, ierr)
-        CALL MPI_SEND(ACsend, MSC*MDC*nbMatch, rtype, 0, 2403, comm, ierr)
+        CALL MPI_SEND(ACsend, NUMSIG*NUMDIR*nbMatch, rtype, 0, 2403, comm, ierr)
         CALL MPI_SEND(VAR_ONEDsend, nbOned*nbMatch, rtype, 0, 2404, comm, ierr)
       END IF
 #else
@@ -301,7 +301,7 @@
       character (len = *), parameter :: CallFct = "NESTING_BOUNDARY_CONDITION"
       real(rkind), allocatable :: WBACwrite(:,:,:), SPPARMwrite(:,:)
       real(rkind), allocatable :: WBACsend(:,:,:), SPPARMsend(:,:)
-      REAL(rkind) :: CURTXYLOC(2), DEPLOC, WATLEVLOC, WKLOC(MSC), ACLOC(MSC,MDC)
+      REAL(rkind) :: CURTXYLOC(2), DEPLOC, WATLEVLOC, WKLOC(NUMSIG), WALOC(NUMSIG,NUMDIR)
       real(rkind) :: eVect(8)
       real(rkind) :: WVK,WVCG,WVKDEP,WVN,WVC
       integer IE, IP, idx
@@ -330,7 +330,7 @@
           SPPARMwrite = 0
         END IF
         IF (L_BOUC_SPEC) THEN
-          allocate(WBACwrite(MSC,MDC,nbBound), stat=istat)
+          allocate(WBACwrite(NUMSIG,NUMDIR,nbBound), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
           WBACwrite = 0
         END IF
@@ -349,7 +349,7 @@
         IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
       END IF
       IF (L_BOUC_SPEC) THEN
-        allocate(WBACsend(MSC,MDC,nbMatch), stat=istat)
+        allocate(WBACsend(NUMSIG,NUMDIR,nbMatch), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
       END IF
       allocate(Listmatch(nbMatch), stat=istat)
@@ -360,7 +360,7 @@
         IF (IE .gt. 0) THEN
           idx=idx+1
           ListMatch(idx)=IP
-          ACLOC=0
+          WALOC=0
           IF (L_BOUC_PARAM) THEN
             DEPLOC=0
             CURTXYLOC=0
@@ -369,7 +369,7 @@
           DO I=1,3
             eW=ListNestInfo(iGrid) % BOUC_W(I,IP)
             IP2=INE(I,IE)
-            ACLOC = ACLOC + eW * AC2(:,:,IP2)
+            WALOC = WALOC + eW * AC2(:,:,IP2)
             IF (L_BOUC_PARAM) THEN
               DEPLOC = DEPLOC + eW * DEP(IP2)
               CURTXYLOC = CURTXYLOC + eW * CURTXY(IP2,:)
@@ -377,16 +377,16 @@
             END IF
           END DO
           IF (L_BOUC_SPEC) THEN
-            WBACsend(:,:,idx) = ACLOC
+            WBACsend(:,:,idx) = WALOC
           END IF
           IF (L_BOUC_PARAM) THEN
-            DO IS = 1, MSC
+            DO IS = 1, NUMSIG
               CALL ALL_FROM_TABLE(SPSIG(IS),DEPLOC,WVK,WVCG,WVKDEP,WVN,WVC)
               WKLOC(IS) = WVK
             END DO
-            ISMAX=MSC
-            CALL MEAN_PARAMETER_LOC(ACLOC,CURTXYLOC,DEPLOC,WKLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
-            CALL MEAN_DIRECTION_AND_SPREAD_LOC(ACLOC,ISMAX,ETOTS,ETOTC,DM,DSPR)
+            ISMAX=NUMSIG
+            CALL MEAN_PARAMETER_LOC(WALOC,CURTXYLOC,DEPLOC,WKLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
+            CALL MEAN_DIRECTION_AND_SPREAD_LOC(WALOC,ISMAX,ETOTS,ETOTC,DM,DSPR)
             eVect(1) = HS
             eVect(2) = TM01
             eVect(3) = DM
@@ -428,9 +428,9 @@
           IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
           CALL MPI_RECV(ListMatch, nbMatchLoc, itype, iProc-1, 2402, comm, istatus, ierr)
           IF (L_BOUC_SPEC) THEN
-            allocate(WBACsend(MSC,MDC,nbMatchLoc), stat=istat)
+            allocate(WBACsend(NUMSIG,NUMDIR,nbMatchLoc), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_nesting, allocate error 1')
-            CALL MPI_RECV(WBACsend, MSC*MDC*nbMatchLoc, rtype, iProc-1, 2403, comm, istatus, ierr)
+            CALL MPI_RECV(WBACsend, NUMSIG*NUMDIR*nbMatchLoc, rtype, iProc-1, 2403, comm, istatus, ierr)
             DO idx=1,nbMatchLoc
               IP=ListMatch(idx)
               ListStatus(IP)=1
@@ -458,7 +458,7 @@
         CALL MPI_SEND(eInt, 1, itype, 0, 2401, comm, ierr)
         CALL MPI_SEND(ListMatch, nbMatch, itype, 0, 2402, comm, ierr)
         IF (L_BOUC_SPEC) THEN
-          CALL MPI_SEND(WBACsend, MSC*MDC*nbMatch, rtype, 0, 2403, comm, ierr)
+          CALL MPI_SEND(WBACsend, NUMSIG*NUMDIR*nbMatch, rtype, 0, 2403, comm, ierr)
         END IF
         IF (L_BOUC_PARAM) THEN
           CALL MPI_SEND(SPPARMsend, 8*nbMatch, rtype, 0, 2404, comm, ierr)
@@ -502,10 +502,10 @@
           iret=nf90_inq_varid(ncid, 'WBAC', var_id)
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, iret)
           IF (NF90_RUNTYPE == NF90_OUTTYPE_BOUC) THEN
-            iret=nf90_put_var(ncid,var_id,WBACwrite, start=(/1,1,1,recs_his/), count = (/MSC,MDC, nbBound,1/))
+            iret=nf90_put_var(ncid,var_id,WBACwrite, start=(/1,1,1,recs_his/), count = (/NUMSIG,NUMDIR, nbBound,1/))
             CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 12, iret)
           ELSE
-            iret=nf90_put_var(ncid,var_id,SNGL(WBACwrite), start=(/1,1,1,recs_his/), count = (/MSC,MDC, nbBound,1/))
+            iret=nf90_put_var(ncid,var_id,SNGL(WBACwrite), start=(/1,1,1,recs_his/), count = (/NUMSIG,NUMDIR, nbBound,1/))
             CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, iret)
           ENDIF
         END IF

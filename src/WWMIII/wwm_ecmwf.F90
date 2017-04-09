@@ -2,17 +2,17 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE ECMWF_PRE (IP, ACLOC, PHI, DPHIDN, SSINE, DSSINE, SSDS, DSSDS, SSNL4, DSSNL4, SSINL)
+      SUBROUTINE ECMWF_PRE (IP, WALOC, PHI, DPHIDN, SSINE, DSSINE, SSDS, DSSDS, SSNL4, DSSNL4, SSINL)
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)        :: IP
 
-         REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
-         REAL(rkind), INTENT(OUT)   :: PHI(MSC,MDC), DPHIDN(MSC,MDC)
-         REAL(rkind), INTENT(OUT)   :: SSINE(MSC,MDC),DSSINE(MSC,MDC), SSINL(MSC,MDC)
-         REAL(rkind), INTENT(OUT)   :: SSDS(MSC,MDC),DSSDS(MSC,MDC)
-         REAL(rkind), INTENT(OUT)   :: SSNL4(MDC,MSC),DSSNL4(MDC,MSC)
+         REAL(rkind), INTENT(IN)    :: WALOC(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(OUT)   :: PHI(NUMSIG,NUMDIR), DPHIDN(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(OUT)   :: SSINE(NUMSIG,NUMDIR),DSSINE(NUMSIG,NUMDIR), SSINL(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(OUT)   :: SSDS(NUMSIG,NUMDIR),DSSDS(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(OUT)   :: SSNL4(NUMDIR,NUMSIG),DSSNL4(NUMDIR,NUMSIG)
 
          INTEGER      :: IS, ID
 
@@ -20,12 +20,12 @@
          REAL(rkind)  :: WIND10
          REAL(rkind)  :: FPM,WINDTH,TEMP
          REAL(rkind)  :: SC, SP, JAC
-         REAL(rkind)  :: FL3(MDC,MSC), FL(MDC,MSC), SL(MDC,MSC)
+         REAL(rkind)  :: FL3(NUMDIR,NUMSIG), FL(NUMDIR,NUMSIG), SL(NUMDIR,NUMSIG)
 
-         DO IS = 1, MSC
+         DO IS = 1, NUMSIG
            JAC = PI2 * SPSIG(IS)
-           DO ID = 1, MDC
-             FL3(ID,IS) = ACLOC(IS,ID) * JAC
+           DO ID = 1, NUMDIR
+             FL3(ID,IS) = WALOC(IS,ID) * JAC
            END DO
          END DO
 
@@ -36,8 +36,8 @@
 
          CALL WAM_PRE (IP, FL3, FL, SL, SSDS, DSSDS, SSNL4, DSSNL4, SSINE, DSSINE)
 
-         DO ID = 1, MDC
-           DO IS = 1, MSC 
+         DO ID = 1, NUMDIR
+           DO IS = 1, NUMSIG 
              JAC = ONE/PI2/SPSIG(IS)
              IF (ICOMP .GE. 2) THEN
                IF (optionCall .eq. 1) THEN
@@ -56,7 +56,7 @@
 
          IF (.NOT. LINID) THEN
            CALL SET_WIND( IP, WIND10, WINDTH )
-           CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
+           CALL SET_FRICTION( IP, WALOC, WIND10, WINDTH, FPM )
            CALL SIN_LIN_CAV(IP,WINDTH,FPM,SSINL)
            PHI = PHI + SSINL
          ELSE
@@ -67,28 +67,28 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE ECMWF_POST(IP,ACLOC)
+      SUBROUTINE ECMWF_POST(IP,WALOC)
          USE DATAPOOL
          IMPLICIT NONE
          INTEGER, INTENT(IN)           :: IP
-         REAL(rkind), INTENT(INOUT)    :: ACLOC(MSC,MDC)
+         REAL(rkind), INTENT(INOUT)    :: WALOC(NUMSIG,NUMDIR)
          INTEGER                       :: IS, ID
          REAL(rkind)                   :: VEC2RAD, FPM
-         REAL(rkind)                   :: PHI(MSC,MDC)
-         REAL(rkind)                :: FL3(MDC,MSC), FL(MDC,MSC), SL(MDC,MSC)
+         REAL(rkind)                   :: PHI(NUMSIG,NUMDIR)
+         REAL(rkind)                :: FL3(NUMDIR,NUMSIG), FL(NUMDIR,NUMSIG), SL(NUMDIR,NUMSIG)
          THWOLD(IP) = THWNEW(IP)
          THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
          U10NEW(IP) = MAX(TWO,SQRT(WINDXY(IP,1)**2+WINDXY(IP,2)**2)) * WINDFAC
          Z0NEW(IP) = Z0OLD(IP)
-         DO IS = 1, MSC
-           DO ID = 1, MDC
-             FL3(ID,IS) =  ACLOC(IS,ID) * PI2 * SPSIG(IS)
+         DO IS = 1, NUMSIG
+           DO ID = 1, NUMDIR
+             FL3(ID,IS) =  WALOC(IS,ID) * PI2 * SPSIG(IS)
            END DO
          END DO
          CALL WAM_POST (IP, FL3)
-         DO IS = 1, MSC
-           DO ID = 1, MDC
-             ACLOC(IS,ID) = FL3(ID,IS) / PI2 / SPSIG(IS)
+         DO IS = 1, NUMSIG
+           DO ID = 1, NUMDIR
+             WALOC(IS,ID) = FL3(ID,IS) / PI2 / SPSIG(IS)
            END DO
          END DO
 

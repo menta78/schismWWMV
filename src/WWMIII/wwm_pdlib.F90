@@ -83,14 +83,14 @@ implicit none
   contains
 
   !> init pd datastructure
-  subroutine initPD(filename, mdc, msc, comm)
+  subroutine initPD(filename, NUMDIR, NUMSIG, comm)
     use yowpd, only: initPD1=>initPD, setDimSize
     implicit none
     character(len=*), intent(in) :: filename
-    integer, intent(in) :: mdc, msc
+    integer, intent(in) :: NUMDIR, NUMSIG
     integer, intent(in) :: comm
 
-    call setDimSize(mdc, msc)
+    call setDimSize(NUMDIR, NUMSIG)
     call initPD1(filename, comm)
     call fillPublicVars()
   end subroutine
@@ -169,7 +169,7 @@ implicit none
     call exchange(p2d_data)
   end subroutine
 
-  !> 3D-Whole-Level Node Exchange; order of indices must be (mdc2,nm) (nm>=npa)
+  !> 3D-Whole-Level Node Exchange; order of indices must be (NUMDIR2,nm) (nm>=npa)
   subroutine exchange_p3d_wwm(p3d_wwm_data)
     use yowExchangeModule
     implicit none
@@ -182,7 +182,7 @@ implicit none
   subroutine exchange_p4d_wwm(p4d_wwm_data)
     use yowExchangeModule
     implicit none
-    real(rkind),intent(inout) :: p4d_wwm_data(:,:,:) !indices must be (msc2,mdc2,nm) where nm>=npa
+    real(rkind),intent(inout) :: p4d_wwm_data(:,:,:) !indices must be (NUMSIG2,NUMDIR2,nm) where nm>=npa
 
     call exchange(p4d_wwm_data)
   end subroutine

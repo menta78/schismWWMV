@@ -388,38 +388,38 @@
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER :: IS, ID
-      INTEGER :: MSC1, MSC2
+      INTEGER :: NUMSIG1, NUMSIG2
       REAL(rkind)    :: SSB, SPECTRAL_BANDWIDTH
       REAL(rkind)    :: TMP, CO1
 
-      ALLOCATE( SPSIG(MSC), SPDIR(MDC), FR(MSC), stat=istat)
+      ALLOCATE( SPSIG(NUMSIG), SPDIR(NUMDIR), FR(NUMSIG), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 5')
       SPSIG = zero
       SPDIR = zero
       FR    = zero
 
-      ALLOCATE( COSTH(MDC), SINTH(MDC), COS2TH(MDC), SIN2TH(MDC), stat=istat)
+      ALLOCATE( COSTH(NUMDIR), SINTH(NUMDIR), COS2TH(NUMDIR), SIN2TH(NUMDIR), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 6')
       COSTH = zero
       SINTH = zero
       COS2TH = zero
       SIN2TH = zero
 
-      ALLOCATE( SINCOSTH(MDC), SIGPOW(MSC,6), DS_BAND(0:MSC+1), DS_INCR(0:MSC+1), ID_NEXT(MDC), ID_PREV(MDC), stat=istat)
+      ALLOCATE( SINCOSTH(NUMDIR), SIGPOW(NUMSIG,6), DS_BAND(0:NUMSIG+1), DS_INCR(0:NUMSIG+1), ID_NEXT(NUMDIR), ID_PREV(NUMDIR), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 7')
       SINCOSTH = zero
       SIGPOW = zero
       DS_BAND = zero
       DS_INCR = zero
 
-      DO ID=1,MDC-1
+      DO ID=1,NUMDIR-1
         ID_NEXT(ID)=ID+1
       END DO
-      ID_NEXT(MDC)=1
-      DO ID=2,MDC
+      ID_NEXT(NUMDIR)=1
+      DO ID=2,NUMDIR
         ID_PREV(ID)=ID-1
       END DO
-      ID_PREV(1)=MDC
+      ID_PREV(1)=NUMDIR
 
       SGLOW  = PI2*FRLOW
       SGHIGH = PI2*FRHIGH
@@ -430,11 +430,11 @@
         SFAC   = 1.1_rkind
         FRINTF = LOG(SFAC)
         FRHIGH = FRLOW
-        DO IS=2,MSC
+        DO IS=2,NUMSIG
           FRHIGH = FRHIGH * SFAC
         END DO
       ELSE 
-        FRINTF = LOG(SGHIGH/SGLOW)/MyREAL(MSC-1) 
+        FRINTF = LOG(SGHIGH/SGLOW)/MyREAL(NUMSIG-1) 
         SFAC   = EXP(FRINTF)
       END IF
 
@@ -451,7 +451,7 @@
       WRITE(STAT%FHNDL,*) 'LOPTSIG', LOPTSIG
       WRITE(STAT%FHNDL,*) 'SFAC, FRINTF, FRINTH', SFAC, FRINTF, FRINTH
 
-      DO IS = 2, MSC
+      DO IS = 2, NUMSIG
         FR(IS) = FR(IS-1) * SFAC
       END DO
 
@@ -466,39 +466,39 @@
         WRITE(DBG%FHNDL,*) 'rel. freq. res. should be 1.1 is now', 1. + FRINTF, 'ERROR IS:', ABS(FRINTF - .1)/FRINTF * 100.
       END IF  
          
-      IF (MSC .GE. 2) THEN
+      IF (NUMSIG .GE. 2) THEN
         DS_BAND(0)     = SPSIG(2)- SPSIG(1)
         DS_BAND(1)     = DS_BAND(0)
-        DS_BAND(MSC)   = SPSIG(MSC) - SPSIG(MSC-1)
-        DS_BAND(MSC+1) = DS_BAND(MSC)
+        DS_BAND(NUMSIG)   = SPSIG(NUMSIG) - SPSIG(NUMSIG-1)
+        DS_BAND(NUMSIG+1) = DS_BAND(NUMSIG)
         DS_INCR(0)     = DS_BAND(0)
         DS_INCR(1)     = DS_BAND(0)
-        DS_INCR(MSC)   = DS_BAND(MSC)
-        DS_INCR(MSC+1) = DS_INCR(MSC)
-        DO IS = 2, MSC-1 ! Bandwith at gridpoints
+        DS_INCR(NUMSIG)   = DS_BAND(NUMSIG)
+        DS_INCR(NUMSIG+1) = DS_INCR(NUMSIG)
+        DO IS = 2, NUMSIG-1 ! Bandwith at gridpoints
           DS_BAND(IS) = (SPSIG(IS)-SPSIG(IS-1))/2. + (SPSIG(IS+1)-SPSIG(IS))/2.
         END DO
-        DO IS = 2, MSC ! Stepwidth between gridpoints K and K-1
+        DO IS = 2, NUMSIG ! Stepwidth between gridpoints K and K-1
           DS_INCR(IS) = SPSIG(IS) - SPSIG(IS-1)
         END DO
       END IF
 
       SPECTRAL_BANDWIDTH = (FRHIGH-FRLOW)
       SSB                =  (SPSIG(2)-SPSIG(1))/PI2
-      MSCL               =  INT(SPECTRAL_BANDWIDTH/SSB)
+      NUMSIGL               =  INT(SPECTRAL_BANDWIDTH/SSB)
 
-      ALLOCATE(SPSIGL(MSCL));SPSIGL = ZERO
+      ALLOCATE(SPSIGL(NUMSIGL));SPSIGL = ZERO
       SPSIGL(1) = FRLOW * PI2
-      DO IS = 2, MSCL
+      DO IS = 2, NUMSIGL
         SPSIGL(IS) = SPSIGL(IS-1) + SSB
       ENDDO
 !
 !    *** the ratio of the consecutive frequency ... for quad
 !
-      IF ( MSC .GT. 3) THEN
-        MSC2   = INT(MyREAL(MSC)/TWO)
-        MSC1   = MSC2-1
-        XIS    = SPSIG(MSC2)/SPSIG(MSC1)
+      IF ( NUMSIG .GT. 3) THEN
+        NUMSIG2   = INT(MyREAL(NUMSIG)/TWO)
+        NUMSIG1   = NUMSIG2-1
+        XIS    = SPSIG(NUMSIG2)/SPSIG(NUMSIG1)
         XISLN  = LOG(XIS)
         IF (SMETHOD .GT. 0 .AND. MESTR .GT. 0) CALL INIT_TRIAD
       ELSE
@@ -512,13 +512,13 @@
 ! 
 !    *** set the distribution of the dectional domain
 ! 
-      IF (MDC == 1) THEN
+      IF (NUMDIR == 1) THEN
         DDIR = 1._rkind
         SPDIR(1) = 0._rkind
       ELSE
         IF (LCIRD) THEN 
-          DDIR = ABS(MAXDIR-MINDIR)/MyREAL(MDC)
-          DO ID = 1, MDC
+          DDIR = ABS(MAXDIR-MINDIR)/MyREAL(NUMDIR)
+          DO ID = 1, NUMDIR
             IF (LSTAG) THEN
               SPDIR(ID) = MINDIR + DDIR * MyREAL(ID-1) + DDIR/2.0 
             ELSE
@@ -534,8 +534,8 @@
           END IF 
           WRITE(STAT%FHNDL,*) 'MINDIR MAXDIR', MINDIR, MAXDIR, MINDIR*RADDEG, MAXDIR*RADDEG
           IF (MAXDIR.LT.MINDIR) MAXDIR = MAXDIR + PI2            
-          DDIR = (MAXDIR-MINDIR) / MyREAL(MDC)                     
-          DO ID = 1, MDC
+          DDIR = (MAXDIR-MINDIR) / MyREAL(NUMDIR)                     
+          DO ID = 1, NUMDIR
             SPDIR(ID) = MINDIR + DDIR * MyREAL(ID-1)
           END DO
         END IF  
@@ -560,11 +560,11 @@
 !
       FDIR = FRINTF * DDIR
 
-      DELTH = PI2/MyREAL(MDC)
+      DELTH = PI2/MyREAL(NUMDIR)
 !
 ! WAM related definitions
 !
-      ALLOCATE(DFIM(MSC), DFFR(MSC), DFFR2(MSC), DFIMOFR(MSC), FR5(MSC), FRM5(MSC), COFRM4(MSC), stat=istat)
+      ALLOCATE(DFIM(NUMSIG), DFFR(NUMSIG), DFFR2(NUMSIG), DFIMOFR(NUMSIG), FR5(NUMSIG), FRM5(NUMSIG), COFRM4(NUMSIG), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_gridcf, allocate error 1')
       DFIM = ZERO
       DFFR = ZERO
@@ -575,11 +575,11 @@
       COFRM4 = ZERO
 
       IF (ISOURCE == 2) THEN
-        ALLOCATE(TH(MDC), stat=istat)
+        ALLOCATE(TH(NUMDIR), stat=istat)
         th = zero
-        DELTH = PI2/REAL(MDC)
+        DELTH = PI2/REAL(NUMDIR)
         DELTR = DELTH*REARTH
-        DO ID=1,MDC
+        DO ID=1,NUMDIR
           IF (LSTAG) THEN
             TH(ID) = REAL(ID-1)*DELTH
           ELSE
@@ -592,12 +592,12 @@
       
       CO1 = 0.5*(FRATIO-1.)*DELTH
       DFIM(1)= CO1*FR(1)
-      DO IS=2,MSC-1
+      DO IS=2,NUMSIG-1
         DFIM(IS)=CO1 * (FR(IS)+FR(IS-1))
       ENDDO
       DFIM(IS)=CO1*FR(IS-1)
 
-      DO IS = 1, MSC
+      DO IS = 1, NUMSIG
         DFFR(IS)    = DFIM(IS)*FR(IS)
         DFFR2(IS)   = DFIM(IS)*FR(IS)**2
         DFIMOFR(IS) = DFIM(IS)/FR(IS)

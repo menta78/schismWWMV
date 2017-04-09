@@ -457,9 +457,9 @@
       SUBROUTINE TOTAL_SUMMATION_AC(AC, Lsum)
       USE DATAPOOL
       IMPLICIT NONE
-      real(rkind), intent(in) :: AC(MSC, MDC, MNP)
-      real(rkind), intent(out) :: Lsum(MSC, MDC)
-      real(rkind) eField(MSC, MDC)
+      real(rkind), intent(in) :: AC(NUMSIG, NUMDIR, MNP)
+      real(rkind), intent(out) :: Lsum(NUMSIG, NUMDIR)
+      real(rkind) eField(NUMSIG, NUMDIR)
       integer IP, iProc
       Lsum=ZERO
       DO IP=1,MNP
@@ -472,15 +472,15 @@
 #ifdef MPI_PARALL_GRID
       IF (myrank == 0) THEN
         DO iProc=2,nproc
-          CALL MPI_RECV(eField,MSC*MDC,rtype, iProc-1, 43, comm, istatus, ierr)
+          CALL MPI_RECV(eField,NUMSIG*NUMDIR,rtype, iProc-1, 43, comm, istatus, ierr)
           Lsum=Lsum + eField
         END DO
         DO iProc=2,nproc
-          CALL MPI_SEND(Lsum,MSC*MDC,rtype, iProc-1, 13, comm, ierr)
+          CALL MPI_SEND(Lsum,NUMSIG*NUMDIR,rtype, iProc-1, 13, comm, ierr)
         END DO
       ELSE
-        CALL MPI_SEND(Lsum,MSC*MDC,rtype, 0, 43, comm, ierr)
-        CALL MPI_RECV(Lsum,MSC*MDC,rtype, 0, 13, comm, istatus, ierr)
+        CALL MPI_SEND(Lsum,NUMSIG*NUMDIR,rtype, 0, 43, comm, ierr)
+        CALL MPI_RECV(Lsum,NUMSIG*NUMDIR,rtype, 0, 13, comm, istatus, ierr)
       END IF
 #endif     
 !      WRITE(STAT%FHNDL,*) 'At leaving, sum(Lsum)=', sum(Lsum)
@@ -492,7 +492,7 @@
       USE DATAPOOL
       implicit NONE
       character(len=*), intent(in) :: string
-      real(rkind) :: Lsum(MSC,MDC)
+      real(rkind) :: Lsum(NUMSIG,NUMDIR)
 !      WRITE(STAT%FHNDL,*) 'Direct sum(AC2)=', sum(AC2)
       CALL TOTAL_SUMMATION_AC(AC2, Lsum)
       WRITE(STAT%FHNDL,*) 'sum(AC2)=', sum(Lsum),' at step:', TRIM(string)
@@ -512,11 +512,11 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE I5B_TOTAL_COHERENCY_ERROR(MSCeffect, ACw, Lerror)
+      SUBROUTINE I5B_TOTAL_COHERENCY_ERROR(NUMSIGeffect, ACw, Lerror)
       USE DATAPOOL
       implicit none
-      integer, intent(in) :: MSCeffect
-      real(rkind), intent(in) :: ACw(MSCeffect, MDC, MNP)
+      integer, intent(in) :: NUMSIGeffect
+      real(rkind), intent(in) :: ACw(NUMSIGeffect, NUMDIR, MNP)
       real(rkind), intent(out) :: Lerror
       real(rkind), allocatable :: ACtotal(:,:,:)
       real(rkind), allocatable :: ACloc(:,:,:)
@@ -535,7 +535,7 @@
         DO iProc=2,nproc
           ListFirstMNP(iProc)=ListFirstMNP(iProc-1) + ListMNP(iProc-1)
         END DO
-        allocate(ACtotal(MSCeffect, MDC, np_global), stat=istat)
+        allocate(ACtotal(NUMSIGeffect, NUMDIR, np_global), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 7')
         DO IP=1,MNP
           IPglob=iplg(IP)
@@ -544,14 +544,14 @@
         END DO
         DO iProc=2,nproc
           MNPloc=ListMNP(iProc)
-          allocate(ACloc(MSCeffect, MDC, MNPloc), stat=istat)
+          allocate(ACloc(NUMSIGeffect, NUMDIR, MNPloc), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 8')
-          CALL MPI_RECV(ACloc,MNPloc*MSCeffect*MDC,rtype, iProc-1, 53, comm, istatus, ierr)
+          CALL MPI_RECV(ACloc,MNPloc*NUMSIGeffect*NUMDIR,rtype, iProc-1, 53, comm, istatus, ierr)
           DO IP=1,MNPloc
             IPglob=ListIPLG(IP+ListFirstMNP(iProc))
             IF (eStatus(IPglob) == 1) THEN
-              DO IS=1,MSCeffect
-                DO ID=1,MDC
+              DO IS=1,NUMSIGeffect
+                DO ID=1,NUMDIR
                   Lerror=Lerror+abs(ACtotal(IS,ID,IPglob)-ACloc(IS,ID,IP))
                 END DO
               END DO
@@ -568,7 +568,7 @@
           CALL MPI_SEND(rbuf_real,1,rtype, iProc-1, 23, comm, ierr)
         END DO
       ELSE
-        CALL MPI_SEND(ACw,MNP*MSCeffect*MDC,rtype, 0, 53, comm, ierr)
+        CALL MPI_SEND(ACw,MNP*NUMSIGeffect*NUMDIR,rtype, 0, 53, comm, ierr)
         CALL MPI_RECV(rbuf_real,1,rtype, 0, 23, comm, istatus, ierr)
         Lerror=rbuf_real(1)
       END IF
@@ -579,11 +579,11 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE I5B_TOTAL_COHERENCY_ERROR_NPRES(MSCeffect, ACw, Lerror)
+      SUBROUTINE I5B_TOTAL_COHERENCY_ERROR_NPRES(NUMSIGeffect, ACw, Lerror)
       USE DATAPOOL
       implicit none
-      integer, intent(in) :: MSCeffect
-      real(rkind), intent(in) :: ACw(MSCeffect, MDC, MNP)
+      integer, intent(in) :: NUMSIGeffect
+      real(rkind), intent(in) :: ACw(NUMSIGeffect, NUMDIR, MNP)
       real(rkind), intent(out) :: Lerror
       real(rkind), allocatable :: ACtotal(:,:,:)
       real(rkind), allocatable :: ACloc(:,:,:)
@@ -595,7 +595,7 @@
 #ifdef MPI_PARALL_GRID
       IF (myrank == 0) THEN
         Lerror=0
-        allocate(ListFirstMNP(nproc), eStatus(np_global), ACtotal(MSCeffect, MDC, np_global), stat=istat)
+        allocate(ListFirstMNP(nproc), eStatus(np_global), ACtotal(NUMSIGeffect, NUMDIR, np_global), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 9')
         ListFirstMNP=0
         eStatus=0
@@ -609,14 +609,14 @@
         END DO
         DO iProc=2,nproc
           NP_RESloc=ListNP_RES(iProc)
-          allocate(ACloc(MSCeffect, MDC, NP_RESloc), stat=istat)
+          allocate(ACloc(NUMSIGeffect, NUMDIR, NP_RESloc), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 10')
-          CALL MPI_RECV(ACloc,MSCeffect*MDC*NP_RESloc,rtype, iProc-1, 53, comm, istatus, ierr)
+          CALL MPI_RECV(ACloc,NUMSIGeffect*NUMDIR*NP_RESloc,rtype, iProc-1, 53, comm, istatus, ierr)
           DO IP=1,NP_RESloc
             IPglob=ListIPLG(IP+ListFirstMNP(iProc))
             IF (eStatus(IPglob) == 1) THEN
-              DO IS=1,MSCeffect
-                DO ID=1,MDC
+              DO IS=1,NUMSIGeffect
+                DO ID=1,NUMDIR
                   Lerror=Lerror+abs(ACtotal(IS,ID,IPglob)-ACloc(IS,ID,IP))
                 END DO
               END DO
@@ -633,12 +633,12 @@
           CALL MPI_SEND(rbuf_real,1,rtype, iProc-1, 23, comm, ierr)
         END DO
       ELSE
-        allocate(ACloc(MSCeffect, MDC, NP_RES), stat=istat)
+        allocate(ACloc(NUMSIGeffect, NUMDIR, NP_RES), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_aux_parall, allocate error 11')
         DO IP=1,NP_RES
           ACloc(:,:,IP)=ACw(:,:,IP)
         END DO
-        CALL MPI_SEND(ACloc,NP_RES*MSCeffect*MDC,rtype, 0, 53, comm, ierr)
+        CALL MPI_SEND(ACloc,NP_RES*NUMSIGeffect*NUMDIR,rtype, 0, 53, comm, ierr)
         deallocate(ACloc)
         CALL MPI_RECV(rbuf_real,1,rtype, 0, 23, comm, istatus, ierr)
         Lerror=rbuf_real(1)
@@ -1184,12 +1184,12 @@
                 idx=idx+1
                 eIdx=Indexes(IP_glob)
                 dspl_spparm(idx)=8*(eIdx-1)
-                dspl_wbac(idx)=MSC*MDC*(eIdx-1)
+                dspl_wbac(idx)=NUMSIG*NUMDIR*(eIdx-1)
               END IF
             END DO
             call mpi_type_create_indexed_block(eSend,8,dspl_spparm,rtype,spparm_type(idx_nbproc), ierr)
             call mpi_type_commit(spparm_type(idx_nbproc), ierr)
-            call mpi_type_create_indexed_block(eSend,MSC*MDC,dspl_wbac,rtype,wbac_type(idx_nbproc), ierr)
+            call mpi_type_create_indexed_block(eSend,NUMSIG*NUMDIR,dspl_wbac,rtype,wbac_type(idx_nbproc), ierr)
             call mpi_type_commit(wbac_type(idx_nbproc), ierr)
             deallocate(dspl_spparm, dspl_wbac)
           END IF
@@ -1232,7 +1232,7 @@
       SUBROUTINE SCATTER_BOUNDARY_ARRAY_WBAC(WBACOUT)
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind), INTENT(OUT)   :: WBACOUT(MSC,MDC,IWBMNP)
+      REAL(rkind), INTENT(OUT)   :: WBACOUT(NUMSIG,NUMDIR,IWBMNP)
       integer IP, irank
       IF ((IWBMNP .eq. 0).and.(myrank.ne.rank_boundary)) THEN
         RETURN
@@ -1249,7 +1249,7 @@
           CALL MPI_WAITALL(bound_nbproc, spparm_rqst, spparm_stat, ierr)
         END IF
       ELSE
-        CALL MPI_RECV(WBACOUT, MSC*MDC*IWBMNP, rtype, rank_boundary, 2096, comm, istatus, ierr)
+        CALL MPI_RECV(WBACOUT, NUMSIG*NUMDIR*IWBMNP, rtype, rank_boundary, 2096, comm, istatus, ierr)
       END IF
 #else
       WBACOUT = WBAC_GL
@@ -1337,7 +1337,7 @@
         IF (myrank .eq. rank_boundary) THEN
 !          WRITE(STAT%FHNDL,*) 'Before data receiving'
 !          WRITE(STAT%FHNDL,*) 'IWBMNPGL=', IWBMNPGL
-!          WRITE(STAT%FHNDL,*) 'MSC/MDC=', MSC,MDC
+!          WRITE(STAT%FHNDL,*) 'NUMSIG/NUMDIR=', NUMSIG,NUMDIR
 !          WRITE(STAT%FHNDL,*) 'allocated(WBAC_GL)=', allocated(WBAC_GL)
 !          WRITE(STAT%FHNDL,*) 'size(WBAC_GL)=', size(WBAC_GL)
 !          FLUSH(STAT%FHNDL)
@@ -1366,17 +1366,17 @@
 !          WRITE(STAT%FHNDL,*) 'Before data sending IWBMNP=', IWBMNP
 !          WRITE(STAT%FHNDL,*) 'sum(WBAC)=', sum(WBAC)
 !          FLUSH(STAT%FHNDL)
-          CALL MPI_SEND(WBAC, MSC*MDC*IWBMNP, rtype, rank_boundary, 2040, comm, ierr)
+          CALL MPI_SEND(WBAC, NUMSIG*NUMDIR*IWBMNP, rtype, rank_boundary, 2040, comm, ierr)
 !          WRITE(STAT%FHNDL,*) 'MPI_SEND ierr=', ierr
 !          FLUSH(STAT%FHNDL)
         END IF
       ELSE
         IF (rank_boundary .ne. rank_hasboundary) THEN
           IF (myrank .eq. rank_hasboundary) THEN
-            CALL MPI_SEND(WBAC, MSC*MDC, rtype, rank_boundary, 2035, comm, ierr)
+            CALL MPI_SEND(WBAC, NUMSIG*NUMDIR, rtype, rank_boundary, 2035, comm, ierr)
           END IF
           IF (myrank .eq. rank_boundary) THEN
-            CALL MPI_RECV(WBAC,MSC*MDC,rtype, rank_hasboundary, 2035, comm, istatus, ierr)
+            CALL MPI_RECV(WBAC,NUMSIG*NUMDIR,rtype, rank_hasboundary, 2035, comm, istatus, ierr)
           END IF
         END IF
         IF (myrank .eq. rank_boundary) THEN
@@ -1423,16 +1423,16 @@
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
       integer, SAVE :: iSystem = 1
-      integer MSCeffect
+      integer NUMSIGeffect
       integer ired, ncid, var_id
-      MSCeffect=LocalColor%MSCeffect
+      NUMSIGeffect=LocalColor%NUMSIGeffect
       WRITE (FILE_NAME,10) TRIM(PRE_FILE_NAME),nproc, iSystem, myrank
   10  FORMAT (a,'_np',i2.2,'_syst',i3.3,'_iproc',i4.4, '.nc')
       iret = nf90_create(TRIM(FILE_NAME), NF90_CLOBBER, ncid)
       iret = nf90_def_dim(ncid, 'iter', NF90_UNLIMITED, iter_dims)
       iret = nf90_def_dim(ncid, 'three', 3, three_dims)
-      iret = nf90_def_dim(ncid, 'nfreq', MSCeffect, nfreq_dims)
-      iret = nf90_def_dim(ncid, 'ndir', MDC, ndir_dims)
+      iret = nf90_def_dim(ncid, 'nfreq', NUMSIGeffect, nfreq_dims)
+      iret = nf90_def_dim(ncid, 'ndir', NUMDIR, ndir_dims)
       iret = nf90_def_dim(ncid, 'bbz', MNP, mnp_dims)
       iret = nf90_def_dim(ncid, 'mnpp', MNP+1, mnpp_dims)
       iret = nf90_def_dim(ncid, 'np_global', np_global, npgl_dims)
@@ -1458,7 +1458,7 @@
       iret=nf90_put_var(ncid,var_id,INE,start=(/1,1/), count = (/ 3, MNE /))
       !
       iret=nf90_inq_varid(ncid, 'ASPAR', var_id)
-      iret=nf90_put_var(ncid,var_id,ASPAR,start=(/1,1,1/), count = (/ MSC, MDC, NNZ/))
+      iret=nf90_put_var(ncid,var_id,ASPAR,start=(/1,1,1/), count = (/ NUMSIG, NUMDIR, NNZ/))
       iret=nf90_inq_varid(ncid, 'IA', var_id)
       iret=nf90_put_var(ncid,var_id,IA,start=(/1/), count = (/ MNP+1/))
       iret=nf90_inq_varid(ncid, 'JA', var_id)

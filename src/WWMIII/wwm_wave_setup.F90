@@ -7,21 +7,21 @@
       real(rkind) :: U_X2(MNP), U_Y2(MNP)
       integer IP, ID, ISS
       REAL(rkind) :: COSE2, SINE2, COSI2, WN, ELOC
-      REAL(rkind) :: ACLOC(MSC,MDC)
+      REAL(rkind) :: WALOC(NUMSIG,NUMDIR)
       REAL(rkind) :: eRXX, eRXY, eRYY
       REAL(rkind) :: eHS, ETOT
-!      DO ISS=2,MSC
+!      DO ISS=2,NUMSIG
 !        WRITE(700,*) 'ISS=', ISS, 'INCR=', DS_INCR(ISS), 'diff=', SPSIG(ISS) - SPSIG(ISS-1)
 !      END DO
       DO IP = 1, MNP
-        ACLOC = AC2(:,:,IP)
+        WALOC = AC2(:,:,IP)
         ETOT=ZERO
         eRXX=ZERO
         eRXY=ZERO
         eRYY=ZERO
-        DO ID = 1, MDC
-          DO ISS = 2, MSC
-            ELOC  = 0.5_rkind*(SPSIG(ISS)*ACLOC(ISS,ID)+SPSIG(ISS-1)*ACLOC(ISS-1,ID))*DS_INCR(ISS)*DDIR
+        DO ID = 1, NUMDIR
+          DO ISS = 2, NUMSIG
+            ELOC  = 0.5_rkind*(SPSIG(ISS)*WALOC(ISS,ID)+SPSIG(ISS-1)*WALOC(ISS-1,ID))*DS_INCR(ISS)*DDIR
             ETOT = ETOT + ELOC
             COSE2 = COS(SPDIR(ID))**TWO
             SINE2 = SIN(SPDIR(ID))**TWO

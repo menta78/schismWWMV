@@ -54,18 +54,18 @@
 !     *** Range of calculations ***
 !
          ISLOW  = 1 + ISM1
-         ISHGH  = MSC + ISP1 - ISM1
+         ISHGH  = NUMSIG + ISP1 - ISM1
          ISCLW  = 1
-         ISCHG  = MSC - ISM1
+         ISCHG  = NUMSIG - ISM1
          IDLOW  = 1 - MAX(IDM1,IDP1)
-         IDHGH  = MDC + MAX(IDM1,IDP1)
+         IDHGH  = NUMDIR + MAX(IDM1,IDP1)
 
-         MSC4MI = ISLOW
-         MSC4MA = ISHGH
-         MDC4MI = IDLOW
-         MDC4MA = IDHGH
-         MSCMAX = MSC4MA - MSC4MI + 1
-         MDCMAX = MDC4MA - MDC4MI + 1
+         NUMSIG4MI = ISLOW
+         NUMSIG4MA = ISHGH
+         NUMDIR4MI = IDLOW
+         NUMDIR4MA = IDHGH
+         NUMSIGMAX = NUMSIG4MA - NUMSIG4MI + 1
+         NUMDIRMAX = NUMDIR4MA - NUMDIR4MI + 1
 !
 !     *** Interpolation weights ***
 !
@@ -107,12 +107,12 @@
          WWINT(12) = ISCHG
          WWINT(13) = IDLOW
          WWINT(14) = IDHGH
-         WWINT(15) = MSC4MI
-         WWINT(16) = MSC4MA
-         WWINT(17) = MDC4MI
-         WWINT(18) = MDC4MA
-         WWINT(19) = MSCMAX
-         WWINT(20) = MDCMAX
+         WWINT(15) = NUMSIG4MI
+         WWINT(16) = NUMSIG4MA
+         WWINT(17) = NUMDIR4MI
+         WWINT(18) = NUMDIR4MA
+         WWINT(19) = NUMSIGMAX
+         WWINT(20) = NUMDIRMAX
 
          WWAWG(1) = AWG1
          WWAWG(2) = AWG2
@@ -148,16 +148,16 @@
 !
        IF (ALLOCATED (AF11)) DEALLOCATE (AF11)
 
-       ALLOCATE( AF11(MSC4MI:MSC4MA), stat=istat)
+       ALLOCATE( AF11(NUMSIG4MI:NUMSIG4MA), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_snl42, allocate error 1')
 
 
-         DO IS = 1, MSC
+         DO IS = 1, NUMSIG
             AF11(IS) = (SPSIG(IS)/PI2)**11.0
          END DO
 
-         FREQ = SPSIG(MSC)/PI2
-         DO IS = MSC+1, ISHGH
+         FREQ = SPSIG(NUMSIG)/PI2
+         DO IS = NUMSIG+1, ISHGH
             FREQ     = FREQ*XIS
             AF11(IS) = FREQ**11.0
          END DO
@@ -171,14 +171,14 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SNL41(IP,KMESPC, ACLOC, SFNL, DSNL)
+      SUBROUTINE SNL41(IP,KMESPC, WALOC, SFNL, DSNL)
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN) :: IP
          REAL(rkind),    INTENT(IN) :: KMESPC
-         REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
-         REAL(rkind), INTENT(OUT)   :: SFNL(MSC,MDC), DSNL(MSC,MDC)
+         REAL(rkind), INTENT(IN)    :: WALOC(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(OUT)   :: SFNL(NUMSIG,NUMDIR), DSNL(NUMSIG,NUMDIR)
          INTEGER             :: ISHGH, ISCLW, ISCHG, IDLOW, IDHGH
          INTEGER             :: IDP, IDP1, IDM, IDM1
          INTEGER             :: ISP, ISP1, ISM, ISM1
@@ -193,15 +193,15 @@
          REAL(rkind)                :: E00, EP1, EM1, EP2, EM2
          REAL(rkind)                :: SA1A, SA1B, SA2A, SA2B
 
-         REAL(rkind)                :: UE(MSC4MI:MSC4MA, MDC4MI:MDC4MA)
-         REAL(rkind)                :: SA1(MSC4MI:MSC4MA, MDC4MI:MDC4MA)
-         REAL(rkind)                :: SA2(MSC4MI:MSC4MA, MDC4MI:MDC4MA)
-         REAL(rkind)                :: DA1C(MSC4MI:MSC4MA, MDC4MI:MDC4MA)
-         REAL(rkind)                :: DA1P(MSC4MI:MSC4MA, MDC4MI:MDC4MA)
-         REAL(rkind)                :: DA1M(MSC4MI:MSC4MA, MDC4MI:MDC4MA)
-         REAL(rkind)                :: DA2C(MSC4MI:MSC4MA, MDC4MI:MDC4MA)
-         REAL(rkind)                :: DA2P(MSC4MI:MSC4MA, MDC4MI:MDC4MA)
-         REAL(rkind)                :: DA2M(MSC4MI:MSC4MA, MDC4MI:MDC4MA)
+         REAL(rkind)                :: UE(NUMSIG4MI:NUMSIG4MA, NUMDIR4MI:NUMDIR4MA)
+         REAL(rkind)                :: SA1(NUMSIG4MI:NUMSIG4MA, NUMDIR4MI:NUMDIR4MA)
+         REAL(rkind)                :: SA2(NUMSIG4MI:NUMSIG4MA, NUMDIR4MI:NUMDIR4MA)
+         REAL(rkind)                :: DA1C(NUMSIG4MI:NUMSIG4MA, NUMDIR4MI:NUMDIR4MA)
+         REAL(rkind)                :: DA1P(NUMSIG4MI:NUMSIG4MA, NUMDIR4MI:NUMDIR4MA)
+         REAL(rkind)                :: DA1M(NUMSIG4MI:NUMSIG4MA, NUMDIR4MI:NUMDIR4MA)
+         REAL(rkind)                :: DA2C(NUMSIG4MI:NUMSIG4MA, NUMDIR4MI:NUMDIR4MA)
+         REAL(rkind)                :: DA2P(NUMSIG4MI:NUMSIG4MA, NUMDIR4MI:NUMDIR4MA)
+         REAL(rkind)                :: DA2M(NUMSIG4MI:NUMSIG4MA, NUMDIR4MI:NUMDIR4MA)
 
          IDP    = WWINT(1)
          IDP1   = WWINT(2)
@@ -290,13 +290,13 @@
 !     *** set action original spectrum in array UE ***
 !
          DO IDDUM = IDLOW, IDHGH
-            ID = MOD( IDDUM - 1 + MDC, MDC ) + 1
-            DO IS = 1, MSC
-               UE(IS,IDDUM) = ACLOC(IS,ID) * SPSIG(IS) * JACOBI
+            ID = MOD( IDDUM - 1 + NUMDIR, NUMDIR ) + 1
+            DO IS = 1, NUMSIG
+               UE(IS,IDDUM) = WALOC(IS,ID) * SPSIG(IS) * JACOBI
             END DO
          END DO
 
-         DO IS = MSC+1, ISHGH
+         DO IS = NUMSIG+1, ISHGH
             DO ID = IDLOW, IDHGH
                UE(IS,ID) = UE(IS-1,ID)*FACHFR
             END DO
@@ -306,7 +306,7 @@
 !     *** Energy at interacting bins  ***
 !
          DO IS = ISCLW, ISCHG
-            DO ID = 1, MDC
+            DO ID = 1, NUMDIR
                E00 =        UE(IS     ,ID     )
 
                EP1 = AWG1 * UE(IS+ISP1,ID+IDP1) +       &
@@ -350,34 +350,34 @@
 !     *** Fold interactions to side angles if spectral domain ***
 !     *** is periodic in directional space                    ***
 !
-        DO ID = 1, IDHGH - MDC
+        DO ID = 1, IDHGH - NUMDIR
            ID0 = 1 - ID
            DO IS = ISCLW, ISCHG
-              SA1 (IS,MDC+ID) = SA1 (IS,ID     )
-              SA2 (IS,MDC+ID) = SA2 (IS,ID     )
-              DA1C(IS,MDC+ID) = DA1C(IS,ID     )
-              DA1P(IS,MDC+ID) = DA1P(IS,ID     )
-              DA1M(IS,MDC+ID) = DA1M(IS,ID     )
-              DA2C(IS,MDC+ID) = DA2C(IS,ID     )
-              DA2P(IS,MDC+ID) = DA2P(IS,ID     )
-              DA2M(IS,MDC+ID) = DA2M(IS,ID     )
-              SA1 (IS,ID0   ) = SA1 (IS,MDC+ID0)
-              SA2 (IS,ID0   ) = SA2 (IS,MDC+ID0)
-              DA1C(IS,ID0   ) = DA1C(IS,MDC+ID0)
-              DA1P(IS,ID0   ) = DA1P(IS,MDC+ID0)
-              DA1M(IS,ID0   ) = DA1M(IS,MDC+ID0)
-              DA2C(IS,ID0   ) = DA2C(IS,MDC+ID0)
-              DA2P(IS,ID0   ) = DA2P(IS,MDC+ID0)
-              DA2M(IS,ID0   ) = DA2M(IS,MDC+ID0)
+              SA1 (IS,NUMDIR+ID) = SA1 (IS,ID     )
+              SA2 (IS,NUMDIR+ID) = SA2 (IS,ID     )
+              DA1C(IS,NUMDIR+ID) = DA1C(IS,ID     )
+              DA1P(IS,NUMDIR+ID) = DA1P(IS,ID     )
+              DA1M(IS,NUMDIR+ID) = DA1M(IS,ID     )
+              DA2C(IS,NUMDIR+ID) = DA2C(IS,ID     )
+              DA2P(IS,NUMDIR+ID) = DA2P(IS,ID     )
+              DA2M(IS,NUMDIR+ID) = DA2M(IS,ID     )
+              SA1 (IS,ID0   ) = SA1 (IS,NUMDIR+ID0)
+              SA2 (IS,ID0   ) = SA2 (IS,NUMDIR+ID0)
+              DA1C(IS,ID0   ) = DA1C(IS,NUMDIR+ID0)
+              DA1P(IS,ID0   ) = DA1P(IS,NUMDIR+ID0)
+              DA1M(IS,ID0   ) = DA1M(IS,NUMDIR+ID0)
+              DA2C(IS,ID0   ) = DA2C(IS,NUMDIR+ID0)
+              DA2P(IS,ID0   ) = DA2P(IS,NUMDIR+ID0)
+              DA2M(IS,ID0   ) = DA2M(IS,NUMDIR+ID0)
            END DO
         END DO
 !
 !     *** Put source term together  ***
 !
         PI3 = ( PI2 )**3.0
-        DO I = 1, MSC
+        DO I = 1, NUMSIG
            SIGPI = SPSIG(I) * JACOBI
-           DO J = 1, MDC
+           DO J = 1, NUMDIR
               SFNL(I,J) =   -2.0 * ( SA1(I,J) + SA2(I,J) )         &
      &        + AWG1 * ( SA1(I-ISP1,J-IDP1) + SA2(I-ISP1,J+IDP1) )   &
      &        + AWG2 * ( SA1(I-ISP1,J-IDP ) + SA2(I-ISP1,J+IDP ) )   &
@@ -404,14 +404,14 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SNL42(IP, KMESPC, ACLOC, PHI, DPHIDN)
+      SUBROUTINE SNL42(IP, KMESPC, WALOC, PHI, DPHIDN)
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER             :: IP
          REAL(rkind)                :: KMESPC
-         REAL(rkind), INTENT(INOUT) :: PHI(MSC,MDC), DPHIDN(MSC,MDC)
-         REAL(rkind), INTENT(IN) :: ACLOC(MSC,MDC)
+         REAL(rkind), INTENT(INOUT) :: PHI(NUMSIG,NUMDIR), DPHIDN(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(IN) :: WALOC(NUMSIG,NUMDIR)
 
          REAL(rkind)                :: PWTAIL, FACHFR
          REAL(rkind)                :: LAMBDA
@@ -427,9 +427,9 @@
          REAL(rkind)                :: AWG1, AWG2, AWG3, AWG4, AWG5, AWG6, AWG7, AWG8
          REAL(rkind)                :: E00, EP1, EM1, EP2, EM2, SIGPI2
          REAL(rkind)                :: SA11, SA22, AUX, AUX2
-         REAL(rkind)                :: SA1A, SA1B, SA2A, SA2B, SFNL(MSC,MDC)
+         REAL(rkind)                :: SA1A, SA1B, SA2A, SA2B, SFNL(NUMSIG,NUMDIR)
 
-         REAL(rkind)                :: UE(MSC4MI:MSC4MA, MDC4MI:MDC4MA)
+         REAL(rkind)                :: UE(NUMSIG4MI:NUMSIG4MA, NUMDIR4MI:NUMDIR4MA)
 
          IDP    = WWINT(1)
          IDP1   = WWINT(2)
@@ -477,22 +477,22 @@
 
          FACHFR = 1.0/XIS**PWTAIL
 
-         DO ID = 1, MDC
-            DO IS = 1, MSC
-               UE(IS,ID) = ACLOC(IS,ID)*SPSIG(IS)*PI2
+         DO ID = 1, NUMDIR
+            DO IS = 1, NUMSIG
+               UE(IS,ID) = WALOC(IS,ID)*SPSIG(IS)*PI2
             END DO
          END DO
 
-         DO ID = 1, IDHGH - MDC
+         DO ID = 1, IDHGH - NUMDIR
             ID0 = 1 - ID
-            DO IS = 1, MSC
-               UE(IS,MDC+ID) = UE(IS,ID     )
-               UE(IS,ID0   ) = UE(IS,MDC+ID0)
+            DO IS = 1, NUMSIG
+               UE(IS,NUMDIR+ID) = UE(IS,ID     )
+               UE(IS,ID0   ) = UE(IS,NUMDIR+ID0)
             END DO
          END DO
 
 
-         DO IS = MSC + 1, ISHGH
+         DO IS = NUMSIG + 1, ISHGH
             DO ID = IDLOW, IDHGH
                UE(IS,ID) = UE(IS-1,ID)*FACHFR
             END DO
@@ -500,7 +500,7 @@
 
          DO IS = ISCLO, ISCHG
 
-            DO ID = 1, MDC
+            DO ID = 1, NUMDIR
 
                K3SF = IS+ISP1
                K3SB = IS+ISP
@@ -545,20 +545,20 @@
                SA11    = FACTOR*SA1B
                SA22    = FACTOR*SA2B
 
-               IF ((IS >= 1) .AND. (IS <= MSC)) THEN
+               IF ((IS >= 1) .AND. (IS <= NUMSIG)) THEN
                   SFNL(IS,ID) = SFNL(IS,ID) - 2.0 * ( SA11 + SA22 )
                END IF
 
-               IF (K3D1 > MDC) K3D1 = K3D1 - MDC
-               IF (K3D2 > MDC) K3D2 = K3D2 - MDC
-               IF (K4D1 < 1  ) K4D1 = MDC  + K4D1
-               IF (K4D2 < 1  ) K4D2 = MDC  + K4D2
-               IF (K3D3 < 1  ) K3D3 = MDC  + K3D3
-               IF (K3D4 < 1  ) K3D4 = MDC  + K3D4
-               IF (K4D3 > MDC) K4D3 = K4D3 - MDC
-               IF (K4D4 > MDC) K4D4 = K4D4 - MDC
+               IF (K3D1 > NUMDIR) K3D1 = K3D1 - NUMDIR
+               IF (K3D2 > NUMDIR) K3D2 = K3D2 - NUMDIR
+               IF (K4D1 < 1  ) K4D1 = NUMDIR  + K4D1
+               IF (K4D2 < 1  ) K4D2 = NUMDIR  + K4D2
+               IF (K3D3 < 1  ) K3D3 = NUMDIR  + K3D3
+               IF (K3D4 < 1  ) K3D4 = NUMDIR  + K3D4
+               IF (K4D3 > NUMDIR) K4D3 = K4D3 - NUMDIR
+               IF (K4D4 > NUMDIR) K4D4 = K4D4 - NUMDIR
 
-               IF ((K3SF >= 1) .AND. (K3SF <= MSC) .AND. (K3SB >= 1) .AND. (K3SB <= MSC)) THEN
+               IF ((K3SF >= 1) .AND. (K3SF <= NUMSIG) .AND. (K3SB >= 1) .AND. (K3SB <= NUMSIG)) THEN
                   SFNL(K3SF,K3D1) = SFNL(K3SF,K3D1) + AWG1 * SA11
                   SFNL(K3SF,K3D2) = SFNL(K3SF,K3D2) + AWG2 * SA11
                   SFNL(K3SB,K3D1) = SFNL(K3SB,K3D1) + AWG3 * SA11
@@ -569,7 +569,7 @@
                   SFNL(K3SB,K3D4) = SFNL(K3SB,K3D4) + AWG4 * SA22
                END IF
 
-               IF ((K4SF >= 1) .AND. (K4SF <= MSC) .AND. (K4SB >= 1) .AND. (K4SB <= MSC)) THEN
+               IF ((K4SF >= 1) .AND. (K4SF <= NUMSIG) .AND. (K4SB >= 1) .AND. (K4SB <= NUMSIG)) THEN
                   SFNL(K4SF,K4D1) = SFNL(K4SF,K4D1) + AWG5 * SA11
                   SFNL(K4SF,K4D2) = SFNL(K4SF,K4D2) + AWG6 * SA11
                   SFNL(K4SB,K4D1) = SFNL(K4SB,K4D1) + AWG7 * SA11
@@ -584,18 +584,18 @@
 !
 !     *** SFNL -> energy density, PHI -> action density
 !
-         DO IS = 1, MSC
+         DO IS = 1, NUMSIG
            SIGPI2 = SPSIG(IS)*PI2
-           DO ID = 1, MDC
+           DO ID = 1, NUMDIR
              IF (ICOMP >= 2) THEN
                IF (SFNL(IS,ID).GT.0.) THEN                                   
                  PHI(IS,ID) = PHI(IS,ID) + SFNL(IS,ID) / SIGPI2
                ELSE
-                 DPHIDN(IS,ID) = DPHIDN(IS,ID) - SFNL(IS,ID) / MAX(1.E-18_rkind,ACLOC(IS,ID)*SIGPI2)
+                 DPHIDN(IS,ID) = DPHIDN(IS,ID) - SFNL(IS,ID) / MAX(1.E-18_rkind,WALOC(IS,ID)*SIGPI2)
                END IF
              ELSE
                PHI(IS,ID) = PHI(IS,ID) + SFNL(IS,ID) / SIGPI2 
-               DPHIDN(IS,ID) = DPHIDN(IS,ID) + SFNL(IS,ID) / MAX(1.E-18_rkind,ACLOC(IS,ID)*SIGPI2)
+               DPHIDN(IS,ID) = DPHIDN(IS,ID) + SFNL(IS,ID) / MAX(1.E-18_rkind,WALOC(IS,ID)*SIGPI2)
              END IF
            END DO
          END DO
@@ -603,15 +603,15 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SNL43(IP,KMESPC, ACLOC, PHI, DPHIDN, SFNL, DSNL)
+      SUBROUTINE SNL43(IP,KMESPC, WALOC, PHI, DPHIDN, SFNL, DSNL)
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN) :: IP
          REAL(rkind),    INTENT(IN) :: KMESPC
-         REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
-         REAL(rkind), INTENT(INOUT) :: PHI(MSC,MDC), DPHIDN(MSC,MDC)
-         REAL(rkind), INTENT(OUT)   :: SFNL(MSC,MDC), DSNL(MSC,MDC)
+         REAL(rkind), INTENT(IN)    :: WALOC(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(INOUT) :: PHI(NUMSIG,NUMDIR), DPHIDN(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(OUT)   :: SFNL(NUMSIG,NUMDIR), DSNL(NUMSIG,NUMDIR)
 
          INTEGER             :: ISHGH, ISCLW, ISCHG, IDLOW, IDHGH
          INTEGER             :: IDP, IDP1, IDM, IDM1
@@ -626,9 +626,9 @@
          REAL(rkind)         :: E00, EP1, EM1, EP2, EM2
          REAL(rkind)         :: SA1A, SA1B, SA2A, SA2B
 
-         REAL(rkind)         :: UE(MSC4MI:MSC4MA, MDC4MI:MDC4MA)
-         REAL(rkind)         :: SA1(MSC4MI:MSC4MA, MDC4MI:MDC4MA)
-         REAL(rkind)         :: SA2(MSC4MI:MSC4MA, MDC4MI:MDC4MA)
+         REAL(rkind)         :: UE(NUMSIG4MI:NUMSIG4MA, NUMDIR4MI:NUMDIR4MA)
+         REAL(rkind)         :: SA1(NUMSIG4MI:NUMSIG4MA, NUMDIR4MI:NUMDIR4MA)
+         REAL(rkind)         :: SA2(NUMSIG4MI:NUMSIG4MA, NUMDIR4MI:NUMDIR4MA)
 
 
          IDP    = WWINT(1)
@@ -692,13 +692,13 @@
 !     *** set action original spectrum in array UE ***
 !
          DO IDDUM = IDLOW, IDHGH
-            ID = MOD( IDDUM - 1 + MDC, MDC ) + 1
-            DO IS = 1, MSC
-               UE(IS,IDDUM) = ACLOC(IS,ID) * SPSIG(IS) * JACOBI
+            ID = MOD( IDDUM - 1 + NUMDIR, NUMDIR ) + 1
+            DO IS = 1, NUMSIG
+               UE(IS,IDDUM) = WALOC(IS,ID) * SPSIG(IS) * JACOBI
             END DO
          END DO
 
-         DO IS = MSC+1, ISHGH
+         DO IS = NUMSIG+1, ISHGH
             DO ID = IDLOW, IDHGH
                UE(IS,ID) = UE(IS-1,ID)*FACHFR
             END DO
@@ -709,7 +709,7 @@
 !
          DO IS = ISCLW, ISCHG
 
-            DO ID = 1, MDC
+            DO ID = 1, NUMDIR
 
                E00 =        UE(IS     ,ID     )
 
@@ -746,22 +746,22 @@
 !     *** Fold interactions to side angles if spectral domain ***
 !     *** is periodic in directional space                    ***
 !
-        DO ID = 1, IDHGH - MDC
+        DO ID = 1, IDHGH - NUMDIR
            ID0 = 1 - ID
            DO IS = ISCLW, ISCHG
-              SA1 (IS,MDC+ID) = SA1 (IS,ID     )
-              SA2 (IS,MDC+ID) = SA2 (IS,ID     )
-              SA1 (IS,ID0   ) = SA1 (IS,MDC+ID0)
-              SA2 (IS,ID0   ) = SA2 (IS,MDC+ID0)
+              SA1 (IS,NUMDIR+ID) = SA1 (IS,ID     )
+              SA2 (IS,NUMDIR+ID) = SA2 (IS,ID     )
+              SA1 (IS,ID0   ) = SA1 (IS,NUMDIR+ID0)
+              SA2 (IS,ID0   ) = SA2 (IS,NUMDIR+ID0)
            END DO
         END DO
 !
 !     *** Put source term together  ***
 !
-        DO I = 1, MSC
+        DO I = 1, NUMSIG
            SIGPI = SPSIG(I) * JACOBI
-           DO J = 1, MDC
-              ID = MOD( J - 1 + MDC, MDC ) + 1
+           DO J = 1, NUMDIR
+              ID = MOD( J - 1 + NUMDIR, NUMDIR ) + 1
 
               SFNL(I,ID) =   -2.0 * ( SA1(I,J) + SA2(I,J) )         &
      &        + AWG1 * ( SA1(I-ISP1,J-IDP1) + SA2(I-ISP1,J+IDP1) )   &
@@ -777,13 +777,13 @@
                IF (SFNL(I,ID).GT.0.) THEN ! Patankar rule's ...
                  PHI(I,ID) = PHI(I,ID) + SFNL(I,ID) / SIGPI
                ELSE
-                 DPHIDN(I,ID) = DPHIDN(I,ID) - SFNL(I,ID) / MAX(10E-18_rkind,ACLOC(I,ID)*SIGPI)
-                 DSNL(IS,ID)  = - SFNL(I,ID) / MAX(10E-18_rkind,ACLOC(I,ID)*SIGPI)
+                 DPHIDN(I,ID) = DPHIDN(I,ID) - SFNL(I,ID) / MAX(10E-18_rkind,WALOC(I,ID)*SIGPI)
+                 DSNL(IS,ID)  = - SFNL(I,ID) / MAX(10E-18_rkind,WALOC(I,ID)*SIGPI)
                END IF
              ELSE
                PHI(I,ID) = PHI(I,ID) + SFNL(I,ID) / SIGPI
-               DPHIDN(I,ID) = DPHIDN(I,ID) + SFNL(I,ID) / MAX(10E-18_rkind,ACLOC(I,ID)*SIGPI)
-               DSNL(IS,ID)  = - SFNL(I,ID) / MAX(10E-18_rkind,ACLOC(I,ID)*SIGPI)
+               DPHIDN(I,ID) = DPHIDN(I,ID) + SFNL(I,ID) / MAX(10E-18_rkind,WALOC(I,ID)*SIGPI)
+               DSNL(IS,ID)  = - SFNL(I,ID) / MAX(10E-18_rkind,WALOC(I,ID)*SIGPI)
              END IF
 
            END DO

@@ -434,8 +434,8 @@
       USE W3SERVMD, ONLY: EXTCDE
 #else
       USE DATAPOOL, ONLY: &
-     &                   NK => MSC,      &
-     &                   NTH => MDC,     &
+     &                   NK => NUMSIG,      &
+     &                   NTH => NUMDIR,     &
      &                   TPI => PI2,     &
      &                   XFR => SFAC,    &
      &                   SIG => SPSIG,   &

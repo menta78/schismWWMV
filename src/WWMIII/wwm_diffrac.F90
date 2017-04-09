@@ -23,7 +23,7 @@
              ETOT = ZERO
              EWKTOT = ZERO
              ECGTOT = ZERO
-             DO IS = 1, MSC
+             DO IS = 1, NUMSIG
                EAD = SUM(AC2(IS,:,IP))*DDIR*SIGPOW(IS,2)
                ETOT = ETOT + EAD
                EWKTOT = EWKTOT + WK(IS,IP) * EAD
@@ -398,7 +398,7 @@
             EWCTOT = ZERO
             ECGTOT = ZERO
             IF (DEP(IP) .GT. DMIN) THEN
-              DO IS = 1, MSC
+              DO IS = 1, NUMSIG
                 CALL ALL_FROM_TABLE(SPSIG(IS),DEP(IP),WVK,WVCG,WVKDEP,WVN,WVC)
                 EAD = SUM(AC2(IS,:,IP))*DDIR*SIGPOW(IS,2)
                 ETOT = ETOT + EAD
@@ -417,7 +417,7 @@
                 ENG(IP) = ZERO
                 CCG(IP) = ZERO
               ELSE
-                IF (MSC > 3) THEN
+                IF (NUMSIG > 3) THEN
                   ETOT   = ETOT   + PTAIL(2)*EAD
                   EWKTOT = EWKTOT + PTAIL(4)*EAD
                   EWCTOT = EWCTOT + PTAIL(4)*EAD
@@ -455,7 +455,7 @@
                IF (LSTCU .OR. LSECU) THEN
                  ETOTC = ZERO
                  ETOTS = ZERO
-                 DO ID = 1, MDC
+                 DO ID = 1, NUMDIR
                    EAD = SUM(AC2(:,ID,IP)*SIGPOW(:,2))*FRINTF*DDIR
                    ETOTC = ETOTC + EAD*COS(SPDIR(ID))
                    ETOTS = ETOTS + EAD*SIN(SPDIR(ID))

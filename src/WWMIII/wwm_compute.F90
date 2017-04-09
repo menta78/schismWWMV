@@ -125,7 +125,7 @@
 #endif
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE COMPUTE_SIMPLE_EXPLICIT'
          FLUSH(STAT%FHNDL)
-!        CALL PLOT_SHADED_CONTOUR_POLAR(SPSIG/PI2,SPDIR*RADDEG,MSC,MDC,AC2(137,:,:),10,MSC,MDC,'BEFORE ANY CALL')
+!        CALL PLOT_SHADED_CONTOUR_POLAR(SPSIG/PI2,SPDIR*RADDEG,NUMSIG,NUMDIR,AC2(137,:,:),10,NUMSIG,NUMDIR,'BEFORE ANY CALL')
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -359,7 +359,7 @@
 
          REAL(rkind)                 :: TMPCFLCAD(MNP), TMPCAD(MNP)
          REAL(rkind)                 :: TMPCFLCAS(MNP), TMPCAS(MNP)
-         REAL(rkind)                 :: CAS(MSC,MDC), CAD(MSC,MDC)
+         REAL(rkind)                 :: CAS(NUMSIG,NUMDIR), CAD(NUMSIG,NUMDIR)
 
          OPEN(310, FILE='cflcad.bin', FORM = 'UNFORMATTED', STATUS = 'UNKNOWN')
          OPEN(311, FILE='cflcas.bin', FORM = 'UNFORMATTED', STATUS = 'UNKNOWN')

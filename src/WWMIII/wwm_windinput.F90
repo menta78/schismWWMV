@@ -21,7 +21,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SET_FRICTION(IP,ACLOC,WIND10,WINDTH,FPM)
+      SUBROUTINE SET_FRICTION(IP,WALOC,WIND10,WINDTH,FPM)
 !
 !     Friction Velocities different formulations ....
 !
@@ -30,7 +30,7 @@
          INTEGER, INTENT(IN)  :: IP
          INTEGER              :: I
 
-         REAL(rkind)   , INTENT(IN)  :: ACLOC(MSC,MDC)
+         REAL(rkind)   , INTENT(IN)  :: WALOC(NUMSIG,NUMDIR)
          REAL(rkind)   , INTENT(IN)  :: WIND10, WINDTH
          REAL(rkind)   , INTENT(OUT) :: FPM
 
@@ -99,7 +99,7 @@
                 UFRIC(IP)  = WIND10 / 28.0_rkind ! First Guess
                 VISK   = 1.5E-5_rkind
 
-                CALL WINDSEASWELLSEP( IP, ACLOC, TM_W, CGP_W, CP_W, TP_W, LP_W, HS_W, KP_W )
+                CALL WINDSEASWELLSEP( IP, WALOC, TM_W, CGP_W, CP_W, TP_W, LP_W, HS_W, KP_W )
                 IF (HS_W .LT. THR) GOTO 101
 
                 EPS_D = MAX(THR,0.5_rkind*HS_W*KP_W)
@@ -184,7 +184,7 @@
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(IN)   :: IP
-      REAL(rkind)   , INTENT(OUT)  :: SSINL(MSC,MDC)
+      REAL(rkind)   , INTENT(OUT)  :: SSINL(NUMSIG,NUMDIR)
       REAL(rkind)   , INTENT(IN)   :: WINDTH
       REAL(rkind)   , INTENT(IN)   :: FPM
       INTEGER                      :: IS, ID
@@ -192,10 +192,10 @@
       REAL(rkind)                  :: SWINA
       AUX = 0.0015_rkind / ( G9*G9*PI2 )
       SSINL  = ZERO 
-      DO IS = 1, MSC
+      DO IS = 1, NUMSIG
         AUX1 = MIN( 2.0_rkind, FPM / SPSIG(IS) )
         AUXH = EXP( -1.0_rkind*(AUX1**4.0_rkind) )
-        DO ID = 1, MDC
+        DO ID = 1, NUMDIR
           IF (SPSIG(IS) .GE. (0.7_rkind*FPM)) THEN
             AUX2 = ( UFRIC(IP) * MAX( 0._rkind , MyCOS(SPDIR(ID)-WINDTH) ) )**4
             SWINA = MAX(0._rkind,AUX * AUX2 * AUXH)
@@ -207,7 +207,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SIN_EXP_KOMEN( IP, WINDTH, ACLOC, PHI, DPHIDN, SSINE )
+      SUBROUTINE SIN_EXP_KOMEN( IP, WINDTH, WALOC, PHI, DPHIDN, SSINE )
          USE DATAPOOL
          IMPLICIT NONE
 !
@@ -215,9 +215,9 @@
 !
          INTEGER, INTENT(IN)          :: IP
          REAL(rkind)   , INTENT(IN)   :: WINDTH
-         REAL(rkind)   , INTENT(IN)   :: ACLOC(MSC,MDC)
-         REAL(rkind)   , INTENT(OUT)  :: SSINE(MSC,MDC)
-         REAL(rkind)   , INTENT(INOUT):: PHI(MSC,MDC), DPHIDN(MSC,MDC)
+         REAL(rkind)   , INTENT(IN)   :: WALOC(NUMSIG,NUMDIR)
+         REAL(rkind)   , INTENT(OUT)  :: SSINE(NUMSIG,NUMDIR)
+         REAL(rkind)   , INTENT(INOUT):: PHI(NUMSIG,NUMDIR), DPHIDN(NUMSIG,NUMDIR)
 
          INTEGER                      :: IS, ID
          REAL(rkind)                  :: AUX1, AUX2, AUX3
@@ -226,14 +226,14 @@
          AUX1 = 0.25_rkind * RHOAW 
          AUX2 = 28._rkind * UFRIC(IP)
 
-         DO IS = 1, MSC
+         DO IS = 1, NUMSIG
             CINV = WK(IS,IP)/SPSIG(IS)
             AUX3 = AUX2 * CINV
-            DO ID = 1, MDC
+            DO ID = 1, NUMDIR
               COSDIF = MyCOS(SPDIR(ID)-WINDTH)
               SWINB = AUX1 * ( AUX3  * COSDIF - 1.0_rkind )
               SWINB = MAX( 0.0_rkind, SWINB * SPSIG(IS) )
-              SSINE(IS,ID) = SWINB * ACLOC(IS,ID)
+              SSINE(IS,ID) = SWINB * WALOC(IS,ID)
               !WRITE(DBG%FHNDL,'(2I10,4F15.8)') IS, ID, SSINE(IS,ID), AUX3, AUX2, AUX1
               PHI(IS,ID) = PHI(IS,ID) + SSINE(IS,ID)
             END DO
@@ -244,15 +244,15 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SIN_MAKIN(IP, WIND10, WINDTH, KMESPC, ETOT, ACLOC, PHI, DPHIDN, SSINE)
+      SUBROUTINE SIN_MAKIN(IP, WIND10, WINDTH, KMESPC, ETOT, WALOC, PHI, DPHIDN, SSINE)
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)    :: IP
          REAL(rkind)   , INTENT(IN)    :: WIND10, WINDTH
-         REAL(rkind)   , INTENT(IN)    :: ACLOC(MSC,MDC)
-         REAL(rkind)   , INTENT(OUT)   :: SSINE(MSC,MDC)
-         REAL(rkind)   , INTENT(INOUT) :: PHI(MSC,MDC), DPHIDN(MSC,MDC)
+         REAL(rkind)   , INTENT(IN)    :: WALOC(NUMSIG,NUMDIR)
+         REAL(rkind)   , INTENT(OUT)   :: SSINE(NUMSIG,NUMDIR)
+         REAL(rkind)   , INTENT(INOUT) :: PHI(NUMSIG,NUMDIR), DPHIDN(NUMSIG,NUMDIR)
 
          INTEGER             :: IS, ID
          REAL(rkind)                :: AUX1, AUX2
@@ -275,7 +275,7 @@
          ATTC  = -10.0_rkind  ! Attenuation coefficient
          MBETA =  32.0_rkind   ! See orignial Paper A GU OCEANS VOL. 104, No.: C4, April 1999 and see Makin & Stam 2003 (KNMI)
 
-         DO IS = 1, MSC
+         DO IS = 1, NUMSIG
            CINV =  WK(IS,IP) / SPSIG(IS) 
            SIGMA = SPSIG(IS)
            IF (WIND10 .LE. THR) THEN
@@ -285,7 +285,7 @@
            END IF
            AUX2  = UFRIC(IP)*CINV
            RMK = 1 - MC_MK * AUX1 ** NC_MK
-           DO ID = 1, MDC
+           DO ID = 1, NUMDIR
              THETA  = SPDIR(ID)
              COSWW  = MyCOS(THETA-WINDTH)
              IF (LATT) THEN
@@ -307,8 +307,8 @@
                  CPHASE      = 0.0_rkind/CINV
                  IF (IS .EQ. 1) DS = SPSIG(IS)
                  IF (IS .GT. 1) DS = SPSIG(IS) - SPSIG(IS-1)
-                 IF (IS .EQ. 1) ELOCAL = ONEHALF * ACLOC(IS,ID) * SPSIG(IS) * SPSIG(IS) ! Simpson
-                 IF (IS .GT. 1) ELOCAL = ONEHALF * ( ACLOC(IS,ID) * SPSIG(IS) + ACLOC(IS-1,ID) * SPSIG(IS-1) ) * DS 
+                 IF (IS .EQ. 1) ELOCAL = ONEHALF * WALOC(IS,ID) * SPSIG(IS) * SPSIG(IS) ! Simpson
+                 IF (IS .GT. 1) ELOCAL = ONEHALF * ( WALOC(IS,ID) * SPSIG(IS) + WALOC(IS-1,ID) * SPSIG(IS-1) ) * DS 
                  ALOCAL      = SQRT(8.0_rkind*ELOCAL)
                  STEEPLOCAL  = ALOCAL  * WK(IS,IP)
                  SWINB       = CYS * RHOAW * STEEPLOCAL * STEEPLOCAL * (ONE - ((WIND10 * COSWW)/CPHASE) ) **2 * SIGMA
@@ -317,7 +317,7 @@
                END IF
              END IF
 
-             SSINE(IS,ID)   = SWINB * ACLOC(IS,ID)
+             SSINE(IS,ID)   = SWINB * WALOC(IS,ID)
 
              IF (ICOMP .GE. 2) THEN
                IF (SWINB .LT. 0) THEN

@@ -2,14 +2,14 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SDS_BOTF(IP,ACLOC,SSBF,DSSBF)
+      SUBROUTINE SDS_BOTF(IP,WALOC,SSBF,DSSBF)
       USE DATAPOOL
       IMPLICIT NONE
 
       INTEGER, INTENT(IN)           :: IP
       REAL(rkind)                   :: UBOT, BOTEXPER, ORBITAL, TMBOT
-      REAL(rkind)   , INTENT(IN)    :: ACLOC(MSC,MDC)
-      REAL(rkind), INTENT(INOUT)    :: SSBF(MSC,MDC), DSSBF(MSC,MDC)
+      REAL(rkind)   , INTENT(IN)    :: WALOC(NUMSIG,NUMDIR)
+      REAL(rkind), INTENT(INOUT)    :: SSBF(NUMSIG,NUMDIR), DSSBF(NUMSIG,NUMDIR)
       INTEGER                       :: IS, ID, J
       REAL(rkind)                   :: KDEP
 #ifdef SCHISM
@@ -27,21 +27,21 @@
 #endif
       TMP_X     = ZERO; TMP_Y = ZERO
 
-      CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT,'FRICTION')
+      CALL WAVE_CURRENT_PARAMETER(IP,WALOC,UBOT,ORBITAL,BOTEXPER,TMBOT,'FRICTION')
  
       CFBOT = PBOTF(3) / G9**2
 
-      DO IS = 1, MSC
+      DO IS = 1, NUMSIG
         KDEP = WK(IS,IP)*DEP(IP)
-        DO ID = 1, MDC 
+        DO ID = 1, NUMDIR 
           DSSBF(IS,ID)  = - CFBOT * (SPSIG(IS) / SINH(MIN(20.0_rkind,KDEP)))**2
-          SSBF(IS,ID)   =   DSSBF(IS,ID) * ACLOC(IS,ID)
+          SSBF(IS,ID)   =   DSSBF(IS,ID) * WALOC(IS,ID)
         END DO
       END DO
 
 #ifdef SCHISM
-      DO IS=1,MSC
-        DO ID=1,MDC
+      DO IS=1,NUMSIG
+        DO ID=1,NUMDIR
           COST = COSTH(ID)
           SINT = SINTH(ID)
           SBF(1,IP)=SBF(1,IP)+SINT*(WK(IS,IP)/SPSIG(IS))*SSBF(IS,ID)*DS_INCR(IS)*DDIR

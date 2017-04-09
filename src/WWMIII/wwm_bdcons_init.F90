@@ -29,7 +29,7 @@
         DXP3 =   IEN(4,IE)
         DYP3 = - IEN(3,IE)
 !AR: ... modifly wave direction by currents ...
-        DO ID=1,MDC
+        DO ID=1,NUMDIR
           EVX=COSTH(ID)
           EVY=SINTH(ID)
           DO I=1,3
@@ -86,7 +86,7 @@
 !        ENDIF
 #ifdef MPI_PARALL_GRID
       CALL exchange_p2di(IOBWB)
-      DO ID = 1, MDC
+      DO ID = 1, NUMDIR
         iwild = IOBPD(ID,:)
         CALL exchange_p2di(iwild)
         IOBPD(ID,:) = iwild
@@ -101,7 +101,7 @@
           WRITE(IOBPOUT%FHNDL,*) IP, ID, IOBWB(IP)
         END DO
         DO IP = 1, MNP
-          DO ID = 1, MDC
+          DO ID = 1, NUMDIR
             WRITE(IOBPDOUT%FHNDL,*) IP, ID, SPDIR(ID)*RADDEG, IOBPD(ID,IP), IOBP(IP)
           ENDDO
         END DO
@@ -665,11 +665,11 @@
         SPPARM = 0.
       ENDIF
       IF (LBCWA .OR. LBCSP .OR. BOUC_NETCDF_OUT_SPECTRA) THEN
-        ALLOCATE( WBAC(MSC,MDC,SPsize), stat=istat)
+        ALLOCATE( WBAC(NUMSIG,NUMDIR,SPsize), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 5')
         WBAC = 0.
         IF (LBINTER) THEN
-          ALLOCATE( WBACOLD(MSC,MDC,SPsize), WBACNEW(MSC,MDC,SPsize), DSPEC(MSC,MDC,SPsize), stat=istat)
+          ALLOCATE( WBACOLD(NUMSIG,NUMDIR,SPsize), WBACNEW(NUMSIG,NUMDIR,SPsize), DSPEC(NUMSIG,NUMDIR,SPsize), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 6')
           WBACOLD = 0.
           WBACNEW = 0.

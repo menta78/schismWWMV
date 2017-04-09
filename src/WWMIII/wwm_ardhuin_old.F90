@@ -149,19 +149,19 @@
         REAL(rkind)     :: SIGMA, FR1, RTH0
         integer istat
 
-        NK    = MSC
+        NK    = NUMSIG
         MK    = NK  ! ?????????????????????????????
-        NTH   = MDC
+        NTH   = NUMDIR
         MTH   = NTH ! ?????????????????????????????
         MSPEC = NSPEC
 
-        ALLOCATE(SIG(0:MSC+1), SIG2(NSPEC), DSIP(0:MSC+1), TH(MDC), stat=istat)
+        ALLOCATE(SIG(0:NUMSIG+1), SIG2(NSPEC), DSIP(0:NUMSIG+1), TH(NUMDIR), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_old, allocate error 1')
         ALLOCATE(ESIN(MSPEC+MTH), ECOS(MSPEC+MTH), EC2(MSPEC+MTH), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_old, allocate error 2')
         ALLOCATE(ES2(MSPEC+MTH),ESC(MSPEC+MTH), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_old, allocate error 3')
-        ALLOCATE(DSII(MSC), DDEN(MSC), DDEN2(NSPEC), stat=istat)
+        ALLOCATE(DSII(NUMSIG), DDEN(NUMSIG), DDEN2(NSPEC), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_old, allocate error 4')
 
         DTH   = DDIR
@@ -691,7 +691,7 @@
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
-      USE DATAPOOL, ONLY : ICOMP, G9, PI2, RADDEG, MSC, MDC, RKIND
+      USE DATAPOOL, ONLY : ICOMP, G9, PI2, RADDEG, NUMSIG, NUMDIR, RKIND
       USE DATAPOOL, ONLY : NSPEC, ZERO, ONE
 !/S      USE W3SERVMD, ONLY: STRACE
 !/T      USE W3ODATMD, ONLY: NDST

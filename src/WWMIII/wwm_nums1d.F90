@@ -18,8 +18,8 @@
 
          DX = XP(4)-XP(3)
 !todo IS ID ordering
-         DO IS = 1, MSC
-           DO ID = 1, MDC
+         DO IS = 1, NUMSIG
+           DO ID = 1, NUMDIR
               ACQ(1:MNP)  = AC2(IS,ID,:)
               CAXQ(1:MNP) = CG(IS,:)*COSTH(ID)+CURTXY(:,1)
               IF (LVAR1D) THEN

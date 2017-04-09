@@ -525,7 +525,7 @@ MODULE WWMaOCN_PGMCL
       real(rkind) USTOKES1, USTOKES2, USTOKES3
       real(rkind) VSTOKES1, VSTOKES2, VSTOKES3
       real(rkind) USTOKESpart, VSTOKESpart, eJPress
-      real(rkind) ACLOC, eWk, eSigma, eLoc, eSinhkd, eSinh2kd, eSinhkd2
+      real(rkind) WALOC, eWk, eSigma, eLoc, eSinhkd, eSinh2kd, eSinhkd2
       real(rkind) zMid, HS, ETOT, MinVal_MFACT, MaxVal_MFACT, MaxVal_eQuot1
       real(rkind) MinVal_MFACT_gl, MaxVal_MFACT_gl, MaxHS, SumHS, AvgHS
       real(rkind) WLM, KLM, AvgStokesNormA, AvgStokesNormB
@@ -594,7 +594,7 @@ MODULE WWMaOCN_PGMCL
         eJpress_loc=0
         eZetaCorr_loc=0
         IF (L_FIRST_ORDER_ARDHUIN) THEN
-          DO IS=1,MSC
+          DO IS=1,NUMSIG
             eMult=SPSIG(IS)*DDIR*DS_INCR(IS)
             eWk=WK(IS,IP)
             kD=MIN(KDMAX, eWk*eDep)
@@ -607,7 +607,7 @@ MODULE WWMaOCN_PGMCL
               eUint=0
               eVint=0
             END IF
-            DO ID=1,MDC
+            DO ID=1,NUMDIR
               eLoc=AC2(IS,ID,IP)*eMult
               eScal=COSTH(ID)*PartialU1(1)+SINTH(ID)*PartialV1(1)
               eZeta=eWk/eSinhkd + (eWk/eSigma)*eScal
@@ -633,7 +633,7 @@ MODULE WWMaOCN_PGMCL
             END IF
           END DO
         ELSE
-          DO IS=1,MSC
+          DO IS=1,NUMSIG
             eMult=SPSIG(IS)*DDIR*DS_INCR(IS)
             eWk=WK(IS,IP)
             kD=MIN(KDMAX, eWk*eDep)
@@ -642,7 +642,7 @@ MODULE WWMaOCN_PGMCL
             eSinhkd=MySINH(kD)
             eSinhkd2=eSinhkd**2
             eSigma=SPSIG(IS)
-            DO ID=1,MDC
+            DO ID=1,NUMDIR
               eLoc=AC2(IS,ID,IP)*eMult
               TheInt=0
               DO k=1,Nlevel
@@ -837,7 +837,7 @@ MODULE WWMaOCN_PGMCL
       real(rkind) UBOT, ORBITAL, BOTEXPER, TMBOT
       real(rkind) FPP, TPP, CPP, WNPP, CGPP, KPP, LPP, PEAKDSPR, PEAKDM, DPEAK
       real(rkind) ETOTS,ETOTC,DM,DSPR
-      REAL(RKIND) :: ACLOC(MSC,MDC)
+      REAL(RKIND) :: WALOC(NUMSIG,NUMDIR)
       real(rkind) cPhase, eStokesNorm
       real(rkind) kD
       real(rkind) :: TPPD, KPPD, CGPD, CPPD
@@ -925,11 +925,11 @@ MODULE WWMaOCN_PGMCL
       NbAlpha=0
 # endif
       DO IP = 1, MNP
-        ACLOC = AC2(:,:,IP)
-        CALL MEAN_PARAMETER(IP,ACLOC,MSC,HS,TM01,TM02,TM10,KLM,WLM)
-        CALL WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT,'PGMCL_ROMS_OUT')
-        CALL MEAN_DIRECTION_AND_SPREAD(IP,ACLOC,MSC,ETOTS,ETOTC,DM,DSPR)
-        CALL PEAK_PARAMETER(IP,ACLOC,MSC,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
+        WALOC = AC2(:,:,IP)
+        CALL MEAN_PARAMETER(IP,WALOC,NUMSIG,HS,TM01,TM02,TM10,KLM,WLM)
+        CALL WAVE_CURRENT_PARAMETER(IP,WALOC,UBOT,ORBITAL,BOTEXPER,TMBOT,'PGMCL_ROMS_OUT')
+        CALL MEAN_DIRECTION_AND_SPREAD(IP,WALOC,NUMSIG,ETOTS,ETOTC,DM,DSPR)
+        CALL PEAK_PARAMETER(IP,WALOC,NUMSIG,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
 # ifdef DEBUG
         SumUFRICsqr=SumUFRICsqr + UFRIC(IP)*UFRIC(IP)
         eMag=SQRT(WINDXY(IP,1)**2 + WINDXY(IP,2)**2)

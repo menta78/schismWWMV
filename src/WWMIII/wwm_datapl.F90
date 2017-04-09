@@ -62,8 +62,8 @@
      &                         SIGMACOR=>SIGMA,              & !sigma coord.
      &                         WINDX0=>WINDX,                & !x-wind
      &                         WINDY0=>WINDY,                & !x-wind
-     &                         MSC_SCHISM => MSC2,            & !msc2 from SCHISM ...
-     &                         MDC_SCHISM => MDC2,            & !mdc2 from SCHISM ...
+     &                         NUMSIG_SCHISM => NUMSIG2,            & !NUMSIG2 from SCHISM ...
+     &                         NUMDIR_SCHISM => NUMDIR2,            & !NUMDIR2 from SCHISM ...
      &                         WWAVE_FORCE=>wwave_force,     & !wave-induced force
      &                         OUTT_INTPAR=>out_wwm,         & !outputs from WWM
      &                         WIND_INTPAR=>out_wwm_windpar, & ! boundary layer stuff from wwm ...
@@ -204,7 +204,7 @@
          LOGICAL    :: ABORT_BLOWUP = .FALSE.
          INTEGER    :: LEVEL_HS_BLOW = 50
 
-         INTEGER    :: HMNP, HMNE, HMSC, HMDC, HFRLOW, HFRHIGH
+         INTEGER    :: HMNP, HMNE, HNUMSIG, HNUMDIR, HFRLOW, HFRHIGH
 
          INTEGER    :: MNP_WIND
 
@@ -536,7 +536,7 @@
          REAL(rkind)      :: FRINTH
          REAL(rkind)      :: XIS, XISLN
          REAL(rkind)      :: DDIR
-         REAL(rkind)      :: DELTH ! PI2/MDC
+         REAL(rkind)      :: DELTH ! PI2/NUMDIR
          REAL(rkind)      :: FDIR
          REAL(rkind)      :: MINDIR
          REAL(rkind)      :: MAXDIR
@@ -580,8 +580,8 @@
          INTEGER   :: MNE
          INTEGER   :: NVRT
 #endif
-         INTEGER   :: MDC
-         INTEGER   :: MSC, MSCL
+         INTEGER   :: NUMDIR
+         INTEGER   :: NUMSIG, NUMSIGL
          INTEGER   :: NSPEC
 
          INTEGER, allocatable :: ID_NEXT(:), ID_PREV(:)
@@ -745,8 +745,8 @@
          REAL(rkind), ALLOCATABLE    :: SDIR  (:,:)
          REAL(rkind), ALLOCATABLE    :: SPRD  (:,:)
 
-         INTEGER              :: WBMSC
-         INTEGER              :: WBMDC
+         INTEGER              :: WBNUMSIG
+         INTEGER              :: WBNUMDIR
 !
 ! ... part ...
 !
@@ -799,7 +799,7 @@
          REAL(rkind),   ALLOCATABLE             :: ALL_VAR_WW3(:,:,:)
 
 
-         INTEGER                                :: NP_WW3, MSC_WW3, MDC_WW3, MAXSTEP_WW3, TSTART_WW3(2)
+         INTEGER                                :: NP_WW3, NUMSIG_WW3, NUMDIR_WW3, MAXSTEP_WW3, TSTART_WW3(2)
 
          REAL(rkind)                            :: DTBOUND_WW3, DDIR_WW3
          REAL(rkind),   ALLOCATABLE             :: FQ_WW3(:)
@@ -958,10 +958,13 @@
 !
 !  nonlinear interactions ...
 !
-         INTEGER                :: WWINT(20)
-         INTEGER                :: MSC4MI, MSC4MA, MDC4MI, MDC4MA, MSCMAX, MDCMAX
+         INTEGER                       :: NUMSIG4MI, NUMSIG4MA, NUMDIR4MI, NUMDIR4MA, NUMSIGMAX, NUMDIRMAX
          REAL(rkind)                   :: DAL1, DAL2, DAL3
-         REAL(rkind)                   :: WWAWG(8), WWSWG(8)
+         INTEGER                       :: IDP, IDP1, IDM, IDM1
+         INTEGER                       :: ISP, ISP1, ISM, ISM1
+         INTEGER                       :: ISHGH, ISCLW, ISCHG, IDLOW, IDHGH
+         REAL(rkind)                   :: AWG1, AWG2, AWG3, AWG4, AWG5, AWG6, AWG7, AWG8
+         REAL(rkind)                   :: SWG1, SWG2, SWG3, SWG4, SWG5, SWG6, SWG7, SWG8
          REAL(rkind), ALLOCATABLE      :: AF11(:)
 !
 ! ... output parameter ... wwmDoutput.mod
@@ -1065,7 +1068,7 @@
          REAL(rkind), ALLOCATABLE :: WATLEVLOC_STATIONS(:)
          REAL(rkind), ALLOCATABLE :: WKLOC_STATIONS(:,:)
          REAL(rkind), ALLOCATABLE :: CURTXYLOC_STATIONS(:,:)
-         REAL(rkind), ALLOCATABLE :: ACLOC_STATIONS(:,:,:)
+         REAL(rkind), ALLOCATABLE :: WALOC_STATIONS(:,:,:)
          REAL(rkind), ALLOCATABLE :: USTARLOC_STATIONS(:)
          REAL(rkind), ALLOCATABLE :: WINDYLOC_STATIONS(:)
          REAL(rkind), ALLOCATABLE :: WINDXLOC_STATIONS(:)
@@ -1081,7 +1084,7 @@
          REAL(rkind), ALLOCATABLE :: CD_SUM(:)
          REAL(rkind), ALLOCATABLE :: DEPLOC_SUM(:)
          REAL(rkind), ALLOCATABLE :: WATLEVLOC_SUM(:)
-         REAL(rkind), ALLOCATABLE :: ACLOC_SUM(:,:,:)
+         REAL(rkind), ALLOCATABLE :: WALOC_SUM(:,:,:)
          REAL(rkind), ALLOCATABLE :: WKLOC_SUM(:,:)
          REAL(rkind), ALLOCATABLE :: CURTXYLOC_SUM(:,:)
 #endif
@@ -1161,7 +1164,7 @@
                              ! value 2 no allocation
          REAL(rkind), allocatable :: U_JACOBI(:,:,:)
          REAL(rkind), allocatable :: ASPAR_JAC(:,:,:), B_JAC(:,:,:)
-         REAL(rkind), allocatable :: K_CRFS_MSC(:,:,:), K_CRFS_U(:,:)
+         REAL(rkind), allocatable :: K_CRFS_NUMSIG(:,:,:), K_CRFS_U(:,:)
 
          REAL(rkind)          :: RTHETA  = 0.5
          REAL(rkind)          :: QSCONV1 = 0.97
@@ -1239,7 +1242,7 @@
          REAL(rkind), PARAMETER       :: USTARM = 5.
 
          INTEGER, PARAMETER           :: ISHALLO = 0  ! ISHALLO = 1 is not working yet ...
-         INTEGER, ALLOCATABLE         :: MSC_HF(:)
+         INTEGER, ALLOCATABLE         :: NUMSIG_HF(:)
 
          REAL(rkind), ALLOCATABLE     :: TAUTOT(:)   ! Total Stress from the Waves
          REAL(rkind), ALLOCATABLE     :: TAUWX(:)    ! X Component of the total stress (m^2/s/s)
@@ -1417,15 +1420,15 @@
          integer, dimension(:), pointer :: NNZ_len_r
          integer, dimension(:,:), pointer :: NNZ_index_s
          integer, dimension(:,:), pointer :: NNZ_index_r
-         ! variables for partition of MSC*MDC freq/dir into blocks.
+         ! variables for partition of NUMSIG*NUMDIR freq/dir into blocks.
          integer Nblock
          integer maxBlockLength
          integer, dimension(:), pointer :: BlockLength
          integer, dimension(:,:), pointer :: ISindex
          integer, dimension(:,:), pointer :: IDindex
-         ! variables for partitioning MSC
+         ! variables for partitioning NUMSIG
          integer, dimension(:), pointer :: ISbegin, ISend, ISlen
-         integer NbMSCblock
+         integer NbNUMSIGblock
          !
          integer, dimension(:), pointer :: Jstatus_L
          integer, dimension(:), pointer :: Jstatus_U

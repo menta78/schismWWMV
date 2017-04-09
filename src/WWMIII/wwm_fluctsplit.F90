@@ -27,21 +27,21 @@
            ENDIF
          ELSE
            IF (AMETHOD == 1) THEN
-             DO ID = 1, MDC
-               DO IS = 1, MSC
+             DO ID = 1, NUMDIR
+               DO IS = 1, NUMSIG
                  CALL EXPLICIT_N_SCHEME(IS,ID)
                END DO
              END DO
            ELSE IF (AMETHOD == 2) THEN
-             DO ID = 1, MDC
-               DO IS = 1, MSC
+             DO ID = 1, NUMDIR
+               DO IS = 1, NUMSIG
                  CALL EXPLICIT_PSI_SCHEME(IS,ID)
 !                 CALL EXPLICIT_LFPSI_SCHEME_GSE(IS,ID)
                END DO
              END DO
            ELSE IF (AMETHOD == 3) THEN
-             DO ID = 1, MDC
-               DO IS = 1, MSC
+             DO ID = 1, NUMDIR
+               DO IS = 1, NUMSIG
                  CALL EXPLICIT_LFPSI_SCHEME(IS,ID)
 !                 CALL EXPLICIT_LFPSI_SCHEME_GSE(IS,ID)
                END DO
@@ -65,7 +65,7 @@
        REAL(rkind)         :: DTMAX
  
 #ifdef PETSC
-       ! petsc block has its own loop over MSC MDC
+       ! petsc block has its own loop over NUMSIG NUMDIR
        IF(AMETHOD == 5) THEN
          call EIMPS_PETSC_BLOCK
          RETURN
@@ -74,30 +74,30 @@
 !$OMP PARALLEL
        IF (AMETHOD == 1) THEN
 !$OMP DO PRIVATE (ID,IS)
-           DO ID = 1, MDC
-             DO IS = 1, MSC
+           DO ID = 1, NUMDIR
+             DO IS = 1, NUMSIG
                CALL EIMPS_V1( IS, ID)
              END DO
            END DO
          ELSE IF (AMETHOD == 2) THEN
 !$OMP DO PRIVATE (ID,IS)
-           DO ID = 1, MDC
-             DO IS = 1, MSC
+           DO ID = 1, NUMDIR
+             DO IS = 1, NUMSIG
                CALL CNIMPS( IS, ID)
              END DO
            END DO
          ELSE IF (AMETHOD == 3) THEN
 !$OMP DO PRIVATE (ID,IS)
-           DO ID = 1, MDC
-             DO IS = 1, MSC
+           DO ID = 1, NUMDIR
+             DO IS = 1, NUMSIG
                CALL CNEIMPS( IS, ID, DTMAX)
              END DO
            END DO
          ELSE IF (AMETHOD == 4) THEN
 #ifdef PETSC
 !$OMP DO PRIVATE (ID,IS)
-           DO ID = 1, MDC
-             DO IS = 1, MSC
+           DO ID = 1, NUMDIR
+             DO IS = 1, NUMSIG
                CALL EIMPS_PETSC(IS, ID)
              END DO
            END DO
@@ -128,7 +128,7 @@
 
 !2DO MATHIEU: Please clean this ... and please check this  
 #ifdef PETSC
-       ! petsc block has its own loop over MSC MDC
+       ! petsc block has its own loop over NUMSIG NUMDIR
        IF(AMETHOD == 5) THEN
          call EIMPS_PETSC_BLOCK
          RETURN
@@ -149,30 +149,30 @@
 !$OMP PARALLEL
        IF (AMETHOD == 1) THEN
 !$OMP DO PRIVATE (ID,IS)
-           DO ID = 1, MDC
-             DO IS = 1, MSC
+           DO ID = 1, NUMDIR
+             DO IS = 1, NUMSIG
                CALL EIMPS_V1( IS, ID)
              END DO
            END DO
        ELSE IF (AMETHOD == 2) THEN
 !$OMP DO PRIVATE (ID,IS)
-           DO ID = 1, MDC
-             DO IS = 1, MSC
+           DO ID = 1, NUMDIR
+             DO IS = 1, NUMSIG
                CALL CNIMPS( IS, ID)
              END DO
            END DO
        ELSE IF (AMETHOD == 3) THEN
 !$OMP DO PRIVATE (ID,IS)
-           DO ID = 1, MDC
-             DO IS = 1, MSC
+           DO ID = 1, NUMDIR
+             DO IS = 1, NUMSIG
                CALL CNEIMPS( IS, ID, DTMAX)
              END DO
            END DO
        ELSE IF (AMETHOD == 4) THEN
 #ifdef PETSC
 !$OMP DO PRIVATE (ID,IS)
-           DO ID = 1, MDC
-             DO IS = 1, MSC
+           DO ID = 1, NUMDIR
+             DO IS = 1, NUMSIG
                CALL EIMPS_PETSC(IS, ID)
              END DO
            END DO
@@ -737,8 +737,8 @@
 
            IDD = ID + IGSE - NGSE + 1 
            IF (IDD == 0) THEN
-             IDD = MDC
-           ELSE IF (IDD == MDC + 1) THEN
+             IDD = NUMDIR
+           ELSE IF (IDD == NUMDIR + 1) THEN
              IDD = 1
            ENDIF
 
@@ -1389,7 +1389,7 @@
 
 !         WRITE(DBG%FHNDL,*) 'CALL SOLVER'
 
-!         WRITE(DBG%FHNDL,*) DT4A, MSC, MDC, MNE
+!         WRITE(DBG%FHNDL,*) DT4A, NUMSIG, NUMDIR, MNE
 !         WRITE(DBG%FHNDL,*) 'WRITE CG', SUM(CG)
 !         WRITE(DBG%FHNDL,*) SUM(XP), SUM(YP)
 !         WRITE(DBG%FHNDL,*) SUM(PHIA), SUM(DPHIDNA)
@@ -1638,7 +1638,7 @@
 
 !         WRITE(DBG%FHNDL,*) 'CALL SOLVER'
 
-!         WRITE(DBG%FHNDL,*) DT4A, MSC, MDC, MNE
+!         WRITE(DBG%FHNDL,*) DT4A, NUMSIG, NUMDIR, MNE
 !         WRITE(DBG%FHNDL,*) 'WRITE CG', SUM(CG)
 !         WRITE(DBG%FHNDL,*) SUM(XP), SUM(YP)
 !         WRITE(DBG%FHNDL,*) SUM(PHIA), SUM(DPHIDNA)
@@ -2206,7 +2206,7 @@
          USE DATAPOOL
          IMPLICIT NONE
 
-         REAL(rkind), INTENT(OUT)  :: CX(MSC,MDC,MNP), CY(MSC,MDC,MNP)
+         REAL(rkind), INTENT(OUT)  :: CX(NUMSIG,NUMDIR,MNP), CY(NUMSIG,NUMDIR,MNP)
 
          INTEGER     :: IP, IS, ID
 
@@ -2215,8 +2215,8 @@
 ! Loop over the resident nodes only ... exchange is done in the calling routine
 !
 
-       DO IS = 1, MSC
-         DO ID = 1, MDC
+       DO IS = 1, NUMSIG
+         DO ID = 1, NUMDIR
            DO IP = 1, MNP
              IF (LSECU .OR. LSTCU) THEN
                CX(IS,ID,IP) = CG(IS,IP)*COSTH(ID)+CURTXY(IP,1)
@@ -2255,7 +2255,7 @@
       SUBROUTINE INIT_FLUCT_ARRAYS
          USE DATAPOOL
          IMPLICIT NONE
-         ALLOCATE(CCON(MNP), SI(MNP), ITER_EXP(MSC,MDC), ITER_EXPD(MSC), stat=istat)
+         ALLOCATE(CCON(MNP), SI(MNP), ITER_EXP(NUMSIG,NUMDIR), ITER_EXPD(NUMSIG), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 1')
          CCON = 0
          SI = ZERO
@@ -2267,7 +2267,7 @@
          I_DIAG = 0
 
          IF (LVECTOR .and. (AMETHOD .eq. 1) .and. (ICOMP.eq.0)) THEN
-           ALLOCATE(FLALLGL(MSC,MDC,3,MNE), stat=istat)
+           ALLOCATE(FLALLGL(NUMSIG,NUMDIR,3,MNE), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 3')
          END IF
         
@@ -2587,7 +2587,7 @@
         WRITE(STAT%FHNDL,'("+TRACE......",A)') 'SET UP SPARSE MATRIX POINTER ... SETUP POINTER'
 !
 ! Allocate sparse matrix pointers using the Compressed Sparse Row Format CSR ... this is now done only of MNP nodes
-! The next step is to do it for the whole Matrix MNP * MSC * MDC
+! The next step is to do it for the whole Matrix MNP * NUMSIG * NUMDIR
 ! see ...:x
 !
 ! JA Pointer according to the convention in my thesis see p. 123
@@ -2729,13 +2729,13 @@
             DEALLOCATE(REV_BOOK)
           END IF
           IF (ASPAR_LOCAL_LEVEL .le. 1) THEN
-            ALLOCATE (ASPAR_JAC(MSC,MDC,NNZ), stat=istat)
+            ALLOCATE (ASPAR_JAC(NUMSIG,NUMDIR,NNZ), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
             ASPAR_JAC = zero
-            TMP1 = MyREAL(MSC)*MyREAL(MDC)*MyREAL(NNZ*8)
+            TMP1 = MyREAL(NUMSIG)*MyREAL(NUMDIR)*MyREAL(NNZ*8)
             TMP2 = 1024**2
             WRITE(STAT%FHNDL,'("+TRACE......",A,F15.4,A)') 'MAX MEMORY SIZE OF ASPAR_JAC =', TMP1/TMP2, 'MB'
-            TMP1 = TMP1 + MyREAL(MSC) * MyREAL(MDC) * MyREAL(MNP) * 4 * 8
+            TMP1 = TMP1 + MyREAL(NUMSIG) * MyREAL(NUMDIR) * MyREAL(MNP) * 4 * 8
             WRITE(STAT%FHNDL,'("+TRACE......",A,F15.4,A)') 'TOTAL MEMORY SIZE =', TMP1/TMP2, 'MB'
           END IF
           IF ((ASPAR_LOCAL_LEVEL .ge. 5).and.(ASPAR_LOCAL_LEVEL .le. 7)) THEN
@@ -2743,18 +2743,18 @@
             DO IP = 1, NP_RES
               SUM_CCON = SUM_CCON +CCON(IP)
             END DO
-            ALLOCATE(K_CRFS_MSC(12, MSC,SUM_CCON), K_CRFS_U(6,SUM_CCON), stat=istat)
+            ALLOCATE(K_CRFS_NUMSIG(12, NUMSIG,SUM_CCON), K_CRFS_U(6,SUM_CCON), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9b')
-            SizeAlloc=12*MSC*SUM_CCON
+            SizeAlloc=12*NUMSIG*SUM_CCON
             WRITE(STAT%FHNDL,*) 'LEVEL 5, nb   =', SizeAlloc
-            SizeAlloc=MDC*MSC*NNZ
+            SizeAlloc=NUMDIR*NUMSIG*NNZ
             WRITE(STAT%FHNDL,*) 'ASPAR_JAC, nb =', SizeAlloc
-            SizeAlloc=MDC*MSC*MNP
+            SizeAlloc=NUMDIR*NUMSIG*MNP
             WRITE(STAT%FHNDL,*) 'U_JAC, nb     =', SizeAlloc
           END IF
           !
           IF ((.NOT. LNONL) .AND. SOURCE_IMPL .AND. (ASPAR_LOCAL_LEVEL.le.1)) THEN
-            ALLOCATE (B_JAC(MSC,MDC,MNP), stat=istat)
+            ALLOCATE (B_JAC(NUMSIG,NUMDIR,MNP), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
             B_JAC = zero
           END IF
@@ -2792,19 +2792,19 @@
          REAL(rkind)  :: DTMAX_GLOBAL_EXP, DTMAX_EXP
 
 #ifdef MPI_PARALL_GRID
-         REAL(rkind)  :: WILD(MNP), WILD2D(MDC,MNP)
+         REAL(rkind)  :: WILD(MNP), WILD2D(NUMDIR,MNP)
 #endif
          REAL(rkind)  :: REST, CFLXY
-         REAL(rkind)  :: LAMBDA(2,MSC,MDC), DT4AI
-         REAL(rkind)  :: FL11(MSC,MDC),FL12(MSC,MDC),FL21(MSC,MDC),FL22(MSC,MDC),FL31(MSC,MDC),FL32(MSC,MDC)
-         REAL(rkind)  :: KTMP(MSC,MDC,3)
-         REAL(rkind)  :: U3(3), U33(MSC,MDC,3), ST1, ST3(MSC,MDC)
-         REAL(rkind)  :: KKSUM(MSC,MDC,MNP), ST(MSC,MDC,MNP), N(MSC,MDC,MNE)
-         REAL(rkind)  :: CX(MSC,MDC,MNP), CY(MSC,MDC,MNP)
-         REAL(rkind)  :: FLALL(MSC,MDC,3,MNE)
-         REAL(rkind)  :: KELEM(MSC,MDC,3,MNE)
-         REAL(rkind)  :: FL111(MSC,MDC), FL112(MSC,MDC), FL211(MSC,MDC), FL212(MSC,MDC), FL311(MSC,MDC), FL312(MSC,MDC)
-         REAL(rkind)  :: UTILDE3(MNE), UTILDE33(MSC,MDC)
+         REAL(rkind)  :: LAMBDA(2,NUMSIG,NUMDIR), DT4AI
+         REAL(rkind)  :: FL11(NUMSIG,NUMDIR),FL12(NUMSIG,NUMDIR),FL21(NUMSIG,NUMDIR),FL22(NUMSIG,NUMDIR),FL31(NUMSIG,NUMDIR),FL32(NUMSIG,NUMDIR)
+         REAL(rkind)  :: KTMP(NUMSIG,NUMDIR,3)
+         REAL(rkind)  :: U3(3), U33(NUMSIG,NUMDIR,3), ST1, ST3(NUMSIG,NUMDIR)
+         REAL(rkind)  :: KKSUM(NUMSIG,NUMDIR,MNP), ST(NUMSIG,NUMDIR,MNP), N(NUMSIG,NUMDIR,MNE)
+         REAL(rkind)  :: CX(NUMSIG,NUMDIR,MNP), CY(NUMSIG,NUMDIR,MNP)
+         REAL(rkind)  :: FLALL(NUMSIG,NUMDIR,3,MNE)
+         REAL(rkind)  :: KELEM(NUMSIG,NUMDIR,3,MNE)
+         REAL(rkind)  :: FL111(NUMSIG,NUMDIR), FL112(NUMSIG,NUMDIR), FL211(NUMSIG,NUMDIR), FL212(NUMSIG,NUMDIR), FL311(NUMSIG,NUMDIR), FL312(NUMSIG,NUMDIR)
+         REAL(rkind)  :: UTILDE3(MNE), UTILDE33(NUMSIG,NUMDIR)
          REAL(rkind)  :: USOC, WVC, DIFRU
 
 #ifdef TIMINGS
@@ -2813,7 +2813,7 @@
 !
 ! local parameter
 !
-         REAL(rkind) :: TMP(MSC,MDC)
+         REAL(rkind) :: TMP(NUMSIG,NUMDIR)
 !
 !        Calculate phase speeds for the certain spectral component ...
 !
@@ -2823,8 +2823,8 @@
          ST    = ZERO
          N     = ZERO
 
-         DO IS = 1, MSC
-           DO ID = 1, MDC
+         DO IS = 1, NUMSIG
+           DO ID = 1, NUMDIR
              DO IP = 1, MNP
                IF (LSECU .OR. LSTCU) THEN
                  CX(IS,ID,IP) = CG(IS,IP)*COSTH(ID)+CURTXY(IP,1)
@@ -2900,8 +2900,8 @@
              KKSUM(:,:,NI) = KKSUM(:,:,NI) + KELEM(:,:,:,IE)
            END DO
            IF (IVECTOR == 1) THEN
-             DO ID = 1, MDC
-               DO IS = 1, MSC
+             DO ID = 1, NUMDIR
+               DO IS = 1, NUMSIG
                  DTMAX_GLOBAL_EXP = VERYLARGE
 #ifdef MPI_PARALL_GRID
                  DO IP = 1, MNP
@@ -2952,7 +2952,7 @@
                ITER_MAX = ABS(NINT(CFLXY))
              END IF
            ELSE IF (IVECTOR .EQ. 3) THEN
-             DO IS = 1, MSC
+             DO IS = 1, NUMSIG
                DTMAX_GLOBAL_EXP = VERYLARGE
 #ifdef MPI_PARALL_GRID
                DO IP = 1, NP_RES
@@ -2978,7 +2978,7 @@
                END IF
              END DO
            ELSE IF (IVECTOR .EQ. 4) THEN
-             DO IS = 1, MSC
+             DO IS = 1, NUMSIG
                DTMAX_GLOBAL_EXP = VERYLARGE
 #ifdef MPI_PARALL_GRID
                DO IP = 1, NP_RES
@@ -3036,8 +3036,8 @@
          CALL WAV_MY_WTIME(TIME1)
 #endif
          IF (IVECTOR == 1) THEN
-         DO ID = 1, MDC
-           DO IS = 1, MSC
+         DO ID = 1, NUMDIR
+           DO IS = 1, NUMSIG
              DT4AI = DT4A/ITER_EXP(IS,ID)
              DO IT = 1, ITER_EXP(IS,ID)
                ST(:,IS,ID) = ZERO ! Init. ... only used over the residual nodes see IP loop
@@ -3059,8 +3059,8 @@
          ELSE IF (IVECTOR == 2) THEN
          DT4AI = DT4A/ITER_MAX
          DO IT = 1, ITER_MAX
-           DO ID = 1, MDC
-             DO IS = 1, MSC
+           DO ID = 1, NUMDIR
+             DO IS = 1, NUMSIG
                ST(IS,ID,:) = ZERO ! Init. ... only used over the residual nodes see IP loop
                DO IE = 1, MNE
                  NI = INE(:,IE)
@@ -3078,11 +3078,11 @@
 #endif
          END DO !IT
          ELSE IF (IVECTOR == 3) THEN
-         DO IS = 1, MSC
+         DO IS = 1, NUMSIG
            ITER_MAX = ITER_EXPD(IS)
            DT4AI = DT4A/ITER_MAX
            DO IT = 1, ITER_MAX
-             DO ID = 1, MDC
+             DO ID = 1, NUMDIR
                ST(:,IS,ID) = ZERO ! Init. ... only used over the residual nodes see IP loop
                DO IE = 1, MNE
                  NI = INE(:,IE)
@@ -3100,11 +3100,11 @@
            END DO !IT
          END DO !IS
          ELSE IF (IVECTOR == 4) THEN
-         DO IS = 1, MSC
+         DO IS = 1, NUMSIG
            ITER_MAX = ITER_EXPD(IS)
            DT4AI = DT4A/ITER_MAX
            DO IT = 1, ITER_MAX
-             DO ID = 1, MDC
+             DO ID = 1, NUMDIR
                DO IE = 1, MNE
                  NI = INE(:,IE)
                  U3 = AC2(IS,ID,NI)
@@ -3133,8 +3133,8 @@
 !openmp directive here 
            DO IP = 1, MNP
              IF (.FALSE.) THEN
-               DO ID = 1, MDC
-                 DO IS = 1, MSC
+               DO ID = 1, NUMDIR
+                 DO IS = 1, NUMSIG
                    ST1 = ZERO
                    DO I = 1, CCON(IP)
                      IE   = IE_CELL2(IP,I)
@@ -3159,7 +3159,7 @@
                AC2(:,:,IP) = MAX(ZERO,AC2(:,:,IP)-DT4AI/SI(IP)*ST3*IOBWB(IP))
              ENDIF
            END DO !IP
-           DO IS = 1, MSC
+           DO IS = 1, NUMSIG
              AC2(IS,:,:)=AC2(IS,:,:)*DBLE(IOBPD)
            END DO 
 #ifdef MPI_PARALL_GRID
@@ -3185,13 +3185,13 @@
 !
          REAL(rkind)  :: DTMAX_GLOBAL_EXP, DTMAX_EXP
          REAL(rkind)  :: REST, CFLXY
-         REAL(rkind)  :: LAMBDA(2,MSC,MDC), DT4AI
-         REAL(rkind)  :: FL11(MSC,MDC),FL12(MSC,MDC),FL21(MSC,MDC),FL22(MSC,MDC),FL31(MSC,MDC),FL32(MSC,MDC)
-         REAL(rkind)  :: FL111(MSC,MDC), FL112(MSC,MDC), FL211(MSC,MDC), FL212(MSC,MDC), FL311(MSC,MDC), FL312(MSC,MDC)
-         REAL(rkind)  :: KTMP(MSC,MDC,3)
-         REAL(rkind)  :: U33(MSC,MDC,3), ST3(MSC,MDC)
-         REAL(rkind)  :: KKSUM(MSC,MDC,MNP), ST(MSC,MDC,MNP), N(MSC,MDC,MNE)
-         REAL(rkind)  :: CX(MSC,MDC,MNP), CY(MSC,MDC,MNP), UTILDE33(MSC,MDC)
+         REAL(rkind)  :: LAMBDA(2,NUMSIG,NUMDIR), DT4AI
+         REAL(rkind)  :: FL11(NUMSIG,NUMDIR),FL12(NUMSIG,NUMDIR),FL21(NUMSIG,NUMDIR),FL22(NUMSIG,NUMDIR),FL31(NUMSIG,NUMDIR),FL32(NUMSIG,NUMDIR)
+         REAL(rkind)  :: FL111(NUMSIG,NUMDIR), FL112(NUMSIG,NUMDIR), FL211(NUMSIG,NUMDIR), FL212(NUMSIG,NUMDIR), FL311(NUMSIG,NUMDIR), FL312(NUMSIG,NUMDIR)
+         REAL(rkind)  :: KTMP(NUMSIG,NUMDIR,3)
+         REAL(rkind)  :: U33(NUMSIG,NUMDIR,3), ST3(NUMSIG,NUMDIR)
+         REAL(rkind)  :: KKSUM(NUMSIG,NUMDIR,MNP), ST(NUMSIG,NUMDIR,MNP), N(NUMSIG,NUMDIR,MNE)
+         REAL(rkind)  :: CX(NUMSIG,NUMDIR,MNP), CY(NUMSIG,NUMDIR,MNP), UTILDE33(NUMSIG,NUMDIR)
          REAL(rkind)  :: USOC, WVC, DIFRU
 
 #ifdef TIMINGS
@@ -3200,7 +3200,7 @@
 !
 ! local parameter
 !
-         REAL(rkind) :: TMP(MSC,MDC)
+         REAL(rkind) :: TMP(NUMSIG,NUMDIR)
 !
 !        Calculate phase speeds for the certain spectral component ...
 !
@@ -3215,8 +3215,8 @@
            N     = ZERO
 
            DO IP = 1, MNP
-             DO IS = 1, MSC
-               DO ID = 1, MDC
+             DO IS = 1, NUMSIG
+               DO ID = 1, NUMDIR
                  IF (LSECU .OR. LSTCU) THEN
                    CX(IS,ID,IP) = CG(IS,IP)*COSTH(ID)+CURTXY(IP,1)
                    CY(IS,ID,IP) = CG(IS,IP)*SINTH(ID)+CURTXY(IP,2)
@@ -3331,7 +3331,7 @@
                IPOS     = POS_CELL2(IP,I)
                ST3      = ST3 + KELEMGL(:,:,IPOS,IE)*(U33(:,:,IPOS)-UTILDE33)
              END DO
-             DO IS = 1, MSC 
+             DO IS = 1, NUMSIG 
                AC2(IS,:,IP) = MAX(ZERO,AC2(IS,:,IP)-DT4AI/SI(IP)*ST3(IS,:)*IOBWB(IP))*IOBPD(:,IP)
              END DO 
            END DO !IP
@@ -3389,8 +3389,8 @@
          N     = ZERO
 
          IF (LCALC) THEN
-           DO ID = 1, MDC
-             DO IS = 1, MSC
+           DO ID = 1, NUMDIR
+             DO IS = 1, NUMSIG
                KMAX = ZERO
                KSUM = ZERO
                DO IP = 1, MNP
@@ -3458,8 +3458,8 @@
          DT4AI = DT4A/ITER_MAX
 
          DO IT = 1, ITER_MAX
-           DO ID = 1, MDC
-             DO IS = 1, MSC
+           DO ID = 1, NUMDIR
+             DO IS = 1, NUMSIG
                UIP = AC2(IS,ID,:)
 !!$OMP DO PRIVATE(IP,I,IE,IPOS)
                DO IP = 1, MNP
@@ -3538,24 +3538,24 @@
 !
 ! local double
 !
-      REAL(rkind)  :: DTMAX_GLOBAL_EXP(MSC,MDC), DTMAX_EXP
-      REAL(rkind)  :: DTMAX_GLOBAL_EXP_LOC(MSC,MDC)
+      REAL(rkind)  :: DTMAX_GLOBAL_EXP(NUMSIG,NUMDIR), DTMAX_EXP
+      REAL(rkind)  :: DTMAX_GLOBAL_EXP_LOC(NUMSIG,NUMDIR)
 
       REAL(rkind)  :: REST, CFLXY
-      REAL(rkind)  :: LAMBDA(MSC,MDC,2), DT4AI
-      REAL(rkind)  :: FL11(MSC,MDC), FL12(MSC,MDC)
-      REAL(rkind)  :: FL21(MSC,MDC), FL22(MSC,MDC)
-      REAL(rkind)  :: FL31(MSC,MDC), FL32(MSC,MDC)
-      REAL(rkind)  :: ST(MSC,MDC), N(MSC,MDC)
-      REAL(rkind)  :: CX(MSC,MDC,3), CY(MSC,MDC,3)
-      REAL(rkind)  :: FLALL(MSC,MDC,3)
-      REAL(rkind)  :: KELEM(MSC,MDC,3)
-      REAL(rkind)  :: KM(MSC,MDC,3), KP(MSC,MDC,3)
-      REAL(rkind)  :: FL111(MSC,MDC), FL112(MSC,MDC)
-      REAL(rkind)  :: FL211(MSC,MDC), FL212(MSC,MDC)
-      REAL(rkind)  :: FL311(MSC,MDC), FL312(MSC,MDC)
-      REAL(rkind)  :: UTILDE3(MSC,MDC)
-      REAL(rkind)  :: KSUM(MSC,MDC), KMAX(MSC,MDC)
+      REAL(rkind)  :: LAMBDA(NUMSIG,NUMDIR,2), DT4AI
+      REAL(rkind)  :: FL11(NUMSIG,NUMDIR), FL12(NUMSIG,NUMDIR)
+      REAL(rkind)  :: FL21(NUMSIG,NUMDIR), FL22(NUMSIG,NUMDIR)
+      REAL(rkind)  :: FL31(NUMSIG,NUMDIR), FL32(NUMSIG,NUMDIR)
+      REAL(rkind)  :: ST(NUMSIG,NUMDIR), N(NUMSIG,NUMDIR)
+      REAL(rkind)  :: CX(NUMSIG,NUMDIR,3), CY(NUMSIG,NUMDIR,3)
+      REAL(rkind)  :: FLALL(NUMSIG,NUMDIR,3)
+      REAL(rkind)  :: KELEM(NUMSIG,NUMDIR,3)
+      REAL(rkind)  :: KM(NUMSIG,NUMDIR,3), KP(NUMSIG,NUMDIR,3)
+      REAL(rkind)  :: FL111(NUMSIG,NUMDIR), FL112(NUMSIG,NUMDIR)
+      REAL(rkind)  :: FL211(NUMSIG,NUMDIR), FL212(NUMSIG,NUMDIR)
+      REAL(rkind)  :: FL311(NUMSIG,NUMDIR), FL312(NUMSIG,NUMDIR)
+      REAL(rkind)  :: UTILDE3(NUMSIG,NUMDIR)
+      REAL(rkind)  :: KSUM(NUMSIG,NUMDIR), KMAX(NUMSIG,NUMDIR)
 #ifdef TIMINGS
       REAL(rkind)  :: TIME1
 #endif
@@ -3575,8 +3575,8 @@
 ! get node indices from the element table ...
             NI = INE(:,IE)
 ! estimate speed in WAE
-            DO ID = 1, MDC
-              DO IS = 1, MSC
+            DO ID = 1, NUMDIR
+              DO IS = 1, NUMSIG
                 CX(IS,ID,:) = (CG(IS,NI)*COSTH(ID)+CURTXY(NI,1))* INVSPHTRANS(IP,1)
                 CY(IS,ID,:) = (CG(IS,NI)*SINTH(ID)+CURTXY(NI,2))* INVSPHTRANS(IP,2)
               END DO
@@ -3592,8 +3592,8 @@
             KSUM(:,:)  = KSUM(:,:) + KELEM(:,:,IPOS)
 
             IF (IP .le. NP_RES) THEN
-              DO ID=1,MDC
-                DO IS=1,MSC
+              DO ID=1,NUMDIR
+                DO IS=1,NUMSIG
                   IF ( KELEM(IS,ID,IPOS) > KMAX(IS,ID) ) KMAX(IS,ID) = KELEM(IS,ID,IPOS)
                   DTMAX_EXP=SI(IP)/MAX(THR,KSUM(IS,ID))
                  !DTMAX_EXP=SI(IP)/MAX(THR,KMAX(IS,ID))
@@ -3602,12 +3602,12 @@
               END DO
             END IF
 #ifdef MPI_PARALL_GRID
-            CALL MPI_ALLREDUCE(DTMAX_GLOBAL_EXP_LOC,DTMAX_GLOBAL_EXP,MSC*MDC,rtype,MPI_MIN,COMM,IERR)
+            CALL MPI_ALLREDUCE(DTMAX_GLOBAL_EXP_LOC,DTMAX_GLOBAL_EXP,NUMSIG*NUMDIR,rtype,MPI_MIN,COMM,IERR)
 #else
             DTMAX_GLOBAL_EXP=DTMAX_GLOBAL_EXP_LOC
 #endif
-            DO ID=1,MDC
-              DO IS=1,MSC
+            DO ID=1,NUMDIR
+              DO IS=1,NUMSIG
                 CFLXY = DT4A/DTMAX_GLOBAL_EXP(IS,ID)
                 REST  = ABS(MOD(CFLXY,ONE))
                 IF (REST .LT. THR) THEN
@@ -3646,8 +3646,8 @@
 ! get node indices from the element table ...
             NI = INE(:,IE)
 ! estimate speed in WAE
-            DO ID=1,MDC
-              DO IS=1,MSC
+            DO ID=1,NUMDIR
+              DO IS=1,NUMSIG
                 CX(IS,ID,:) = (CG(IS,NI)*COSTH(ID)+CURTXY(NI,1))*INVSPHTRANS(IP,1)
                 CY(IS,ID,:) = (CG(IS,NI)*SINTH(ID)+CURTXY(NI,2))*INVSPHTRANS(IP,2)
               END DO
@@ -3731,8 +3731,8 @@
 !
          IF (LCALC) THEN
 
-           DO ID = 1, MDC
-             DO IS = 1, MSC
+           DO ID = 1, NUMDIR
+             DO IS = 1, NUMSIG
                CX = (CG(IS,:)*COSTH(ID)+CURTXY(:,1))*INVSPHTRANS(:,1)
                CY = (CG(IS,:)*SINTH(ID)+CURTXY(:,2))*INVSPHTRANS(:,2)
                DTMAX_GLOBAL_EXP = VERYLARGE
@@ -3792,8 +3792,8 @@
 #endif
          DT4AI = DT4A/ITER_MAX
          DO IT = 1, ITER_MAX
-           DO ID = 1, MSC
-             DO IS = 1, MDC
+           DO ID = 1, NUMSIG
+             DO IS = 1, NUMDIR
 !$OMP WORKSHARE
                CX = (CG(IS,:)*COSTH(ID)+CURTXY(:,1))*INVSPHTRANS(:,1)
                CY = (CG(IS,:)*SINTH(ID)+CURTXY(:,2))*INVSPHTRANS(:,2)

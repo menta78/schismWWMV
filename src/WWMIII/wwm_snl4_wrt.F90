@@ -105,7 +105,7 @@ diag = 0.
 iproc = 0
 !
 !
-!WRITE (*,*) 'ACLOC' 
+!WRITE (*,*) 'WALOC' 
 !WRITE (*,*) aquad
 !WRITE (*,*) 'SIGMA'
 !WRITE (*,*) sigma 

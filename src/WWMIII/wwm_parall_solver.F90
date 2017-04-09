@@ -2,8 +2,8 @@
 ! I5 is under the assumptions that we have a lot of memory
 !    and tries to minimize the number of MPI exchanges and
 !    to have the processors be as busy as possible
-!    We use memory ordered as AC(MNP,MSC,MDC)
-! I5B is the same as I5. We use memory ordered as AC(MSC,MDC,MNP)
+!    We use memory ordered as AC(MNP,NUMSIG,NUMDIR)
+! I5B is the same as I5. We use memory ordered as AC(NUMSIG,NUMDIR,MNP)
 !    so reordering at the beginning but less operations later on.
 #undef DEBUG
 !#define DEBUG
@@ -118,7 +118,7 @@
 !*    The points of 1:NP_RES are sent to nodes that contained them    *
 !*    length=1                                                        *
 !* ---wwmtot_p2dsend_type/wwmtot_p2drecv_type                         *
-!*    same as above but length=MSC*MDC                                *
+!*    same as above but length=NUMSIG*NUMDIR                                *
 !* ---blk_p2dsend_type/blk_p2drecv_type                               *
 !*    same as above but length=maxBlockLength for matrix exchanges    *
 !* ---wwmmat_p2dsend_type/wwmmat_p2drecv_type                         *
@@ -131,7 +131,7 @@
 !*    exchange are from upper to lower.                               *
 !* ---sync_p2dsend_type/sync_p2drecv_type                             *
 !*    synchronize value, i.e. the CovLower=1 values  are send to all  *
-!*    nodes. Length is MSC*MDC                                        *
+!*    nodes. Length is NUMSIG*NUMDIR                                        *
 !**********************************************************************
 #if defined WWM_SOLVER && defined MPI_PARALL_GRID
 !**********************************************************************
@@ -141,13 +141,13 @@
       USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
-      real(rkind), intent(inout) :: AC(MSC,MDC,MNP)
+      real(rkind), intent(inout) :: AC(NUMSIG,NUMDIR,MNP)
       integer iSync, iRank
       integer IS, ID, IP
       real(rkind) SumErr, Lerror
-      real(rkind) :: ACtest(MSC,MDC,MNP)
+      real(rkind) :: ACtest(NUMSIG,NUMDIR,MNP)
       real(rkind) :: U1(MNP), U2(MNP)
-      CALL I5B_TOTAL_COHERENCY_ERROR_NPRES(MSC, AC, Lerror)
+      CALL I5B_TOTAL_COHERENCY_ERROR_NPRES(NUMSIG, AC, Lerror)
 !      Print *, 'NP_RES cohenrency error=', Lerror
 #ifdef DEBUG
       WRITE(740+myrank,*) 'I5B_EXCHANGE_P4D_WWM, begin, sum(AC)=', sum(AC)
@@ -155,8 +155,8 @@
 #endif
       ACtest=AC
       SumErr=ZERO
-      DO IS=1,MSC
-        DO ID=1,MDC
+      DO IS=1,NUMSIG
+        DO ID=1,NUMDIR
           U1=AC(IS,ID,:)
           U2=AC(IS,ID,:)
           DO iSync=1,wwm_nnbr_send
@@ -197,8 +197,8 @@
         call mpi_waitall(wwm_nnbr_recv, wwm_p2drecv_rqst, wwm_p2drecv_stat,ierr)
       END IF
       SumErr=ZERO
-      DO IS=1,MSC
-        DO ID=1,MDC
+      DO IS=1,NUMSIG
+        DO ID=1,NUMDIR
           DO IP=1,NP_RES
             SumErr=SumErr + abs(AC(IS,ID,IP) - ACtest(IS,ID,IP))
           END DO
@@ -220,7 +220,7 @@
       USE datapool
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
-      real(rkind), intent(inout) :: AC(MSC,MDC,MNP)
+      real(rkind), intent(inout) :: AC(NUMSIG,NUMDIR,MNP)
       integer iSync, iRank
       DO iSync=1,wwm_nnbr_send_sl
         iRank=wwm_ListNeigh_send(iSync)
@@ -244,7 +244,7 @@
       use datapool
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
-      real(rkind), intent(inout) :: ASPAR_bl(MSC,MDC,NNZ)
+      real(rkind), intent(inout) :: ASPAR_bl(NUMSIG,NUMDIR,NNZ)
       integer I, iProc
       do I=1,wwm_nnbr_m_send
         iProc=wwm_ListNeigh_m_send(I)
@@ -433,14 +433,14 @@
             IPmap=ListMappedB(IP_glob)
             idx=idx+1
             dspl_send(idx)=IP-1
-            dspl_send_tot(idx)=MSC*MDC*(IP-1)
+            dspl_send_tot(idx)=NUMSIG*NUMDIR*(IP-1)
             idxDspl_send=idxDspl_send+1
             wwm_ListDspl_send(idxDspl_send)=IP
           END IF
         END DO
         call mpi_type_create_indexed_block(nbCommon,1,dspl_send,rtype,wwm_p2dsend_type(iNeigh), ierr)
         call mpi_type_commit(wwm_p2dsend_type(iNeigh), ierr)
-        call mpi_type_create_indexed_block(nbCommon,MSC*MDC,dspl_send_tot,rtype,wwmtot_p2dsend_type(iNeigh), ierr)
+        call mpi_type_create_indexed_block(nbCommon,NUMSIG*NUMDIR,dspl_send_tot,rtype,wwmtot_p2dsend_type(iNeigh), ierr)
         call mpi_type_commit(wwmtot_p2dsend_type(iNeigh), ierr)
         deallocate(dspl_send, dspl_send_tot)
       END DO
@@ -459,7 +459,7 @@
             IPmap=ListMapped(IP_glob)
             idx=idx+1
             dspl_recv(idx)=IPmap-1
-            dspl_recv_tot(idx)=MSC*MDC*(IPmap-1)
+            dspl_recv_tot(idx)=NUMSIG*NUMDIR*(IPmap-1)
             idxDspl_recv=idxDspl_recv+1
             wwm_ListDspl_recv(idxDspl_recv)=IPmap
 #ifdef DEBUG
@@ -471,7 +471,7 @@
         !
         call mpi_type_create_indexed_block(nbCommon,1,dspl_recv,rtype,wwm_p2drecv_type(iNeigh),ierr)
         call mpi_type_commit(wwm_p2drecv_type(iNeigh), ierr)
-        call mpi_type_create_indexed_block(nbCommon,MSC*MDC,dspl_recv_tot,rtype,wwmtot_p2drecv_type(iNeigh),ierr)
+        call mpi_type_create_indexed_block(nbCommon,NUMSIG*NUMDIR,dspl_recv_tot,rtype,wwmtot_p2drecv_type(iNeigh),ierr)
         call mpi_type_commit(wwmtot_p2drecv_type(iNeigh), ierr)
         deallocate(dspl_recv, dspl_recv_tot)
       END DO
@@ -564,10 +564,10 @@
           IF (ListMappedB(IP_glob).gt.0) THEN
             IPmap=ListMappedB(IP_glob)
             idx=idx+1
-            dspl_send(idx)=MSC*MDC*(IP-1)
+            dspl_send(idx)=NUMSIG*NUMDIR*(IP-1)
           END IF
         END DO
-        call mpi_type_create_indexed_block(nbCommon,MSC*MDC,dspl_send,rtype,wwmsl_send_type(iNeigh), ierr)
+        call mpi_type_create_indexed_block(nbCommon,NUMSIG*NUMDIR,dspl_send,rtype,wwmsl_send_type(iNeigh), ierr)
         call mpi_type_commit(wwmsl_send_type(iNeigh), ierr)
         deallocate(dspl_send)
       END DO
@@ -585,10 +585,10 @@
           IF (ListMapped(IP_glob).gt.0) THEN
             IPmap=ListMapped(IP_glob)
             idx=idx+1
-            dspl_recv(idx)=MSC*MDC*(IPmap-1)
+            dspl_recv(idx)=NUMSIG*NUMDIR*(IPmap-1)
           END IF
         END DO
-        call mpi_type_create_indexed_block(nbCommon,MSC*MDC,dspl_recv,rtype,wwmsl_recv_type(iNeigh),ierr)
+        call mpi_type_create_indexed_block(nbCommon,NUMSIG*NUMDIR,dspl_recv,rtype,wwmsl_recv_type(iNeigh),ierr)
         call mpi_type_commit(wwmsl_recv_type(iNeigh), ierr)
         deallocate(dspl_recv)
       END DO
@@ -773,13 +773,13 @@
                   idxDspl_send=idxDspl_send+1
                   wwm_ListDspl_m_send(idxDspl_send)=J
                   idx=idx+1
-                  dspl_send(idx)=(J-1)*MSC*MDC
+                  dspl_send(idx)=(J-1)*NUMSIG*NUMDIR
                 END IF
               END IF
             END DO
           END IF
         END DO
-        call mpi_type_create_indexed_block(nbCommon,MSC*MDC,dspl_send,rtype,wwmmat_p2dsend_type(iNeigh), ierr)
+        call mpi_type_create_indexed_block(nbCommon,NUMSIG*NUMDIR,dspl_send,rtype,wwmmat_p2dsend_type(iNeigh), ierr)
         call mpi_type_commit(wwmmat_p2dsend_type(iNeigh), ierr)
         deallocate(dspl_send)
       END DO
@@ -813,13 +813,13 @@
                   idxDspl_recv=idxDspl_recv+1
                   wwm_ListDspl_m_recv(idxDspl_recv)=Jfound
                   idx=idx+1
-                  dspl_recv(idx)=(Jfound-1)*MSC*MDC
+                  dspl_recv(idx)=(Jfound-1)*NUMSIG*NUMDIR
                 END IF
               END IF
             END DO
           END IF
         END DO
-        call mpi_type_create_indexed_block(nbCommon,MSC*MDC,dspl_recv,rtype,wwmmat_p2drecv_type(iNeigh), ierr)
+        call mpi_type_create_indexed_block(nbCommon,NUMSIG*NUMDIR,dspl_recv,rtype,wwmmat_p2drecv_type(iNeigh), ierr)
         call mpi_type_commit(wwmmat_p2drecv_type(iNeigh), ierr)
         deallocate(dspl_recv)
       END DO
@@ -941,7 +941,7 @@
       integer lenBlock, maxBlockLength
       WRITE(STAT%FHNDL,'("+TRACE......",A)') 'ENTERING INIT_BLOCK_FREQDIR'
       FLUSH(STAT%FHNDL)
-      Ntot=MSC*MDC
+      Ntot=NUMSIG*NUMDIR
       Hlen=INT(MyREAL(Ntot)/Nblock)
       Delta=Ntot - Hlen*Nblock
       iBlock=1
@@ -954,8 +954,8 @@
       ENDIF
       allocate(LocalColor % ISindex(Nblock, maxBlockLength), LocalColor % IDindex(Nblock, maxBlockLength), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 44')
-      DO IS=1,MSC
-        DO ID=1,MDC
+      DO IS=1,NUMSIG
+        DO ID=1,NUMDIR
           LocalColor % ISindex(iBlock, idx)=IS
           LocalColor % IDindex(iBlock, idx)=ID
           IF (iBlock <= Delta) THEN
@@ -1748,11 +1748,11 @@
             END IF
             IF (DoOper == 1) THEN
               idx=idx+1
-              dspl_send(idx)=MSC*MDC*(IP-1)
+              dspl_send(idx)=NUMSIG*NUMDIR*(IP-1)
             END IF
           END IF
         END DO
-        call mpi_type_create_indexed_block(nbCommon,MSC*MDC,dspl_send,rtype,LocalColor % sync_p2dsend_type(iNeigh), ierr)
+        call mpi_type_create_indexed_block(nbCommon,NUMSIG*NUMDIR,dspl_send,rtype,LocalColor % sync_p2dsend_type(iNeigh), ierr)
         call mpi_type_commit(LocalColor % sync_p2dsend_type(iNeigh), ierr)
         deallocate(dspl_send)
       END DO
@@ -1792,11 +1792,11 @@
             END IF
             IF (DoOper == 1) THEN
               idx=idx+1
-              dspl_recv(idx)=MSC*MDC*(IPmap-1)
+              dspl_recv(idx)=NUMSIG*NUMDIR*(IPmap-1)
             END IF
           END IF
         END DO
-        call mpi_type_create_indexed_block(nbCommon,MSC*MDC,dspl_recv,rtype,LocalColor % sync_p2drecv_type(iNeigh),ierr)
+        call mpi_type_create_indexed_block(nbCommon,NUMSIG*NUMDIR,dspl_recv,rtype,LocalColor % sync_p2drecv_type(iNeigh),ierr)
         call mpi_type_commit(LocalColor % sync_p2drecv_type(iNeigh), ierr)
         deallocate(dspl_recv)
       END DO
@@ -1948,15 +1948,15 @@
         i=LocalColor % ListIdxUpper_send(iProc)
         iRank=nbrrank_p(i)
         NNZ_l=LocalColor % NNZ_len_r(iProc)
-        siz=NNZ_l*MSC*MDC
-        allocate(ASPAR_rs(NNZ_l*MSC*MDC), stat=istat)
+        siz=NNZ_l*NUMSIG*NUMDIR
+        allocate(ASPAR_rs(NNZ_l*NUMSIG*NUMDIR), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 67')
         CALL mpi_recv(ASPAR_rs,siz,rtype,iRank,45,comm,istatus,ierr)
         idx=0
         DO iNNZ=1,NNZ_l
           jNNZ=LocalColor % NNZ_index_r(iProc,iNNZ)
-          DO IS=1,MSC
-            DO ID=1,MDC
+          DO IS=1,NUMSIG
+            DO ID=1,NUMDIR
               idx=idx+1
               SolDatI % ASPAR_pc(jNNZ,IS,ID)=ASPAR_rs(idx)
             END DO
@@ -1980,14 +1980,14 @@
         i=LocalColor % ListIdxUpper_send(iProc)
         iRank=nbrrank_p(i)
         NNZ_l=LocalColor % NNZ_len_s(iProc)
-        siz=NNZ_l*MSC*MDC
-        allocate(ASPAR_rs(NNZ_l*MSC*MDC), stat=istat)
+        siz=NNZ_l*NUMSIG*NUMDIR
+        allocate(ASPAR_rs(NNZ_l*NUMSIG*NUMDIR), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 68')
         idx=0
         DO iNNZ=1,NNZ_l
           jNNZ=LocalColor % NNZ_index_s(iProc,iNNZ)
-          DO IS=1,MSC
-            DO ID=1,MDC
+          DO IS=1,NUMSIG
+            DO ID=1,NUMDIR
               idx=idx+1
               ASPAR_rs(idx)=SolDatI % ASPAR_pc(jNNZ,IS,ID)
             END DO
@@ -2021,8 +2021,8 @@
           END DO
           DO J=IA(IP),I_DIAG(IP)-1
             JP=JA(J)
-            DO IS=1,MSC
-              DO ID=1,MDC
+            DO IS=1,NUMSIG
+              DO ID=1,NUMDIR
                 tl=SolDatI % ASPAR_pc(J,IS,ID)*SolDatI % ASPAR_pc(I_DIAG(JP),IS,ID)
                 DO J2=IA(JP),IA(JP+1)-1
                   JP2=JA(J2)
@@ -2040,8 +2040,8 @@
             ListJ(JP)=0
           END DO
           J=I_DIAG(IP)
-          DO IS=1,MSC
-            DO ID=1,MDC
+          DO IS=1,NUMSIG
+            DO ID=1,NUMDIR
               SolDatI % ASPAR_pc(J,IS,ID)=1.0_rkind/SolDatI % ASPAR_pc(J,IS,ID)
             END DO
           END DO
@@ -2174,7 +2174,7 @@
       USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
-      REAL(rkind), intent(in) :: AC(MSC, MDC, MNP)
+      REAL(rkind), intent(in) :: AC(NUMSIG, NUMDIR, MNP)
       INTEGER, intent(in) :: iBlock
       integer iUpp, iRank, idx, lenBlock, maxBlockLength, IS, ID, IP, nbUpp_send
       integer idxIP
@@ -2204,7 +2204,7 @@
       USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
-      REAL(rkind), intent(inout) :: AC(MSC, MDC, MNP)
+      REAL(rkind), intent(inout) :: AC(NUMSIG, NUMDIR, MNP)
       INTEGER, intent(in) :: iBlock
       integer iProc, iRank, idx, lenBlock, IS, ID, IP, nbLow_recv
       integer idxIP
@@ -2233,7 +2233,7 @@
       USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
-      REAL(rkind), intent(in) :: AC(MSC, MDC, MNP)
+      REAL(rkind), intent(in) :: AC(NUMSIG, NUMDIR, MNP)
       INTEGER, intent(in) :: iBlock
       integer iProc, iRank, idx, lenBlock, IS, ID, nbLow_send, IP
       integer idxIP
@@ -2262,7 +2262,7 @@
       USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
-      REAL(rkind), intent(inout) :: AC(MSC, MDC, MNP)
+      REAL(rkind), intent(inout) :: AC(NUMSIG, NUMDIR, MNP)
       INTEGER, intent(in) :: iBlock
       integer iProc, iRank, idx, lenBlock
       integer nbUpp_recv, IS, ID, IP
@@ -2312,12 +2312,12 @@
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(in) :: SolDatI
       integer, intent(in) :: iBlock
-      real(rkind), intent(inout) :: ACret(MSC,MDC,MNP)
+      real(rkind), intent(inout) :: ACret(NUMSIG,NUMDIR,MNP)
       real(rkind) :: eCoeff
 !      real(rkind) :: hVal
       integer IP, idx, ID, IS, J
       integer lenBlock, JP, Jb
-!      real(rkind) :: ACtest(MSC, MDC,MNP)
+!      real(rkind) :: ACtest(NUMSIG, NUMDIR,MNP)
       lenBlock=LocalColor % BlockLength(iBlock)
 !      DO IP=1,NP_RES
 !        J=I_DIAG(IP)
@@ -2391,7 +2391,7 @@
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(in) :: SolDatI
       integer, intent(in) :: iBlock
-      real(rkind), intent(inout) :: ACret(MSC,MDC,MNP)
+      real(rkind), intent(inout) :: ACret(NUMSIG,NUMDIR,MNP)
       real(rkind) :: eCoeff
       integer lenBlock, IP, JP, idx, J, IS, ID
       lenBlock=LocalColor % BlockLength(iBlock)
@@ -2473,7 +2473,7 @@
       USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
-      real(rkind), intent(inout) :: AC(MSC, MDC, MNP)
+      real(rkind), intent(inout) :: AC(NUMSIG, NUMDIR, MNP)
       INTEGER :: iRank
       integer iSync
       integer nbSync_send, nbSync_recv
@@ -2502,7 +2502,7 @@
       implicit none
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(in) :: SolDatI
-      real(rkind), intent(inout) :: ACret(MSC, MDC, MNP)
+      real(rkind), intent(inout) :: ACret(NUMSIG, NUMDIR, MNP)
       integer iBlock
       DO iBlock=1,LocalColor % Nblock
         IF (DO_SYNC_LOW_2_UPP) THEN
@@ -2535,13 +2535,13 @@
       integer IP, J, idx
       type(LocalColorInfo), intent(in) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDatI
-      REAL(rkind), intent(in) :: ACin(MSC, MDC, MNP)
-      REAL(rkind), intent(inout) :: ACret(MSC, MDC, MNP)
-      REAL(rkind) :: eSum(MSC,MDC)
+      REAL(rkind), intent(in) :: ACin(NUMSIG, NUMDIR, MNP)
+      REAL(rkind), intent(inout) :: ACret(NUMSIG, NUMDIR, MNP)
+      REAL(rkind) :: eSum(NUMSIG,NUMDIR)
 #ifdef DEBUG
       REAL(rkind) :: Lerror
-      REAL(rkind) :: ACtest1(MSC, MDC, MNP)
-      REAL(rkind) :: ACtest2(MSC, MDC, MNP)
+      REAL(rkind) :: ACtest1(NUMSIG, NUMDIR, MNP)
+      REAL(rkind) :: ACtest2(NUMSIG, NUMDIR, MNP)
 #endif
       DO IP=1,NP_RES
         eSum=0
@@ -2588,10 +2588,10 @@
       USE DATAPOOL
       implicit none
       type(LocalColorInfo), intent(in) :: LocalColor
-      real(rkind), intent(inout) :: LScal(MSC,MDC)
+      real(rkind), intent(inout) :: LScal(NUMSIG,NUMDIR)
       integer IS, ID
-      DO IS=1,MSC
-        DO ID=1,MDC
+      DO IS=1,NUMSIG
+        DO ID=1,NUMDIR
           IF (LScal(IS,ID) .ne. LScal(IS,ID)) THEN
             LScal(IS,ID)=0
           END IF
@@ -2604,38 +2604,38 @@
       SUBROUTINE I5B_L2_LINF(ACw1, ACw2, Norm_L2, Norm_LINF)
       USE DATAPOOL
       implicit none
-      real(rkind), intent(in) :: ACw1(MSC, MDC, MNP)
-      real(rkind), intent(in) :: ACw2(MSC, MDC, MNP)
-      real(rkind), intent(inout) :: Norm_L2(MSC, MDC)
-      real(rkind), intent(inout) :: Norm_LINF(MSC, MDC)
-      real(rkind) :: LScal(MSC, MDC, 2)
-      real(rkind) :: RScal(MSC, MDC, 2)
+      real(rkind), intent(in) :: ACw1(NUMSIG, NUMDIR, MNP)
+      real(rkind), intent(in) :: ACw2(NUMSIG, NUMDIR, MNP)
+      real(rkind), intent(inout) :: Norm_L2(NUMSIG, NUMDIR)
+      real(rkind), intent(inout) :: Norm_LINF(NUMSIG, NUMDIR)
+      real(rkind) :: LScal(NUMSIG, NUMDIR, 2)
+      real(rkind) :: RScal(NUMSIG, NUMDIR, 2)
       integer IP, iProc, IS, ID
       LScal=0
       DO IP=1,NP_RES
         LScal(:,:,1)=LScal(:,:,1) + nwild_loc_res(IP)*((ACw1(:,:,IP) - ACw2(:,:,IP))**2)
-        DO IS=1,MSC
-          DO ID=1,MDC
+        DO IS=1,NUMSIG
+          DO ID=1,NUMDIR
             LScal(IS,ID,2)=max(LScal(IS,ID,2), abs(ACw1(IS,ID,IP) - ACw2(IS,ID,IP)))
           END DO
         END DO
       END DO
       IF (myrank == 0) THEN
         DO iProc=2,nproc
-          CALL MPI_RECV(RScal,MSC*MDC*2,rtype, iProc-1, 19, comm, istatus, ierr)
+          CALL MPI_RECV(RScal,NUMSIG*NUMDIR*2,rtype, iProc-1, 19, comm, istatus, ierr)
           LScal(:,:,1) = LScal(:,:,1) + RScal(:,:,1)
-          DO IS=1,MSC
-            DO ID=1,MDC
+          DO IS=1,NUMSIG
+            DO ID=1,NUMDIR
               LScal(IS,ID,2)=max(LScal(IS,ID,2), RScal(IS,ID,2))
             END DO
           END DO
         END DO
         DO iProc=2,nproc
-          CALL MPI_SEND(LScal,MSC*MDC*2,rtype, iProc-1, 23, comm, ierr)
+          CALL MPI_SEND(LScal,NUMSIG*NUMDIR*2,rtype, iProc-1, 23, comm, ierr)
         END DO
       ELSE
-        CALL MPI_SEND(LScal,MSC*MDC*2,rtype, 0, 19, comm, ierr)
-        CALL MPI_RECV(LScal,MSC*MDC*2,rtype, 0, 23, comm, istatus, ierr)
+        CALL MPI_SEND(LScal,NUMSIG*NUMDIR*2,rtype, 0, 19, comm, ierr)
+        CALL MPI_RECV(LScal,NUMSIG*NUMDIR*2,rtype, 0, 23, comm, istatus, ierr)
       END IF
       Norm_L2=LScal(:,:,1)
       Norm_LINF=LScal(:,:,2)
@@ -2646,10 +2646,10 @@
       SUBROUTINE I5B_SCALAR(ACw1, ACw2, LScal)
       USE DATAPOOL
       implicit none
-      real(rkind), intent(in) :: ACw1(MSC, MDC, MNP)
-      real(rkind), intent(in) :: ACw2(MSC, MDC, MNP)
-      real(rkind), intent(inout) :: LScal(MSC, MDC)
-      real(rkind) :: RScal(MSC, MDC)
+      real(rkind), intent(in) :: ACw1(NUMSIG, NUMDIR, MNP)
+      real(rkind), intent(in) :: ACw2(NUMSIG, NUMDIR, MNP)
+      real(rkind), intent(inout) :: LScal(NUMSIG, NUMDIR)
+      real(rkind) :: RScal(NUMSIG, NUMDIR)
       integer IP, iProc
       LScal=0
       DO IP=1,NP_RES
@@ -2657,15 +2657,15 @@
       END DO
       IF (myrank == 0) THEN
         DO iProc=2,nproc
-          CALL MPI_RECV(RScal,MSC*MDC,rtype, iProc-1, 19, comm, istatus, ierr)
+          CALL MPI_RECV(RScal,NUMSIG*NUMDIR,rtype, iProc-1, 19, comm, istatus, ierr)
           LScal = LScal + RScal
         END DO
         DO iProc=2,nproc
-          CALL MPI_SEND(LScal,MSC*MDC,rtype, iProc-1, 23, comm, ierr)
+          CALL MPI_SEND(LScal,NUMSIG*NUMDIR,rtype, iProc-1, 23, comm, ierr)
         END DO
       ELSE
-        CALL MPI_SEND(LScal,MSC*MDC,rtype, 0, 19, comm, ierr)
-        CALL MPI_RECV(LScal,MSC*MDC,rtype, 0, 23, comm, istatus, ierr)
+        CALL MPI_SEND(LScal,NUMSIG*NUMDIR,rtype, 0, 19, comm, ierr)
+        CALL MPI_RECV(LScal,NUMSIG*NUMDIR,rtype, 0, 23, comm, istatus, ierr)
       END IF
       END SUBROUTINE
 !**********************************************************************
@@ -2674,29 +2674,29 @@
       SUBROUTINE I5B_SUM_MAX(ACw, LSum, LMax)
       USE DATAPOOL
       implicit none
-      real(rkind), intent(in) :: ACw(MSC, MDC, MNP)
-      real(rkind), intent(inout) :: LSum(MSC, MDC)
-      real(rkind), intent(inout) :: LMax(MSC, MDC)
-      real(rkind) :: RScal(MSC, MDC)
+      real(rkind), intent(in) :: ACw(NUMSIG, NUMDIR, MNP)
+      real(rkind), intent(inout) :: LSum(NUMSIG, NUMDIR)
+      real(rkind), intent(inout) :: LMax(NUMSIG, NUMDIR)
+      real(rkind) :: RScal(NUMSIG, NUMDIR)
       integer IP, iProc, IS, ID
       LSum=0
       DO IP=1,NP_RES
         LSum=LSum + nwild_loc_res(IP)*ACw(:,:, IP)
       END DO
-      DO IS=1,MSC
-        DO ID=1,MDC
+      DO IS=1,NUMSIG
+        DO ID=1,NUMDIR
           LMax(IS,ID)=maxval(ACw(IS,ID,:))
         END DO
       END DO
       IF (myrank == 0) THEN
         DO iProc=2,nproc
-          CALL MPI_RECV(RScal,MSC*MDC,rtype, iProc-1, 53, comm, istatus, ierr)
+          CALL MPI_RECV(RScal,NUMSIG*NUMDIR,rtype, iProc-1, 53, comm, istatus, ierr)
           LSum = LSum + RScal
         END DO
         DO iProc=2,nproc
-          CALL MPI_RECV(RScal,MSC*MDC,rtype, iProc-1, 59, comm, istatus, ierr)
-          DO IS=1,MSC
-            DO ID=1,MDC
+          CALL MPI_RECV(RScal,NUMSIG*NUMDIR,rtype, iProc-1, 59, comm, istatus, ierr)
+          DO IS=1,NUMSIG
+            DO ID=1,NUMDIR
               IF (RScal(IS,ID) .gt. LMax(IS,ID)) THEN
                 LMax(IS,ID)=RScal(IS,ID)
               END IF
@@ -2704,16 +2704,16 @@
           END DO
         END DO
         DO iProc=2,nproc
-          CALL MPI_SEND(LSum,MSC*MDC,rtype, iProc-1, 197, comm, ierr)
+          CALL MPI_SEND(LSum,NUMSIG*NUMDIR,rtype, iProc-1, 197, comm, ierr)
         END DO
         DO iProc=2,nproc
-          CALL MPI_SEND(LMax,MSC*MDC,rtype, iProc-1, 199, comm, ierr)
+          CALL MPI_SEND(LMax,NUMSIG*NUMDIR,rtype, iProc-1, 199, comm, ierr)
         END DO
       ELSE
-        CALL MPI_SEND(LSum,MSC*MDC,rtype, 0, 53, comm, ierr)
-        CALL MPI_SEND(LMax,MSC*MDC,rtype, 0, 59, comm, ierr)
-        CALL MPI_RECV(LSum,MSC*MDC,rtype, 0, 197, comm, istatus, ierr)
-        CALL MPI_RECV(LMax,MSC*MDC,rtype, 0, 199, comm, istatus, ierr)
+        CALL MPI_SEND(LSum,NUMSIG*NUMDIR,rtype, 0, 53, comm, ierr)
+        CALL MPI_SEND(LMax,NUMSIG*NUMDIR,rtype, 0, 59, comm, ierr)
+        CALL MPI_RECV(LSum,NUMSIG*NUMDIR,rtype, 0, 197, comm, istatus, ierr)
+        CALL MPI_RECV(LMax,NUMSIG*NUMDIR,rtype, 0, 199, comm, istatus, ierr)
       END IF
       END SUBROUTINE
 !**********************************************************************
@@ -2722,9 +2722,9 @@
       FUNCTION I5B_SUMTOT(ACw)
       USE DATAPOOL
       implicit none
-      real(rkind), intent(in) :: ACw(MSC, MDC, MNP)
-      real(rkind) :: LSum(MSC, MDC)
-      real(rkind) :: LMax(MSC, MDC)
+      real(rkind), intent(in) :: ACw(NUMSIG, NUMDIR, MNP)
+      real(rkind) :: LSum(NUMSIG, NUMDIR)
+      real(rkind) :: LMax(NUMSIG, NUMDIR)
       real(rkind) :: I5B_SUMTOT
       CALL I5B_SUM_MAX(ACw, LSum, LMax)
       I5B_SUMTOT=sum(LSum)
@@ -2744,13 +2744,13 @@
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDatI
       integer, intent(inout) :: nbIter
-      REAL(rkind), intent(inout) :: Norm_L2(MSC,MDC)
-      REAL(rkind), intent(inout) :: Norm_LINF(MSC,MDC)
-      REAL(rkind) :: Rho(MSC,MDC)
-      REAL(rkind) :: Prov(MSC,MDC)
-      REAL(rkind) :: AlphaL(MSC,MDC)
-      REAL(rkind) :: Beta(MSC,MDC)
-      REAL(rkind) :: Omega(MSC,MDC)
+      REAL(rkind), intent(inout) :: Norm_L2(NUMSIG,NUMDIR)
+      REAL(rkind), intent(inout) :: Norm_LINF(NUMSIG,NUMDIR)
+      REAL(rkind) :: Rho(NUMSIG,NUMDIR)
+      REAL(rkind) :: Prov(NUMSIG,NUMDIR)
+      REAL(rkind) :: AlphaL(NUMSIG,NUMDIR)
+      REAL(rkind) :: Beta(NUMSIG,NUMDIR)
+      REAL(rkind) :: Omega(NUMSIG,NUMDIR)
       REAL(rkind) :: MaxError, CritVal
       integer :: MaxIter_loc = 30
       integer IP
@@ -2862,11 +2862,11 @@
       USE DATAPOOL
       implicit none
       type(I5_SolutionData), intent(inout) :: SolDatI
-      allocate(SolDatI % AC1(MSC,MDC,MNP), SolDatI % AC3(MSC,MDC,MNP), SolDatI % AC4(MSC,MDC,MNP), SolDatI % AC5(MSC,MDC,MNP), SolDatI % AC6(MSC,MDC,MNP), SolDatI % AC7(MSC,MDC,MNP), stat=istat)
+      allocate(SolDatI % AC1(NUMSIG,NUMDIR,MNP), SolDatI % AC3(NUMSIG,NUMDIR,MNP), SolDatI % AC4(NUMSIG,NUMDIR,MNP), SolDatI % AC5(NUMSIG,NUMDIR,MNP), SolDatI % AC6(NUMSIG,NUMDIR,MNP), SolDatI % AC7(NUMSIG,NUMDIR,MNP), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 75')
-      allocate(SolDatI % ASPAR_block(MSC,MDC,NNZ), SolDatI % B_block(MSC,MDC, MNP), stat=istat)
+      allocate(SolDatI % ASPAR_block(NUMSIG,NUMDIR,NNZ), SolDatI % B_block(NUMSIG,NUMDIR, MNP), stat=istat)
 # ifndef SOR_DIRECT
-      allocate(SolDatI % ASPAR_pc(MSC,MDC,NNZ), stat=istat)
+      allocate(SolDatI % ASPAR_pc(NUMSIG,NUMDIR,NNZ), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 77')
 # endif
 
@@ -2916,13 +2916,13 @@
       SUBROUTINE I5_SUM(AC, eSum)
       USE DATAPOOL
       implicit none
-      real(rkind), intent(in) :: AC(MNP,MSC,MDC)
+      real(rkind), intent(in) :: AC(MNP,NUMSIG,NUMDIR)
       real(rkind), intent(out) :: eSum
       integer IP,IS,ID
       eSum=ZERO
       DO IP=1,MNP
-        DO IS=1,MSC
-          DO ID=1,MDC
+        DO IS=1,NUMSIG
+          DO ID=1,NUMDIR
             eSum=eSum + AC(IP,IS,ID)
           END DO
         END DO
@@ -2948,15 +2948,15 @@
       SUBROUTINE EIMPS_B_BLOCK(U,B)
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind), intent(out) :: B(MSC, MDC, MNP)
-      REAL(rkind), intent(in)  :: U(MSC, MDC, MNP)
+      REAL(rkind), intent(out) :: B(NUMSIG, NUMDIR, MNP)
+      REAL(rkind), intent(in)  :: U(NUMSIG, NUMDIR, MNP)
       INTEGER :: IP, ID
       INTEGER :: IPGL1, IPREL
 # ifdef DEBUG
       WRITE(740+myrank,*) 'Begin of EIMPS_B_BLOCK'
 # endif
       DO IP=1,MNP
-        DO ID=1,MDC
+        DO ID=1,NUMDIR
           B(:,ID,IP) = U(:,ID,IP) * IOBPD(ID,IP)*IOBWB(IP)*IOBDP(IP)*SI(IP)
         ENDDO
       END DO
@@ -2981,31 +2981,31 @@
       SUBROUTINE EIMPS_ASPAR_B_BLOCK_SOURCES_TOTAL(U, ASPAR, B)
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind), intent(inout) :: ASPAR(MSC, MDC, NNZ)
-      REAL(rkind), intent(inout) :: B(MSC, MDC, MNP)
-      REAL(rkind), intent(in)    :: U(MSC, MDC, MNP)
+      REAL(rkind), intent(inout) :: ASPAR(NUMSIG, NUMDIR, NNZ)
+      REAL(rkind), intent(inout) :: B(NUMSIG, NUMDIR, MNP)
+      REAL(rkind), intent(in)    :: U(NUMSIG, NUMDIR, MNP)
       INTEGER :: POS_TRICK(3,2)
-      REAL(rkind) :: FL11(MSC,MDC), FL12(MSC,MDC), FL21(MSC,MDC), FL22(MSC,MDC), FL31(MSC,MDC), FL32(MSC,MDC)
-      REAL(rkind):: CRFS(MSC,MDC,3), K1(MSC,MDC), KM(MSC,MDC,3), K(MSC,MDC,3), TRIA03
+      REAL(rkind) :: FL11(NUMSIG,NUMDIR), FL12(NUMSIG,NUMDIR), FL21(NUMSIG,NUMDIR), FL22(NUMSIG,NUMDIR), FL31(NUMSIG,NUMDIR), FL32(NUMSIG,NUMDIR)
+      REAL(rkind):: CRFS(NUMSIG,NUMDIR,3), K1(NUMSIG,NUMDIR), KM(NUMSIG,NUMDIR,3), K(NUMSIG,NUMDIR,3), TRIA03
 # ifndef NO_MEMORY_CX_CY
-      REAL(rkind) :: CX(MSC,MDC,MNP), CY(MSC,MDC,MNP)
+      REAL(rkind) :: CX(NUMSIG,NUMDIR,MNP), CY(NUMSIG,NUMDIR,MNP)
 # else
-      REAL(rkind) :: CXY(2,MSC,MDC,3)
+      REAL(rkind) :: CXY(2,NUMSIG,NUMDIR,3)
       REAL(rkind)      :: DIFRU, USOC, WVC
 # endif
 # ifndef SINGLE_LOOP_AMATRIX
-      REAL(rkind) :: DELTAL(MSC,MDC,3,MNE)
-      REAL(rkind) :: KP(MSC,MDC,3,MNE), NM(MSC,MDC,MNE)
+      REAL(rkind) :: DELTAL(NUMSIG,NUMDIR,3,MNE)
+      REAL(rkind) :: KP(NUMSIG,NUMDIR,3,MNE), NM(NUMSIG,NUMDIR,MNE)
       INTEGER     :: POS
 # else
-      REAL(rkind) :: DELTAL(MSC,MDC,3)
-      REAL(rkind) :: KP(MSC,MDC,3), NM(MSC,MDC)
+      REAL(rkind) :: DELTAL(NUMSIG,NUMDIR,3)
+      REAL(rkind) :: KP(NUMSIG,NUMDIR,3), NM(NUMSIG,NUMDIR)
 # endif
       INTEGER :: I1, I2, I3
       INTEGER :: IP, ID, IS, IE
       INTEGER :: I, IPGL1, IPrel
-      REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
-      REAL(rkind) :: LAMBDA(2,MSC,MDC)
+      REAL(rkind) :: DTK(NUMSIG,NUMDIR), TMP3(NUMSIG,NUMDIR)
+      REAL(rkind) :: LAMBDA(2,NUMSIG,NUMDIR)
 # ifdef DEBUG
       WRITE(740+myrank,*) 'Begin of EIMPS_ASPAR_B_BLOCK'
 # endif
@@ -3046,8 +3046,8 @@
 # else
         DO I=1,3
           IP = INE(I,IE)
-          DO IS=1,MSC
-            DO ID=1,MDC
+          DO IS=1,NUMSIG
+            DO ID=1,NUMDIR
               IF (LSECU .OR. LSTCU) THEN
                 CXY(1,IS,ID,I) = CG(IS,IP)*COSTH(ID)+CURTXY(IP,1)
                 CXY(2,IS,ID,I) = CG(IS,IP)*SINTH(ID)+CURTXY(IP,2)
@@ -3108,14 +3108,14 @@
           I2=JA_IE(I,2,IE)
           I3=JA_IE(I,3,IE)
           K1(:,:) =  KP(:,:,I)
-          DO ID=1,MDC
+          DO ID=1,NUMDIR
             DTK(:,ID) =  K1(:,ID) * DT4A * IOBWB(IP) * IOBPD(ID,IP) * IOBDP(IP)
           END DO
           TMP3(:,:)  =  DTK(:,:) * NM(:,:)
           ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,I             ) + ASPAR(:,:,I1)
           ASPAR(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,1)) + ASPAR(:,:,I2)
           ASPAR(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(I,2)) + ASPAR(:,:,I3)
-          DO ID=1,MDC
+          DO ID=1,NUMDIR
             B(:,ID,IP)  =  B(:,ID,IP) + U(:,ID,IP) * TRIA03 * IOBWB(IP) * IOBPD(ID,IP) * IOBDP(IP) 
           END DO
         END DO
@@ -3131,7 +3131,7 @@
             POS   =  POS_CELL(J)
             K1(:,:)    =  KP(:,:,POS,IE) ! Flux Jacobian
             TRIA03 = ONETHIRD * TRIA(IE)
-            DO ID=1,MDC
+            DO ID=1,NUMDIR
               DTK(:,ID)   =  K1(:,ID) * DT4A * IOBPD(ID,IP)
             END DO
             TMP3(:,:)  =  DTK(:,:) * NM(:,:,IE)
@@ -3141,7 +3141,7 @@
             ASPAR(:,:,I1) =  TRIA03+DTK(:,:)- TMP3(:,:) * DELTAL(:,:,POS             ,IE) + ASPAR(:,:,I1)  ! Diagonal entry
             ASPAR(:,:,I2) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(POS,1),IE) + ASPAR(:,:,I2)  ! off diagonal entries ...
             ASPAR(:,:,I3) =                 - TMP3(:,:) * DELTAL(:,:,POS_TRICK(POS,2),IE) + ASPAR(:,:,I3)
-            DO ID=1,MDC
+            DO ID=1,NUMDIR
               B(:,ID,IP)     =  B(:,ID,IP) + IOBPD(ID,IP)*TRIA03 * U(:,ID,IP)
             END DO
           END DO
@@ -3182,7 +3182,7 @@
 # if defined DEBUG
       WRITE(3000+myrank,*)  'sum(ASPAR )=', sum(ASPAR)
       WRITE(3000+myrank,*)  'sum(B     )=', sum(B)
-      DO IS=1,MSC
+      DO IS=1,NUMSIG
         WRITE(3000+myrank,*) 'IS, sum(ASPAR)=', IS, sum(ASPAR(IS,:,:))
       END DO
 # endif
@@ -3196,7 +3196,7 @@
       type(LocalColorInfo), intent(inout) :: LocalColor
       type(I5_SolutionData), intent(inout) :: SolDatI
       integer nbIter
-      real(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
+      real(rkind) :: Norm_L2(NUMSIG,NUMDIR), Norm_LINF(NUMSIG,NUMDIR)
 # ifndef ASPAR_B_COMPUTE_BLOCK
       real(rkind) :: U(MNP), ASPAR(NNZ), B(MNP)
 # endif
@@ -3232,7 +3232,7 @@
 # endif
       CALL I5B_BCGS_REORG_SOLVER(LocalColor, SolDatI, nbIter, Norm_L2, Norm_LINF)
       DO IP=1,MNP
-        DO ID=1,MDC
+        DO ID=1,NUMDIR
           AC2(:,ID,IP)=MAX(ZERO, AC2(:,ID,IP))*MyREAL(IOBPD(ID,IP))
         END DO
       END DO

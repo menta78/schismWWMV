@@ -75,7 +75,7 @@
 
          INTEGER     :: I, IP, IT_SCHISM, K
          REAL(rkind) :: DT_PROVIDED
-         REAL(rkind) :: OUTPAR(OUTVARS), OUTWINDPAR(WINDVARS), ACLOC(MSC,MDC)
+         REAL(rkind) :: OUTPAR(OUTVARS), OUTWINDPAR(WINDVARS), WALOC(NUMSIG,NUMDIR)
          character(LEN=15) :: CALLFROM
 
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING WWM_II'
@@ -254,9 +254,9 @@
          CALL FLUSH(STAT%FHNDL)
 
          DO IP = 1, MNP
-           ACLOC = AC2(:,:,IP)
+           WALOC = AC2(:,:,IP)
            IF (DEP(IP) .GT. DMIN) THEN
-             CALL INTPAR(IP, MSC, ACLOC, OUTPAR)
+             CALL INTPAR(IP, NUMSIG, WALOC, OUTPAR)
              OUTT_INTPAR(IP,:) = OUTPAR
              CALL WINDPAR(IP,OUTWINDPAR)
              WIND_INTPAR(IP,:) = OUTWINDPAR
@@ -693,15 +693,15 @@
 #if !defined SCHISM && !defined PDLIB && defined MPI_PARALL_GRID
       SUBROUTINE SIMPLE_PRE_READ
       USE DATAPOOL
-      USE schism_glbl, only : msc2, mdc2, ics
+      USE schism_glbl, only : NUMSIG2, NUMDIR2, ics
       IMPLICIT NONE
       CHARACTER(LEN=20) :: BEGTC, UNITC, ENDTC
       REAL(rkind) DELTC
          NAMELIST /PROC/ PROCNAME, DIMMODE, LSTEA, LQSTEA, LSPHE,       &
      &      LNAUTIN, LNAUTOUT, LMONO_OUT, LMONO_IN,                     &
      &      BEGTC, DELTC, UNITC, ENDTC, DMIN 
-         NAMELIST /GRID/ LCIRD, LSTAG, MINDIR, MAXDIR, MDC, FRLOW,      &
-     &      FRHIGH, MSC, FILEGRID, IGRIDTYPE, LSLOP, SLMAX, LVAR1D,     &
+         NAMELIST /GRID/ LCIRD, LSTAG, MINDIR, MAXDIR, NUMDIR, FRLOW,      &
+     &      FRHIGH, NUMSIG, FILEGRID, IGRIDTYPE, LSLOP, SLMAX, LVAR1D,     &
      &      LOPTSIG, CART2LATLON, LATLON2CART 
       INTEGER FHNDL
       !
@@ -725,8 +725,8 @@
       IF (CART2LATLON .and. LATLON2CART) THEN
         CALL WWM_ABORT('You cannot have both CART2LATLON and CART2LONLAT')
       END IF
-      msc2=MSC
-      mdc2=MDC
+      NUMSIG2=NUMSIG
+      NUMDIR2=NUMDIR
       END SUBROUTINE
 #endif
 !**********************************************************************

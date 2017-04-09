@@ -4,36 +4,36 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SPECTRAL_SHAPE(SPPAR,ACLOC,LDEBUG,CALLFROM, OPTI)
+      SUBROUTINE SPECTRAL_SHAPE(SPPAR,WALOC,LDEBUG,CALLFROM, OPTI)
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind), INTENT(OUT)    ::  ACLOC(MSC,MDC)
+      REAL(rkind), INTENT(OUT)    ::  WALOC(NUMSIG,NUMDIR)
       REAL(rkind), INTENT(INOUT)  ::  SPPAR(8)
       CHARACTER(LEN=*), INTENT(IN) :: CALLFROM
       LOGICAL, INTENT(IN) :: LDEBUG, OPTI
       IF (SPPAR(1) .lt. VERYSMALL) THEN
-        CALL KERNEL_SPECTRAL_SHAPE(SPPAR,ACLOC,LDEBUG,CALLFROM)
+        CALL KERNEL_SPECTRAL_SHAPE(SPPAR,WALOC,LDEBUG,CALLFROM)
       ELSE
         IF (OPTI) THEN
 !          Print *, 'Before call to OPTI_SPECTRAL_SHAPE'
-          CALL OPTI_SPECTRAL_SHAPE(SPPAR,ACLOC,LDEBUG,CALLFROM)
+          CALL OPTI_SPECTRAL_SHAPE(SPPAR,WALOC,LDEBUG,CALLFROM)
 !          Print *, ' After call to OPTI_SPECTRAL_SHAPE'
         ELSE
-          CALL KERNEL_SPECTRAL_SHAPE(SPPAR,ACLOC,LDEBUG,CALLFROM)
+          CALL KERNEL_SPECTRAL_SHAPE(SPPAR,WALOC,LDEBUG,CALLFROM)
         END IF
       END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_ESTIMATE_PER_DIR_SHAPE(SPPAR, ACLOC, HS, TM, DM)
+      SUBROUTINE COMPUTE_ESTIMATE_PER_DIR_SHAPE(SPPAR, WALOC, HS, TM, DM)
       USE DATAPOOL
       IMPLICIT NONE
       REAL(rkind), INTENT(IN)  :: SPPAR(8)
-      REAL(rkind), INTENT(IN)  :: ACLOC(MSC,MDC)
+      REAL(rkind), INTENT(IN)  :: WALOC(NUMSIG,NUMDIR)
       REAL(rkind), INTENT(OUT) :: HS, TM, DM
       REAL(rkind) :: DEPLOC, CURTXYLOC(2)
-      REAL(rkind) :: WKLOC(MSC)
+      REAL(rkind) :: WKLOC(NUMSIG)
       REAL(rkind) :: FPP, TPP, CPP, WNPP, CGPP, KPP, LPP
       REAL(rkind) :: PEAKDSPR, PEAKDM, DPEAK, TPPD, KPPD, CGPD, CPPD
       REAL(rkind) :: TM01, TM02, TM10, KLM, WLM
@@ -41,33 +41,33 @@
       REAL(rkind) :: SPSIGLOC, WVN, WVC, WVK, WVCG
       integer ISMAX, IS
 
-      ISMAX=MSC
+      ISMAX=NUMSIG
       CURTXYLOC=ZERO
-      DO IS=1,MSC
+      DO IS=1,NUMSIG
         SPSIGLOC = SPSIG(IS)
         CALL WAVEKCG(DEPLOC,SPSIGLOC,WVN,WVC,WVK,WVCG)
         WKLOC(IS)=WVK
       END DO
-      CALL MEAN_PARAMETER_LOC(ACLOC,CURTXYLOC,DEPLOC,WKLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
+      CALL MEAN_PARAMETER_LOC(WALOC,CURTXYLOC,DEPLOC,WKLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
       IF (SPPAR(5) .gt. 0) THEN
 !        Print *, 'Using PEAK parameters'
-        CALL PEAK_PARAMETER_LOC(ACLOC,DEPLOC,ISMAX,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
+        CALL PEAK_PARAMETER_LOC(WALOC,DEPLOC,ISMAX,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
 !        Print *, '   PEAKDM=', PEAKDM
         TM=TPP
         DM=PEAKDM
       ELSE
 !        Print *, 'Using MEAN parameters'
-        CALL MEAN_DIRECTION_AND_SPREAD_LOC(ACLOC,ISMAX,ETOTS,ETOTC,DM,DSPR)
+        CALL MEAN_DIRECTION_AND_SPREAD_LOC(WALOC,ISMAX,ETOTS,ETOTC,DM,DSPR)
         TM=TM01
       END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE OPTI_SPECTRAL_SHAPE(SPPAR,ACLOC,LDEBUG,CALLFROM)
+      SUBROUTINE OPTI_SPECTRAL_SHAPE(SPPAR,WALOC,LDEBUG,CALLFROM)
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind), INTENT(OUT)    ::  ACLOC(MSC,MDC)
+      REAL(rkind), INTENT(OUT)    ::  WALOC(NUMSIG,NUMDIR)
       REAL(rkind), INTENT(INOUT)  ::  SPPAR(8)
       CHARACTER(LEN=*), INTENT(IN) :: CALLFROM
       LOGICAL, INTENT(IN) :: LDEBUG
@@ -77,14 +77,14 @@
       integer :: iIter, nbIter, eSign, IS, ID
       REAL(rkind) :: eSum
       IF (ABS(SPPAR(5)) .eq. 3) THEN
-        CALL KERNEL_SPECTRAL_SHAPE(SPPAR,ACLOC,LDEBUG,CALLFROM)
+        CALL KERNEL_SPECTRAL_SHAPE(SPPAR,WALOC,LDEBUG,CALLFROM)
         RETURN
       END IF
       SPPARwork1=SPPAR
       SPPARwork2=SPPAR
       Tper=SPPAR(2)
-      CALL KERNEL_SPECTRAL_SHAPE(SPPAR,ACLOC,LDEBUG,CALLFROM)
-      CALL COMPUTE_ESTIMATE_PER_DIR_SHAPE(SPPAR, ACLOC, HS, TM, DM)
+      CALL KERNEL_SPECTRAL_SHAPE(SPPAR,WALOC,LDEBUG,CALLFROM)
+      CALL COMPUTE_ESTIMATE_PER_DIR_SHAPE(SPPAR, WALOC, HS, TM, DM)
       DeltaPer=Tper - TM
       IF (TM < Tper) THEN
         eSign=1
@@ -96,8 +96,8 @@
       iIter=0
       DO
         iIter=iIter + 1
-        CALL KERNEL_SPECTRAL_SHAPE(SPPARwork,ACLOC,LDEBUG,CALLFROM)
-        CALL COMPUTE_ESTIMATE_PER_DIR_SHAPE(SPPAR, ACLOC, HS, TM, DM)
+        CALL KERNEL_SPECTRAL_SHAPE(SPPARwork,WALOC,LDEBUG,CALLFROM)
+        CALL COMPUTE_ESTIMATE_PER_DIR_SHAPE(SPPAR, WALOC, HS, TM, DM)
         TheErr=(TM - Tper)*eSign
 !        Print *, 'iIter=', iIter, ' TheErr=', TheErr, ' DeltaPer=', DeltaPer
 !        Print *, '  eSign=', eSign, ' TM=', TM, ' Tper=', Tper
@@ -119,8 +119,8 @@
       DO
 !        Print *, 'iIter=', iIter
         SPPARwork=0.5_rkind*SPPARwork1 + 0.5_rkind*SPPARwork2
-        CALL KERNEL_SPECTRAL_SHAPE(SPPARwork,ACLOC,LDEBUG,CALLFROM)
-        CALL COMPUTE_ESTIMATE_PER_DIR_SHAPE(SPPAR, ACLOC, HS, TM, DM)
+        CALL KERNEL_SPECTRAL_SHAPE(SPPARwork,WALOC,LDEBUG,CALLFROM)
+        CALL COMPUTE_ESTIMATE_PER_DIR_SHAPE(SPPAR, WALOC, HS, TM, DM)
         IF (TM > Tper) THEN
           SPPARwork2=SPPARwork
         ELSE
@@ -131,27 +131,27 @@
           EXIT
         END IF
       END DO
-      CALL KERNEL_SPECTRAL_SHAPE(SPPARwork,ACLOC,LDEBUG,CALLFROM)
-      CALL COMPUTE_ESTIMATE_PER_DIR_SHAPE(SPPAR, ACLOC, HS, TM, DM)
+      CALL KERNEL_SPECTRAL_SHAPE(SPPARwork,WALOC,LDEBUG,CALLFROM)
+      CALL COMPUTE_ESTIMATE_PER_DIR_SHAPE(SPPAR, WALOC, HS, TM, DM)
       SPPARwork(1)=SPPAR(1)*(SPPAR(1)/HS)
-      CALL KERNEL_SPECTRAL_SHAPE(SPPARwork,ACLOC,LDEBUG,CALLFROM)
-      DO IS=1,MSC
-        eSum=sum(ACLOC(IS,:))
+      CALL KERNEL_SPECTRAL_SHAPE(SPPARwork,WALOC,LDEBUG,CALLFROM)
+      DO IS=1,NUMSIG
+        eSum=sum(WALOC(IS,:))
       END DO
       CALL DEG2NAUT (SPPAR(3), DEG, LNAUTIN)
       ADIR = DEG * DEGRAD
-      DO ID=1,MDC
-        eSum=sum(ACLOC(:,ID))
+      DO ID=1,NUMDIR
+        eSum=sum(WALOC(:,ID))
         DiffAng=(360.0_rkind/PI2)*(SPDIR(ID) - ADIR)
       END DO
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE KERNEL_SPECTRAL_SHAPE(SPPAR,ACLOC,LDEBUG,CALLFROM)
+      SUBROUTINE KERNEL_SPECTRAL_SHAPE(SPPAR,WALOC,LDEBUG,CALLFROM)
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind), INTENT(OUT)    ::  ACLOC(MSC,MDC)
+      REAL(rkind), INTENT(OUT)    ::  WALOC(NUMSIG,NUMDIR)
       REAL(rkind), INTENT(INOUT)  ::  SPPAR(8)
       CHARACTER(LEN=*), INTENT(IN) :: CALLFROM
       LOGICAL, INTENT(IN) :: LDEBUG
@@ -180,10 +180,10 @@
 
       ETOT = 0.
       EFTOT = 0.
-      ACLOC = 0.
+      WALOC = 0.
 
       IF (SPPAR(1) .LT. THR .OR. SPPAR(2) .LT. THR .OR. SPPAR(4) .LT. THR) THEN
-        ACLOC = 0.
+        WALOC = 0.
         RETURN
       END IF
 
@@ -201,7 +201,7 @@
       IF (LSHAPE.EQ.3) THEN
 !       select bin closest to given period
         DIFPER = 1.E10
-        DO IS = 1, MSC
+        DO IS = 1, NUMSIG
           IF (ABS(PKPER - PI2/SPSIG(IS)) .LT. DIFPER) THEN
             ISP = IS
             DIFPER = ABS(PKPER - PI2/SPSIG(IS))
@@ -221,7 +221,7 @@
         AUX3 = 2._rkind * SPPAR(7)**2
       ENDIF
 !
-      DO IS = 1, MSC
+      DO IS = 1, NUMSIG
 !
         IF (LSHAPE.EQ.1) THEN
 
@@ -229,7 +229,7 @@
           SF4 = SF**4
           SF5 = SF**5
           RA = (SALPHA/SF5)*EXP(-(5.*FPK4)/(4.*SF4))/(PI2*SPSIG(IS))
-          ACLOC(IS,MDC) = RA
+          WALOC(IS,NUMDIR) = RA
 
         ELSE IF (LSHAPE.EQ.2) THEN
 
@@ -265,7 +265,7 @@
 
           RA = SYF*RA/(SPSIG(IS)*PI2)
 
-          ACLOC(IS,MDC) = RA
+          WALOC(IS,NUMDIR) = RA
 
           IF (LDEBUG) WRITE(DBG%FHNDL,*) 'IS LOOP', IS, SF, FPK, SYF, RA
 !
@@ -273,16 +273,16 @@
 
           IF (IS.EQ.ISP) THEN
             ISBIN = ISP
-            ACLOC(IS,MDC) = ( SPPAR(1)**2 ) / ( 16. * SIGPOW(IS,2) * FRINTF )
+            WALOC(IS,NUMDIR) = ( SPPAR(1)**2 ) / ( 16. * SIGPOW(IS,2) * FRINTF )
           ELSE
-            ACLOC(IS,MDC) = 0.
+            WALOC(IS,NUMDIR) = 0.
           END IF
 
         ELSE IF (LSHAPE .EQ. 4) THEN
 
           AUX2 = ( SPSIG(IS) - ( PI2 / PKPER ) )**2
           RA = AUX1 * EXP ( -1. * AUX2 / AUX3 ) / SPSIG(IS)
-          ACLOC(IS,MDC) = RA
+          WALOC(IS,NUMDIR) = RA
 
         ELSE
           CALL WWM_ABORT('Wrong type for frequency shape 1 - 4')
@@ -295,8 +295,8 @@
 !       calculate average frequency
         AM0 = 0.
         AM1 = 0.
-        DO IS = 1, MSC
-          AS2 = ACLOC(IS,MDC) * SIGPOW(IS,2)
+        DO IS = 1, NUMSIG
+          AS2 = WALOC(IS,NUMDIR) * SIGPOW(IS,2)
           AS3 = AS2 * SPSIG(IS)
           AM0 = AM0 + AS2
           AM1 = AM1 + AS3
@@ -346,7 +346,7 @@
         CTOT =  SQRT(0.5_rkind*MS/PI)/(1._rkind-0.25_rkind/MS)
       ENDIF
       LINCOUT = .FALSE.
-      DO ID = 1, MDC
+      DO ID = 1, NUMDIR
         AACOS = COS(SPDIR(ID) - ADIR)
         !write(*,*) aacos, spdir(id), adir
         IF (AACOS .GT. 0._rkind) THEN
@@ -361,9 +361,9 @@
         ELSE
           CDIR = 0._rkind
         ENDIF
-        DO IS = 1, MSC
-          ACLOC(IS,ID) = CDIR * ACLOC(IS,MDC)
-          !write(*,'(2I10,2F15.8)') is, id, cdir, ACLOC(IS,MDC)
+        DO IS = 1, NUMSIG
+          WALOC(IS,ID) = CDIR * WALOC(IS,NUMDIR)
+          !write(*,'(2I10,2F15.8)') is, id, cdir, WALOC(IS,NUMDIR)
         ENDDO
       ENDDO
 !
@@ -380,24 +380,24 @@
  
         EFTAIL = 1.0 / (PTAIL(1)-1.0)
 
-        IF (MSC .GE. 2) THEN
-          DO ID = 1, MDC
-            DO IS = 2, MSC
+        IF (NUMSIG .GE. 2) THEN
+          DO ID = 1, NUMDIR
+            DO IS = 2, NUMSIG
               DS = SPSIG(IS) - SPSIG(IS-1)
-              EAD = 0.5*(SPSIG(IS)*ACLOC(IS,ID)+SPSIG(IS-1)*ACLOC(IS-1,ID))*DS*DDIR
+              EAD = 0.5*(SPSIG(IS)*WALOC(IS,ID)+SPSIG(IS-1)*WALOC(IS-1,ID))*DS*DDIR
               ETOT = ETOT + EAD
               ETOTC  = ETOTC + EAD * COS(SPDIR(ID))
               ETOTS  = ETOTS + EAD * SIN(SPDIR(ID))
             END DO
-            IF (MSC > 3) THEN
-              EHFR = ACLOC(MSC,ID) * SPSIG(MSC)
-              ETOT = ETOT + DDIR * EHFR * SPSIG(MSC) * EFTAIL
+            IF (NUMSIG > 3) THEN
+              EHFR = WALOC(NUMSIG,ID) * SPSIG(NUMSIG)
+              ETOT = ETOT + DDIR * EHFR * SPSIG(NUMSIG) * EFTAIL
             ENDIF
           END DO
         ELSE
           DS = SGHIGH - SGLOW
-          DO ID = 1, MDC
-            EAD = ACLOC(1,ID) * DS * DDIR
+          DO ID = 1, NUMDIR
+            EAD = WALOC(1,ID) * DS * DDIR
             ETOT = ETOT + EAD
             ETOTC  = ETOTC + EAD * COS(SPDIR(ID))
             ETOTS  = ETOTS + EAD * SIN(SPDIR(ID))
@@ -419,10 +419,10 @@
         EFTOT = 0.0
         EFTAIL = PTAIL(3)
 
-        DO ID = 1, MDC
-          DO IS = 1, MSC
+        DO ID = 1, NUMDIR
+          DO IS = 1, NUMSIG
             OMEG = SPSIG(IS)
-            EAD = FRINTF * SIGPOW(IS,2) * ACLOC(IS,ID)
+            EAD = FRINTF * SIGPOW(IS,2) * WALOC(IS,ID)
             ETOTT = ETOTT + EAD
             EFTOT = EFTOT + EAD * OMEG
           END DO
@@ -435,10 +435,10 @@
 
         ETOTT = 0.0
         ISIGMP = -1
-        DO IS = 1, MSC
+        DO IS = 1, NUMSIG
          EAD = 0.0
-         DO ID = 1, MDC
-            EAD = EAD + SPSIG(IS)*ACLOC(IS,ID)*DDIR
+         DO ID = 1, NUMDIR
+            EAD = EAD + SPSIG(IS)*WALOC(IS,ID)*DDIR
          ENDDO
          IF (EAD > ETOTT) THEN
             ETOTT = EAD
@@ -461,7 +461,7 @@
         WRITE (STAT%FHNDL,*) 'SIMUL     ', 'DM =',       DM 
         WRITE (STAT%FHNDL,*) 'SIMUL     ', 'DSPR =', DSPR
         WRITE (STAT%FHNDL,*) 'SIMUL     ', 'TM=', TM1, 'TPEAK=', TPEAK
-        WRITE (STAT%FHNDL,*) 'TOT AC   =', SUM(ACLOC)
+        WRITE (STAT%FHNDL,*) 'TOT AC   =', SUM(WALOC)
         WRITE (STAT%FHNDL,*) SPPAR
         FLUSH(STAT%FHNDL)
       END IF
@@ -469,24 +469,24 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SPECTRUM_INT(ACLOC)
+      SUBROUTINE SPECTRUM_INT(WALOC)
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind), INTENT(OUT)   :: ACLOC(MSC,MDC)
-      REAL(rkind)                :: MS(MSC), MS1, ADIR1, DS, EAD
-      REAL(rkind)                :: INSPF(WBMSC)
-      REAL(rkind)                :: INSPE(WBMSC)
-      REAL(rkind)                :: INDIR(WBMSC)
-      REAL(rkind)                :: INSPRD(WBMSC)
-      REAL(rkind)                :: INMS(WBMSC)
-      REAL(rkind)                :: SPCDIR(MSC)
+      REAL(rkind), INTENT(OUT)   :: WALOC(NUMSIG,NUMDIR)
+      REAL(rkind)                :: MS(NUMSIG), MS1, ADIR1, DS, EAD
+      REAL(rkind)                :: INSPF(WBNUMSIG)
+      REAL(rkind)                :: INSPE(WBNUMSIG)
+      REAL(rkind)                :: INDIR(WBNUMSIG)
+      REAL(rkind)                :: INSPRD(WBNUMSIG)
+      REAL(rkind)                :: INMS(WBNUMSIG)
+      REAL(rkind)                :: SPCDIR(NUMSIG)
       INTEGER                    :: IS, IS2, ID
-      REAL(rkind)                :: CTOT(MSC), CDIRT, CDIR(MDC), CTOT1, CDIR1
+      REAL(rkind)                :: CTOT(NUMSIG), CDIRT, CDIR(NUMDIR), CTOT1, CDIR1
       REAL(rkind)                :: DDACOS, DEG, DX, DIFFDX, YINTER
       REAL(rkind)                :: GAMMA_FUNC, ETOT, TM2
       REAL(rkind)                :: EFTOT, TM1, OMEG, PPTAIL, OMEG2
       REAL(rkind)                :: RA, ETAIL, EFTAIL
-      REAL(rkind)                :: THD(MDC)
+      REAL(rkind)                :: THD(NUMDIR)
       REAL(rkind)                :: DTHD, RTH0 
       MS1 = WBDS
       ADIR1 = WBDM
@@ -499,32 +499,32 @@
 !
 !        2do Convert ... set the correct units ...
 !
-      DO IS = 1, WBMSC
+      DO IS = 1, WBNUMSIG
         INSPF(IS)  = SFRQ(IS,1) * PI2
         INDIR(IS)  = SDIR(IS,1)
         INSPRD(IS) = SPRD(IS,1) * DEGRAD
         INSPE(IS)  = SPEG(IS,1,1) / PI2
       END DO
       ETOT = 0.0
-      DO IS = 2, WBMSC
+      DO IS = 2, WBNUMSIG
         DS = (INSPF(IS) - INSPF(IS-1)) 
         EAD = 0.5*(INSPE(IS) + INSPE(IS-1))*DS
         ETOT = ETOT + EAD
       END DO
       WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - 1', 4.0*SQRT(ETOT)
-      ACLOC = 0.
-      CALL INTERLIN (WBMSC, MSC, INSPF, SPSIG, INSPE, ACLOC(:,1))
-      DO IS = 1, MSC
-        IF (SPSIG(IS) .GT. INSPF(WBMSC)) THEN
-           WRITE (STAT%FHNDL,*) 'Discrete Frequency is bigger then measured set FRMAX =', INSPF(WBMSC)/PI2
+      WALOC = 0.
+      CALL INTERLIN (WBNUMSIG, NUMSIG, INSPF, SPSIG, INSPE, WALOC(:,1))
+      DO IS = 1, NUMSIG
+        IF (SPSIG(IS) .GT. INSPF(WBNUMSIG)) THEN
+           WRITE (STAT%FHNDL,*) 'Discrete Frequency is bigger then measured set FRMAX =', INSPF(WBNUMSIG)/PI2
            WRITE (STAT%FHNDL,*) 'Setting all Action above the max. measured freq. zero'
-           ACLOC(IS,1) = 0.0
+           WALOC(IS,1) = 0.0
         END IF
       END DO
       ETOT = 0.0
-      DO IS = 2, MSC
+      DO IS = 2, NUMSIG
         DS   = SPSIG(IS) - SPSIG(IS-1)
-        EAD  = 0.5*(ACLOC(IS,1) + ACLOC(IS-1,1))*DS
+        EAD  = 0.5*(WALOC(IS,1) + WALOC(IS-1,1))*DS
         ETOT = ETOT + EAD
       END DO
       WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - INTERPOLATED', 4.0*SQRT(ETOT)
@@ -532,53 +532,53 @@
 !        Convert to Wave Action if nessasary
 !
       IF (LWBAC2EN) THEN
-        DO IS = 1, MSC
-          ACLOC(IS,1) = ACLOC(IS,1) / SPSIG(IS)
+        DO IS = 1, NUMSIG
+          WALOC(IS,1) = WALOC(IS,1) / SPSIG(IS)
         END DO
       END IF
       ETOT = 0.0
-      DO IS = 2, MSC
+      DO IS = 2, NUMSIG
         DS   = SPSIG(IS) - SPSIG(IS-1)
-        EAD  = 0.5 * (SPSIG(IS)*ACLOC(IS,1)+SPSIG(IS-1)*ACLOC(IS-1,1))*DS
+        EAD  = 0.5 * (SPSIG(IS)*WALOC(IS,1)+SPSIG(IS-1)*WALOC(IS-1,1))*DS
         ETOT = ETOT + EAD
       END DO
       WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - WAVE ACTION', 4.0*SQRT(ETOT)
 !
 !        Convert from nautical to cartesian direction if nessasary and from deg2rad
 !
-      DO IS = 1, WBMSC
+      DO IS = 1, WBNUMSIG
         CALL DEG2NAUT (INDIR(IS), DEG, LNAUTIN)
         INDIR(IS) = DEG
       END DO
 !
 !        Interpolate Directions in frequency space
 !
-      DO IS = 1, MSC
-        DO IS2 = 1, WBMSC - 1
+      DO IS = 1, NUMSIG
+        DO IS2 = 1, WBNUMSIG - 1
           IF (SPSIG(IS) .GT. INSPF(IS2) .AND. SPSIG(IS) .LT. INSPF(IS2+1)) THEN
             DX     = INSPF(IS2+1) - INSPF(IS2)
             DIFFDX = SPSIG(IS)    - INSPF(IS2)
             CALL INTERDIR( INDIR(IS2), INDIR(IS2+1), DX, DIFFDX, YINTER)
             SPCDIR(IS) = YINTER
-            IF (SPSIG(IS) .GT. INSPF(WBMSC) ) SPCDIR(IS) = 0.0
+            IF (SPSIG(IS) .GT. INSPF(WBNUMSIG) ) SPCDIR(IS) = 0.0
           END IF
         END DO
-        IF (SPSIG(IS) .GT. INSPF(WBMSC) ) SPCDIR(IS) = 0.0
+        IF (SPSIG(IS) .GT. INSPF(WBNUMSIG) ) SPCDIR(IS) = 0.0
       END DO
-      CALL INTERLIN (WBMSC, MSC, INSPF, SPSIG, INDIR, SPCDIR)
-      DO IS = 1, MSC
-        IF ( SPSIG(IS) .GT. INSPF(WBMSC) ) SPCDIR(IS) = 0.
+      CALL INTERLIN (WBNUMSIG, NUMSIG, INSPF, SPSIG, INDIR, SPCDIR)
+      DO IS = 1, NUMSIG
+        IF ( SPSIG(IS) .GT. INSPF(WBNUMSIG) ) SPCDIR(IS) = 0.
       END DO
-      DO IS = 1, MSC
+      DO IS = 1, NUMSIG
         DEG = SPCDIR(IS) * DEGRAD
         SPCDIR(IS) = DEG
       END DO
       IF (LINDSPRDEG) THEN
-        DO IS = 1, WBMSC
+        DO IS = 1, WBNUMSIG
           INMS(IS) = MAX (INSPRD(IS)**(-2) - TWO, ONE)
         END DO
       ELSE
-        DO IS = 1, WBMSC
+        DO IS = 1, WBNUMSIG
           INMS(IS) = INSPRD(IS)
         END DO
       END IF
@@ -586,9 +586,9 @@
 !       Interpolate MS in Frequency Space, if LCUBIC than Cubic Spline Interpolation is used
 !
       MS = 0.
-      CALL INTERLIN (WBMSC, MSC, INSPF, SPSIG, INMS, MS)
-      DO IS = 1, MSC
-        IF ( SPSIG(IS) .GT. INSPF(WBMSC) ) MS(IS) = MS(IS-1)
+      CALL INTERLIN (WBNUMSIG, NUMSIG, INSPF, SPSIG, INMS, MS)
+      DO IS = 1, NUMSIG
+        IF ( SPSIG(IS) .GT. INSPF(WBNUMSIG) ) MS(IS) = MS(IS-1)
       END DO
 !
 !        Construction of a JONSWAP Spectra
@@ -599,39 +599,39 @@
         ELSE
           CTOT1 = 2.**MS1 * (GAMMA_FUNC(1.+0.5*MS1))**2 / (PI * GAMMA_FUNC(1.+MS1))
         ENDIF
-        DO IS = 1, MSC
-          RA = ACLOC(IS,1)
+        DO IS = 1, NUMSIG
+          RA = WALOC(IS,1)
           CDIRT = 0.
-          DO ID = 1, MDC
+          DO ID = 1, NUMDIR
             DDACOS = COS(SPDIR(ID) - ADIR1)
             IF (DDACOS .GT. 0.) THEN
               CDIR1 = CTOT1 * MAX (DDACOS**MS1, THR)
             ELSE
               CDIR1 = 0.
             ENDIF
-            ACLOC(IS,ID) = RA * CDIR1
+            WALOC(IS,ID) = RA * CDIR1
             CDIRT        = CDIRT + CDIR1 * DDIR
           END DO
         END DO
       ELSE
-        DO IS = 1, MSC
+        DO IS = 1, NUMSIG
           IF (MS(IS).GT.10.) THEN
             CTOT(IS) = SQRT(MS(IS)/(2.*PI)) * (1. + 0.25/MS(IS))
           ELSE
             CTOT(IS) = 2.**MS(IS) * (GAMMA_FUNC(1.+0.5*MS(IS)))**2.0 / (PI * GAMMA_FUNC(1.+MS(IS)))
           ENDIF
         END DO
-        DO IS = 1, MSC
-          RA = ACLOC(IS,1)
+        DO IS = 1, NUMSIG
+          RA = WALOC(IS,1)
           CDIRT = 0.
-          DO ID = 1, MDC
+          DO ID = 1, NUMDIR
             DDACOS = COS(SPDIR(ID) - SPCDIR(IS))
             IF (DDACOS .GT. 0.) THEN
               CDIR(ID) = CTOT(IS) * MAX (DDACOS**MS(IS), ZERO)
             ELSE
               CDIR(ID) = 0.
             ENDIF
-            ACLOC(IS,ID) = RA * CDIR(ID)
+            WALOC(IS,ID) = RA * CDIR(ID)
             CDIRT        = CDIRT + CDIR(ID) * DDIR
           ENDDO
 
@@ -642,10 +642,10 @@
         ENDDO
       END IF
       ETOT = 0.
-      DO ID = 1, MDC
-        DO IS = 2, MSC
+      DO ID = 1, NUMDIR
+        DO IS = 2, NUMSIG
           DS = SPSIG(IS) - SPSIG(IS-1)
-          EAD = 0.5*(SPSIG(IS)*ACLOC(IS,ID)+SPSIG(IS-1)*ACLOC(IS-1,ID))*DS*DDIR
+          EAD = 0.5*(SPSIG(IS)*WALOC(IS,ID)+SPSIG(IS-1)*WALOC(IS-1,ID))*DS*DDIR
           ETOT = ETOT + EAD
         END DO
       END DO
@@ -659,18 +659,18 @@
       PPTAIL = PTAIL(1) - 2.
       EFTAIL = 1. / (PPTAIL * (1. + PPTAIL * (FRINTH-1.)))
 
-      DO ID=1, MDC
-         DO IS = 1, MSC
+      DO ID=1, NUMDIR
+         DO IS = 1, NUMSIG
            OMEG = SPSIG(IS)
-           EAD = FRINTF * SIGPOW(IS,2) * ACLOC(IS,ID)
+           EAD = FRINTF * SIGPOW(IS,2) * WALOC(IS,ID)
            ETOT = ETOT + EAD
            EFTOT = EFTOT + EAD * OMEG
          ENDDO
-         IF (MSC .GT. 3) THEN
-           EAD = SIGPOW(MSC,2) * ACLOC(MSC,ID)
+         IF (NUMSIG .GT. 3) THEN
+           EAD = SIGPOW(NUMSIG,2) * WALOC(NUMSIG,ID)
            ETOT = ETOT + ETAIL * EAD
            EFTOT = EFTOT + EFTAIL * OMEG * EAD
-!           WRITE (*,*)  ETAIL * EAD, EFTAIL * OMEG * EAD, ACLOC(MSC,ID)
+!           WRITE (*,*)  ETAIL * EAD, EFTAIL * OMEG * EAD, WALOC(NUMSIG,ID)
          ENDIF
       ENDDO
       IF (EFTOT.GT.THR) THEN
@@ -685,15 +685,15 @@
       ETAIL  = 1. / (PPTAIL * (1. + PPTAIL * (FRINTH-1.)))
       PPTAIL = PTAIL(1) - 3.
       EFTAIL = 1. / (PPTAIL * (1. + PPTAIL * (FRINTH-1.)))
-      DO ID=1, MDC
-         DO IS=1,MSC
-           EAD  = SIGPOW(IS,2) * ACLOC(IS,ID) * FRINTF
+      DO ID=1, NUMDIR
+         DO IS=1,NUMSIG
+           EAD  = SIGPOW(IS,2) * WALOC(IS,ID) * FRINTF
            OMEG2 = SIGPOW(IS,2)
            ETOT  = ETOT + EAD
            EFTOT = EFTOT + EAD * OMEG2
          ENDDO
-         IF (MSC .GT. 3) THEN
-           EAD  = SIGPOW(MSC,2) * ACLOC(MSC,ID)
+         IF (NUMSIG .GT. 3) THEN
+           EAD  = SIGPOW(NUMSIG,2) * WALOC(NUMSIG,ID)
            ETOT  = ETOT  + ETAIL * EAD
            EFTOT = EFTOT + EFTAIL * OMEG2 * EAD
          ENDIF
@@ -705,10 +705,10 @@
       END IF
 
       ETOT = 0.
-      DO ID = 1, MDC
-        DO IS = 2, MSC
+      DO ID = 1, NUMDIR
+        DO IS = 2, NUMSIG
           DS = SPSIG(IS) - SPSIG(IS-1)
-          EAD = 0.5*(SPSIG(IS)*ACLOC(IS,ID)+SPSIG(IS-1)*ACLOC(IS-1,ID))*DS*DDIR
+          EAD = 0.5*(SPSIG(IS)*WALOC(IS,ID)+SPSIG(IS-1)*WALOC(IS-1,ID))*DS*DDIR
           ETOT = ETOT + EAD
         END DO
       END DO
@@ -721,16 +721,16 @@
 
       IF (.FALSE.) THEN ! Write WW3 spectra of the input boundary condition ...
 
-        DTHD=360./MDC
+        DTHD=360./NUMDIR
         RTH0=SPDIR(1)/DDIR
-        DO ID = 1, MDC
+        DO ID = 1, NUMDIR
           THD(ID)=DTHD*(RTH0+MyREAL(ID-1))
         END DO
-        WRITE (4001,1944) 'WAVEWATCH III SPECTRA', MSC, MDC, 1, 'LAI ET AL'
-        WRITE (4001,1945) (SPSIG(IS)*INVPI2,IS=1,MSC)
-        WRITE (4001,1946) (MOD(2.5*PI-SPDIR(ID),PI2),ID=1,MDC)
+        WRITE (4001,1944) 'WAVEWATCH III SPECTRA', NUMSIG, NUMDIR, 1, 'LAI ET AL'
+        WRITE (4001,1945) (SPSIG(IS)*INVPI2,IS=1,NUMSIG)
+        WRITE (4001,1946) (MOD(2.5*PI-SPDIR(ID),PI2),ID=1,NUMDIR)
         WRITE (4001,901) 'LAI SPEC', 0., 0., 0., 0., 0., 0., 0.
-        WRITE (4001,902) ((ACLOC(IS,ID)*SPSIG(IS)/PI2*RHOW*G9,IS=1,MSC),ID=1,MDC)
+        WRITE (4001,902) ((WALOC(IS,ID)*SPSIG(IS)/PI2*RHOW*G9,IS=1,NUMSIG),ID=1,NUMDIR)
 
       END IF
 
@@ -790,7 +790,7 @@
       SUBROUTINE WAVE_BOUNDARY_CONDITION(WBACOUT)
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind), INTENT(OUT)   :: WBACOUT(MSC,MDC,IWBMNP)
+      REAL(rkind), INTENT(OUT)   :: WBACOUT(NUMSIG,NUMDIR,IWBMNP)
       INTEGER                    :: IP
 !AR: WAVE BOUNDARY
 
@@ -1019,7 +1019,7 @@
           END IF 
           IF (LBCSP .or. LEXPORT_BOUC_MOD_OUT .or. BOUC_NETCDF_OUT_SPECTRA) THEN
             IF (.NOT. ALLOCATED(WBAC_GL)) THEN
-              allocate(WBAC_GL(MSC,MDC,IWBMNPGL), stat=istat)
+              allocate(WBAC_GL(NUMSIG,NUMDIR,IWBMNPGL), stat=istat)
               IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 27')
             END IF
           END IF
@@ -1711,22 +1711,22 @@
       IF (LFIRST) THEN
         CALL TEST_FILE_EXIST_DIE('Missing wave file : ', TRIM(WAV%FNAME))
         OPEN(WAV%FHNDL, FILE = TRIM(WAV%FNAME), STATUS = 'OLD')   
-        READ (WAV%FHNDL,*) WBMSC
-        READ (WAV%FHNDL,*) WBMDC
-        !WRITE(*,*) WBMSC, WBMDC
+        READ (WAV%FHNDL,*) WBNUMSIG
+        READ (WAV%FHNDL,*) WBNUMDIR
+        !WRITE(*,*) WBNUMSIG, WBNUMDIR
         CALL ALLOC_SPEC_BND
-        DO IS = 1, WBMSC
+        DO IS = 1, WBNUMSIG
           READ (WAV%FHNDL,*) SFRQ(IS,1)
         END DO
       END IF
       IF (LINHOM) THEN
         DO IP = 1, IWBMNP
-          DO IS = 1, WBMSC
+          DO IS = 1, WBNUMSIG
             READ (WAV%FHNDL, *) SPEG(IS,1,IP), SDIR(IS,1), SPRD(IS,1)
           END DO
         END DO
       ELSE
-        DO IS = 1, WBMSC
+        DO IS = 1, WBNUMSIG
           READ (WAV%FHNDL, *) SPEG(IS,1,1), SDIR(IS,1), SPRD(IS,1)
           !WRITE(*,*) SPEG(IS,1,1), SDIR(IS,1), SPRD(IS,1)
         END DO
@@ -1758,16 +1758,16 @@
       CHARACTER(LEN=21) :: LABEL
       CALL TEST_FILE_EXIST_DIE('Missing wave file : ', TRIM(WAV%FNAME))
       OPEN(WAV%FHNDL,FILE=WAV%FNAME, STATUS='OLD',CONVERT='BIG_ENDIAN',FORM='UNFORMATTED')
-      READ(WAV%FHNDL)LABEL, MSC_WW3,MDC_WW3, NP_WW3, GNAME
+      READ(WAV%FHNDL)LABEL, NUMSIG_WW3,NUMDIR_WW3, NP_WW3, GNAME
       WRITE(STAT%FHNDL,*) 'START READSPEC2D_WW3_INIT_SPEC'
-      WRITE(STAT%FHNDL,*) 'LABEL, MSC_WW3,MDC_WW3, NP_WW3, GNAME'
-      WRITE(STAT%FHNDL,*) LABEL, MSC_WW3,MDC_WW3, NP_WW3, GNAME
+      WRITE(STAT%FHNDL,*) 'LABEL, NUMSIG_WW3,NUMDIR_WW3, NP_WW3, GNAME'
+      WRITE(STAT%FHNDL,*) LABEL, NUMSIG_WW3,NUMDIR_WW3, NP_WW3, GNAME
       CLOSE(WAV%FHNDL)
-      WRITE(STAT%FHNDL,*) 'DIRECTION NUMBER IN WW3 SPECTRUM:',MDC_WW3
-      WRITE(STAT%FHNDL,*) 'FREQUENCY NUMBER IN WW3 SPECTRUM:',MSC_WW3
+      WRITE(STAT%FHNDL,*) 'DIRECTION NUMBER IN WW3 SPECTRUM:',NUMDIR_WW3
+      WRITE(STAT%FHNDL,*) 'FREQUENCY NUMBER IN WW3 SPECTRUM:',NUMSIG_WW3
       WRITE(STAT%FHNDL,'("+TRACE...",A)')'DONE READSPEC2D_WW3_INIT_SPEC'
-      IF ((MDC_WW3 .gt. 360).or.(MSC_WW3 .gt. 1000)) THEN
-        CALL WWM_ABORT('MDC_WW3 or MSC_WW3 are too large to be reasonable')
+      IF ((NUMDIR_WW3 .gt. 360).or.(NUMSIG_WW3 .gt. 1000)) THEN
+        CALL WWM_ABORT('NUMDIR_WW3 or NUMSIG_WW3 are too large to be reasonable')
       END IF
       END SUBROUTINE
 !**********************************************************************
@@ -1784,7 +1784,7 @@
       SUBROUTINE READSPEC2D_WW3_INIT_TIME 
       USE DATAPOOL
       IMPLICIT NONE
-      REAL                 :: SPECDMP(MSC_WW3,MDC_WW3)
+      REAL                 :: SPECDMP(NUMSIG_WW3,NUMDIR_WW3)
       INTEGER              :: TMP, IFLAG, IP, TIME(2), IT
       INTEGER, ALLOCATABLE :: ITIME(:,:)
       CHARACTER(LEN=30)    :: GNAME
@@ -1793,12 +1793,12 @@
       CHARACTER(LEN=20)    :: CTIME1, CTIME2
       CHARACTER(LEN=15)    :: TIMESTRING
 
-      REAL :: TMP1(MSC_WW3),TMP2(MDC_WW3) !GD: in ww3 binary file, reals 
+      REAL :: TMP1(NUMSIG_WW3),TMP2(NUMDIR_WW3) !GD: in ww3 binary file, reals 
       REAL :: TMPR1, TMPR2, TMPR3, TMPR4, TMPR5, TMPR6, TMPR7
 
       WRITE(STAT%FHNDL,*) 'START READSPEC2D_WW3_INIT_TIME'
    
-      ALLOCATE(FQ_WW3(MSC_WW3), DR_WW3(MDC_WW3), XP_WW3(NP_WW3), YP_WW3(NP_WW3), stat=istat)
+      ALLOCATE(FQ_WW3(NUMSIG_WW3), DR_WW3(NUMDIR_WW3), XP_WW3(NP_WW3), YP_WW3(NP_WW3), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 19')
       FQ_WW3=ZERO
       DR_WW3=ZERO
@@ -1882,7 +1882,7 @@
 
       CLOSE(WAV%FHNDL)
       WRITE(STAT%FHNDL,*) 'MIN. FREQ. IN WW3 SPECTRUM:',FQ_WW3(1)
-      WRITE(STAT%FHNDL,*) 'MAX. FREQ. IN WW3 SPECTRUM:',FQ_WW3(MSC_WW3)
+      WRITE(STAT%FHNDL,*) 'MAX. FREQ. IN WW3 SPECTRUM:',FQ_WW3(NUMSIG_WW3)
       WRITE(STAT%FHNDL,*) 'NUMBER OF TIME STEPS',MAXSTEP_WW3
       WRITE(STAT%FHNDL,*) 'TIME INCREMENT IN SPECTRAL FILE', DTBOUND_WW3
       WRITE(STAT%FHNDL,*) 'FIRST TIME STEP IN WW3 SPECTRUM FILE:',BND_TIME_ALL_FILES(1,1)
@@ -1927,10 +1927,10 @@
       INTEGER :: TMP
       INTEGER :: IP, IT, TIME(2)
 
-      REAL(rkind), INTENT(OUT) :: SPECOUT(MSC_WW3,MDC_WW3,NP_WW3)
+      REAL(rkind), INTENT(OUT) :: SPECOUT(NUMSIG_WW3,NUMDIR_WW3,NP_WW3)
 
-      REAL :: SPECOUT_SGLE(MSC_WW3,MDC_WW3)
-      REAL :: FQ_WW3_SNGL(MSC_WW3), DR_WW3_SNGL(MDC_WW3)
+      REAL :: SPECOUT_SGLE(NUMSIG_WW3,NUMDIR_WW3)
+      REAL :: FQ_WW3_SNGL(NUMSIG_WW3), DR_WW3_SNGL(NUMDIR_WW3)
       REAL :: XP_WW3_SGLE(NP_WW3), YP_WW3_SGLE(NP_WW3)
       REAL :: D(NP_WW3),UA(NP_WW3),UD(NP_WW3),CA(NP_WW3),CD2(NP_WW3)
       REAL :: M0, M1, M2, DF
@@ -1957,8 +1957,8 @@
 !            write(*,*) sum(SPECOUT_SGLE)
             SPECOUT(:,:,IP) = SPECOUT_SGLE
             m0 = 0.; m1 = 0.; m2 = 0.
-            DO ID = 1,MDC_WW3-1
-              DO IS = 1,MSC_WW3-1
+            DO ID = 1,NUMDIR_WW3-1
+              DO IS = 1,NUMSIG_WW3-1
                 DF = FQ_WW3_SNGL(IS+1)-FQ_WW3_SNGL(IS)
                 eSPECmid= (SPECOUT_SGLE(IS+1,ID)+SPECOUT_SGLE(IS,ID))/2.
                 M0 = M0 + eSPECmid*DF*DDIR_WW3
@@ -1995,7 +1995,7 @@
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: ISTEP
-      REAL(rkind), INTENT(OUT) :: SPECOUT(MSC_WW3,MDC_WW3,NP_WW3)
+      REAL(rkind), INTENT(OUT) :: SPECOUT(NUMSIG_WW3,NUMDIR_WW3,NP_WW3)
       integer, allocatable :: send_rqst(:)
       integer, allocatable :: send_stat(:,:)
       integer siz, iProc
@@ -2005,7 +2005,7 @@
       IF (MULTIPLE_IN_BOUND) THEN
         CALL READ_SPEC_WW3_KERNEL(ISTEP,SPECOUT)
       ELSE
-        siz=MSC_WW3*MDC_WW3*NP_WW3
+        siz=NUMSIG_WW3*NUMDIR_WW3*NP_WW3
         IF (myrank .eq. 0) THEN
           allocate(send_rqst(nproc-1), send_stat(MPI_STATUS_SIZE,nproc-1), stat=istat)
           IF (istat/=0) CALL WWM_ABORT('wwm_parall_solver, allocate error 30')
@@ -2036,18 +2036,18 @@
 !**********************************************************************
       SUBROUTINE GET_BINARY_WW3_SPECTRA(WBACOUT)
       USE DATAPOOL, ONLY: NP_WW3, rkind, DR_WW3, DDIR_WW3, FQ_WW3, FRLOW, LNANINFCHK, DBG, FRHIGH
-      USE DATAPOOL, ONLY: LINHOM, IWBNDLC, XP, YP, XP_WW3, YP_WW3, STAT, MSC, MDC, IWBMNP, MSC_WW3
-      USE DATAPOOL, ONLY: MDC_WW3
+      USE DATAPOOL, ONLY: LINHOM, IWBNDLC, XP, YP, XP_WW3, YP_WW3, STAT, NUMSIG, NUMDIR, IWBMNP, NUMSIG_WW3
+      USE DATAPOOL, ONLY: NUMDIR_WW3
 # ifdef SCHISM
       USE DATAPOOL, ONLY: XLON, YLAT
 # endif
       IMPLICIT NONE
-      REAL(rkind), INTENT(OUT) :: WBACOUT(MSC,MDC,IWBMNP)
+      REAL(rkind), INTENT(OUT) :: WBACOUT(NUMSIG,NUMDIR,IWBMNP)
       INTEGER     :: IB,IPGL,IBWW3,TIME(2),IS
-      REAL(rkind) :: SPEC_WW3(MSC_WW3,MDC_WW3,NP_WW3),SPEC_WWM(MSC,MDC,NP_WW3)
+      REAL(rkind) :: SPEC_WW3(NUMSIG_WW3,NUMDIR_WW3,NP_WW3),SPEC_WWM(NUMSIG,NUMDIR,NP_WW3)
       REAL(rkind) :: DIST(NP_WW3),TMP(NP_WW3), INDBWW3(NP_WW3)
-      REAL(rkind) :: SPEC_WW3_TMP(MSC_WW3,MDC_WW3,NP_WW3),SPEC_WW3_UNSORT(MSC_WW3,MDC_WW3,NP_WW3)
-      REAL(rkind) :: JUNK(MDC_WW3), DR_WW3_TMP(MDC_WW3)
+      REAL(rkind) :: SPEC_WW3_TMP(NUMSIG_WW3,NUMDIR_WW3,NP_WW3),SPEC_WW3_UNSORT(NUMSIG_WW3,NUMDIR_WW3,NP_WW3)
+      REAL(rkind) :: JUNK(NUMDIR_WW3), DR_WW3_TMP(NUMDIR_WW3)
       REAL(rkind) :: XP_WWM,YP_WWM
       INTEGER     :: IFILE, IT
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'Begin GETWW3SPECTRA'
@@ -2061,10 +2061,10 @@
 ! montonic)
 !
       DO IBWW3 = 1, NP_WW3
-        DO IS = 1,MSC_WW3
+        DO IS = 1,NUMSIG_WW3
           DR_WW3_TMP=DR_WW3
           SPEC_WW3_TMP(IS,:,IBWW3) = SPEC_WW3_UNSORT(IS,:,IBWW3)
-          CALL SSORT2 (DR_WW3_TMP,SPEC_WW3_TMP(IS,:,IBWW3),JUNK,MDC_WW3,2)
+          CALL SSORT2 (DR_WW3_TMP,SPEC_WW3_TMP(IS,:,IBWW3),JUNK,NUMDIR_WW3,2)
           SPEC_WW3(IS,:,IBWW3) = SPEC_WW3_TMP(IS,:,IBWW3)
           DR_WW3 = DR_WW3_TMP
         ENDDO
@@ -2075,14 +2075,14 @@
 ! Interpolate ww3 spectra on wwm frequency grid
 ! GD: at the moment 360º spanning grids are mandatory
 !
-      IF((FQ_WW3(1).GT.FRLOW).OR.(FQ_WW3(MSC_WW3).LT.FRHIGH)) THEN
+      IF((FQ_WW3(1).GT.FRLOW).OR.(FQ_WW3(NUMSIG_WW3).LT.FRHIGH)) THEN
 !          WRITE(STAT%FHNDL,*)'WW3 FMIN = ',FQ_WW3(1),'WWM FMIN = ',FRLOW
-!          WRITE(STAT%FHNDL,*)'WW3 FMAX = ',FQ_WW3(MSC_WW3),'WWM FMAX = ', FRHIGH
+!          WRITE(STAT%FHNDL,*)'WW3 FMAX = ',FQ_WW3(NUMSIG_WW3),'WWM FMAX = ', FRHIGH
 !          WRITE(STAT%FHNDL,*)'WW3 spectra does not encompass the whole WWM spectra, please carefully check if this makes sense for your simulations'
         CALL SPECTRALINT(SPEC_WW3,SPEC_WWM)
       ELSE
 !          WRITE(STAT%FHNDL,*)'WW3 FMIN = ',FQ_WW3(1),'WWM FMIN = ',FRLOW
-!          WRITE(STAT%FHNDL,*)'WW3 FMAX = ',FQ_WW3(MSC_WW3),'WWM FMAX = ', FRHIGH
+!          WRITE(STAT%FHNDL,*)'WW3 FMAX = ',FQ_WW3(NUMSIG_WW3),'WWM FMAX = ', FRHIGH
         CALL SPECTRALINT(SPEC_WW3,SPEC_WWM)
       ENDIF
 
@@ -2110,7 +2110,7 @@
               INDBWW3(IBWW3)=IBWW3
             ENDDO
             CALL SSORT2 (DIST, INDBWW3, TMP, NP_WW3, 2)
-            CALL SHEPARDINT2D(2, 1./DIST(1:2),MSC,MDC,SPEC_WWM(:,:,INT(INDBWW3(1:2))), WBACOUT(:,:,IB), 1)
+            CALL SHEPARDINT2D(2, 1./DIST(1:2),NUMSIG,NUMDIR,SPEC_WWM(:,:,INT(INDBWW3(1:2))), WBACOUT(:,:,IB), 1)
             !WRITE(STAT%FHNDL,'(A20, 2F20.5,3F30.10)') ' AFTER INTERPOLATION ', INDBWW3(1), INDBWW3(2), sum(SPEC_WWM(:,:,INT(INDBWW3(1)))), sum(SPEC_WWM(:,:,INT(INDBWW3(2)))), SUM(WBACOUT(:,:,IB))
           ELSE
             WBACOUT(:,:,IB) = SPEC_WWM(:,:,1)
@@ -2176,12 +2176,12 @@
       SUBROUTINE SPECTRALINT(SPEC_WW3,SPEC_WWM)
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind), INTENT(IN)  :: SPEC_WW3(MSC_WW3,MDC_WW3,NP_WW3)
-      REAL(rkind), INTENT(OUT) :: SPEC_WWM(MSC,MDC,NP_WW3)
-      REAL(rkind) :: SPEC_WW3_TMP(MSC_WW3,MDC,NP_WW3)
+      REAL(rkind), INTENT(IN)  :: SPEC_WW3(NUMSIG_WW3,NUMDIR_WW3,NP_WW3)
+      REAL(rkind), INTENT(OUT) :: SPEC_WWM(NUMSIG,NUMDIR,NP_WW3)
+      REAL(rkind) :: SPEC_WW3_TMP(NUMSIG_WW3,NUMDIR,NP_WW3)
       REAL(rkind) :: DF, M0_WW3, M1_WW3, M2_WW3, M0_WWM, M1_WWM, M2_WWM
       INTEGER     :: IP,IS,ID
-      REAL(rkind) :: JACOBIAN(MSC), AM, SM
+      REAL(rkind) :: JACOBIAN(NUMSIG), AM, SM
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING SPECTRALINT'
       JACOBIAN = ONE/(SPSIG*PI2)! ENERGY / HZ -> ACTION / RAD
       SPEC_WW3_TMP = ZERO
@@ -2190,15 +2190,15 @@
         WRITE(DBG%FHNDL,'(A20,I10,3F30.2)') 'BEFORE INTERPOLATION', SUM(SPEC_WW3), SUM(SPEC_WW3_TMP), SUM(SPEC_WWM) 
       ENDIF
       DO IP=1,NP_WW3
-        DO IS=1,MSC_WW3
-          CALL INTERLIND(MDC_WW3,MDC,DR_WW3,SPDIR,SPEC_WW3(IS,:,IP),SPEC_WW3_TMP(IS,:,IP))
+        DO IS=1,NUMSIG_WW3
+          CALL INTERLIND(NUMDIR_WW3,NUMDIR,DR_WW3,SPDIR,SPEC_WW3(IS,:,IP),SPEC_WW3_TMP(IS,:,IP))
         ENDDO
-        DO ID=1,MDC 
-          CALL INTERLIN (MSC_WW3,MSC,FQ_WW3,FR,SPEC_WW3_TMP(:,ID,IP),SPEC_WWM(:,ID,IP))
+        DO ID=1,NUMDIR 
+          CALL INTERLIN (NUMSIG_WW3,NUMSIG,FQ_WW3,FR,SPEC_WW3_TMP(:,ID,IP),SPEC_WWM(:,ID,IP))
         ENDDO
         M0_WW3 = ZERO; M1_WW3 = ZERO; M2_WW3 = ZERO
-        DO ID = 1,MDC_WW3
-          DO IS = 1,MSC_WW3-1
+        DO ID = 1,NUMDIR_WW3
+          DO IS = 1,NUMSIG_WW3-1
             DF = FQ_WW3(IS+1)-FQ_WW3(IS)
             AM = (SPEC_WW3(IS+1,ID,IP)+SPEC_WW3(IS,ID,IP))/TWO
             SM = (FQ_WW3(IS+1)+FQ_WW3(IS))/TWO
@@ -2208,8 +2208,8 @@
           ENDDO
         ENDDO
         M0_WWM = ZERO; M1_WWM = ZERO; M2_WWM = ZERO 
-        DO ID = 1,MDC
-          DO IS = 1,MSC-1
+        DO ID = 1,NUMDIR
+          DO IS = 1,NUMSIG-1
             DF = FR(IS+1)-FR(IS)
             AM = (SPEC_WWM(IS+1,ID,IP)+SPEC_WWM(IS,ID,IP))/TWO
             SM = (FR(IS+1)+FR(IS))/TWO
@@ -2229,7 +2229,7 @@
 ! Do jacobian
 
       DO IP = 1, NP_WW3
-        DO ID = 1, MDC
+        DO ID = 1, NUMDIR
           SPEC_WWM(:,ID,IP) = SPEC_WWM(:,ID,IP) * JACOBIAN(:) ! convert to wave action in sigma,theta space
         END DO              
       END DO
@@ -2237,8 +2237,8 @@
       WRITE(STAT%FHNDL,*)'CHECKING INTEGRATED PARAMETERS AFTER JACOBIAN'
       DO IP = 1, NP_WW3
         M0_WW3 = ZERO; M1_WW3 = ZERO; M2_WW3 = ZERO
-        DO ID = 1,MDC_WW3
-          DO IS = 1,MSC_WW3-1
+        DO ID = 1,NUMDIR_WW3
+          DO IS = 1,NUMSIG_WW3-1
             DF = FQ_WW3(IS+1)-FQ_WW3(IS)
             AM = (SPEC_WW3(IS+1,ID,IP)+SPEC_WW3(IS,ID,IP))/TWO
             SM = (FQ_WW3(IS+1)+FQ_WW3(IS))/TWO
@@ -2248,8 +2248,8 @@
           ENDDO
         ENDDO
         M0_WWM = ZERO; M1_WWM = ZERO; M2_WWM = ZERO
-        DO ID = 1,MDC
-          DO IS = 1,MSC-1
+        DO ID = 1,NUMDIR
+          DO IS = 1,NUMSIG-1
             DF = SPSIG(IS+1)-SPSIG(IS)
             SM = (SPSIG(IS+1)+SPSIG(IS))/TWO
             AM = (SPEC_WWM(IS+1,ID,IP)+SPEC_WWM(IS,ID,IP))/TWO * SM
@@ -2320,14 +2320,14 @@
       USE DATAPOOL
       IMPLICIT NONE
       IF (LINHOM) THEN
-        ALLOCATE (SFRQ(WBMSC,IWBMNP), SPEG(WBMSC,WBMDC,IWBMNP), stat=istat)
+        ALLOCATE (SFRQ(WBNUMSIG,IWBMNP), SPEG(WBNUMSIG,WBNUMDIR,IWBMNP), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 22')
-        ALLOCATE (SDIR(WBMSC,IWBMNP), SPRD(WBMSC,IWBMNP), stat=istat)
+        ALLOCATE (SDIR(WBNUMSIG,IWBMNP), SPRD(WBNUMSIG,IWBMNP), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 23')
       ELSE
-        ALLOCATE (SFRQ(WBMSC,1), SPEG(WBMSC,WBMDC,1), stat=istat)
+        ALLOCATE (SFRQ(WBNUMSIG,1), SPEG(WBNUMSIG,WBNUMDIR,1), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 24')
-        ALLOCATE (SDIR(WBMSC,1), SPRD(WBMSC,1), stat=istat)
+        ALLOCATE (SDIR(WBNUMSIG,1), SPRD(WBNUMSIG,1), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 25')
       END IF
       END SUBROUTINE
@@ -2428,9 +2428,9 @@
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, iret)
       iret = nf90_def_dim(ncid, 'np_total', np_write, mnp_dims)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, iret)
-      iret = nf90_def_dim(ncid, 'nfreq', MSC, nfreq_dims)
+      iret = nf90_def_dim(ncid, 'nfreq', NUMSIG, nfreq_dims)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
-      iret = nf90_def_dim(ncid, 'ndir', MDC, ndir_dims)
+      iret = nf90_def_dim(ncid, 'ndir', NUMDIR, ndir_dims)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, iret)
       iret = nf90_def_dim(ncid, 'eight',   8, eight_dims)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, iret)
@@ -2537,7 +2537,7 @@
             IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 26')
           END IF
           IF (BOUC_NETCDF_OUT_SPECTRA .and. (.NOT. allocated(WBAC_GL))) THEN
-            allocate(WBAC_GL(MSC,MDC,IWBMNPGL), stat=istat)
+            allocate(WBAC_GL(NUMSIG,NUMDIR,IWBMNPGL), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 27')
           END IF
 # ifdef MPI_PARALL_GRID
@@ -2635,10 +2635,10 @@
           iret=nf90_inq_varid(ncid, 'WBAC', var_id)
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, iret)
           IF (NF90_RUNTYPE == NF90_OUTTYPE_BOUC) THEN
-            iret=nf90_put_var(ncid,var_id,WBAC_GL, start=(/1,1,1,recs_his/), count = (/MSC,MDC, IWBMNPGL,1/))
+            iret=nf90_put_var(ncid,var_id,WBAC_GL, start=(/1,1,1,recs_his/), count = (/NUMSIG,NUMDIR, IWBMNPGL,1/))
             CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 12, iret)
           ELSE
-            iret=nf90_put_var(ncid,var_id,SNGL(WBAC_GL), start=(/1,1,1,recs_his/), count = (/MSC,MDC, IWBMNPGL,1/))
+            iret=nf90_put_var(ncid,var_id,SNGL(WBAC_GL), start=(/1,1,1,recs_his/), count = (/NUMSIG,NUMDIR, IWBMNPGL,1/))
             CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, iret)
           ENDIF
         END IF
@@ -2668,7 +2668,7 @@
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
       ISTAT = nf90_inq_varid(ncid, 'WBAC', var_id)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, ISTAT)
-      ISTAT = NF90_GET_VAR(ncid, var_id, WBAC_GL, start=(/1,1,1,IT/), count = (/MSC,MDC, IWBMNPGL,1/))
+      ISTAT = NF90_GET_VAR(ncid, var_id, WBAC_GL, start=(/1,1,1,IT/), count = (/NUMSIG,NUMDIR, IWBMNPGL,1/))
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, ISTAT)
       ISTAT = NF90_CLOSE(ncid)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, ISTAT)
@@ -2679,7 +2679,7 @@
       SUBROUTINE READ_NETCDF_BOUNDARY_WBAC(WBACOUT)
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind), INTENT(OUT)   :: WBACOUT(MSC,MDC,IWBMNP)
+      REAL(rkind), INTENT(OUT)   :: WBACOUT(NUMSIG,NUMDIR,IWBMNP)
       integer IFILE, IT
       integer IP
       CALL COMPUTE_IFILE_IT_BOUND(IFILE, IT)
@@ -2975,8 +2975,8 @@
 # endif
          TheOut = FHNDL_EXPORT_BOUC_WW3
 !         Print *, 'IsFirst=', IsFirst
-         NK    = MSC
-         NTH   = MDC
+         NK    = NUMSIG
+         NTH   = NUMDIR
          XFR   = MySNGL(SFAC)
          FREQ1 = MySNGL(FR(1))
          eTH   = MySNGL(SPDIR(1))

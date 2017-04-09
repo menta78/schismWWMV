@@ -3,7 +3,7 @@ MODULE SdsBabanin
 
 CONTAINS
 
-  subroutine calc_Sds(ip,nfreq,EDENS,f,Kds,ANAR_IN,LPOW,MPOW,a1,a2,ACLOC,PHI,DPHIDN,SSDS)
+  subroutine calc_Sds(ip,nfreq,EDENS,f,Kds,ANAR_IN,LPOW,MPOW,a1,a2,WALOC,PHI,DPHIDN,SSDS)
     USE DATAPOOL
     IMPLICIT NONE
 
@@ -21,9 +21,9 @@ CONTAINS
 ! power on threshold exceedence in T2 (precise definition depends
 !  on whether using "U" vs "D" method)
     integer                 , INTENT(IN)  ::  nfreq      ! # freqs
-    real(rkind)             , INTENT(OUT) ::  SSDS(MSC,MDC) !
-    real(rkind)             , INTENT(IN)  :: ACLOC(MSC,MDC)
-    real(rkind)             , INTENT(INOUT) :: PHI(MSC,MDC), DPHIDN(MSC,MDC)
+    real(rkind)             , INTENT(OUT) ::  SSDS(NUMSIG,NUMDIR) !
+    real(rkind)             , INTENT(IN)  :: WALOC(NUMSIG,NUMDIR)
+    real(rkind)             , INTENT(INOUT) :: PHI(NUMSIG,NUMDIR), DPHIDN(NUMSIG,NUMDIR)
     real(rkind)             , INTENT(OUT) ::  Kds(:)     ! Kds(f)=Sds(f)/E(f)
 
     real(rkind)             ::  Sds(nfreq)     ! Sds(f), the source term
@@ -151,14 +151,14 @@ CONTAINS
        ST2(is)=T2(is)*Edens(is)
     end do
 
-    DO IS = 1, MSC
-      DO ID = 1, MDC
+    DO IS = 1, NUMSIG
+      DO ID = 1, NUMDIR
         SSDS(IS,ID) = KDS(IS)
         IF (ICOMP .GE. 2) THEN
           DPHIDN(IS,ID) = DPHIDN(IS,ID) + Kds(IS)
         ELSE
           DPHIDN(IS,ID) = DPHIDN(IS,ID) - kds(IS)
-          PHI(IS,ID) = PHI(IS,ID) - kds(IS) * ACLOC(IS,ID)
+          PHI(IS,ID) = PHI(IS,ID) - kds(IS) * WALOC(IS,ID)
         END IF
       END DO
     END DO
@@ -508,24 +508,24 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
 
 
 !****************************************************************
-  SUBROUTINE SSWELL (IP,ETOT,ACLOC,PHI, DPHIDN,URMSTOP,CGo)
+  SUBROUTINE SSWELL (IP,ETOT,WALOC,PHI, DPHIDN,URMSTOP,CGo)
 
 ! note that CGo is for diagnostic purposes only, may be excluded
 ! excluded : SPCDIR AC2 DEP2 PHI
 
 !****************************************************************
-    USE DATAPOOL, ONLY : RKIND, RHOAW, RHOW, SPSIG, G9, WK, THR, MSC, SIGPOW
+    USE DATAPOOL, ONLY : RKIND, RHOAW, RHOW, SPSIG, G9, WK, THR, NUMSIG, SIGPOW
     IMPLICIT NONE
 
 
     INTEGER, INTENT(IN)    :: IP
     REAL(rkind)   , INTENT(IN)    :: ETOT
-    REAL(rkind)   , INTENT(IN)    :: CGo(:,:)   ! CGo(MSC,MICMAX) ! group velocity without currents, but includes depth effects
+    REAL(rkind)   , INTENT(IN)    :: CGo(:,:)   ! CGo(NUMSIG,MICMAX) ! group velocity without currents, but includes depth effects
     REAL(rkind)   , INTENT(IN)    :: URMSTOP
 
-    REAL(rkind)   , INTENT(INOUT) :: DPHIDN(:,:) ! DPHIDN(MDC,MSC)
-    REAL(rkind)   , INTENT(INOUT) :: PHI(:,:) ! DPHIDN(MDC,MSC)
-    REAL(rkind)   , INTENT(IN)    :: ACLOC(:,:) ! ACLOC(MDC,MSC)
+    REAL(rkind)   , INTENT(INOUT) :: DPHIDN(:,:) ! DPHIDN(NUMDIR,NUMSIG)
+    REAL(rkind)   , INTENT(INOUT) :: PHI(:,:) ! DPHIDN(NUMDIR,NUMSIG)
+    REAL(rkind)   , INTENT(IN)    :: WALOC(:,:) ! WALOC(NUMDIR,NUMSIG)
 
 !   local constants:
     REAL(rkind), parameter   :: feswell=0.0035_rkind ! "fe is of the order 0.002 to 0.008" (Fabrice proposes 0.0035)
@@ -538,7 +538,7 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
     INTEGER           :: ID
     REAL(rkind)       :: aorb,USIGTOP
     REAL(rkind)       :: Re
-    REAL(rkind)       :: SWDIS(MSC) ! this is S_SWELL / E(f,theta)
+    REAL(rkind)       :: SWDIS(NUMSIG) ! this is S_SWELL / E(f,theta)
 !    REAL(rkind)       :: myu,SWDIS_CHECK ! error checking, may be omitted
 
 ! Method:
@@ -552,12 +552,12 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
     USIGTOP=URMSTOP*SQRT(2.0)
     Re=4.0*USIGTOP*aorb/nu_air
     IF(Re > Re_crit)then
-       DO IS=1, MSC 
+       DO IS=1, NUMSIG 
           SWDIS(IS) = RHOAW * 16.0 * feswell * SIGPOW(IS,2)  & ! note that "-1" omitted since LHS
           &           * URMSTOP / g9 ! units of radian^2/s (radians/sec is conventional)
        END DO
     else
-       DO IS=1, MSC 
+       DO IS=1, NUMSIG 
           SWDIS(IS) = RHOAW * Cdsv * 2.0 * WK(IS,IP)  & ! note that "-1" omitted since LHS
           &           * SQRT(2.0 * NU_AIR * SPSIG(IS)) ! units of radian^1.5/s (radians/sec is conventional)
 
@@ -573,10 +573,10 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
        END DO
     endif
 
-    DO IS=1, MSC 
-      DO ID = 1, MSC
+    DO IS=1, NUMSIG 
+      DO ID = 1, NUMSIG
          DPHIDN(IS,ID) = DPHIDN(IS,ID) + SWDIS(IS)
-         IF (ACLOC(IS,ID) .GT. THR) PHI(IS,ID) = SWDIS(IS) * ACLOC(IS,ID)
+         IF (WALOC(IS,ID) .GT. THR) PHI(IS,ID) = SWDIS(IS) * WALOC(IS,ID)
       END DO
     END DO
 
@@ -595,12 +595,12 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
 
     REAL(rkind)      :: THETAW, SIGMA, SWINEB, CTW, STW, COSDIF, TEMP2, UoverC, WIND10
 !
-    REAL(rkind)      :: S_IN(MSC,MDC), PHI(MSC,MDC)
-    REAL(rkind), INTENT(OUT) :: SSINE(MSC,MDC)
+    REAL(rkind)      :: S_IN(NUMSIG,NUMDIR), PHI(NUMSIG,NUMDIR)
+    REAL(rkind), INTENT(OUT) :: SSINE(NUMSIG,NUMDIR)
 !
     REAL(rkind)      :: DMAX,AINV
-    REAL(rkind)      :: KTHETA(MSC,MDC) ! like D(theta), except max value at each freq is unity
-    REAL(rkind)      :: ASPR(MSC), SIGDENS(MSC), SQRTBN(MSC), CINV(MSC), LFACTOR(MSC)
+    REAL(rkind)      :: KTHETA(NUMSIG,NUMDIR) ! like D(theta), except max value at each freq is unity
+    REAL(rkind)      :: ASPR(NUMSIG), SIGDENS(NUMSIG), SQRTBN(NUMSIG), CINV(NUMSIG), LFACTOR(NUMSIG)
     REAL(rkind)      :: GAMMAD, GDONEL, TEMP4, TEMP42, TEMP5, TEMP6, BN
     LOGICAL   :: TESTFL
 
@@ -611,32 +611,32 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
 
     IF (WIND10 .LT. VERYSMALL) RETURN
 
-    DO  IS = 1, MSC
+    DO  IS = 1, NUMSIG
        SIGDENS(IS) = 0.
-       DO  ID = 1, MDC
+       DO  ID = 1, NUMDIR
           SIGDENS(IS) = SIGDENS(IS) + SPSIG(IS) * AC2(IS,ID,IP)
           KTHETA(IS,ID) = AC2(IS,ID,IP)
        END DO
        SIGDENS(IS)=SIGDENS(IS)*DDIR 
     END DO
 
-!    DO IS = 1, MSC
+!    DO IS = 1, NUMSIG
 !       DMAX=-1.0
-!       DO ID = 1, MDC
+!       DO ID = 1, NUMDIR
 !         IF(KTHETA(IS,ID).GT.DMAX)DMAX=KTHETA(IS,ID)
 !       END DO
 !       IF(DMAX.EQ.0.0)THEN ! FIX FOR FREQ BINS (USUALLY FIRST TWO OR SO) THAT ARE EMPTY
 !          DMAX=1.0
-!          DO  ID = 1, MDC
+!          DO  ID = 1, NUMDIR
 !             KTHETA(IS,ID)=1.0
 !          END DO
 !       ENDIF
-!       DO ID = 1, MDC
+!       DO ID = 1, NUMDIR
 !         KTHETA(IS,ID)=KTHETA(IS,ID)/DMAX
 !       END DO
 !    END DO
 
-    DO IS = 1, MSC
+    DO IS = 1, NUMSIG
       DMAX = 0.
       DMAX = MAXVAL(KTHETA(IS,:))
       IF (DMAX .LT. 10.E-10) THEN
@@ -646,9 +646,9 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
       END IF
     END DO
 
-    DO IS = 1, MSC
+    DO IS = 1, NUMSIG
        AINV=0.0_rkind
-       DO ID = 1, MDC
+       DO ID = 1, NUMDIR
           AINV=AINV+KTHETA(IS,ID)*DDIR
        END DO
        ASPR(IS)=1./AINV
@@ -658,11 +658,11 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
 
     TEMP2 = 28.0_rkind * UFRIC(IP)
     S_IN=0.0_rkind
-    DO IS = 1, MSC
+    DO IS = 1, NUMSIG
        SIGMA = SPSIG(IS)                                  
        CINV(IS)  = WK(IS,IP) / SIGMA
        UoverC = TEMP2 * CINV(IS)
-       DO ID=1,MDC
+       DO ID=1,NUMDIR
           IF ( WIND10 .GT. THR ) THEN
              COSDIF = COSTH(ID)*CTW+SINTH(ID)*STW          
              TEMP4=( UoverC * COSDIF - 1.0_rkind )
@@ -682,8 +682,8 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
 
     SSINE = S_IN
 
-    DO IS = 1, MSC 
-       DO ID = 1, MDC
+    DO IS = 1, NUMSIG 
+       DO ID = 1, NUMDIR
           IF ( WIND10 .GT. VERYSMALL ) THEN
              S_IN(IS,ID)= S_IN(IS,ID) * Lfactor(IS)
              PHI(IS,ID) = PHI(IS,ID) + S_IN(IS,ID)/SPSIG(IS) 

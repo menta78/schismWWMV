@@ -3,20 +3,20 @@
 !*  Yasser Eldeberky, Nonlinear Transformation of Wave Spectra in     *
 !*        the Nearshore Zone, PhD thesis, TU Delft                    *
 !**********************************************************************
-      SUBROUTINE TRIAD_ELDEBERKY(ip, hs, smespc, acloc, ssnl3, dssnl3)
+      SUBROUTINE TRIAD_ELDEBERKY(ip, hs, smespc, WALOC, ssnl3, dssnl3)
       use datapool
       implicit none
       integer, intent(in)        :: ip
       real(rkind), intent(in)    :: hs, smespc
-      real(rkind), intent(inout) :: ssnl3(msc,mdc), dssnl3(msc,mdc)
-      real(rkind), intent(in)    :: acloc(msc,mdc)
+      real(rkind), intent(inout) :: ssnl3(NUMSIG,NUMDIR), dssnl3(NUMSIG,NUMDIR)
+      real(rkind), intent(in)    :: WALOC(NUMSIG,NUMDIR)
       integer id, is, ismax
       real(rkind)    aux1, aux2, biph, c0, cm, e0
       real(rkind)    em,ft, rint, sigpi, sinbph, stri
       real(rkind)    w0, wm, wn0, wnm, ursell, c1, c2, c3
       real(rkind)    eCont
-      real(rkind) :: E(MSC)
-      real(rkind) :: SA(1:MSC+TRI_ISP1,1:MDC)
+      real(rkind) :: E(NUMSIG)
+      real(rkind) :: SA(1:NUMSIG+TRI_ISP1,1:NUMDIR)
 
       IF (HS .LT. SMALL) RETURN
       CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL) 
@@ -24,7 +24,7 @@
       E  = 0.
       SA = 0.
       ISMAX = TRI_ISP1
-      DO IS = TRI_ISP1, MSC
+      DO IS = TRI_ISP1, NUMSIG
        IF ( SPSIG(IS) .LT. ( TRI_ARR(2) * SMESPC) ) THEN
           ISMAX = IS
         ENDIF
@@ -34,8 +34,8 @@
       c3 = (TWO/5._rkind)*(DEP(IP)**3)
       BIPH   = PIHALF*(MyTANH(TRI_ARR(4)/URSELL)-1.)
       SINBPH = ABS( SIN(BIPH) )
-      DO ID = 1, MDC
-        E = ACLOC(:,ID) * PI2 * SPSIG
+      DO ID = 1, NUMDIR
+        E = WALOC(:,ID) * PI2 * SPSIG
         DO IS=TRI_ISBEGIN, ISMAX 
           E0  = E(IS)
           W0  = SPSIG(IS)
@@ -52,40 +52,40 @@
           SA(IS,ID) = MAX(ZERO, FT*(EM*(EM - 2*E0)))
         END DO
       END DO
-      DO ID = 1, MDC
-        DO IS = 1, MSC
+      DO ID = 1, NUMDIR
+        DO IS = 1, NUMSIG
           SIGPI = SPSIG(IS) * PI2
-          IF (ACLOC(IS,ID) .LT. THR) CYCLE
+          IF (WALOC(IS,ID) .LT. THR) CYCLE
           STRI = SA(IS,ID) - TWO*(TRI_WISP*SA(IS+TRI_ISP1,ID) + TRI_WISP1*SA(IS+TRI_ISP,ID))
           IF (ABS(STRI) .LT. THR) CYCLE
           eCont = STRI / SIGPI
           SSNL3(IS,ID)  = eCont
-          DSSNL3(IS,ID) = eCont / ACLOC(IS,ID)
+          DSSNL3(IS,ID) = eCont / WALOC(IS,ID)
         END DO
       END DO
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE triad_dingemans (ip, acloc, imatra, imatda, ssnl3)
+      SUBROUTINE triad_dingemans (ip, WALOC, imatra, imatda, ssnl3)
       use datapool
       implicit none
       integer, intent(in) :: ip
-      real(rkind), intent(in)    :: acloc(msc,mdc)
-      real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
-      real(rkind), intent(out)   :: ssnl3(msc,mdc)
+      real(rkind), intent(in)    :: WALOC(NUMSIG,NUMDIR)
+      real(rkind), intent(inout) :: imatra(NUMSIG,NUMDIR), imatda(NUMSIG,NUMDIR)
+      real(rkind), intent(out)   :: ssnl3(NUMSIG,NUMDIR)
       integer             :: is, is2, id
-      real(rkind)         :: ecloc(msc,mdc), e2(msc,mdc), d20
+      real(rkind)         :: ecloc(NUMSIG,NUMDIR), e2(NUMSIG,NUMDIR), d20
       real(rkind)         :: df, domega, omega, omega1, fac, z1a, z1b
       integer             :: j1, j2, jmin, j2abs
-      do is = 1, msc
-        do id = 1, mdc 
-          ecloc(is,id) = acloc(is,id) * spsig(is) * ddir
+      do is = 1, NUMSIG
+        do id = 1, NUMDIR 
+          ecloc(is,id) = WALOC(is,id) * spsig(is) * ddir
         end do 
       end do
       SSNL3 = 0.
-      do id = 1, mdc
-        do is = 1,msc-1
+      do id = 1, NUMDIR
+        do is = 1,NUMSIG-1
           df = ((spsig(is+1) - spsig(is)))/pi2
           domega = pi2 * df
           omega = spsig(is) * pi2 
@@ -98,7 +98,7 @@
           z1a = dep(ip) * (jmin*domega)**2 / g9
           z1b = dep(ip) * ((jmin-is-1)*domega)**2 / g9
           e2(is,id) = 0. 
-          do is2 = jmin, msc
+          do is2 = jmin, NUMSIG
             j1    = is2 
             j2    = is2 - is 
             j2abs = iabs (j2)
@@ -314,25 +314,25 @@
 !*                                                                    *
 !**********************************************************************
      subroutine snl3ta(ip,snl3,dsnl3)
-     use datapool, only : rkind, msc, mdc, ac2, ZERO, spsig, cg, frintf, ddir, fr, stat
+     use datapool, only : rkind, NUMSIG, NUMDIR, ac2, ZERO, spsig, cg, frintf, ddir, fr, stat
      implicit none
 
-     real(rkind), intent(out) :: snl3(msc,mdc), dsnl3(msc,mdc)
+     real(rkind), intent(out) :: snl3(NUMSIG,NUMDIR), dsnl3(NUMSIG,NUMDIR)
      integer, intent(in)      :: ip
      integer :: is, is1, is2, id
      real(rkind) :: SUPER, SUB, f, f1, f2, SUPERD, SUBD, k, w, JAC
 
-     do id = 1, mdc
+     do id = 1, NUMDIR
        snl3(:,id) = zero
        dsnl3(:,id) = zero
 #ifdef SNL3_DOUBLE
-       do is = 1, msc
+       do is = 1, NUMSIG
          SUPER = ZERO; SUPERD = ZERO
          SUB   = ZERO; SUBD = ZERO
          f = (ac2(ip,is,id) * spsig(is)**2. * frintf * ddir)* cg(ip,is)
-         do is1 = 1, msc
+         do is1 = 1, NUMSIG
            f1 = (ac2(ip,is1,id) * spsig(is1)**2. * frintf * ddir) * cg(ip,is1)
-           do is2 = 1, msc
+           do is2 = 1, NUMSIG
              f2 = (ac2(ip,is2,id) * spsig(is2)**2. * frintf * ddir) * cg(ip,is2)
              SUPER =   SUPER +  ( k(ip, is, is1, is2, id, is, is1, is2, 0, 0) * f1 * f2 &
      &                       +    k(ip, is1, is2, is, id, is, is1, is2, 1, 0) * f1 * f &
@@ -342,9 +342,9 @@
            enddo
          enddo
          SUPER = 4 * SUPER
-         do is1 = 1, msc
+         do is1 = 1, NUMSIG
            f1 = ac2(ip,is1,id)
-           do is2 = 1, msc
+           do is2 = 1, NUMSIG
              f1 = ac2(ip,is2,id)
              SUB = SUB +   ( k(ip, is, is1, is2, id, is2, is, is1, 1, 0) * f1 * f2  +  k(ip, is1, is, is2, id, is2, is, is1, 1, 0) * f2 * f + &
       &                      k(ip, is2, is1, is, id, is2, is, is1, 0, 0) * f1 * f ) *  w(ip, is, is1, is2, 1, 0) * kron_delta(is2,is+is1)
@@ -353,7 +353,7 @@
            enddo
          enddo
 #else
-       do is = 2, msc 
+       do is = 2, NUMSIG 
          SUPER = ZERO; SUPERD = ZERO
          f = (ac2(ip,is,id) * spsig(is)**2. * frintf * ddir) * cg(ip,is)
          do is1 = 1, is - 1
@@ -374,10 +374,10 @@
          snl3(is,id) = SUPER * JAC
          dsnl3(is,id) = SUPERD
        end do
-       do is = 1, msc-1
+       do is = 1, NUMSIG-1
          SUB   = ZERO; SUBD = ZERO
          f = (ac2(ip,is,id) * spsig(is)**2. * frintf * ddir) * cg(ip,is)
-         do is1 = 1, msc - is
+         do is1 = 1, NUMSIG - is
            is2 = is + is1
            f1 = (ac2(ip,is1,id) * spsig(is1)**2. * frintf * ddir) * cg(ip,is1)
            f2 = (ac2(ip,is2,id) * spsig(is2)**2. * frintf * ddir) * cg(ip,is2)
@@ -412,23 +412,23 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      subroutine snl31 (ip, hs, smespc, acloc, imatra, imatda, ssnl3)
+      subroutine snl31 (ip, hs, smespc, WALOC, imatra, imatda, ssnl3)
       use datapool
       implicit none
       integer, intent(in)        :: ip
       real(rkind), intent(in)    :: hs, smespc
-      real(rkind), intent(out)   :: ssnl3(msc,mdc)
-      real(rkind), intent(in)    :: acloc(msc,mdc)
-      real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
+      real(rkind), intent(out)   :: ssnl3(NUMSIG,NUMDIR)
+      real(rkind), intent(in)    :: WALOC(NUMSIG,NUMDIR)
+      real(rkind), intent(inout) :: imatra(NUMSIG,NUMDIR), imatda(NUMSIG,NUMDIR)
       INTEGER :: IS, ID
       REAL(rkind)    :: BIPH, ASINB
-      REAL(rkind)    :: ED(MSC)
+      REAL(rkind)    :: ED(NUMSIG)
       INTEGER :: IS1, IS2, ISMAX
       INTEGER :: IRES
       REAL(rkind)    :: AUX1, AUX2, FAC
       REAL(rkind)    :: JAC, DNL3IS1, DNL3IS2
       REAL(rkind)    :: NL3IS1, NL3IS2
-      REAL(rkind)    :: cgl(msc),cl(msc),wkl(msc), AA
+      REAL(rkind)    :: cgl(NUMSIG),cl(NUMSIG),wkl(NUMSIG), AA
       REAL(rkind)    :: URSELL, BB, DEP1, DEP2, DEP3
       PTRIAD(1)  = 1. 
       PTRIAD(2)  = 2.5
@@ -451,14 +451,14 @@
       cl  = wc(ip,:)
       IRES   = NINT(LOG(TWO)/LOG(XIS))
       ISMAX  = 1
-      DO IS = 1, MSC
+      DO IS = 1, NUMSIG
         IF (SPSIG(IS) < (PTRIAD(2)*SMESPC)) ISMAX = IS
       END DO
       ISMAX = MAX(ISMAX,IRES+1)
       BIPH  = PI/TWO*(MyTANH(0.2/URSELL)-ONE)
       ASINB = ABS(SIN(BIPH))
-      DO ID = 1, MDC
-        ED = ACLOC(:,ID)*SPSIG
+      DO ID = 1, NUMDIR
+        ED = WALOC(:,ID)*SPSIG
         DO IS = 1, ISMAX-IRES
           IS1     = IS+IRES
           IS2     = IS
@@ -489,14 +489,14 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      subroutine snl32 (ip, hs, smespc, acloc, imatra, imatda, ssnl3)
+      subroutine snl32 (ip, hs, smespc, WALOC, imatra, imatda, ssnl3)
       use datapool
       implicit none
       integer, intent(in)        :: ip
       real(rkind), intent(in)    :: hs, smespc
-      real(rkind), intent(out)   :: ssnl3(msc,mdc)
-      real(rkind), intent(in)    :: acloc(msc,mdc)
-      real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
+      real(rkind), intent(out)   :: ssnl3(NUMSIG,NUMDIR)
+      real(rkind), intent(in)    :: WALOC(NUMSIG,NUMDIR)
+      real(rkind), intent(inout) :: imatra(NUMSIG,NUMDIR), imatda(NUMSIG,NUMDIR)
       INTEGER           :: I, J
       INTEGER           :: IRES, ISMAX
       INTEGER           :: IS, ID
@@ -505,7 +505,7 @@
       REAL(rkind)              :: TMN, URS
       REAL(rkind)              :: WiT,WjT,WNi,WNj,CGi,CGj,JACi,JACj
       REAL(rkind)              :: ALPH, BETA, SINBPH, FT, RHV_i, RHV_j, DIA_i, DIA_j
-      REAL(rkind)              :: E(MSC), URSELL
+      REAL(rkind)              :: E(NUMSIG), URSELL
       LOGICAL  :: TRIEXP
       PTTRIAD(1)  = 0.1 
       PTTRIAD(2)  = 2.2 
@@ -525,7 +525,7 @@
       TRIEXP = .FALSE.
       IRES   = NINT ( LOG(TWO) / XISLN )
       ISMAX = 1
-      DO IS = 1, MSC
+      DO IS = 1, NUMSIG
         IF ( SPSIG(IS) .LT. ( PTTRIAD(2) * SMESPC) ) THEN
           ISMAX = IS
         ENDIF
@@ -538,9 +538,9 @@
         BIPH = - PI2 / 8. * ( LOG10(URS) + 1.)
       ENDIF
       SINBPH = ABS( SIN(BIPH) )
-      DO ID = 1, MDC
-        DO IS = 1, MSC
-          E(IS)  = ACLOC(IS,ID) * PI2 * SPSIG(IS)
+      DO ID = 1, NUMDIR
+        DO IS = 1, NUMSIG
+          E(IS)  = WALOC(IS,ID) * PI2 * SPSIG(IS)
         ENDDO
         DO I = 1, ISMAX-IRES
           J     = I + IRES
@@ -588,14 +588,14 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      subroutine snl33 (ip, hs, smespc, acloc, imatra, imatda, ssnl3)
+      subroutine snl33 (ip, hs, smespc, WALOC, imatra, imatda, ssnl3)
       use datapool
       implicit none
       integer, intent(in)        :: ip
       real(rkind), intent(in)    :: hs, smespc
-      real(rkind), intent(out)   :: ssnl3(msc,mdc)
-      real(rkind), intent(in)    :: acloc(msc,mdc)
-      real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
+      real(rkind), intent(out)   :: ssnl3(NUMSIG,NUMDIR)
+      real(rkind), intent(in)    :: WALOC(NUMSIG,NUMDIR)
+      real(rkind), intent(inout) :: imatra(NUMSIG,NUMDIR), imatda(NUMSIG,NUMDIR)
 
       INTEGER           :: I, J
       INTEGER           :: IRES, ISMAX
@@ -605,7 +605,7 @@
       REAL(rkind)              :: AUX1, AUX2
       REAL(rkind)              :: WiT,WjT,WNi,WNj,CGi,CGj,JACi,JACj, Ci,Cj
       REAL(rkind)              :: SINBPH, FT, RHV_i, RHV_j, DIA_i, DIA_j
-      REAL(rkind)              :: E(MSC), URSELL
+      REAL(rkind)              :: E(NUMSIG), URSELL
       LOGICAL  :: TRIEXP
       PTTRIAD(1)  = 0.25
       PTTRIAD(2)  = 2.5
@@ -623,7 +623,7 @@
       E = 0.
       IRES   = NINT ( LOG(TWO) / XISLN )
       ISMAX = 1
-      DO IS = 1, MSC
+      DO IS = 1, NUMSIG
        IF ( SPSIG(IS) .LT. ( PTTRIAD(2) * SMESPC) ) THEN
           ISMAX = IS
         ENDIF
@@ -631,9 +631,9 @@
       ISMAX = MAX ( ISMAX , IRES + 1 )
       BIPH   = (0.5*PI)*(MyTANH(PTTRIAD(4)/URSELL)-1)
       SINBPH = ABS( SIN(BIPH) )
-      DO ID = 1, MDC
-        DO IS = 1, MSC
-          E(IS)  = ACLOC(IS,ID) * PI2 * SPSIG(IS)
+      DO ID = 1, NUMDIR
+        DO IS = 1, NUMSIG
+          E(IS)  = WALOC(IS,ID) * PI2 * SPSIG(IS)
         ENDDO
         DO I = 1, ISMAX-IRES
           J   = I + IRES
@@ -684,31 +684,31 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      subroutine triad_polnikov (ip, hs, smespc, acloc, imatra, imatda, ssnl3)
+      subroutine triad_polnikov (ip, hs, smespc, WALOC, imatra, imatda, ssnl3)
       use datapool
       implicit none
       integer, intent(in)        :: ip
       real(rkind), intent(in)    :: hs, smespc
-      real(rkind), intent(out)   :: ssnl3(msc,mdc)
-      real(rkind), intent(in)    :: acloc(msc,mdc)
-      real(rkind), intent(inout) :: imatra(msc,mdc), imatda(msc,mdc)
+      real(rkind), intent(out)   :: ssnl3(NUMSIG,NUMDIR)
+      real(rkind), intent(in)    :: WALOC(NUMSIG,NUMDIR)
+      real(rkind), intent(inout) :: imatra(NUMSIG,NUMDIR), imatda(NUMSIG,NUMDIR)
       INTEGER               :: J, IS, ID, IT, ITER
       REAL(rkind)           :: KI, KJ , ETOT
       REAL(rkind)           :: PROPFAK, DBETA, DSIGMA
-      REAL(rkind)           :: BETA_0(MSC), BETA_1(MSC), SNL3(MSC,MDC)
-      REAL(rkind)           :: DELTAK(MSC), DK, H, TMP1, TMP2, TMP3
-      REAL(rkind)           :: PART1(MSC), PART2(MSC), EPS(MSC)
+      REAL(rkind)           :: BETA_0(NUMSIG), BETA_1(NUMSIG), SNL3(NUMSIG,NUMDIR)
+      REAL(rkind)           :: DELTAK(NUMSIG), DK, H, TMP1, TMP2, TMP3
+      REAL(rkind)           :: PART1(NUMSIG), PART2(NUMSIG), EPS(NUMSIG)
       REAL(rkind)           :: SUMAC, KJKIKJ, KJKJKI
       ITER = 10
       ETOT = hs**2/FOUR
       DELTAK(1) = WK(IP,1)
-      DO IS = 2, MSC
+      DO IS = 2, NUMSIG
         DELTAK(IS) = WK(IS,IP) - WK(IS-1,IP)
       END DO
       H  = DEP(IP)
       IF (ETOT .GT. THR) THEN
-        DO ID = 1, MDC
-          DO IS = 1, MSC
+        DO ID = 1, NUMDIR
+          DO IS = 1, NUMSIG
             BETA_0(IS) = 0.1 * SPSIG(IS)/PI2
             KI = WK(IS,IP)
             DK = DELTAK(IS)
@@ -718,7 +718,7 @@
               PART1(IS)  = 0.
               PART2(IS)  = 0.
               DO J = 1, IS - 1
-                SUMAC   = MyREAL(( ACLOC(J,ID) * CG(J,IP) - ACLOC(IS-J,ID) * CG(IS-J,IP) ))
+                SUMAC   = MyREAL(( WALOC(J,ID) * CG(J,IP) - WALOC(IS-J,ID) * CG(IS-J,IP) ))
                 KJ = WK(J,IP)
                 KJKIKJ = KJ*(KI-KJ)
                 KJKJKI = KJ*(KJ-KI)
@@ -727,8 +727,8 @@
                 PART1(IS) = PART1(IS) +  KJKIKJ * DBETA * SUMAC
                 IF (PART1(IS) .NE. PART1(IS)) WRITE (*,*) 'PART1', PART1(IS), KJKIKJ, DBETA, DSIGMA, BETA_0(IS)
               END DO
-              DO J = IS+1, MSC
-                SUMAC   = MyREAL(( ACLOC(J-IS,ID) * CG(J-IS,IP) - ACLOC(J,ID) * CG(J,IP) ))
+              DO J = IS+1, NUMSIG
+                SUMAC   = MyREAL(( WALOC(J-IS,ID) * CG(J-IS,IP) - WALOC(J,ID) * CG(J,IP) ))
                 KJ = WK(J,IP)
                 KJKIKJ = KJ*(KI-KJ)
                 KJKJKI = KJ*(KJ-KI)
@@ -758,22 +758,22 @@
               KJKJKI = KJ*(KJ-KI)
               DSIGMA  = 0.5 * SQRT(G9*H**5.) * ABS(KI*KJKIKJ)
               DBETA   = BETA_0(IS) / ( PI * DSIGMA**2. + BETA_0(IS)**2.  )
-              TMP1    = MyREAL(ACLOC(J,ID)*CG(J,IP)*ACLOC(IS-J,ID)*CG(IS-J,IP))
-              TMP2    = MyREAL(ACLOC(J,ID)*CG(J,IP)+ACLOC(IS-J,ID)*CG(IS-J,IP))
-              TMP3    = (TMP1 - ACLOC(IS,ID)*CG(IS,IP)*TMP2)
+              TMP1    = MyREAL(WALOC(J,ID)*CG(J,IP)*WALOC(IS-J,ID)*CG(IS-J,IP))
+              TMP2    = MyREAL(WALOC(J,ID)*CG(J,IP)+WALOC(IS-J,ID)*CG(IS-J,IP))
+              TMP3    = (TMP1 - WALOC(IS,ID)*CG(IS,IP)*TMP2)
               PART1(IS) = PART1(IS) +  KJKIKJ * DBETA * TMP3
               IF (PART1(IS) .NE. PART1(IS)) WRITE (*,*) 'PART1', PART1(IS), KJKIKJ, DBETA, DSIGMA, BETA_0(IS)
             END DO
-            DO J = IS+1, MSC
+            DO J = IS+1, NUMSIG
               IF (BETA_0(IS) .LT. THR) CYCLE
               KJ = WK(J,IP)
               KJKIKJ = KJ*(KI-KJ)
               KJKJKI = KJ*(KJ-KI)
               DSIGMA  = 0.5 * SQRT(G9*H**5.) * ABS(KI*KJKIKJ)
               DBETA   = BETA_0(IS) / ( PI * DSIGMA**2. + BETA_0(IS)**2.  )
-              TMP1    = MyREAL(ACLOC(IS,ID)*CG(IS,IP)*ACLOC(J-IS,ID)*CG(J-IS,IP))
-              TMP2    = MyREAL(ACLOC(IS,ID)*CG(IS,IP)+ACLOC(J-IS,ID)*CG(J-IS,IP))
-              TMP3    = (TMP1 - ACLOC(J,ID)*CG(J,IP)*TMP2)
+              TMP1    = MyREAL(WALOC(IS,ID)*CG(IS,IP)*WALOC(J-IS,ID)*CG(J-IS,IP))
+              TMP2    = MyREAL(WALOC(IS,ID)*CG(IS,IP)+WALOC(J-IS,ID)*CG(J-IS,IP))
+              TMP3    = (TMP1 - WALOC(J,ID)*CG(J,IP)*TMP2)
               PART2(IS) = PART2(IS) +  KJKIKJ * DBETA * TMP3
               IF (PART2(IS) .NE. PART2(IS)) WRITE (*,*)'PART2', PART2(IS), KJKIKJ, DBETA, DSIGMA, BETA_0(IS)
             END DO
@@ -781,12 +781,12 @@
           END DO
         END DO
 
-        DO IS = 1, MSC
-          DO ID = 1, MDC
+        DO IS = 1, NUMSIG
+          DO ID = 1, NUMDIR
             IMATRA(IS,ID) = IMATRA(IS,ID) + SNL3(IS,ID)
             ssnl3(is,id) = SNL3(IS,ID)
-            IF (ACLOC(IS,ID) .GT. 0.) THEN
-              IMATDA(IS,ID) = IMATDA(IS,ID) + SNL3(IS,ID)/ACLOC(IS,ID)
+            IF (WALOC(IS,ID) .GT. 0.) THEN
+              IMATDA(IS,ID) = IMATDA(IS,ID) + SNL3(IS,ID)/WALOC(IS,ID)
             ELSE
               IMATDA(IS,ID) = 0.
             END IF

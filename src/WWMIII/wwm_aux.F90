@@ -147,12 +147,12 @@
 
          SELECT CASE (DIMMODE)
             CASE (1)
-              DO IS = 1, MSC
+              DO IS = 1, NUMSIG
                 CALL DIFFERENTIATE_XDIR(CG(IS,:),DCGDX(:,IS))
                 CALL DIFFERENTIATE_XDIR(WK(IS,:),DWKDX(:,IS))
               ENDDO
             CASE (2)
-              DO IS = 1, MSC
+              DO IS = 1, NUMSIG
                 CALL DIFFERENTIATE_XYDIR(CG(IS,:),DCGDX(:,IS),DCGDY(:,IS))
                 CALL DIFFERENTIATE_XYDIR(WK(IS,:),DWKDX(:,IS),DWKDY(:,IS))
               ENDDO
@@ -609,7 +609,7 @@
             DEPLOC = MAX(DMIN,DEP(IP))
 !           DEPLOC = DEP(IP)
 !           WRITE(740+myrank,*) 'IP=', IP, ' DEPLOC=', DEPLOC
-           DO IS = 1, MSC
+           DO IS = 1, NUMSIG
              SPSIGLOC = SPSIG(IS)
 !             CALL ALL_FROM_TABLE(SPSIGLOC,DEPLOC,WVK,WVCG,WVKDEP,WVN,WVC)
              CALL WAVEKCG(DEPLOC,SPSIGLOC,WVN,WVC,WVK,WVCG)
@@ -627,16 +627,16 @@
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER IP, ID, IS
-      REAL(rkind) :: ACLOC(MSC,MDC)
+      REAL(rkind) :: WALOC(NUMSIG,NUMDIR)
       REAL(rkind) :: ETOT, DS, EAD, HS2
       
       DO IP=1,MNP
-         ACLOC(:,:) = AC2(:,:,IP)
+         WALOC(:,:) = AC2(:,:,IP)
          ETOT = 0.0
-         DO ID = 1, MDC
-            DO IS = 2, MSC
+         DO ID = 1, NUMDIR
+            DO IS = 2, NUMSIG
                DS = SPSIG(IS) - SPSIG(IS-1)
-               EAD = 0.5*(SPSIG(IS)*ACLOC(IS,ID)+SPSIG(IS-1)*ACLOC(IS-1,ID))*DS*DDIR
+               EAD = 0.5*(SPSIG(IS)*WALOC(IS,ID)+SPSIG(IS-1)*WALOC(IS-1,ID))*DS*DDIR
                ETOT = ETOT + EAD
             END DO
          END DO
@@ -660,7 +660,7 @@
 
         INTEGER :: I, IP, IE, IS, ID, NI(3)
         INTEGER :: IPCONV1, IPCONV2, IPCONV3, IPCONV4, IPCONV5, ISCONV(MNP)
-        REAL(rkind)  :: SUMAC, ACLOC(MSC,MDC)
+        REAL(rkind)  :: SUMAC, WALOC(NUMSIG,NUMDIR)
         REAL(rkind)  :: ETOT, EAD, DS, HS2, KD
         REAL(rkind)  :: ETOTF3, ETOTF4, TP, KHS2, EFTOT, TM02
         REAL(rkind)  :: FP, CP, KPP, CGP, WNP, UXD, OMEG, OMEG2
@@ -682,14 +682,14 @@
             IF(IPGL(IPLG(ip))%NEXT%RANK < MYRANK) CYCLE !already in the sum so skip
           ENDIF 
 #endif
-          ACLOC(:,:) = AC2(:,:,IP)
-          SUMAC = SUM(ACLOC)
+          WALOC(:,:) = AC2(:,:,IP)
+          SUMAC = SUM(WALOC)
 
           ETOT = 0.0
-          DO ID = 1, MDC
-            DO IS = 2, MSC
+          DO ID = 1, NUMDIR
+            DO IS = 2, NUMSIG
               DS = SPSIG(IS) - SPSIG(IS-1)
-              EAD = 0.5*(SPSIG(IS)*ACLOC(IS,ID)+SPSIG(IS-1)*ACLOC(IS-1,ID))*DS*DDIR
+              EAD = 0.5*(SPSIG(IS)*WALOC(IS,ID)+SPSIG(IS-1)*WALOC(IS-1,ID))*DS*DDIR
               ETOT = ETOT + EAD
             END DO
           END DO
@@ -697,10 +697,10 @@
 
           ETOTF3 = 0.
           ETOTF4 = 0.
-          DO IS = 1, MSC
-            DO ID = 1, MDC
-              ETOTF3 = ETOTF3 + SPSIG(IS) * ACLOC(IS,ID)**4 * DDIR * DS_BAND(IS)
-              ETOTF4 = ETOTF4 +             ACLOC(IS,ID)**4 * DDIR * DS_BAND(IS)
+          DO IS = 1, NUMSIG
+            DO ID = 1, NUMDIR
+              ETOTF3 = ETOTF3 + SPSIG(IS) * WALOC(IS,ID)**4 * DDIR * DS_BAND(IS)
+              ETOTF4 = ETOTF4 +             WALOC(IS,ID)**4 * DDIR * DS_BAND(IS)
             END DO
           END DO
 
@@ -716,12 +716,12 @@
 
           ETOT  = 0.
           EFTOT = 0.
-          DO ID=1, MDC
+          DO ID=1, NUMDIR
             IF (LSECU .OR. LSTCU) THEN
               UXD  = CURTXY(IP,1)*COSTH(ID) + CURTXY(IP,2)*SINTH(ID)
             ENDIF
-            DO IS=1,MSC
-              EAD  = SIGPOW(IS,2) * ACLOC(IS,ID) * FRINTF
+            DO IS=1,NUMSIG
+              EAD  = SIGPOW(IS,2) * WALOC(IS,ID) * FRINTF
               IF (LSECU .OR. LSTCU) THEN
                 OMEG  = SPSIG(IS) + WK(IS,IP) * UXD
                 OMEG2 = OMEG**2
@@ -842,19 +842,19 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-     SUBROUTINE TWOD2ONED(ACLOC,AC1D)
+     SUBROUTINE TWOD2ONED(WALOC,AC1D)
          USE DATAPOOL
          IMPLICIT NONE
 
-         REAL(rkind), INTENT(IN)   :: ACLOC(MSC,MDC)
-         REAL(rkind), INTENT(OUT)  :: AC1D(MSC*MDC)
+         REAL(rkind), INTENT(IN)   :: WALOC(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(OUT)  :: AC1D(NUMSIG*NUMDIR)
 
          INTEGER            :: IS, ID
 
 
-         DO IS = 1, MSC
-           DO ID = 1, MDC
-             AC1D(ID + (IS-1) * MDC) = ACLOC(IS,ID)
+         DO IS = 1, NUMSIG
+           DO ID = 1, NUMDIR
+             AC1D(ID + (IS-1) * NUMDIR) = WALOC(IS,ID)
            END DO
          END DO
 
@@ -867,31 +867,31 @@
      IMPLICIT NONE
      INTEGER, intent(in) :: IP
      REAL(rkind), intent(in) :: VS(NSPEC), VD(NSPEC)
-     REAL(rkind), intent(out) :: PHI_R(MSC,MDC), DPHIDN_R(MSC,MDC)
+     REAL(rkind), intent(out) :: PHI_R(NUMSIG,NUMDIR), DPHIDN_R(NUMSIG,NUMDIR)
      INTEGER :: IS, ID
-     DO IS=1,MSC
-       DO ID=1,MDC
-          PHI_R(IS,ID) = VS(ID + (IS-1) * MDC) / CG(IS,IP)
-          DPHIDN_R(IS,ID) = VD(ID + (IS-1) * MDC)
+     DO IS=1,NUMSIG
+       DO ID=1,NUMDIR
+          PHI_R(IS,ID) = VS(ID + (IS-1) * NUMDIR) / CG(IS,IP)
+          DPHIDN_R(IS,ID) = VD(ID + (IS-1) * NUMDIR)
        END DO
      END DO
      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-     SUBROUTINE ONED2TWOD(AC1D,ACLOC)
+     SUBROUTINE ONED2TWOD(AC1D,WALOC)
          USE DATAPOOL
          IMPLICIT NONE
 
-         REAL(rkind), INTENT(OUT)   :: ACLOC(MSC,MDC)
-         REAL(rkind), INTENT(IN)  :: AC1D(MSC*MDC)
+         REAL(rkind), INTENT(OUT)   :: WALOC(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(IN)  :: AC1D(NUMSIG*NUMDIR)
 
          INTEGER            :: IS, ID
 
 
-         DO IS = 1, MSC
-           DO ID = 1, MDC
-             ACLOC(IS,ID) = AC1D(ID + (IS-1) * MDC)
+         DO IS = 1, NUMSIG
+           DO ID = 1, NUMDIR
+             WALOC(IS,ID) = AC1D(ID + (IS-1) * NUMDIR)
            END DO
         END DO
 
@@ -1315,12 +1315,12 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INTELEMENT_AC_LOC(I,ACLOC,CURTXYLOC,DEPLOC,WATLEVLOC,WKLOC)
+      SUBROUTINE INTELEMENT_AC_LOC(I,WALOC,CURTXYLOC,DEPLOC,WATLEVLOC,WKLOC)
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(IN)  :: I
-      REAL(rkind), INTENT(OUT) :: ACLOC(MSC,MDC)
-      REAL(rkind), INTENT(OUT) :: CURTXYLOC(2), DEPLOC, WATLEVLOC, WKLOC(MSC)
+      REAL(rkind), INTENT(OUT) :: WALOC(NUMSIG,NUMDIR)
+      REAL(rkind), INTENT(OUT) :: CURTXYLOC(2), DEPLOC, WATLEVLOC, WKLOC(NUMSIG)
       REAL(rkind), SAVE         :: WI(3)
       INTEGER :: IS, NI(3), IE
       REAL(rkind) :: WVN, WVC, WVK, WVCG, WVKDEP
@@ -1333,18 +1333,18 @@
       DEPLOC    = ZERO 
       WATLEVLOC = ZERO 
       CURTXYLOC = ZERO 
-      ACLOC     = ZERO 
+      WALOC     = ZERO 
 
       DO J=1,3
         IP           = INE(J,IE)
         DEPLOC       = DEPLOC       + WI(J) * DEP(IP)
         CURTXYLOC(:) = CURTXYLOC(:) + WI(J) * CURTXY(IP,:)
         WATLEVLOC    = WATLEVLOC    + WI(J) * WATLEV(IP)
-        ACLOC(:,:)   = ACLOC(:,:)   + WI(J) * AC2(:,:,IP)
+        WALOC(:,:)   = WALOC(:,:)   + WI(J) * AC2(:,:,IP)
         !write(*,'(3I10,5F15.8)') j, ie, ip, wi(j), DEP(IP), WATLEV(IP), CURTXY(IP,:) 
       END DO
 
-      DO IS = 1, MSC
+      DO IS = 1, NUMSIG
         !CALL WAVEKCG(DEPLOC, SPSIG(IS), WVN, WVC, WVK, WVCG)
         CALL ALL_FROM_TABLE(SPSIG(IS),DEPLOC,WVK,WVCG,WVKDEP,WVN,WVC)
         WKLOC(IS) = WVK
@@ -1724,7 +1724,7 @@
                         ymax = MAX(yi,yj,yk)
                         IF ( Yp8<=ymax ) THEN
 !.....              Bis jetzt liegt Punkt innerhalb des das Element
-!                   umschlieszenden Rechtecks XMIN/XMAX, YMIN/YMAX
+!                   uNUMSIGhlieszenden Rechtecks XMIN/XMAX, YMIN/YMAX
 !                   Pruefen, ob Punkt wirklich innerhalb DREIECK-Element
 !                   liegt: BERECHNUNG DER TEILFLAECHEN (ohne 0.5)
                            f = xi*(yj-Yp8) + xj*(Yp8-yi) + Xp8*(yi-yj)
@@ -1880,7 +1880,7 @@
                         ymax = MAX(yi,yj,yk)
                         IF ( Yp8<=ymax ) THEN
 !.....              Bis jetzt liegt Punkt innerhalb des das Element
-!                   umschlieszenden Rechtecks XMIN/XMAX, YMIN/YMAX
+!                   uNUMSIGhlieszenden Rechtecks XMIN/XMAX, YMIN/YMAX
 !                   Pruefen, ob Punkt wirklich innerhalb DREIECK-Element
 !                   liegt: BERECHNUNG DER TEILFLAECHEN (ohne 0.5)
                            f = xi*(yj-Yp8) + xj*(Yp8-yi) + Xp8*(yi-yj)
@@ -1929,25 +1929,25 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      function dintspec_y(ip,acloc,y)
-      use datapool, only : msc,mdc,ddir,ds_incr,spsig,rkind, ZERO
+      function dintspec_y(ip,WALOC,y)
+      use datapool, only : NUMSIG,NUMDIR,ddir,ds_incr,spsig,rkind, ZERO
       implicit none
 
       integer, intent(in)        :: ip
-      real(rkind), intent(in)    :: y(msc), acloc(msc,mdc)
+      real(rkind), intent(in)    :: y(NUMSIG), WALOC(NUMSIG,NUMDIR)
 
       integer             :: is, id
-      real(rkind)         :: dintspec_y, tmp(msc)
+      real(rkind)         :: dintspec_y, tmp(NUMSIG)
 
       dintspec_y = ZERO
 !     maxvalue   = maxval(ac2(:,:,ip))
 !      if (maxvalue .lt. small) return 
 
-      !acloc(:,:) = ac2(:,:,ip) !/ maxvalue
+      !WALOC(:,:) = ac2(:,:,ip) !/ maxvalue
 
-      do id = 1, mdc
-        tmp(:) = acloc(:,id) * spsig * y
-        do is = 2, msc
+      do id = 1, NUMDIR
+        tmp(:) = WALOC(:,id) * spsig * y
+        do is = 2, NUMSIG
           dintspec_y = dintspec_y + 0.5*(tmp(is)+tmp(is-1))*ds_incr(is)*ddir 
         end do
       end do
@@ -1959,25 +1959,25 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      function dintspec(ip,acloc)
-      use datapool,  only : msc,mdc,ddir,ds_incr,spsig,rkind, ZERO
+      function dintspec(ip,WALOC)
+      use datapool,  only : NUMSIG,NUMDIR,ddir,ds_incr,spsig,rkind, ZERO
 
       implicit none
       integer, intent(in)        :: ip
-      real(rkind), intent(in)    :: acloc(msc,mdc)
+      real(rkind), intent(in)    :: WALOC(NUMSIG,NUMDIR)
 
       integer             :: is, id
-      real(rkind)         :: dintspec, tmp(msc)
+      real(rkind)         :: dintspec, tmp(NUMSIG)
 
       dintspec = ZERO
       !maxvalue   = maxval(ac2(:,:,ip))
       !if (maxvalue .lt. small) return 
 
-      !acloc(:,:) = ac2(:,:,ip) / maxvalue
+      !WALOC(:,:) = ac2(:,:,ip) / maxvalue
 
-      do id = 1, mdc
-        tmp(:) = acloc(:,id) * spsig
-        do is = 2, msc
+      do id = 1, NUMDIR
+        tmp(:) = WALOC(:,id) * spsig
+        do is = 2, NUMSIG
           dintspec = dintspec+0.5*(tmp(is)+tmp(is-1))*ds_incr(is)*ddir
         end do
       end do
@@ -2674,8 +2674,8 @@
         STAT2D = 0.
         DO IP = 1, MNP
            ETOT = SUM(AC2(:,:,IP))
-           DO IS = 1, MSC
-             DO ID = 1, MDC
+           DO IS = 1, NUMSIG
+             DO ID = 1, NUMDIR
                IF (ETOT .GT. THR) THEN
                  IF (AC2(IS,ID,IP)/ETOT .LT. 1.E-5) THEN
                    STAT2D(IS,ID) = STAT2D(IS,ID) + 1./REAL(MNP)*100.
@@ -2688,21 +2688,21 @@
            END DO
         END DO
 
-        DO IS = 1, MSC
-          DO ID = 1, MDC
+        DO IS = 1, NUMSIG
+          DO ID = 1, NUMDIR
             IF (STAT2D(IS,ID) .GT. 99.9) STAT2D(IS,ID) = 0.
           END DO
         END DO
 
-!         CALL SSORTORG(STAT1D,SIGTMP,MSC,1)
-!         DO IS = 1, MSC
-!            DO ID = 1, MDC
+!         CALL SSORTORG(STAT1D,SIGTMP,NUMSIG,1)
+!         DO IS = 1, NUMSIG
+!            DO ID = 1, NUMDIR
 !              WRITE(*,'(2I10,F15.4)') IS, ID, STAT2D(IS,ID)
 !            END DO
 !             WRITE(*,*) IS, STAT1D(IS)
 !          END DO
 
-!         CALL DISPLAY_GRAPH(SPSIG,SUM1D,MSC,MINVAL(SPSIG),MAXVAL(SPSIG),MINVAL(SUM1D),MAXVAL(SUM1D),'','','')
+!         CALL DISPLAY_GRAPH(SPSIG,SUM1D,NUMSIG,MINVAL(SPSIG),MAXVAL(SPSIG),MINVAL(SUM1D),MAXVAL(SUM1D),'','','')
 
        END SUBROUTINE
 !**********************************************************************
@@ -2913,7 +2913,7 @@
       character(*), intent(in) :: string
       !
       integer IP, IPmap, ID, IS
-      real(rkind) HS, ETAIL, DS, ETOT, tmp(MSC)
+      real(rkind) HS, ETAIL, DS, ETOT, tmp(NUMSIG)
 !      WRITE(STAT%FHNDL,*) 'Beginning of LOCAL_NODE_PRINT function'
 !      WRITE(STAT%FHNDL,*) 'IPglob=', IPglob
       idxcall=idxcall+1
@@ -2934,37 +2934,37 @@
             WRITE(STAT%FHNDL,*) 'Ghost node'
           END IF
           ETOT = 0
-          DO ID=1,MDC
+          DO ID=1,NUMDIR
             tmp(:) = AC2(:,ID,IP) * SPSIG
             ETOT = ETOT + tmp(1) * ONEHALF * ds_incr(1)*ddir
-            DO IS=2,MSC
+            DO IS=2,NUMSIG
               ETOT = ETOT + ONEHALF*(tmp(is) + tmp(is-1))*ds_band(is)*ddir
             END DO
-            ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc) * ddir
+            ETOT = ETOT + ONEHALF * tmp(NUMSIG) * ds_incr(NUMSIG) * ddir
           END DO
-          DS    = SPSIG(MSC) - SPSIG(MSC-1)
-          ETAIL = SUM(AC2(MSC,:,IP)) * SIGPOW(MSC,2) * DDIR * DS
+          DS    = SPSIG(NUMSIG) - SPSIG(NUMSIG-1)
+          ETAIL = SUM(AC2(NUMSIG,:,IP)) * SIGPOW(NUMSIG,2) * DDIR * DS
           ETOT  = ETOT + PTAIL(6) * ETAIL
           HS=4.0_rkind * SQRT(ETOT)
           !
           WRITE(STAT%FHNDL,*) 'HS=', HS, ' idxcall=', idxcall
           WRITE(STAT%FHNDL,*) 'IOBP=', IOBP(IP), ' DEP=', DEP(IP)
           WRITE(STAT%FHNDL,*) 'X=', XP(IP), ' Y=', YP(IP)
-          DO IS=1,MSC
-            DO ID=1,MDC
+          DO IS=1,NUMSIG
+            DO ID=1,NUMDIR
               WRITE(STAT%FHNDL,*) 'ID/IS=', ID, IS, ' ac2=', AC2(IS,ID,IP)
             END DO
           END DO
           WRITE(STAT%FHNDL,*) 'WIND X=', WINDXY(IP,1), ' Y=', WINDXY(IP,2)
           WRITE(STAT%FHNDL,*) 'CURT X=', CURTXY(IP,1), ' Y=', CURTXY(IP,2)
-          DO ID=1,MDC
+          DO ID=1,NUMDIR
             WRITE(STAT%FHNDL,*) 'ID=', ID, ' IOBPD=', IOBPD(ID,IP)
           END DO
           IF (ICOMP .GE. 2) THEN
             WRITE(STAT%FHNDL,*) 'min/max(PHIA)=', minval(PHIA(:,:,IP)), maxval(PHIA(:,:,IP))
             WRITE(STAT%FHNDL,*) 'min/max(DPHIDNA)=', minval(DPHIDNA(:,:,IP)), maxval(DPHIDNA(:,:,IP))
-            DO IS=1,MSC
-              DO ID=1,MDC
+            DO IS=1,NUMSIG
+              DO ID=1,NUMDIR
                 WRITE(STAT%FHNDL,*) 'ID/IS=', ID, IS, ' TR/TD=', PHIA(IS,ID,IP), DPHIDNA(IS,ID,IP)
               END DO
             END DO

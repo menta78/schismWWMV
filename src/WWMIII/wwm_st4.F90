@@ -2,34 +2,34 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE ST4_PRE (IP, ACLOC, PHI, DPHIDN, SSINE, DSSINE, SSDS, DSSDS, SSNL4, DSSNL4, SSINL)
+      SUBROUTINE ST4_PRE (IP, WALOC, PHI, DPHIDN, SSINE, DSSINE, SSDS, DSSDS, SSNL4, DSSNL4, SSINL)
       USE DATAPOOL
       USE W3SRC4MD
       IMPLICIT NONE
 
       INTEGER, INTENT(IN)        :: IP
-      REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
+      REAL(rkind), INTENT(IN)    :: WALOC(NUMSIG,NUMDIR)
 
-      REAL(rkind), INTENT(OUT)   :: PHI(MSC,MDC), DPHIDN(MSC,MDC)
-      REAL(rkind), INTENT(OUT)   :: SSINE(MSC,MDC), DSSINE(MSC,MDC) 
-      REAL(rkind), INTENT(OUT)   :: SSDS(MSC,MDC),DSSDS(MSC,MDC)
-      REAL(rkind), INTENT(OUT)   :: SSNL4(MSC,MDC),DSSNL4(MSC,MDC)
-      REAL(rkind), INTENT(OUT)   :: SSINL(MSC,MDC)
+      REAL(rkind), INTENT(OUT)   :: PHI(NUMSIG,NUMDIR), DPHIDN(NUMSIG,NUMDIR)
+      REAL(rkind), INTENT(OUT)   :: SSINE(NUMSIG,NUMDIR), DSSINE(NUMSIG,NUMDIR) 
+      REAL(rkind), INTENT(OUT)   :: SSDS(NUMSIG,NUMDIR),DSSDS(NUMSIG,NUMDIR)
+      REAL(rkind), INTENT(OUT)   :: SSNL4(NUMSIG,NUMDIR),DSSNL4(NUMSIG,NUMDIR)
+      REAL(rkind), INTENT(OUT)   :: SSINL(NUMSIG,NUMDIR)
 
       INTEGER      :: IS, ID, ITH, IK, IS0
 
       REAL(rkind)  :: AWW3(NSPEC)
       REAL(rkind)  :: VDDS(NSPEC), VSDS(NSPEC), BRLAMBDA(NSPEC)
-      REAL(rkind)  :: WN2(MSC*MDC), WHITECAP(1:4)
+      REAL(rkind)  :: WN2(NUMSIG*NUMDIR), WHITECAP(1:4)
       REAL(rkind)  :: VSIN(NSPEC), VDIN(NSPEC)
 
-      REAL(rkind)  :: ETOT, FAVG, FMEAN1, WNMEAN, AS, SUMACLOC, FAVGWS
+      REAL(rkind)  :: ETOT, FAVG, FMEAN1, WNMEAN, AS, SUMWALOC, FAVGWS
       REAL(rkind)  :: TAUWAX, TAUWAY, AMAX, FPM, WIND10, WINDTH
       REAL(rkind)  :: HS,SME01,SME10,KME01,KMWAM,KMWAM2
 
-      DO IS = 1, MSC
-        DO ID = 1, MDC
-          AWW3(ID + (IS-1) * MDC) = ACLOC(IS,ID) * CG(IS,IP)
+      DO IS = 1, NUMSIG
+        DO ID = 1, NUMDIR
+          AWW3(ID + (IS-1) * NUMDIR) = WALOC(IS,ID) * CG(IS,IP)
         END DO
       END DO
 
@@ -49,14 +49,14 @@
       TAUWX(IP)  = ZERO
       TAUWY(IP)  = ZERO               
       SSINL      = ZERO
-      MSC_HF(IP) = MSC
+      NUMSIG_HF(IP) = NUMSIG
       AS         = 0.
       BRLAMBDA   = ZERO
 
       IF (MESIN .GT. 0) THEN
 
         CALL SET_WIND( IP, WIND10, WINDTH )
-!        CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
+!        CALL SET_FRICTION( IP, WALOC, WIND10, WINDTH, FPM )
         LLWS=.TRUE.
 #ifdef DEBUGSRC
         WRITE(740+myrank,*) '1: input value USTAR=', UFRIC(IP), ' USTDIR=', USTDIR(IP)
@@ -89,8 +89,8 @@
       ENDIF
 
       IF (MESNL .GT. 0) THEN
-         CALL MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
-         CALL SNL41(IP, KMWAM, ACLOC, SSNL4, DSSNL4)
+         CALL MEAN_WAVE_PARAMETER(IP,WALOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
+         CALL DIASNL4WW3(IP, KMWAM, WALOC, SSNL4, DSSNL4)
       END IF
 
       IF (MESDS .GT. 0) THEN
@@ -119,30 +119,30 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE ST4_POST (IP, ACLOC, SSINE, DSSINE, SSDS, DSSDS, SSINL)
+      SUBROUTINE ST4_POST (IP, WALOC, SSINE, DSSINE, SSDS, DSSDS, SSINL)
         USE DATAPOOL
         USE W3SRC4MD
         IMPLICIT NONE
        
         INTEGER, INTENT(IN)        :: IP
-        REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
+        REAL(rkind), INTENT(IN)    :: WALOC(NUMSIG,NUMDIR)
        
-        REAL(rkind), INTENT(OUT)   :: SSINE(MSC,MDC),DSSINE(MSC,MDC)
-        REAL(rkind), INTENT(OUT)   :: SSDS(MSC,MDC),DSSDS(MSC,MDC)
-        REAL(rkind), INTENT(OUT)   :: SSINL(MSC,MDC)
+        REAL(rkind), INTENT(OUT)   :: SSINE(NUMSIG,NUMDIR),DSSINE(NUMSIG,NUMDIR)
+        REAL(rkind), INTENT(OUT)   :: SSDS(NUMSIG,NUMDIR),DSSDS(NUMSIG,NUMDIR)
+        REAL(rkind), INTENT(OUT)   :: SSINL(NUMSIG,NUMDIR)
 
         INTEGER                    :: IS, ID, IK, ITH, ITH2, IS0
 
-        REAL(rkind)                :: PHI(MSC,MDC), DPHIDN(MSC,MDC)
-        REAL(rkind)                :: AWW3(NSPEC), WN2(MSC*MDC), BRLAMBDA(NSPEC)
-        REAL(rkind)                :: DPHIDN1D(NSPEC), PHI1D(NSPEC), TMP_DS(MSC)
+        REAL(rkind)                :: PHI(NUMSIG,NUMDIR), DPHIDN(NUMSIG,NUMDIR)
+        REAL(rkind)                :: AWW3(NSPEC), WN2(NUMSIG*NUMDIR), BRLAMBDA(NSPEC)
+        REAL(rkind)                :: DPHIDN1D(NSPEC), PHI1D(NSPEC), TMP_DS(NUMSIG)
 
         REAL(rkind)                :: ETOT, FAVG, FMEAN1, WNMEAN, AS, FAVGWS
         REAL(rkind)                :: TAUWAX, TAUWAY, AMAX, WIND10, WINDTH
-        REAL(rkind)                :: WHITECAP(1:4), SUMACLOC, FPM
-        DO IS = 1, MSC
-          DO ID = 1, MDC
-            AWW3(ID + (IS-1) * MDC) = ACLOC(IS,ID) * CG(IS,IP)
+        REAL(rkind)                :: WHITECAP(1:4), SUMWALOC, FPM
+        DO IS = 1, NUMSIG
+          DO ID = 1, NUMDIR
+            AWW3(ID + (IS-1) * NUMDIR) = WALOC(IS,ID) * CG(IS,IP)
           END DO
         END DO
 
@@ -159,9 +159,9 @@
 ! wind input
 !
         AS      = 0.
-        MSC_HF(IP) = MSC
+        NUMSIG_HF(IP) = NUMSIG
         CALL SET_WIND( IP, WIND10, WINDTH )
-        CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
+        CALL SET_FRICTION( IP, WALOC, WIND10, WINDTH, FPM )
         CALL W3SPR4 ( AWW3, CG(:,IP), WK(:,IP), EMEAN(IP), FMEAN(IP), FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS(IP))
         IF (EMEAN(IP) .LT. THR .AND. WIND10 .GT. THR) CALL SIN_LIN_CAV(IP,WINDTH,FPM,SSINL)
         CALL W3SIN4 ( IP, AWW3, CG(:,IP), WN2,  WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, PHI1D, DPHIDN1D, LLWS, BRLAMBDA)

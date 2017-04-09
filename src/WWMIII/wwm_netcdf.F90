@@ -1411,9 +1411,9 @@
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, iret)
       iret = nf90_def_dim(ncid, 'mne', ne_write, mne_dims)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, iret)
-      iret = nf90_def_dim(ncid, 'nfreq', MSC, nfreq_dims)
+      iret = nf90_def_dim(ncid, 'nfreq', NUMSIG, nfreq_dims)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
-      iret = nf90_def_dim(ncid, 'ndir', MDC, ndir_dims)
+      iret = nf90_def_dim(ncid, 'ndir', NUMDIR, ndir_dims)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, iret)
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLEOUT.eq.1) THEN
@@ -1905,9 +1905,9 @@
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, iret)
       iret = nf90_def_dim(ncid, 'nbstation', IOUTS, nbstat_dims)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, iret)
-      iret = nf90_def_dim(ncid, 'nfreq', MSC, nfreq_dims)
+      iret = nf90_def_dim(ncid, 'nfreq', NUMSIG, nfreq_dims)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, iret)
-      iret = nf90_def_dim(ncid, 'ndir', MDC, ndir_dims)
+      iret = nf90_def_dim(ncid, 'ndir', NUMDIR, ndir_dims)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
       !
 # ifdef MPI_PARALL_GRID
@@ -2084,12 +2084,12 @@
 # endif
         iret=nf90_inq_varid(ncid, "spsig", var_id)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 17, iret)
-        iret=nf90_put_var(ncid,var_id,SPSIG, start=(/1/), count =(/MSC/) )
+        iret=nf90_put_var(ncid,var_id,SPSIG, start=(/1/), count =(/NUMSIG/) )
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 18, iret)
         !
         iret=nf90_inq_varid(ncid, "spdir", var_id)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 19, iret)
-        iret=nf90_put_var(ncid,var_id,SPDIR, start=(/1/), count =(/MDC/) )
+        iret=nf90_put_var(ncid,var_id,SPDIR, start=(/1/), count =(/NUMDIR/) )
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 20, iret)
       ENDDO
       END SUBROUTINE

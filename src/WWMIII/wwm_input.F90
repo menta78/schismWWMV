@@ -709,8 +709,8 @@
          NAMELIST /COUPL/ LCPL, LROMS, LTIMOR, LSHYFEM, RADFLAG,        &
      &      LETOT, NLVT, DTCOUP, IMET_DRY
 
-         NAMELIST /GRID/ LCIRD, LSTAG, MINDIR, MAXDIR, MDC, FRLOW,      &
-     &      FRHIGH, MSC, FILEGRID, IGRIDTYPE, LSLOP, SLMAX, LVAR1D,     &
+         NAMELIST /GRID/ LCIRD, LSTAG, MINDIR, MAXDIR, NUMDIR, FRLOW,      &
+     &      FRHIGH, NUMSIG, FILEGRID, IGRIDTYPE, LSLOP, SLMAX, LVAR1D,     &
      &      LOPTSIG, CART2LATLON, LATLON2CART, APPLY_DXP_CORR,          &
      &      USE_EXACT_FORMULA_SPHERICAL_AREA, LEXPORT_GRID_MOD_OUT
 
@@ -840,7 +840,7 @@
 #endif
          GRD%FNAME = FILEGRID
 
-         NSPEC=MDC*MSC
+         NSPEC=NUMDIR*NUMSIG
          IF (LCIRD) THEN
             MINDIR = 0.0
             MAXDIR = PI2
@@ -1363,9 +1363,9 @@
            END IF
          END IF
 !
-!        Check MSC,MDC for exchange
+!        Check NUMSIG,NUMDIR for exchange
 !
-         if(MSC<1.or.MDC<1) call wwm_abort('MSC,MDC too small')
+         if(NUMSIG<1.or.NUMDIR<1) call wwm_abort('NUMSIG,NUMDIR too small')
 
          IF (SMETHOD .GT. 0) THEN
 

@@ -2,18 +2,18 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SDS_NEDWAM_CYCLE4( IP, KMESPC, SMESPC, ETOT, ACLOC, PHI, DPHIDN, SSDS )
+      SUBROUTINE SDS_NEDWAM_CYCLE4( IP, KMESPC, SMESPC, ETOT, WALOC, PHI, DPHIDN, SSDS )
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)          :: IP
          REAL(rkind), INTENT(IN)      :: KMESPC, SMESPC, ETOT
-         REAL(rkind), INTENT(IN)      :: ACLOC(MSC,MDC)
-         REAL(rkind), INTENT(OUT)     :: SSDS(MSC,MDC)
-         REAL(rkind), INTENT(INOUT)   :: PHI(MSC,MDC), DPHIDN(MSC,MDC)
+         REAL(rkind), INTENT(IN)      :: WALOC(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(OUT)     :: SSDS(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(INOUT)   :: PHI(NUMSIG,NUMDIR), DPHIDN(NUMSIG,NUMDIR)
  
          INTEGER                      :: IS, ID
-         REAL(rkind)                  :: BSAT(MSC), PSAT(MSC), C_K(MSC)
+         REAL(rkind)                  :: BSAT(NUMSIG), PSAT(NUMSIG), C_K(NUMSIG)
          REAL(rkind)                  :: CDS, ALPH
          REAL(rkind)                  :: SATDIS, SIGMA, DELTA
          REAL(rkind)                  :: BSATR, N1, PMK, STP_OV, STP_LO
@@ -37,13 +37,13 @@
          BSAT(:) = 0.0
          PSAT(:) = 0.0
 
-         DO IS = 1, MSC
-           DO ID = 1, MDC
-             BSAT(IS) = BSAT(IS)+ACLOC(IS,ID)*SPSIG(IS)*DDIR
+         DO IS = 1, NUMSIG
+           DO ID = 1, NUMDIR
+             BSAT(IS) = BSAT(IS)+WALOC(IS,ID)*SPSIG(IS)*DDIR
            END DO
          END DO
 
-         DO IS = 1, MSC
+         DO IS = 1, NUMSIG
            SIGMA = SPSIG(IS)
            BSAT(IS) = BSAT(IS) * CG(IS,IP) * WK(IS,IP)**3
            STP_LO = WK(IS,IP)/KMESPC
@@ -54,13 +54,13 @@
              PSAT(IS)= 0.25*PMK*(1.+MyTANH(10.0*(BSAT(IS)/BSATR-1.0)))
            END IF
            SATDIS = (BSAT(IS)/BSATR)**PSAT(IS)
-           DO ID = 1, MDC
+           DO ID = 1, NUMDIR
              SSDS(IS,ID)      = CDS * SATDIS * STP_OV * C_K(IS) * SIGMA
              IF (ICOMP .GE. 2) THEN
                DPHIDN(IS,ID) = DPHIDN(IS,ID) + SSDS(IS,ID)
              ELSE IF (ICOMP .LT. 2) THEN
                DPHIDN(IS,ID) = DPHIDN(IS,ID) - SSDS(IS,ID)
-               PHI(IS,ID) = PHI(IS,ID) - SSDS(IS,ID) * ACLOC(IS,ID)
+               PHI(IS,ID) = PHI(IS,ID) - SSDS(IS,ID) * WALOC(IS,ID)
              END IF
            END DO
          END DO
@@ -70,18 +70,18 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SDS_NEDWAM_CYCLE3( IP, KMESPC, SMESPC, ETOT, ACLOC, PHI, DPHIDN, SSDS )
+      SUBROUTINE SDS_NEDWAM_CYCLE3( IP, KMESPC, SMESPC, ETOT, WALOC, PHI, DPHIDN, SSDS )
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)          :: IP
          REAL(rkind), INTENT(IN)      :: KMESPC, SMESPC, ETOT
-         REAL(rkind), INTENT(OUT)     :: SSDS(MSC,MDC)
-         REAL(rkind)   , INTENT(IN)   :: ACLOC(MSC,MDC)
-         REAL(rkind)   , INTENT(INOUT):: PHI(MSC,MDC), DPHIDN(MSC,MDC)
+         REAL(rkind), INTENT(OUT)     :: SSDS(NUMSIG,NUMDIR)
+         REAL(rkind)   , INTENT(IN)   :: WALOC(NUMSIG,NUMDIR)
+         REAL(rkind)   , INTENT(INOUT):: PHI(NUMSIG,NUMDIR), DPHIDN(NUMSIG,NUMDIR)
 
          INTEGER                      :: IS, ID
-         REAL(rkind)                  :: BSAT(MSC), PSAT(MSC), C_K(MSC)
+         REAL(rkind)                  :: BSAT(NUMSIG), PSAT(NUMSIG), C_K(NUMSIG)
          REAL(rkind)                  :: CDS, ALPHAPM, ALPH
          REAL(rkind)                  :: SATDIS, SIGMA
          REAL(rkind)                  :: BSATR, N1, N2, PMK, STP_OV
@@ -104,13 +104,13 @@
          BSAT(:) = 0.0
          PSAT(:) = 0.0
 
-         DO IS = 1, MSC
-           DO ID = 1, MDC
-             BSAT(IS) = BSAT(IS)+ACLOC(IS,ID)*SPSIG(IS)*DDIR
+         DO IS = 1, NUMSIG
+           DO ID = 1, NUMDIR
+             BSAT(IS) = BSAT(IS)+WALOC(IS,ID)*SPSIG(IS)*DDIR
            END DO
          END DO
 
-         DO IS = 1, MSC
+         DO IS = 1, NUMSIG
            SIGMA = SPSIG(IS)
            BSAT(IS) = BSAT(IS) * CG(IS,IP) * WK(IS,IP)**3
            C_K(IS) = (WK(IS,IP) / KMESPC) ** N2
@@ -120,13 +120,13 @@
              PSAT(IS)= 0.25*PMK*(1.+MyTANH(10.0*(BSAT(IS)/BSATR-1.0)))
            END IF
            SATDIS = (BSAT(IS)/BSATR)**PSAT(IS)
-           DO ID = 1, MDC
+           DO ID = 1, NUMDIR
              SSDS(IS,ID)      = CDS * SATDIS * STP_OV * C_K(IS) * SIGMA
              IF (ICOMP .GE. 2) THEN
                DPHIDN(IS,ID) = DPHIDN(IS,ID) + SSDS(IS,ID)
              ELSE IF (ICOMP .LT. 2 ) THEN
                DPHIDN(IS,ID) = DPHIDN(IS,ID) - SSDS(IS,ID)
-               PHI(IS,ID) = PHI(IS,ID) - SSDS(IS,ID) * ACLOC(IS,ID)
+               PHI(IS,ID) = PHI(IS,ID) - SSDS(IS,ID) * WALOC(IS,ID)
              END IF
            END DO
          END DO

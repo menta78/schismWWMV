@@ -27,7 +27,7 @@
          STOKESBAROX=0
          STOKESBAROY=0
          eDep=DEP(IP)
-         DO IS=1,MSC
+         DO IS=1,NUMSIG
            eMult=SPSIG(IS)*DDIR*DS_INCR(IS)
            eWk=WK(IS,IP)
            kD=MIN(KDMAX, eWk*eDep)
@@ -38,7 +38,7 @@
            eSigma=SPSIG(IS)
            eUint=0
            eVint=0
-           DO ID=1,MDC
+           DO ID=1,NUMDIR
              eLoc=AC2(IS,ID,IP)*eMult
              eUint=eUint + eLoc*COSTH(ID)
              eVint=eVint + eLoc*SINTH(ID)
@@ -60,15 +60,15 @@
 !**********************************************************************:
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE STOKES_DRIFT_SURFACE_BAROTROPIC_LOC(ACLOC,DEPLOC,WKLOC,  &
+      SUBROUTINE STOKES_DRIFT_SURFACE_BAROTROPIC_LOC(WALOC,DEPLOC,WKLOC,  &
      &    STOKESBOTTX,STOKESBOTTY,STOKESSURFX,STOKESSURFY,STOKESBAROX,STOKESBAROY)
 
          USE DATAPOOL
          IMPLICIT NONE
 
-         REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
+         REAL(rkind), INTENT(IN)    :: WALOC(NUMSIG,NUMDIR)
          REAL(rkind), INTENT(IN)    :: DEPLOC
-         REAL(rkind), INTENT(IN)    :: WKLOC(MSC)
+         REAL(rkind), INTENT(IN)    :: WKLOC(NUMSIG)
          REAL(rkind), INTENT(OUT)   :: STOKESBOTTX, STOKESBOTTY
          REAL(rkind), INTENT(OUT)   :: STOKESSURFX, STOKESSURFY
          REAL(rkind), INTENT(OUT)   :: STOKESBAROX, STOKESBAROY
@@ -87,7 +87,7 @@
          STOKESBAROX=0
          STOKESBAROY=0
          eDep=DEPLOC
-         DO IS=1,MSC
+         DO IS=1,NUMSIG
            eMult=SPSIG(IS)*DDIR*DS_INCR(IS)
            eWk=WKLOC(IS)
            kD=MIN(KDMAX, eWk*eDep)
@@ -98,8 +98,8 @@
            eSigma=SPSIG(IS)
            eUint=0
            eVint=0
-           DO ID=1,MDC
-             eLoc=ACLOC(IS,ID)*eMult
+           DO ID=1,NUMDIR
+             eLoc=WALOC(IS,ID)*eMult
              eUint=eUint + eLoc*COSTH(ID)
              eVint=eVint + eLoc*SINTH(ID)
            END DO
@@ -120,7 +120,7 @@
 !**********************************************************************:
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE MEAN_WAVE_PARAMETER(IP,ACLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
+      SUBROUTINE MEAN_WAVE_PARAMETER(IP,WALOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
 !AR: This must be replaced by ST4_PRE or the certain WAM routine we are not consistent here this routine needs urgen deletion 
 
          USE DATAPOOL
@@ -128,7 +128,7 @@
 
          INTEGER, INTENT(IN) :: IP
 
-         REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
+         REAL(rkind), INTENT(IN)    :: WALOC(NUMSIG,NUMDIR)
          REAL(rkind), INTENT(OUT)   :: SME01, SME10, KME01
          REAL(rkind), INTENT(OUT)   :: KMWAM, KMWAM2
          REAL(rkind), INTENT(OUT)   :: HS
@@ -141,7 +141,7 @@
          REAL(rkind)                :: ETOT_ISQ_WK
          REAL(rkind)                :: ETOT_SQ_WK
 
-         REAL(rkind)                :: Y(MSC), tmp(msc)
+         REAL(rkind)                :: Y(NUMSIG), tmp(NUMSIG)
          REAL(rkind)                :: DS, ATAIL, ETAIL, ESIGTAIL
 !         REAL(rkind)                :: dintspec, dintspec_y
 !
@@ -149,15 +149,15 @@
 ! 2do improve efficiency ... 
 ! 2do check integration style ... 
 !
-         !ETOT = DINTSPEC(IP,ACLOC)
+         !ETOT = DINTSPEC(IP,WALOC)
          ETOT = ZERO
-         do id = 1, mdc
-           tmp(:) = acloc(:,id) * spsig 
+         do id = 1, NUMDIR
+           tmp(:) = WALOC(:,id) * spsig 
            ETOT = ETOT + tmp(1) * ONEHALF * ds_incr(1)*ddir
-           do is = 2, msc
+           do is = 2, NUMSIG
              ETOT = ETOT + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
            end do
-           ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
+           ETOT = ETOT + ONEHALF * tmp(NUMSIG) * ds_incr(NUMSIG)*ddir
          end do
 !
 ! if etot too small skip ...
@@ -168,81 +168,81 @@
 !
            ACTOT = ZERO
            y = ONE/SPSIG
-           do id = 1, mdc
-             tmp(:) = acloc(:,id) * spsig * y
+           do id = 1, NUMDIR
+             tmp(:) = WALOC(:,id) * spsig * y
              ACTOT  = ACTOT + tmp(1) * ONEHALF * ds_incr(1)*ddir
-             do is = 2, msc
+             do is = 2, NUMSIG
                ACTOT = ACTOT + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
              end do
-             ACTOT  = ACTOT + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
+             ACTOT  = ACTOT + ONEHALF * tmp(NUMSIG) * ds_incr(NUMSIG)*ddir
            end do
            !tmp = ONE/SPSIG
-           !ACTOT       = DINTSPEC_Y(IP,ACLOC,tmp)
+           !ACTOT       = DINTSPEC_Y(IP,WALOC,tmp)
            ETOT_SPSIG = ZERO
            y = SIGPOW(:,1) 
-           do id = 1, mdc
-             tmp(:) = acloc(:,id) * spsig * y
+           do id = 1, NUMDIR
+             tmp(:) = WALOC(:,id) * spsig * y
              ETOT_SPSIG = ETOT_SPSIG + tmp(1) * ONEHALF * ds_incr(1)*ddir
-             do is = 2, msc
+             do is = 2, NUMSIG
                ETOT_SPSIG = ETOT_SPSIG + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
              end do
-             ETOT_SPSIG = ETOT_SPSIG + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
+             ETOT_SPSIG = ETOT_SPSIG + ONEHALF * tmp(NUMSIG) * ds_incr(NUMSIG)*ddir
            end do
            !tmp = SIGPOW(:,1)
-           !ETOT_SPSIG  = DINTSPEC_Y(IP,ACLOC,tmp)
+           !ETOT_SPSIG  = DINTSPEC_Y(IP,WALOC,tmp)
            ETOT_WK = ZERO
            y = WK(:,IP) 
-           do id = 1, mdc
-             tmp(:) = acloc(:,id) * spsig * y
+           do id = 1, NUMDIR
+             tmp(:) = WALOC(:,id) * spsig * y
              ETOT_WK = ETOT_WK + ONEHALF * tmp(1) * ds_incr(1)*ddir
-             do is = 2, msc
+             do is = 2, NUMSIG
                ETOT_WK = ETOT_WK + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
              end do
-             ETOT_WK = ETOT_WK + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
+             ETOT_WK = ETOT_WK + ONEHALF * tmp(NUMSIG) * ds_incr(NUMSIG)*ddir
            end do
            !tmp = WK(:,IP)
-           !ETOT_WK     = DINTSPEC_Y(IP,ACLOC,tmp)
+           !ETOT_WK     = DINTSPEC_Y(IP,WALOC,tmp)
            ETOT_ISQ_WK = ZERO 
            y = ONE/SQRT(WK(:,IP))
-           do id = 1, mdc
-             tmp(:) = acloc(:,id) * spsig * y
+           do id = 1, NUMDIR
+             tmp(:) = WALOC(:,id) * spsig * y
              ETOT_ISQ_WK = ETOT_ISQ_WK + ONEHALF * tmp(1) * ds_incr(1)*ddir
-             do is = 2, msc
+             do is = 2, NUMSIG
                ETOT_ISQ_WK = ETOT_ISQ_WK+ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
              end do
-             ETOT_ISQ_WK = ETOT_ISQ_WK+ONEHALF*tmp(msc) * ds_incr(msc)*ddir
+             ETOT_ISQ_WK = ETOT_ISQ_WK+ONEHALF*tmp(NUMSIG) * ds_incr(NUMSIG)*ddir
            end do
            !tmp = ONE/SQRT(WK(:,IP))
-           !ETOT_ISQ_WK = DINTSPEC_Y(IP,ACLOC,tmp)
+           !ETOT_ISQ_WK = DINTSPEC_Y(IP,WALOC,tmp)
            ETOT_SQ_WK = ZERO
            y = SQRT(WK(:,IP)) 
-           do id = 1, mdc
-             tmp(:) = acloc(:,id) * spsig * y
+           do id = 1, NUMDIR
+             tmp(:) = WALOC(:,id) * spsig * y
              ETOT_SQ_WK = ETOT_SQ_WK + ONEHALF * tmp(1) * ds_incr(1)*ddir
-             do is = 2, msc -1 
+             do is = 2, NUMSIG -1 
                ETOT_SQ_WK = ETOT_SQ_WK + ONEHALF*(tmp(is)+tmp(is-1))*ds_incr(is)*ddir
              end do
-             ETOT_SQ_WK = ETOT_SQ_WK + ONEHALF*tmp(msc) * ds_incr(msc)*ddir
+             ETOT_SQ_WK = ETOT_SQ_WK + ONEHALF*tmp(NUMSIG) * ds_incr(NUMSIG)*ddir
            end do
            !tmp = SQRT(WK(:,IP))
-           !ETOT_SQ_WK  = DINTSPEC_Y(IP,ACLOC,tmp) 
+           !ETOT_SQ_WK  = DINTSPEC_Y(IP,WALOC,tmp) 
 !
 ! tail factors ...
 !
-           DS          = SPSIG(MSC) - SPSIG(MSC-1)
+           DS          = SPSIG(NUMSIG) - SPSIG(NUMSIG-1)
 
-           ATAIL       = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,1) * DDIR * DS
-           ETAIL       = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,2) * DDIR * DS
-           ESIGTAIL    = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,3) * DDIR * DS
+           ATAIL       = SUM(WALOC(NUMSIG,:)) * SIGPOW(NUMSIG,1) * DDIR * DS
+           ETAIL       = SUM(WALOC(NUMSIG,:)) * SIGPOW(NUMSIG,2) * DDIR * DS
+           ESIGTAIL    = SUM(WALOC(NUMSIG,:)) * SIGPOW(NUMSIG,3) * DDIR * DS
 !
 ! tail factors ...
 !
            ACTOT       = ACTOT        + PTAIL(5)  * ATAIL 
            ETOT        = ETOT         + PTAIL(6)  * ETAIL 
            ETOT_SPSIG  = ETOT_SPSIG   + PTAIL(7)  * ETAIL 
-           ETOT_ISQ_WK = ETOT_ISQ_WK  + PTAIL(5)  * ETAIL / (SQRT(WK(MSC,IP)))
-           ETOT_SQ_WK  = ETOT_SQ_WK   + PTAIL(5)  * ETAIL * (SQRT(WK(MSC,IP)))
-           ETOT_WK     = ETOT_WK      + PTAIL(8)  * ETAIL * WK(MSC,IP)
+           ETOT_ISQ_WK = ETOT_ISQ_WK  + PTAIL(5)  * ETAIL / (SQRT(WK(NUMSIG,IP)))
+           ETOT_SQ_WK  = ETOT_SQ_WK   + PTAIL(5)  * ETAIL * (SQRT(WK(NUMSIG,IP)))
+           ETOT_WK     = ETOT_WK      + PTAIL(8)  * ETAIL * WK(NUMSIG,IP)
 !
 ! integral parameters ...
 !
@@ -272,22 +272,22 @@
 !*                                                                    *
 !**********************************************************************
 !AR: This must be replaced by ST4_PRE or the certain WAM routine we are not consistent here this routine needs urgen deletion
-      SUBROUTINE MEAN_PARAMETER_BDCONS(ACLOC,HS,TM01,TM02)
+      SUBROUTINE MEAN_PARAMETER_BDCONS(WALOC,HS,TM01,TM02)
 
       USE DATAPOOL
       IMPLICIT NONE
 
-      REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
+      REAL(rkind), INTENT(IN)    :: WALOC(NUMSIG,NUMDIR)
       REAL(rkind), INTENT(OUT)   :: HS,TM01,TM02
 
       INTEGER             :: ID, IS
 
-      REAL(rkind)                :: Y(MSC)
+      REAL(rkind)                :: Y(NUMSIG)
       REAL(rkind)                :: DS, ETAIL
       REAL(rkind)                :: OMEG2, EAD, ETOT
       REAL(rkind)                :: EFTAIL,PPTAIL,EFTOT,EPTAIL
       REAL(rkind)                :: EHFR,AHFR,APTAIL,EPTOT,APTOT
-      REAL(rkind)                :: tmp(msc),actmp(msc)
+      REAL(rkind)                :: tmp(NUMSIG),actmp(NUMSIG)
 !
 ! total energy ...
 !
@@ -295,21 +295,21 @@
       tmp = ZERO
       actmp = ZERO
       ETOT = ZERO
-      do id = 1, mdc
-        tmp(:) = acloc(:,id) * spsig
+      do id = 1, NUMDIR
+        tmp(:) = WALOC(:,id) * spsig
         ETOT = ETOT + tmp(1) * ONEHALF * ds_incr(1)*ddir
-        do is = 2, msc
+        do is = 2, NUMSIG
           ETOT = ETOT + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
         end do
-        ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
+        ETOT = ETOT + ONEHALF * tmp(NUMSIG) * ds_incr(NUMSIG)*ddir
       end do
 
       IF (ETOT .GT. THR) THEN
 !
 ! tail ratios
 !
-         DS    = SPSIG(MSC) - SPSIG(MSC-1)
-         ETAIL = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,2) * DDIR * DS
+         DS    = SPSIG(NUMSIG) - SPSIG(NUMSIG-1)
+         ETAIL = SUM(WALOC(NUMSIG,:)) * SIGPOW(NUMSIG,2) * DDIR * DS
          ETOT  = ETOT + PTAIL(6) * ETAIL
 
          HS = 4*SQRT(ETOT)
@@ -321,21 +321,21 @@
          PPTAIL = PTAIL(1) - ONE
          EPTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
 
-         DO ID = 1, MDC
-           DO IS = 1, MSC
-             APTOT = APTOT + SPSIG(IS)    * ACLOC(IS,ID)
-             EPTOT = EPTOT + SIGPOW(IS,2) * ACLOC(IS,ID)
+         DO ID = 1, NUMDIR
+           DO IS = 1, NUMSIG
+             APTOT = APTOT + SPSIG(IS)    * WALOC(IS,ID)
+             EPTOT = EPTOT + SIGPOW(IS,2) * WALOC(IS,ID)
            ENDDO
          ENDDO
 
          APTOT = APTOT * FRINTF
          EPTOT = EPTOT * FRINTF
 
-         IF (MSC .GT. 3  .AND. .NOT. LSIGMAX) THEN
-           DO ID = 1, MDC
-           AHFR  = SPSIG(MSC) * ACLOC(MSC,ID)
+         IF (NUMSIG .GT. 3  .AND. .NOT. LSIGMAX) THEN
+           DO ID = 1, NUMDIR
+           AHFR  = SPSIG(NUMSIG) * WALOC(NUMSIG,ID)
            APTOT = APTOT + APTAIL * AHFR
-           EHFR  = SPSIG(MSC) * AHFR
+           EHFR  = SPSIG(NUMSIG) * AHFR
            EPTOT = EPTOT + EPTAIL * EHFR
            ENDDO
          ENDIF
@@ -352,15 +352,15 @@
          ETAIL  = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
          PPTAIL = PTAIL(1) - 3.
          EFTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
-         DO ID=1, MDC
-            DO IS = 1, MSC
-              EAD  = SIGPOW(IS,2) * ACLOC(IS,ID) * FRINTF
+         DO ID=1, NUMDIR
+            DO IS = 1, NUMSIG
+              EAD  = SIGPOW(IS,2) * WALOC(IS,ID) * FRINTF
               OMEG2 = SIGPOW(IS,2)
               ETOT  = ETOT + EAD
               EFTOT = EFTOT + EAD * OMEG2
             ENDDO
-            IF (MSC .GT. 3  .AND. .NOT. LSIGMAX) THEN
-              EAD  = SIGPOW(MSC,2) * ACLOC(MSC,ID)
+            IF (NUMSIG .GT. 3  .AND. .NOT. LSIGMAX) THEN
+              EAD  = SIGPOW(NUMSIG,2) * WALOC(NUMSIG,ID)
               ETOT  = ETOT  + ETAIL * EAD
               EFTOT = EFTOT + EFTAIL * OMEG2 * EAD
             ENDIF
@@ -381,25 +381,25 @@
 !*                                                                    *
 !**********************************************************************
 !AR: This must be replaced by ST4_PRE or the certain WAM routine we are not consistent here this routine needs urgen deletion
-      SUBROUTINE MEAN_PARAMETER(IP,ACLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
+      SUBROUTINE MEAN_PARAMETER(IP,WALOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
 
       USE DATAPOOL
       IMPLICIT NONE
 !2do ... rewrite this integration ...
       INTEGER, INTENT(IN) :: IP,ISMAX
 
-      REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
+      REAL(rkind), INTENT(IN)    :: WALOC(NUMSIG,NUMDIR)
       REAL(rkind), INTENT(OUT)   :: HS,TM01,TM02,KLM,WLM,TM10
 
       INTEGER             :: ID, IS
 
-      REAL(rkind)                :: Y(MSC)
+      REAL(rkind)                :: Y(NUMSIG)
       REAL(rkind)                :: DS, ETAIL
       REAL(rkind)                :: OMEG2,OMEG,EAD,UXD, ETOT
       REAL(rkind)                :: EFTAIL,PPTAIL,EFTOT,EPTAIL
       REAL(rkind)                :: EHFR,AHFR,APTAIL,EPTOT,APTOT
       REAL(rkind)                :: CKTAIL, ETOT1, SIG22, EKTOT, CETAIL
-      REAL(rkind)                :: tmp(msc),actmp(msc), SKK
+      REAL(rkind)                :: tmp(NUMSIG),actmp(NUMSIG), SKK
 !
 ! total energy ...
 !
@@ -407,21 +407,21 @@
       tmp = ZERO
       actmp = ZERO
       ETOT = ZERO
-      do id = 1, mdc
-        tmp(:) = acloc(:,id) * spsig
+      do id = 1, NUMDIR
+        tmp(:) = WALOC(:,id) * spsig
         ETOT = ETOT + tmp(1) * ONEHALF * ds_incr(1)*ddir
-        do is = 2, msc
+        do is = 2, NUMSIG
           ETOT = ETOT + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
         end do
-        ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
+        ETOT = ETOT + ONEHALF * tmp(NUMSIG) * ds_incr(NUMSIG)*ddir
       end do
 
       IF (ETOT .GT. THR) THEN
 !
 ! tail ratios
 !
-         DS    = SPSIG(MSC) - SPSIG(MSC-1)
-         ETAIL = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,2) * DDIR * DS
+         DS    = SPSIG(NUMSIG) - SPSIG(NUMSIG-1)
+         ETAIL = SUM(WALOC(NUMSIG,:)) * SIGPOW(NUMSIG,2) * DDIR * DS
          ETOT  = ETOT + PTAIL(6) * ETAIL
 
          HS = 4*SQRT(ETOT)
@@ -432,21 +432,21 @@
          APTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
          PPTAIL = PTAIL(1) - ONE
          EPTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
-         DO ID = 1, MDC
+         DO ID = 1, NUMDIR
            DO IS = 1, ISMAX
-             APTOT = APTOT + SPSIG(IS)    * ACLOC(IS,ID)
-             EPTOT = EPTOT + SIGPOW(IS,2) * ACLOC(IS,ID)
+             APTOT = APTOT + SPSIG(IS)    * WALOC(IS,ID)
+             EPTOT = EPTOT + SIGPOW(IS,2) * WALOC(IS,ID)
            ENDDO
          ENDDO
 
          APTOT = APTOT * FRINTF
          EPTOT = EPTOT * FRINTF
 
-         IF (MSC .GT. 3  .AND. .NOT. LSIGMAX) THEN
-           DO ID = 1, MDC
-             AHFR  = SPSIG(MSC) * ACLOC(MSC,ID)
+         IF (NUMSIG .GT. 3  .AND. .NOT. LSIGMAX) THEN
+           DO ID = 1, NUMDIR
+             AHFR  = SPSIG(NUMSIG) * WALOC(NUMSIG,ID)
              APTOT = APTOT + APTAIL * AHFR
-             EHFR  = SPSIG(MSC) * AHFR
+             EHFR  = SPSIG(NUMSIG) * AHFR
              EPTOT = EPTOT + EPTAIL * EHFR
            ENDDO
          ENDIF
@@ -463,12 +463,12 @@
          ETAIL  = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
          PPTAIL = PTAIL(1) - 3.
          EFTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
-         DO ID=1, MDC
+         DO ID=1, NUMDIR
             IF (LSECU .OR. LSTCU) THEN
               UXD  = CURTXY(IP,1)*COSTH(ID) + CURTXY(IP,2)*SINTH(ID)
             ENDIF
             DO IS = 1, ISMAX
-              EAD  = SIGPOW(IS,2) * ACLOC(IS,ID) * FRINTF
+              EAD  = SIGPOW(IS,2) * WALOC(IS,ID) * FRINTF
               IF (LSECU .OR. LSTCU) THEN
                 OMEG  = SPSIG(IS) + WK(IS,IP) * UXD
                 OMEG2 = OMEG**2
@@ -478,8 +478,8 @@
               ETOT  = ETOT + EAD
               EFTOT = EFTOT + EAD * OMEG2
             ENDDO
-            IF (MSC .GT. 3  .AND. .NOT. LSIGMAX) THEN
-              EAD  = SIGPOW(MSC,2) * ACLOC(MSC,ID)
+            IF (NUMSIG .GT. 3  .AND. .NOT. LSIGMAX) THEN
+              EAD  = SIGPOW(NUMSIG,2) * WALOC(NUMSIG,ID)
               ETOT  = ETOT  + ETAIL * EAD
               EFTOT = EFTOT + EFTAIL * OMEG2 * EAD
             ENDIF
@@ -503,18 +503,18 @@
          DO IS = 1, ISMAX
            SIG22 = SIGPOW(IS,2)
            SKK  = SIG22 * WK(IS,IP)
-           DO ID = 1, MDC
-             ETOT1 = ETOT1 + SIG22 * ACLOC(IS,ID)
-             EKTOT = EKTOT + SKK * ACLOC(IS,ID)
+           DO ID = 1, NUMDIR
+             ETOT1 = ETOT1 + SIG22 * WALOC(IS,ID)
+             EKTOT = EKTOT + SKK * WALOC(IS,ID)
            ENDDO
          ENDDO
          ETOT1 = FRINTF * ETOT1
          EKTOT = FRINTF * EKTOT
 
-         IF (MSC .GT. 3) THEN
-            DO ID=1,MDC
-              ETOT1 = ETOT1 + CETAIL * SIG22 * ACLOC(MSC,ID)
-              EKTOT = EKTOT + CKTAIL * SKK * ACLOC(MSC,ID)
+         IF (NUMSIG .GT. 3) THEN
+            DO ID=1,NUMDIR
+              ETOT1 = ETOT1 + CETAIL * SIG22 * WALOC(NUMSIG,ID)
+              EKTOT = EKTOT + CKTAIL * SKK * WALOC(NUMSIG,ID)
             ENDDO
          ENDIF
 
@@ -528,23 +528,23 @@
 
          APTOT = 0.
          EPTOT = 0.
-         DO ID=1, MDC
+         DO ID=1, NUMDIR
            DO IS=1,ISMAX
-             APTOT = APTOT + SPSIG(IS) * ACLOC(IS,ID)
-             EPTOT = EPTOT + SIGPOW(IS,2) * ACLOC(IS,ID)
+             APTOT = APTOT + SPSIG(IS) * WALOC(IS,ID)
+             EPTOT = EPTOT + SIGPOW(IS,2) * WALOC(IS,ID)
            ENDDO
          ENDDO
          APTOT = APTOT * FRINTF
          EPTOT = EPTOT * FRINTF
-         IF (MSC .GT. 3) THEN
+         IF (NUMSIG .GT. 3) THEN
            PPTAIL = PTAIL(1)
            APTAIL = 1. / (PPTAIL * (1. + PPTAIL * (FRINTH-1.)))
            PPTAIL = PTAIL(1) - 1.
            EPTAIL = 1. / (PPTAIL * (1. + PPTAIL * (FRINTH-1.)))
-           DO ID = 1, MDC
-             AHFR = SPSIG(MSC) * ACLOC(MSC,ID)
+           DO ID = 1, NUMDIR
+             AHFR = SPSIG(NUMSIG) * WALOC(NUMSIG,ID)
              APTOT = APTOT + APTAIL * AHFR
-             EHFR = SPSIG(MSC) * AHFR
+             EHFR = SPSIG(NUMSIG) * AHFR
              EPTOT = EPTOT + EPTAIL * EHFR
            ENDDO
          ENDIF
@@ -564,25 +564,25 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE MEAN_PARAMETER_OUTPUT(IP,ACLOC,HS,TM01,TM02,TM10,KLM,WLM)
+      SUBROUTINE MEAN_PARAMETER_OUTPUT(IP,WALOC,HS,TM01,TM02,TM10,KLM,WLM)
       USE DATAPOOL
       USE W3SRC4MD
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: IP
-      REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
+      REAL(rkind), INTENT(IN)    :: WALOC(NUMSIG,NUMDIR)
       REAL(rkind), INTENT(OUT)   :: HS,TM01,TM02,KLM,WLM,TM10
       INTEGER ISMAX, ID, IS
-      REAL(rkind) AWW3(NSPEC), FL3(MDC,MSC)
+      REAL(rkind) AWW3(NSPEC), FL3(NUMDIR,NUMSIG)
       REAL(rkind) WIND10, WINDTH, JAC
       REAL(rkind) FMEAN1, WNMEAN, AMAX
       REAL(rkind) F1MEAN, AKMEAN, XKMEAN
-      ISMAX = MSC
-      CALL MEAN_PARAMETER(IP,ACLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
+      ISMAX = NUMSIG
+      CALL MEAN_PARAMETER(IP,WALOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
       IF (DEP(IP) .gt. 0) THEN
         IF (ISOURCE .eq. 1) THEN
-          DO IS = 1, MSC
-            DO ID = 1, MDC
-              AWW3(ID + (IS-1) * MDC) = ACLOC(IS,ID) * CG(IS,IP)
+          DO IS = 1, NUMSIG
+            DO ID = 1, NUMDIR
+              AWW3(ID + (IS-1) * NUMDIR) = WALOC(IS,ID) * CG(IS,IP)
             END DO
           END DO
           LLWS = .TRUE.
@@ -591,10 +591,10 @@
           HS = 4.0_rkind * SQRT(EMEAN(IP))
         END IF
         IF (ISOURCE .eq. 2) THEN
-          DO IS = 1, MSC
+          DO IS = 1, NUMSIG
             JAC = PI2 * SPSIG(IS)
-            DO ID = 1, MDC
-              FL3(ID,IS) = ACLOC(IS,ID) * JAC
+            DO ID = 1, NUMDIR
+              FL3(ID,IS) = WALOC(IS,ID) * JAC
             END DO
           END DO
           CALL FKMEAN_LOCAL(IP, FL3, EMEAN(IP), FMEAN(IP), F1MEAN, AKMEAN, XKMEAN)
@@ -608,13 +608,13 @@
 !*                                                                    *
 !**********************************************************************
 !AR: This must be replaced by ST4_PRE or the certain WAM routine we are not consistent here this routine needs urgen deletion
-      SUBROUTINE MEAN_WAVE_PARAMETER_LOC(ACLOC,CURTXYLOC,DEPLOC,WKLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
+      SUBROUTINE MEAN_WAVE_PARAMETER_LOC(WALOC,CURTXYLOC,DEPLOC,WKLOC,HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2)
 
          USE DATAPOOL
          IMPLICIT NONE
  
-         REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
-         REAL(rkind), INTENT(IN)    :: WKLOC(MSC), DEPLOC
+         REAL(rkind), INTENT(IN)    :: WALOC(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(IN)    :: WKLOC(NUMSIG), DEPLOC
          REAL(rkind), INTENT(IN)    :: CURTXYLOC(2)
          REAL(rkind), INTENT(OUT)   :: SME01, SME10, KME01
          REAL(rkind), INTENT(OUT)   :: KMWAM, KMWAM2
@@ -628,20 +628,20 @@
          REAL(rkind)                :: ETOT_ISQ_WK
          REAL(rkind)                :: ETOT_SQ_WK
 
-         REAL(rkind)                :: Y(MSC)
+         REAL(rkind)                :: Y(NUMSIG)
          REAL(rkind)                :: DS, ATAIL, ETAIL, ESIGTAIL
-         REAL(rkind)                :: tmp(msc)
+         REAL(rkind)                :: tmp(NUMSIG)
 !
 ! total energy ...
 !
          ETOT = ZERO
-         do id = 1, mdc
-           tmp(:) = acloc(:,id) * spsig
+         do id = 1, NUMDIR
+           tmp(:) = WALOC(:,id) * spsig
            ETOT = ETOT + tmp(1) * ONEHALF * ds_incr(1)*ddir
-           do is = 2, msc
+           do is = 2, NUMSIG
              ETOT = ETOT + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
            end do
-           ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
+           ETOT = ETOT + ONEHALF * tmp(NUMSIG) * ds_incr(NUMSIG)*ddir
          end do
 !
 ! if etot too small skip ...
@@ -650,73 +650,73 @@
 
            ACTOT = ZERO
            y = ONE/SPSIG
-           do id = 1, mdc
-             tmp(:) = acloc(:,id) * spsig * y
+           do id = 1, NUMDIR
+             tmp(:) = WALOC(:,id) * spsig * y
              ACTOT  = ACTOT + tmp(1) * ONEHALF * ds_incr(1)*ddir
-             do is = 2, msc
+             do is = 2, NUMSIG
                ACTOT = ACTOT + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
              end do
-             ACTOT  = ACTOT + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
+             ACTOT  = ACTOT + ONEHALF * tmp(NUMSIG) * ds_incr(NUMSIG)*ddir
            end do
 
            ETOT_SPSIG = ZERO
            y = SIGPOW(:,1)
-           do id = 1, mdc
-             tmp(:) = acloc(:,id) * spsig * y
+           do id = 1, NUMDIR
+             tmp(:) = WALOC(:,id) * spsig * y
              ETOT_SPSIG = ETOT_SPSIG + tmp(1) * ONEHALF * ds_incr(1)*ddir
-             do is = 2, msc
+             do is = 2, NUMSIG
                ETOT_SPSIG = ETOT_SPSIG + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
              end do
-             ETOT_SPSIG = ETOT_SPSIG + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
+             ETOT_SPSIG = ETOT_SPSIG + ONEHALF * tmp(NUMSIG) * ds_incr(NUMSIG)*ddir
            end do
 
            ETOT_WK = ZERO
            y = WKLOC(:)
-           do id = 1, mdc
-             tmp(:) = acloc(:,id) * spsig * y
+           do id = 1, NUMDIR
+             tmp(:) = WALOC(:,id) * spsig * y
              ETOT_WK = ETOT_WK + ONEHALF * tmp(1) * ds_incr(1)*ddir
-             do is = 2, msc
+             do is = 2, NUMSIG
                ETOT_WK = ETOT_WK + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
              end do
-             ETOT_WK = ETOT_WK + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
+             ETOT_WK = ETOT_WK + ONEHALF * tmp(NUMSIG) * ds_incr(NUMSIG)*ddir
            end do
 
            ETOT_ISQ_WK = ZERO
            y = ONE/SQRT(WKLOC)
-           do id = 1, mdc
-             tmp(:) = acloc(:,id) * spsig * y
+           do id = 1, NUMDIR
+             tmp(:) = WALOC(:,id) * spsig * y
              ETOT_ISQ_WK = ETOT_ISQ_WK + ONEHALF * tmp(1) * ds_incr(1)*ddir
-             do is = 2, msc -1 
+             do is = 2, NUMSIG -1 
                ETOT_ISQ_WK = ETOT_ISQ_WK+ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
              end do
-             ETOT_ISQ_WK = ETOT_ISQ_WK+ONEHALF*tmp(msc) * ds_incr(msc)*ddir
+             ETOT_ISQ_WK = ETOT_ISQ_WK+ONEHALF*tmp(NUMSIG) * ds_incr(NUMSIG)*ddir
            end do
 
            ETOT_SQ_WK = ZERO
            y = SQRT(WKLOC)
-           do id = 1, mdc
-             tmp(:) = acloc(:,id) * spsig * y
+           do id = 1, NUMDIR
+             tmp(:) = WALOC(:,id) * spsig * y
              ETOT_SQ_WK = ETOT_SQ_WK + ONEHALF * tmp(1) * ds_incr(1)*ddir
-             do is = 2, msc -1 
+             do is = 2, NUMSIG -1 
                ETOT_SQ_WK = ETOT_SQ_WK + ONEHALF*(tmp(is)+tmp(is-1))*ds_incr(is)*ddir
              end do
-             ETOT_SQ_WK = ETOT_SQ_WK + ONEHALF*tmp(msc) * ds_incr(msc)*ddir
+             ETOT_SQ_WK = ETOT_SQ_WK + ONEHALF*tmp(NUMSIG) * ds_incr(NUMSIG)*ddir
            end do
 !
-           DS          = SPSIG(MSC) - SPSIG(MSC-1)
+           DS          = SPSIG(NUMSIG) - SPSIG(NUMSIG-1)
 
-           ATAIL       = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,1) * DDIR * DS
-           ETAIL       = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,2) * DDIR * DS
-           ESIGTAIL    = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,3) * DDIR * DS
+           ATAIL       = SUM(WALOC(NUMSIG,:)) * SIGPOW(NUMSIG,1) * DDIR * DS
+           ETAIL       = SUM(WALOC(NUMSIG,:)) * SIGPOW(NUMSIG,2) * DDIR * DS
+           ESIGTAIL    = SUM(WALOC(NUMSIG,:)) * SIGPOW(NUMSIG,3) * DDIR * DS
 !
 ! tail factors ...
 !
            ACTOT       = ACTOT        + PTAIL(5)  * ATAIL 
            ETOT        = ETOT         + PTAIL(6)  * ETAIL 
            ETOT_SPSIG  = ETOT_SPSIG   + PTAIL(7)  * ETAIL 
-           ETOT_ISQ_WK = ETOT_ISQ_WK  + PTAIL(5)  * ETAIL / SQRT(WKLOC(MSC))
-           ETOT_SQ_WK  = ETOT_SQ_WK   + PTAIL(5)  * ETAIL * SQRT(WKLOC(MSC))
-           ETOT_WK     = ETOT_WK      + PTAIL(8)  * ETAIL * WKLOC(MSC) 
+           ETOT_ISQ_WK = ETOT_ISQ_WK  + PTAIL(5)  * ETAIL / SQRT(WKLOC(NUMSIG))
+           ETOT_SQ_WK  = ETOT_SQ_WK   + PTAIL(5)  * ETAIL * SQRT(WKLOC(NUMSIG))
+           ETOT_WK     = ETOT_WK      + PTAIL(8)  * ETAIL * WKLOC(NUMSIG) 
 !
 ! integral parameters ...
 !
@@ -744,13 +744,13 @@
 !*                                                                    *
 !**********************************************************************
 !AR: This must be replaced by ST4_PRE or the certain WAM routine we are not consistent here this routine needs urgen deletion
-      SUBROUTINE WAVE_CURRENT_PARAMETER(IP,ACLOC,UBOT,ORBITAL,BOTEXPER,TMBOT,CALLFROM)
+      SUBROUTINE WAVE_CURRENT_PARAMETER(IP,WALOC,UBOT,ORBITAL,BOTEXPER,TMBOT,CALLFROM)
 
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN) :: IP
-         REAL(rkind),    INTENT(IN) :: ACLOC(MSC,MDC)
+         REAL(rkind),    INTENT(IN) :: WALOC(NUMSIG,NUMDIR)
          CHARACTER(len=*), INTENT(IN) :: CALLFROM
 
          REAL(rkind), INTENT(OUT)   :: UBOT, ORBITAL, BOTEXPER, TMBOT
@@ -758,7 +758,7 @@
          INTEGER             :: ID, IS
 
          REAL(rkind)                :: ETOT_SKD
-         REAL(rkind)                :: ETOT_SKDSIG, TMP(MSC), Y(MSC)
+         REAL(rkind)                :: ETOT_SKDSIG, TMP(NUMSIG), Y(NUMSIG)
 
 !
 ! integrals ...
@@ -770,24 +770,24 @@
 
          y = ONE/SINH(MIN(KDMAX,WK(:,IP)*DEP(IP)))**2
 
-         do id = 1, mdc
-           tmp(:) = acloc(:,id) * spsig * y
+         do id = 1, NUMDIR
+           tmp(:) = WALOC(:,id) * spsig * y
            ETOT_SKD  = ETOT_SKD + tmp(1) * ONEHALF * ds_incr(1)*ddir
-           do is = 2, msc -1 
+           do is = 2, NUMSIG -1 
              ETOT_SKD = ETOT_SKD + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
            end do
-           ETOT_SKD = ETOT_SKD + tmp(msc) * ONEHALF * ds_incr(msc)*ddir
+           ETOT_SKD = ETOT_SKD + tmp(NUMSIG) * ONEHALF * ds_incr(NUMSIG)*ddir
          end do
  
          y =  SIGPOW(:,2)*ONE/SINH(MIN(KDMAX,WK(:,IP)*DEP(IP)))**2
 
-         do id = 1, mdc
-           tmp(:) = acloc(:,id) * spsig * y
+         do id = 1, NUMDIR
+           tmp(:) = WALOC(:,id) * spsig * y
            ETOT_SKDSIG = ETOT_SKDSIG + tmp(1) * ONEHALF * ds_incr(1)*ddir
-           do is = 2, msc -1 
+           do is = 2, NUMSIG -1 
              ETOT_SKDSIG = ETOT_SKDSIG + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
            end do 
-           ETOT_SKDSIG = ETOT_SKDSIG + tmp(msc) * ONEHALF * ds_incr(msc)*ddir
+           ETOT_SKDSIG = ETOT_SKDSIG + tmp(NUMSIG) * ONEHALF * ds_incr(NUMSIG)*ddir
          end do
  
          IF (ETOT_SKD .gt. verysmall) THEN 
@@ -814,12 +814,12 @@
 !*                                                                    *
 !**********************************************************************
 !AR: This must be replaced by ST4_PRE or the certain WAM routine we are not consistent here this routine needs urgen deletion
-      SUBROUTINE WAVE_CURRENT_PARAMETER_LOC(ACLOC,CURTXYLOC,DEPLOC,WKLOC,UBOT,ORBITAL,BOTEXPER,TMBOT)
+      SUBROUTINE WAVE_CURRENT_PARAMETER_LOC(WALOC,CURTXYLOC,DEPLOC,WKLOC,UBOT,ORBITAL,BOTEXPER,TMBOT)
          USE DATAPOOL
          IMPLICIT NONE
 
-         REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
-         REAL(rkind), INTENT(IN)    :: WKLOC(MSC), DEPLOC
+         REAL(rkind), INTENT(IN)    :: WALOC(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(IN)    :: WKLOC(NUMSIG), DEPLOC
          REAL(rkind), INTENT(IN)    :: CURTXYLOC(2)
 
          REAL(rkind), INTENT(OUT)   :: UBOT, ORBITAL, BOTEXPER, TMBOT
@@ -827,7 +827,7 @@
          INTEGER             :: ID, IS
 
          REAL(rkind)                :: ETOT_SKD
-         REAL(rkind)                :: ETOT_SKDSIG, TMP(MSC), Y(MSC)
+         REAL(rkind)                :: ETOT_SKDSIG, TMP(NUMSIG), Y(NUMSIG)
 !
 ! integrals ...
 !
@@ -837,23 +837,23 @@
          ETOT_SKDSIG = ZERO
 
          y = ONE/SINH(MIN(KDMAX,WKLOC*DEPLOC))**2
-         do id = 1, mdc
-           tmp(:) = acloc(:,id) * spsig * y
+         do id = 1, NUMDIR
+           tmp(:) = WALOC(:,id) * spsig * y
            ETOT_SKD  = ETOT_SKD + tmp(1) * ONEHALF * ds_incr(1)*ddir
-           do is = 2, msc -1
+           do is = 2, NUMSIG -1
              ETOT_SKD = ETOT_SKD + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
            end do
-           ETOT_SKD = ETOT_SKD + tmp(msc) * ONEHALF * ds_incr(msc)*ddir
+           ETOT_SKD = ETOT_SKD + tmp(NUMSIG) * ONEHALF * ds_incr(NUMSIG)*ddir
          end do
 
          y =  SIGPOW(:,2)*ONE/SINH(MIN(KDMAX,WKLOC*DEPLOC))**2
-         do id = 1, mdc
-           tmp(:) = acloc(:,id) * spsig * y
+         do id = 1, NUMDIR
+           tmp(:) = WALOC(:,id) * spsig * y
            ETOT_SKDSIG = ETOT_SKDSIG + tmp(1) * ONEHALF * ds_incr(1)*ddir
-           do is = 2, msc -1
+           do is = 2, NUMSIG -1
              ETOT_SKDSIG = ETOT_SKDSIG + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
            end do
-           ETOT_SKDSIG = tmp(msc) * ONEHALF * ds_incr(msc)*ddir
+           ETOT_SKDSIG = tmp(NUMSIG) * ONEHALF * ds_incr(NUMSIG)*ddir
          end do
 
          IF (ETOT_SKD .gt. verysmall) THEN 
@@ -876,7 +876,7 @@
 
          ENDIF 
 
-         !WRITE(*,'(9F15.4)') DEPLOC,SUM(ACLOC),CURTXYLOC,SUM(WKLOC), ETOT_SKD, ETOT_SKDSIG 
+         !WRITE(*,'(9F15.4)') DEPLOC,SUM(WALOC),CURTXYLOC,SUM(WKLOC), ETOT_SKD, ETOT_SKDSIG 
       END SUBROUTINE 
 !**********************************************************************
 !*                                                                    *
@@ -900,19 +900,19 @@
 !*                                                                    *
 !**********************************************************************
 !AR: This must be replaced by ST4_PRE or the certain WAM routine we are not consistent here this routine needs urgen deletion
-      SUBROUTINE WINDSEASWELLSEP( IP, ACLOC, TM_W, CGP_W, CP_W, TP_W, LP_W, HS_W, KP_W )
+      SUBROUTINE WINDSEASWELLSEP( IP, WALOC, TM_W, CGP_W, CP_W, TP_W, LP_W, HS_W, KP_W )
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)           :: IP
-         REAL(rkind)   , INTENT(IN)    :: ACLOC(MSC,MDC)
+         REAL(rkind)   , INTENT(IN)    :: WALOC(NUMSIG,NUMDIR)
          REAL(rkind)   , INTENT(OUT)   :: TM_W, CGP_W, CP_W, TP_W, LP_W, HS_W, KP_W
 
          INTEGER                :: ID, IS
 
          REAL(rkind)                   :: ETOT
          REAL(rkind)                   :: VEC2RAD, EFTOT, OMEG, WINDTH
-         REAL(rkind)                   :: EAD, DS, EHFR, EFTAIL, ETAIL, PPTAIL, ACWIND(MSC,MDC)
+         REAL(rkind)                   :: EAD, DS, EHFR, EFTAIL, ETAIL, PPTAIL, ACWIND(NUMSIG,NUMDIR)
          REAL(rkind)                   :: UXD, ETOTF3, ETOTF4, FP, WN_W, WVC, WKDEP_W
 
          WINDTH = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
@@ -920,23 +920,23 @@
          ETOT = ZERO
          EFTAIL = ONE / (PTAIL(1)-ONE)
 
-         DO ID  = 1, MDC            ! Calculate wind sea energy ... weak criterion
-           DO IS = 1, MSC
+         DO ID  = 1, NUMDIR            ! Calculate wind sea energy ... weak criterion
+           DO IS = 1, NUMSIG
              WVC = MyREAL(SPSIG(IS)/WK(IS,IP))
              IF (  1.2*UFRIC(IP)*COS(SPDIR(ID)-WINDTH)*(28./WVC) .LT. ONE) THEN
                ACWIND(IS,ID) = ZERO   ! Swell
              ELSE
-               ACWIND(IS,ID) = ACLOC(IS,ID)  ! Wind Sea
+               ACWIND(IS,ID) = WALOC(IS,ID)  ! Wind Sea
              END IF
            END DO
-           DO IS = 2, MSC
+           DO IS = 2, NUMSIG
               DS = SPSIG(IS) - SPSIG(IS-1)
               EAD = ONEHALF*(SPSIG(IS)*ACWIND(IS,ID)+SPSIG(IS-1)*ACWIND(IS-1,ID))*DS*DDIR
               ETOT = ETOT + EAD
            END DO
-           IF (MSC > 3) THEN
-             EHFR = ACLOC(MSC,ID) * SPSIG(MSC)
-             ETOT = ETOT + DDIR * EHFR * SPSIG(MSC) * EFTAIL
+           IF (NUMSIG > 3) THEN
+             EHFR = WALOC(NUMSIG,ID) * SPSIG(NUMSIG)
+             ETOT = ETOT + DDIR * EHFR * SPSIG(NUMSIG) * EFTAIL
            ENDIF
          END DO
 
@@ -950,10 +950,10 @@
 
          ETOTF3 = ZERO
          ETOTF4 = ZERO
-         DO IS = 1, MSC
-           DO ID = 1, MDC
-             ETOTF3 = ETOTF3 + SPSIG(IS) * ACLOC(IS,ID)**4 * DDIR * DS_BAND(IS)
-             ETOTF4 = ETOTF4 +             ACLOC(IS,ID)**4 * DDIR * DS_BAND(IS)
+         DO IS = 1, NUMSIG
+           DO ID = 1, NUMDIR
+             ETOTF3 = ETOTF3 + SPSIG(IS) * WALOC(IS,ID)**4 * DDIR * DS_BAND(IS)
+             ETOTF4 = ETOTF4 +             WALOC(IS,ID)**4 * DDIR * DS_BAND(IS)
            END DO
          END DO
          IF(ETOTF4 .GT. VERYSMALL) THEN
@@ -976,16 +976,16 @@
          ETAIL  = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
          PPTAIL = PTAIL(1) - 2.
          EFTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
-         DO ID = 1, MDC
+         DO ID = 1, NUMDIR
             UXD = CURTXY(IP,1)*COSTH(ID) + CURTXY(IP,2)*SINTH(ID)
-            DO IS = 1, MSC
+            DO IS = 1, NUMSIG
               OMEG = SPSIG(IS) + WK(IS,IP) * UXD
               EAD = FRINTF * SIGPOW(IS,2) * ACWIND(IS,ID)
               ETOT = ETOT + EAD
               EFTOT = EFTOT + EAD * OMEG
             ENDDO
-            IF (MSC .GT. 3) THEN
-              EAD = SIGPOW(MSC,2) * ACWIND(MSC,ID)
+            IF (NUMSIG .GT. 3) THEN
+              EAD = SIGPOW(NUMSIG,2) * ACWIND(NUMSIG,ID)
               ETOT = ETOT + ETAIL * EAD
              EFTOT = EFTOT + EFTAIL * OMEG * EAD
             ENDIF
@@ -1000,13 +1000,13 @@
 !*                                                                    *
 !**********************************************************************
 !AR: This can remain ...
-      SUBROUTINE PEAK_PARAMETER(IP,ACLOC,ISMAX,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
+      SUBROUTINE PEAK_PARAMETER(IP,WALOC,ISMAX,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
 
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)           :: IP, ISMAX
-         REAL(rkind), INTENT(IN)       :: ACLOC(MSC,MDC)
+         REAL(rkind), INTENT(IN)       :: WALOC(NUMSIG,NUMDIR)
          REAL(rkind), INTENT(OUT)      :: KPP, FPP, CPP, WNPP, CGPP, TPP, LPP, PEAKDSPR,PEAKDM,DPEAK
          REAL(rkind), INTENT(OUT)      :: TPPD,KPPD,CGPD,CPPD
 
@@ -1016,7 +1016,7 @@
 !
 ! Peak period continues version... Taken from Thesis Henriques Alves ... correct citation is given there ... :)
 !
-       MAXAC = MAXVAL(ACLOC)
+       MAXAC = MAXVAL(WALOC)
 
        IF (MAXAC .gt. VERYSMALL .AND.  DEP(IP) .GT. DMIN) THEN
 
@@ -1025,9 +1025,9 @@
          ETOTC4 = ZERO
          ETOTS4 = ZERO
 
-         DO IS = 1, MSC
-           DO ID = 1, MDC
-             HQUOT  = ACLOC(IS,ID)/MAXAC
+         DO IS = 1, NUMSIG
+           DO ID = 1, NUMDIR
+             HQUOT  = WALOC(IS,ID)/MAXAC
              HQUOTP = HQUOT**4
              ETOTF3 = ETOTF3 + SPSIG(IS) * HQUOTP * DS_BAND(IS)
              ETOTF4 = ETOTF4 +             HQUOTP * DS_BAND(IS)
@@ -1066,12 +1066,12 @@
          DPEAK = 1
          ETOTT = ZERO
          IDIRM = -1
-         DO ID = 1, MDC
+         DO ID = 1, NUMDIR
             EAD = ZERO
             DO IS = 2, ISMAX
                DS = SPSIG(IS)-SPSIG(IS-1)
-               E1 = SPSIG(IS-1)*ACLOC(IS-1,ID)
-               E2 = SPSIG(IS)*ACLOC(IS,ID)
+               E1 = SPSIG(IS-1)*WALOC(IS-1,ID)
+               E2 = SPSIG(IS)*WALOC(IS,ID)
                EAD = EAD + DS*(E1+E2)
             END DO
             IF (EAD .GT. ETOTT) THEN
@@ -1105,10 +1105,10 @@
 
        ETOTT = ZERO
        ISIGMP = -1
-       DO IS = 1, MSC
+       DO IS = 1, NUMSIG
          EAD = ZERO
-         DO ID = 1, MDC
-            EAD = EAD + SPSIG(IS)*ACLOC(IS,ID)*DDIR
+         DO ID = 1, NUMDIR
+            EAD = EAD + SPSIG(IS)*WALOC(IS,ID)*DDIR
          ENDDO
          IF (EAD > ETOTT) THEN
            ETOTT = EAD
@@ -1129,13 +1129,13 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE PEAK_PARAMETER_LOC(ACLOC,DEPLOC,ISMAX,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
+      SUBROUTINE PEAK_PARAMETER_LOC(WALOC,DEPLOC,ISMAX,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
 
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)    :: ISMAX
-         REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
+         REAL(rkind), INTENT(IN)    :: WALOC(NUMSIG,NUMDIR)
          REAL(rkind), INTENT(IN)    :: DEPLOC
 
 
@@ -1147,15 +1147,15 @@
 !
 ! Peak period continues version... Taken from Thesis Henriques Alves ... correct citation is given there ... :)
 !
-       MAXAC = MAXVAL(ACLOC)
+       MAXAC = MAXVAL(WALOC)
        IF (MAXAC .gt. VERYSMALL .AND. DEPLOC .GT. DMIN) THEN
          ETOTF3 = ZERO
          ETOTF4 = ZERO
          ETOTC4 = ZERO
          ETOTS4 = ZERO
-         DO IS = 1, MSC
-           DO ID = 1, MDC
-             HQUOT  = ACLOC(IS,ID)/MAXAC
+         DO IS = 1, NUMSIG
+           DO ID = 1, NUMDIR
+             HQUOT  = WALOC(IS,ID)/MAXAC
              HQUOTP = HQUOT**4
              ETOTF3 = ETOTF3 + SPSIG(IS) * HQUOTP * DS_BAND(IS)
              ETOTF4 = ETOTF4 +             HQUOTP * DS_BAND(IS)
@@ -1190,12 +1190,12 @@
          DPEAK = 1
          ETOTT = ZERO
          IDIRM = -1
-         DO ID = 1, MDC
+         DO ID = 1, NUMDIR
             EAD = ZERO
             DO IS = 2, ISMAX
                DS = SPSIG(IS)-SPSIG(IS-1)
-               E1 = SPSIG(IS-1)*ACLOC(IS-1,ID)
-               E2 = SPSIG(IS)*ACLOC(IS,ID)
+               E1 = SPSIG(IS-1)*WALOC(IS-1,ID)
+               E2 = SPSIG(IS)*WALOC(IS,ID)
                EAD = EAD + DS*(E1+E2)
             END DO
             IF (EAD .GT. ETOTT) THEN
@@ -1227,10 +1227,10 @@
 
        ETOTT = ZERO
        ISIGMP = -1
-       DO IS = 1, MSC
+       DO IS = 1, NUMSIG
          EAD = ZERO
-         DO ID = 1, MDC
-            EAD = EAD + SPSIG(IS)*ACLOC(IS,ID)*DDIR
+         DO ID = 1, NUMDIR
+            EAD = EAD + SPSIG(IS)*WALOC(IS,ID)*DDIR
          ENDDO
          IF (EAD > ETOTT) THEN
            ETOTT = EAD
@@ -1252,12 +1252,12 @@
 !*                                                                    *
 !**********************************************************************
 !AR: This must be replaced by ST4_PRE or the certain WAM routine we are not consistent here this routine needs urgen deletion
-      SUBROUTINE MEAN_DIRECTION_AND_SPREAD(IP,ACLOC,ISMAX,ETOTS,ETOTC,DM,DSPR)
+      SUBROUTINE MEAN_DIRECTION_AND_SPREAD(IP,WALOC,ISMAX,ETOTS,ETOTC,DM,DSPR)
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)    :: IP, ISMAX
-         REAL(rkind),    INTENT(IN)    :: ACLOC(MSC,MDC)
+         REAL(rkind),    INTENT(IN)    :: WALOC(NUMSIG,NUMDIR)
          REAL(rkind),    INTENT(OUT)   :: ETOTS, ETOTC, DM, DSPR
 
          INTEGER                       :: IS, ID
@@ -1270,16 +1270,16 @@
 
          EFTAIL = ONE / (PTAIL(1)-ONE)
 
-         DO ID = 1, MDC
+         DO ID = 1, NUMDIR
            EAD = ZERO
              DO  IS = 2, ISMAX 
                DS  = SPSIG(IS)-SPSIG(IS-1)
-               EDI = ONEHALF*(SPSIG(IS)*ACLOC(IS,ID)+SPSIG(IS-1)*ACLOC(IS-1,ID))*DS
+               EDI = ONEHALF*(SPSIG(IS)*WALOC(IS,ID)+SPSIG(IS-1)*WALOC(IS-1,ID))*DS
                EAD = EAD + EDI
             END DO
-            IF (MSC .GT. 3) THEN
-              EHFR = ACLOC(MSC,ID) * SPSIG(MSC)
-              EAD = EAD + EHFR * SPSIG(MSC) * EFTAIL
+            IF (NUMSIG .GT. 3) THEN
+              EHFR = WALOC(NUMSIG,ID) * SPSIG(NUMSIG)
+              EAD = EAD + EHFR * SPSIG(NUMSIG) * EFTAIL
             ENDIF
             EAD = EAD * DDIR
             ETOT1 = ETOT1 + EAD
@@ -1304,12 +1304,12 @@
 !*                                                                    *
 !**********************************************************************
 !AR: This must be replaced by ST4_PRE or the certain WAM routine we are not consistent here this routine needs urgen deletion
-      SUBROUTINE MEAN_DIRECTION_AND_SPREAD_LOC(ACLOC,ISMAX,ETOTS,ETOTC,DM,DSPR)
+      SUBROUTINE MEAN_DIRECTION_AND_SPREAD_LOC(WALOC,ISMAX,ETOTS,ETOTC,DM,DSPR)
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)    :: ISMAX
-         REAL(rkind),    INTENT(IN)    :: ACLOC(MSC,MDC)
+         REAL(rkind),    INTENT(IN)    :: WALOC(NUMSIG,NUMDIR)
          REAL(rkind),    INTENT(OUT)   :: ETOTS, ETOTC, DM, DSPR
 
          INTEGER                :: IS, ID
@@ -1323,16 +1323,16 @@
 
          EFTAIL = ONE / (PTAIL(1)-ONE)
 
-         DO ID = 1, MDC
+         DO ID = 1, NUMDIR
            EAD = ZERO
              DO  IS = 2, ISMAX 
                DS  = SPSIG(IS)-SPSIG(IS-1)
-               EDI = ONEHALF*(SPSIG(IS)*ACLOC(IS,ID)+SPSIG(IS-1)*ACLOC(IS-1,ID))*DS
+               EDI = ONEHALF*(SPSIG(IS)*WALOC(IS,ID)+SPSIG(IS-1)*WALOC(IS-1,ID))*DS
                EAD = EAD + EDI
             END DO
-            IF (MSC .GT. 3) THEN
-              EHFR = ACLOC(MSC,ID) * SPSIG(MSC)
-              EAD = EAD + EHFR * SPSIG(MSC) * EFTAIL
+            IF (NUMSIG .GT. 3) THEN
+              EHFR = WALOC(NUMSIG,ID) * SPSIG(NUMSIG)
+              EAD = EAD + EHFR * SPSIG(NUMSIG) * EFTAIL
             ENDIF
             EAD = EAD * DDIR
             ETOT1 = ETOT1 + EAD
@@ -1356,12 +1356,12 @@
 !*                                                                    *
 !**********************************************************************
 !AR: This must be replaced by ST4_PRE or the certain WAM routine we are not consistent here this routine needs urgen deletion
-      SUBROUTINE MEAN_PARAMETER_LOC(ACLOC,CURTXYLOC,DEPLOC,WKLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
+      SUBROUTINE MEAN_PARAMETER_LOC(WALOC,CURTXYLOC,DEPLOC,WKLOC,ISMAX,HS,TM01,TM02,TM10,KLM,WLM)
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: ISMAX
-      REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
-         REAL(rkind), INTENT(IN)    :: WKLOC(MSC), DEPLOC
+      REAL(rkind), INTENT(IN)    :: WALOC(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(IN)    :: WKLOC(NUMSIG), DEPLOC
          REAL(rkind), INTENT(IN)    :: CURTXYLOC(2)
 
 
@@ -1374,26 +1374,26 @@
          REAL(rkind)                :: EFTAIL,PPTAIL,EFTOT,EPTAIL
          REAL(rkind)                :: EHFR,AHFR,APTAIL,EPTOT,APTOT
          REAL(rkind)                :: SKK, CKTAIL, ETOT1, SIG22, EKTOT, CETAIL
-         REAL(rkind)                :: tmp(msc)
+         REAL(rkind)                :: tmp(NUMSIG)
 !
 ! total energy ...
 !
          ETOT = ZERO
-         do id = 1, mdc
-           tmp(:) = acloc(:,id) * spsig
+         do id = 1, NUMDIR
+           tmp(:) = WALOC(:,id) * spsig
            ETOT = ETOT + tmp(1) * ONEHALF * ds_incr(1)*ddir
-           do is = 2, msc
+           do is = 2, NUMSIG
              ETOT = ETOT + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
            end do
-           ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
+           ETOT = ETOT + ONEHALF * tmp(NUMSIG) * ds_incr(NUMSIG)*ddir
          end do
 
          IF (ETOT .GT. verysmall) THEN
 !
 ! tail ratios same as in swan ...
 !
-         DS    = SPSIG(MSC) - SPSIG(MSC-1)
-         ETAIL = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,2) * DDIR * DS
+         DS    = SPSIG(NUMSIG) - SPSIG(NUMSIG-1)
+         ETAIL = SUM(WALOC(NUMSIG,:)) * SIGPOW(NUMSIG,2) * DDIR * DS
          ETOT  = ETOT + PTAIL(6) * ETAIL
 
          HS = 4*SQRT(ETOT)
@@ -1408,21 +1408,21 @@
          PPTAIL = PTAIL(1) - ONE
          EPTAIL = ONE / (PPTAIL * (ONE + PPTAIL * (FRINTH-ONE)))
 
-         DO ID = 1, MDC
+         DO ID = 1, NUMDIR
            DO IS = 1, ISMAX
-             APTOT = APTOT + SPSIG(IS)    * ACLOC(IS,ID)
-             EPTOT = EPTOT + SIGPOW(IS,2) * ACLOC(IS,ID)
+             APTOT = APTOT + SPSIG(IS)    * WALOC(IS,ID)
+             EPTOT = EPTOT + SIGPOW(IS,2) * WALOC(IS,ID)
            ENDDO
          ENDDO
 
          APTOT = APTOT * FRINTF
          EPTOT = EPTOT * FRINTF
 
-         IF (MSC .GT. 3  .AND. .NOT. LSIGMAX) THEN
-           DO ID = 1, MDC
-             AHFR  = SPSIG(MSC) * ACLOC(MSC,ID)
+         IF (NUMSIG .GT. 3  .AND. .NOT. LSIGMAX) THEN
+           DO ID = 1, NUMDIR
+             AHFR  = SPSIG(NUMSIG) * WALOC(NUMSIG,ID)
              APTOT = APTOT + APTAIL * AHFR
-             EHFR  = SPSIG(MSC) * AHFR
+             EHFR  = SPSIG(NUMSIG) * AHFR
              EPTOT = EPTOT + EPTAIL * EHFR
            ENDDO
          ENDIF
@@ -1443,12 +1443,12 @@
 !
 ! tail ratios same as in swan ...
 !
-         DO ID=1, MDC
+         DO ID=1, NUMDIR
             IF (LSECU .OR. LSTCU) THEN
               UXD  = CURTXYLOC(1)*COSTH(ID) + CURTXYLOC(2)*SINTH(ID)
             ENDIF
             DO IS = 1, ISMAX
-              EAD  = SIGPOW(IS,2) * ACLOC(IS,ID) * FRINTF
+              EAD  = SIGPOW(IS,2) * WALOC(IS,ID) * FRINTF
               IF (LSECU .OR. LSTCU) THEN
                 OMEG  = SPSIG(IS) + WKLOC(IS) * UXD
                 OMEG2 = OMEG**2
@@ -1458,8 +1458,8 @@
               ETOT  = ETOT + EAD
               EFTOT = EFTOT + EAD * OMEG2
             ENDDO
-            IF (MSC .GT. 3  .AND. .NOT. LSIGMAX) THEN
-              EAD  = SIGPOW(MSC,2) * ACLOC(MSC,ID)
+            IF (NUMSIG .GT. 3  .AND. .NOT. LSIGMAX) THEN
+              EAD  = SIGPOW(NUMSIG,2) * WALOC(NUMSIG,ID)
               ETOT  = ETOT  + ETAIL * EAD
               EFTOT = EFTOT + EFTAIL * OMEG2 * EAD
             ENDIF
@@ -1483,19 +1483,19 @@
          DO IS = 1, ISMAX
            SIG22 = SIGPOW(IS,2)
            SKK  = SIG22 * WKLOC(IS)
-           DO ID = 1, MDC
-             ETOT1 = ETOT1 + SIG22 * ACLOC(IS,ID)
-             EKTOT = EKTOT + SKK * ACLOC(IS,ID)
+           DO ID = 1, NUMDIR
+             ETOT1 = ETOT1 + SIG22 * WALOC(IS,ID)
+             EKTOT = EKTOT + SKK * WALOC(IS,ID)
            ENDDO
          ENDDO
 
          ETOT1 = FRINTF * ETOT1
          EKTOT = FRINTF * EKTOT
 
-         IF (MSC .GT. 3) THEN
-            DO ID=1,MDC
-              ETOT1 = ETOT1 + CETAIL * SIG22 * ACLOC(MSC,ID)
-              EKTOT = EKTOT + CKTAIL * SKK * ACLOC(MSC,ID)
+         IF (NUMSIG .GT. 3) THEN
+            DO ID=1,NUMDIR
+              ETOT1 = ETOT1 + CETAIL * SIG22 * WALOC(NUMSIG,ID)
+              EKTOT = EKTOT + CKTAIL * SKK * WALOC(NUMSIG,ID)
             ENDDO
          ENDIF
 
@@ -1509,23 +1509,23 @@
 
          APTOT = 0.
          EPTOT = 0.
-         DO ID=1, MDC
+         DO ID=1, NUMDIR
            DO IS=1,ISMAX
-             APTOT = APTOT + SPSIG(IS) * ACLOC(IS,ID)
-             EPTOT = EPTOT + SIGPOW(IS,2) * ACLOC(IS,ID)
+             APTOT = APTOT + SPSIG(IS) * WALOC(IS,ID)
+             EPTOT = EPTOT + SIGPOW(IS,2) * WALOC(IS,ID)
            ENDDO
          ENDDO
          APTOT = APTOT * FRINTF
          EPTOT = EPTOT * FRINTF
-         IF (MSC .GT. 3) THEN
+         IF (NUMSIG .GT. 3) THEN
            PPTAIL = PTAIL(1)
            APTAIL = 1. / (PPTAIL * (1. + PPTAIL * (FRINTH-1.)))
            PPTAIL = PTAIL(1) - 1.
            EPTAIL = 1. / (PPTAIL * (1. + PPTAIL * (FRINTH-1.)))
-           DO ID = 1, MDC
-             AHFR = SPSIG(MSC) * ACLOC(MSC,ID)
+           DO ID = 1, NUMDIR
+             AHFR = SPSIG(NUMSIG) * WALOC(NUMSIG,ID)
              APTOT = APTOT + APTAIL * AHFR
-             EHFR = SPSIG(MSC) * AHFR
+             EHFR = SPSIG(NUMSIG) * AHFR
              EPTOT = EPTOT + EPTAIL * EHFR
            ENDDO
          ENDIF
@@ -1546,37 +1546,37 @@
 !*                                                                    *
 !**********************************************************************
 !AR: This is all computed in the soruce terms allready we need to get rid of all this shit!
-      SUBROUTINE MEAN_FREQS(IP,ACLOC,SME01,SME10,ETOTWS,LWINDSEA)
+      SUBROUTINE MEAN_FREQS(IP,WALOC,SME01,SME10,ETOTWS,LWINDSEA)
 
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN) :: IP
 
-         REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
+         REAL(rkind), INTENT(IN)    :: WALOC(NUMSIG,NUMDIR)
          REAL(rkind), INTENT(OUT)   :: SME01, SME10, ETOTWS
 
-         LOGICAL, INTENT(IN) :: LWINDSEA(MSC,MDC)
+         LOGICAL, INTENT(IN) :: LWINDSEA(NUMSIG,NUMDIR)
 
          INTEGER             :: ID, IS
 
          REAL(rkind)                :: ACTOT, ETOT
          REAL(rkind)                :: ETOT_SPSIG
 
-         REAL(rkind)                :: Y(MSC)
+         REAL(rkind)                :: Y(NUMSIG)
          REAL(rkind)                :: DS, ATAIL, ETAIL
-         REAL(rkind)                :: tmp(msc)
+         REAL(rkind)                :: tmp(NUMSIG)
 !
 ! total energy ...
 !
          ETOT = ZERO
-         do id = 1, mdc
-           tmp(:) = acloc(:,id) * spsig 
+         do id = 1, NUMDIR
+           tmp(:) = WALOC(:,id) * spsig 
            ETOT = ETOT + ONEHALF * tmp(1) * ds_incr(1)*ddir
-           do is = 2, msc
+           do is = 2, NUMSIG
              IF (LWINDSEA(IS,ID)) ETOT = ETOT + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir 
            end do
-           ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
+           ETOT = ETOT + ONEHALF * tmp(NUMSIG) * ds_incr(NUMSIG)*ddir
          end do
 !
 ! if etot too small skip ...
@@ -1587,32 +1587,32 @@
 !
            ACTOT = ZERO
            y = ONE/SPSIG
-           do id = 1, mdc
-             tmp(:) = acloc(:,id) * spsig * y
+           do id = 1, NUMDIR
+             tmp(:) = WALOC(:,id) * spsig * y
              ACTOT = ACTOT + ONEHALF * tmp(1) * ds_incr(1)*ddir
-             do is = 2, msc
+             do is = 2, NUMSIG
                IF (LWINDSEA(IS,ID)) ACTOT = ACTOT + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir 
              end do
-             ACTOT = ACTOT + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
+             ACTOT = ACTOT + ONEHALF * tmp(NUMSIG) * ds_incr(NUMSIG)*ddir
            end do
 
            ETOT_SPSIG = ZERO
            y = SIGPOW(:,1) 
-           do id = 1, mdc
-             tmp(:) = acloc(:,id) * spsig * y
+           do id = 1, NUMDIR
+             tmp(:) = WALOC(:,id) * spsig * y
              ETOT_SPSIG = ETOT_SPSIG + ONEHALF * tmp(1) * ds_incr(1)*ddir
-             do is = 2, msc
+             do is = 2, NUMSIG
                IF (LWINDSEA(IS,ID)) ETOT_SPSIG = ETOT_SPSIG + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir 
              end do
-             ETOT_SPSIG = ETOT_SPSIG + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
+             ETOT_SPSIG = ETOT_SPSIG + ONEHALF * tmp(NUMSIG) * ds_incr(NUMSIG)*ddir
            end do
 !
 ! tail factors ...
 !
-           DS          = SPSIG(MSC) - SPSIG(MSC-1)
+           DS          = SPSIG(NUMSIG) - SPSIG(NUMSIG-1)
 
-           ATAIL       = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,1) * DDIR * DS
-           ETAIL       = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,2) * DDIR * DS
+           ATAIL       = SUM(WALOC(NUMSIG,:)) * SIGPOW(NUMSIG,1) * DDIR * DS
+           ETAIL       = SUM(WALOC(NUMSIG,:)) * SIGPOW(NUMSIG,2) * DDIR * DS
 !
 ! tail factors ...
 !
@@ -1639,14 +1639,14 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE MEAN_WAVEN(IP,ACLOC,KME01,KMWAM,KMWAM2)
+      SUBROUTINE MEAN_WAVEN(IP,WALOC,KME01,KMWAM,KMWAM2)
 
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN) :: IP
 
-         REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
+         REAL(rkind), INTENT(IN)    :: WALOC(NUMSIG,NUMDIR)
          REAL(rkind), INTENT(OUT)   :: KME01
          REAL(rkind), INTENT(OUT)   :: KMWAM, KMWAM2
          INTEGER             :: ID, IS
@@ -1658,17 +1658,17 @@
          REAL(rkind)                :: ETOT_ISQ_WK
          REAL(rkind)                :: ETOT_SQ_WK
 
-         REAL(rkind)                :: Y(MSC), tmp(msc)
+         REAL(rkind)                :: Y(NUMSIG), tmp(NUMSIG)
          REAL(rkind)                :: DS, ATAIL, ETAIL, ESIGTAIL
 !         REAL(rkind)                :: dintspec, dintspec_y
 !
 ! total energy ...
 !
-         !ETOT = DINTSPEC(IP,ACLOC)
+         !ETOT = DINTSPEC(IP,WALOC)
          ETOT = ZERO
-         do id = 1, mdc
-           tmp(:) = acloc(:,id) * spsig
-           do is = 2, msc
+         do id = 1, NUMDIR
+           tmp(:) = WALOC(:,id) * spsig
+           do is = 2, NUMSIG
              ETOT = ETOT + ONEHALF*(tmp(is)+tmp(is-1))*ds_incr(is)*ddir
            end do
          end do
@@ -1681,71 +1681,71 @@
 !
            ACTOT = ZERO
            y = ONE/SPSIG
-           do id = 1, mdc
-             tmp(:) = acloc(:,id) * spsig * y
-             do is = 2, msc
+           do id = 1, NUMDIR
+             tmp(:) = WALOC(:,id) * spsig * y
+             do is = 2, NUMSIG
                ACTOT = ACTOT + ONEHALF*(tmp(is)+tmp(is-1))*ds_incr(is)*ddir
              end do
            end do
            !tmp = ONE/SPSIG
-           !ACTOT       = DINTSPEC_Y(IP,ACLOC,tmp)
+           !ACTOT       = DINTSPEC_Y(IP,WALOC,tmp)
            ETOT_SPSIG = ZERO
            y = SIGPOW(:,1) 
-           do id = 1, mdc
-             tmp(:) = acloc(:,id) * spsig * y
-             do is = 2, msc
+           do id = 1, NUMDIR
+             tmp(:) = WALOC(:,id) * spsig * y
+             do is = 2, NUMSIG
                ETOT_SPSIG = ETOT_SPSIG + ONEHALF*(tmp(is)+tmp(is-1))*ds_incr(is)*ddir
              end do
            end do
            !tmp = SIGPOW(:,1)
-           !ETOT_SPSIG  = DINTSPEC_Y(IP,ACLOC,tmp)
+           !ETOT_SPSIG  = DINTSPEC_Y(IP,WALOC,tmp)
            ETOT_WK = ZERO
            y = WK(:,IP) 
-           do id = 1, mdc
-             tmp(:) = acloc(:,id) * spsig * y
-             do is = 2, msc
+           do id = 1, NUMDIR
+             tmp(:) = WALOC(:,id) * spsig * y
+             do is = 2, NUMSIG
                ETOT_WK = ETOT_WK + ONEHALF*(tmp(is)+tmp(is-1))*ds_incr(is)*ddir
              end do
            end do
            !tmp = WK(:,IP)
-           !ETOT_WK     = DINTSPEC_Y(IP,ACLOC,tmp)
+           !ETOT_WK     = DINTSPEC_Y(IP,WALOC,tmp)
            ETOT_ISQ_WK = ZERO 
            y = ONE/SQRT(WK(:,IP))
-           do id = 1, mdc
-             tmp(:) = acloc(:,id) * spsig * y
-             do is = 2, msc
+           do id = 1, NUMDIR
+             tmp(:) = WALOC(:,id) * spsig * y
+             do is = 2, NUMSIG
                ETOT_ISQ_WK = ETOT_ISQ_WK + ONEHALF*(tmp(is)+tmp(is-1))*ds_incr(is)*ddir
              end do
            end do
            !tmp = ONE/SQRT(WK(:,IP))
-           !ETOT_ISQ_WK = DINTSPEC_Y(IP,ACLOC,tmp)
+           !ETOT_ISQ_WK = DINTSPEC_Y(IP,WALOC,tmp)
            ETOT_SQ_WK = ZERO
            y = SQRT(WK(:,IP)) 
-           do id = 1, mdc
-             tmp(:) = acloc(:,id) * spsig * y
-             do is = 2, msc
+           do id = 1, NUMDIR
+             tmp(:) = WALOC(:,id) * spsig * y
+             do is = 2, NUMSIG
                ETOT_SQ_WK = ETOT_SQ_WK + ONEHALF*(tmp(is)+tmp(is-1))*ds_incr(is)*ddir
              end do
            end do
            !tmp = SQRT(WK(:,IP))
-           !ETOT_SQ_WK  = DINTSPEC_Y(IP,ACLOC,tmp) 
+           !ETOT_SQ_WK  = DINTSPEC_Y(IP,WALOC,tmp) 
 !
 ! tail factors ...
 !
-           DS          = SPSIG(MSC) - SPSIG(MSC-1)
+           DS          = SPSIG(NUMSIG) - SPSIG(NUMSIG-1)
 
-           ATAIL       = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,1) * DDIR * DS
-           ETAIL       = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,2) * DDIR * DS
-           ESIGTAIL    = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,3) * DDIR * DS
+           ATAIL       = SUM(WALOC(NUMSIG,:)) * SIGPOW(NUMSIG,1) * DDIR * DS
+           ETAIL       = SUM(WALOC(NUMSIG,:)) * SIGPOW(NUMSIG,2) * DDIR * DS
+           ESIGTAIL    = SUM(WALOC(NUMSIG,:)) * SIGPOW(NUMSIG,3) * DDIR * DS
 !
 ! tail factors ... borowed from SWAN
 !
            ACTOT       = ACTOT        + PTAIL(5)  * ATAIL 
            ETOT        = ETOT         + PTAIL(6)  * ETAIL 
            ETOT_SPSIG  = ETOT_SPSIG   + PTAIL(7)  * ETAIL 
-           ETOT_ISQ_WK = ETOT_ISQ_WK  + PTAIL(5)  * ETAIL / (SQRT(WK(MSC,IP)))
-           ETOT_SQ_WK  = ETOT_SQ_WK   + PTAIL(5)  * ETAIL * (SQRT(WK(MSC,IP)))
-           ETOT_WK     = ETOT_WK      + PTAIL(8)  * ETAIL * WK(MSC,IP)
+           ETOT_ISQ_WK = ETOT_ISQ_WK  + PTAIL(5)  * ETAIL / (SQRT(WK(NUMSIG,IP)))
+           ETOT_SQ_WK  = ETOT_SQ_WK   + PTAIL(5)  * ETAIL * (SQRT(WK(NUMSIG,IP)))
+           ETOT_WK     = ETOT_WK      + PTAIL(8)  * ETAIL * WK(NUMSIG,IP)
 !
 ! integral parameters ...
 !

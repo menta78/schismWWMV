@@ -2,15 +2,15 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SDS_SWB(IP, SME, KME, ETOT, HS, ACLOC, SSBR, DSSBR)
+      SUBROUTINE SDS_SWB(IP, SME, KME, ETOT, HS, WALOC, SSBR, DSSBR)
       USE DATAPOOL
       IMPLICIT NONE
 
       INTEGER, INTENT(IN)   :: IP
 
-      REAL(rkind), INTENT(IN)   :: ACLOC(MSC,MDC), SME, KME, ETOT, HS
+      REAL(rkind), INTENT(IN)   :: WALOC(NUMSIG,NUMDIR), SME, KME, ETOT, HS
 
-      REAL(rkind), INTENT(INOUT)     :: SSBR(MSC,MDC), DSSBR(MSC,MDC)
+      REAL(rkind), INTENT(INOUT)     :: SSBR(NUMSIG,NUMDIR), DSSBR(NUMSIG,NUMDIR)
       REAL(rkind)   :: FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD
 
       REAL(rkind) :: BETA, QQ, QB, BETA2, ARG
@@ -49,7 +49,7 @@
            HMAX(IP)  = BRHD * DEP(IP)
          END IF
        CASE(3) ! D. based on peak steepness 
-         CALL PEAK_PARAMETER(IP,ACLOC,MSC,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
+         CALL PEAK_PARAMETER(IP,WALOC,NUMSIG,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
          IF (LPP .GT. VERYSMALL) THEN
            S0    = HS/LPP
            GAMMA_WB =  0.5_rkind + 0.4_rkind * MyTANH(33._rkind * S0)
@@ -202,21 +202,21 @@
       END IF
 #endif
 !
-      DO IS = 1, MSC
-        DO ID = 1, MDC
+      DO IS = 1, NUMSIG
+        DO ID = 1, NUMDIR
           IF (ICOMP .GE. 2) THEN
             DSSBR(IS,ID)  = SURFA1
-            SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID)
+            SSBR(IS,ID)   = SURFA0 * WALOC(IS,ID)
           ELSE IF (ICOMP .LT. 2) THEN
             DSSBR(IS,ID)  = SURFA0
-            SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID)
+            SSBR(IS,ID)   = SURFA0 * WALOC(IS,ID)
           END IF
         END DO
       END DO 
 
 #ifdef SCHISM
-      DO IS=1,MSC
-        DO ID=1,MDC
+      DO IS=1,NUMSIG
+        DO ID=1,NUMDIR
           COST = COSTH(ID)!COS(SPDIR(ID))
           SINT = SINTH(ID)!SIN(SPDIR(ID))
 !          SBR_X(IP)=SBR_X(IP)+COST*G9*RHOW*(WK(IP,IS)/SPSIG(IS))*SSBR_TMP_DUMON(IP,IS,ID)*DS_INCR(IS)*DDIR

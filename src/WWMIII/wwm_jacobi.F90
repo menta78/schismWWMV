@@ -20,8 +20,8 @@
       integer IS, ID
       REAL(rkind) :: CFLadvgeoOut(MNP)
       CFLadvgeoOut=0
-      DO IS=1,MSC
-        DO ID=1,MDC
+      DO IS=1,NUMSIG
+        DO ID=1,NUMDIR
           CALL CADVXY(IS,ID,C)
           DO IE = 1, MNE
             I1 = INE(1,IE)
@@ -64,20 +64,20 @@
       SUBROUTINE EIMPS_ASPAR_BLOCK(ASPAR)
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind), intent(out) :: ASPAR(MSC, MDC, NNZ)
+      REAL(rkind), intent(out) :: ASPAR(NUMSIG, NUMDIR, NNZ)
       INTEGER :: POS_TRICK(3,2)
-      REAL(rkind) :: FL11(MSC,MDC), FL12(MSC,MDC), FL21(MSC,MDC), FL22(MSC,MDC), FL31(MSC,MDC), FL32(MSC,MDC)
-      REAL(rkind) :: CRFS(MSC,MDC,3), K1(MSC,MDC), KM(MSC,MDC,3), K(MSC,MDC,3), TRIA03
-      REAL(rkind) :: CXY(2,MSC,MDC,3)
+      REAL(rkind) :: FL11(NUMSIG,NUMDIR), FL12(NUMSIG,NUMDIR), FL21(NUMSIG,NUMDIR), FL22(NUMSIG,NUMDIR), FL31(NUMSIG,NUMDIR), FL32(NUMSIG,NUMDIR)
+      REAL(rkind) :: CRFS(NUMSIG,NUMDIR,3), K1(NUMSIG,NUMDIR), KM(NUMSIG,NUMDIR,3), K(NUMSIG,NUMDIR,3), TRIA03
+      REAL(rkind) :: CXY(2,NUMSIG,NUMDIR,3)
       REAL(rkind) :: DIFRU, USOC, WVC
-      REAL(rkind) :: DELTAL(MSC,MDC,3)
-      REAL(rkind) :: KP(MSC,MDC,3), NM(MSC,MDC)
+      REAL(rkind) :: DELTAL(NUMSIG,NUMDIR,3)
+      REAL(rkind) :: KP(NUMSIG,NUMDIR,3), NM(NUMSIG,NUMDIR)
       INTEGER     :: I1, I2, I3
       INTEGER     :: IP, ID, IS, IE
       INTEGER     :: I, IPGL1
 
-      REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
-      REAL(rkind) :: LAMBDA(2,MSC,MDC)
+      REAL(rkind) :: DTK(NUMSIG,NUMDIR), TMP3(NUMSIG,NUMDIR)
+      REAL(rkind) :: LAMBDA(2,NUMSIG,NUMDIR)
       REAL(rkind) :: CXnorm
       REAL(rkind) sumTMP3, sumCXY, sumCG, sumASPARdiag
       REAL(rkind) DTeffect
@@ -114,8 +114,8 @@
       DO IE = 1, MNE
         DO I=1,3
           IP = INE(I,IE)
-          DO IS=1,MSC
-            DO ID=1,MDC
+          DO IS=1,NUMSIG
+            DO ID=1,NUMDIR
               IF (LSECU .OR. LSTCU) THEN
                 CXY(1,IS,ID,I) = CG(IS,IP)*COSTH(ID)+CURTXY(IP,1)
                 CXY(2,IS,ID,I) = CG(IS,IP)*SINTH(ID)+CURTXY(IP,2)
@@ -177,7 +177,7 @@
           I2=JA_IE(I,2,IE)
           I3=JA_IE(I,3,IE)
           K1(:,:) =  KP(:,:,I)
-          DO ID=1,MDC
+          DO ID=1,NUMDIR
             DTK(:,ID) =  K1(:,ID) * DTeffect * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
           END DO
           TMP3(:,:)  =  DTK(:,:) * NM(:,:)
@@ -217,12 +217,12 @@
       SUBROUTINE ADD_FREQ_DIR_TO_ASPAR_COMP_CADS(ASPAR)
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind), intent(inout) :: ASPAR(MSC,MDC,NNZ)
+      REAL(rkind), intent(inout) :: ASPAR(NUMSIG,NUMDIR,NNZ)
       REAL(rkind) :: TheVal, eFact
-      REAL(rkind) :: CASS(0:MSC+1), CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
-      REAL(rkind) :: CAD(MSC,MDC), CAS(MSC,MDC)
-      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
-      REAL(rkind) :: B_SIG(MSC)
+      REAL(rkind) :: CASS(0:NUMSIG+1), CP_SIG(0:NUMSIG+1), CM_SIG(0:NUMSIG+1)
+      REAL(rkind) :: CAD(NUMSIG,NUMDIR), CAS(NUMSIG,NUMDIR)
+      REAL(rkind) :: CP_THE(NUMSIG,NUMDIR), CM_THE(NUMSIG,NUMDIR)
+      REAL(rkind) :: B_SIG(NUMSIG)
       INTEGER     :: IS, ID, IP
       IF (REFRACTION_IMPL) THEN
         DO IP=1,NP_RES
@@ -255,17 +255,17 @@
           END IF
           CAS_SIG(:,:,IP)=CAS
           eFact=DT4F*SI(IP)
-          DO ID = 1, MDC
-            CASS(1:MSC) = CAS(:,ID)
+          DO ID = 1, NUMDIR
+            CASS(1:NUMSIG) = CAS(:,ID)
             CASS(0)     = 0.
-            CASS(MSC+1) = CASS(MSC)
+            CASS(NUMSIG+1) = CASS(NUMSIG)
             CP_SIG = MAX(ZERO,CASS)
             CM_SIG = MIN(ZERO,CASS)
             ! Now forming the tridiagonal system
-            DO IS=1,MSC
+            DO IS=1,NUMSIG
               B_SIG(IS)=eFact*(CP_SIG(IS)/DS_INCR(IS-1) - CM_SIG(IS) /DS_INCR(IS))
             END DO
-            B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
+            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * PTAIL(5)
             ASPAR(:,ID,I_DIAG(IP))=ASPAR(:,ID,I_DIAG(IP)) + B_SIG
           END DO
         END DO
@@ -299,7 +299,7 @@
 !* 
 !* Grid: the gridsize is variable. DS_INCR(IS) is essentially defined
 !* as  DS_INCR(IS) = SPSIG(IS) - SPSIG(IS-1)
-!* Therefore the system that needs to be resolved is for i=1,MSC
+!* Therefore the system that needs to be resolved is for i=1,NUMSIG
 !*
 !* We write f_{n,+} = 1 if u_i^n > 0
 !*                    0 otherwise
@@ -329,24 +329,24 @@
 !*       + N_(i+1)^(n+1) [    Delta t { -u_(i+1,+)/DS_(i+1)   }    ]
 !* 
 !* The boundary conditions are expressed as
-!* N_0^{n+1}=0 and N_{MSC+1}^{n+1} = N_{MSC}^{n+1} PTAIL(5)
+!* N_0^{n+1}=0 and N_{NUMSIG+1}^{n+1} = N_{NUMSIG}^{n+1} PTAIL(5)
 !* 
 !* 
 !**********************************************************************
       SUBROUTINE GET_FREQ_DIR_CONTRIBUTION(IP, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind), intent(inout) :: ASPAR_DIAG(MSC,MDC)
-      REAL(rkind), intent(out) :: A_THE(MSC,MDC), C_THE(MSC,MDC)
-      REAL(rkind), intent(out) :: A_SIG(MSC,MDC), C_SIG(MSC,MDC)
+      REAL(rkind), intent(inout) :: ASPAR_DIAG(NUMSIG,NUMDIR)
+      REAL(rkind), intent(out) :: A_THE(NUMSIG,NUMDIR), C_THE(NUMSIG,NUMDIR)
+      REAL(rkind), intent(out) :: A_SIG(NUMSIG,NUMDIR), C_SIG(NUMSIG,NUMDIR)
 
       REAL(rkind) :: TheVal, eFact
       REAL(rkind) :: CP_SIG, CM_SIG
       REAL(rkind) :: CP_SIG_ip1, CM_SIG_im1
       REAL(rkind) :: FP, FM
-      REAL(rkind) :: CAD(MSC,MDC), CAS(MSC,MDC)
-      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
-      REAL(rkind) :: B_SIG(MSC)
+      REAL(rkind) :: CAD(NUMSIG,NUMDIR), CAS(NUMSIG,NUMDIR)
+      REAL(rkind) :: CP_THE(NUMSIG,NUMDIR), CM_THE(NUMSIG,NUMDIR)
+      REAL(rkind) :: B_SIG(NUMSIG)
       INTEGER     :: ID1, ID2, IS, ID, IP
       IF (REFRACTION_IMPL) THEN
         TheVal=1
@@ -361,7 +361,7 @@
         CP_THE = MAX(ZERO,CAD)
         CM_THE = MIN(ZERO,CAD)
         eFact=(DT4D/DDIR)*SI(IP)
-        DO ID=1,MDC
+        DO ID=1,NUMDIR
           ID1 = ID_PREV(ID)
           ID2 = ID_NEXT(ID)
           A_THE(:,ID) = - eFact *  CP_THE(:,ID1)
@@ -380,8 +380,8 @@
           CAS=ZERO
         END IF
         eFact=DT4F*SI(IP)
-        DO ID = 1, MDC
-          DO IS=1,MSC
+        DO ID = 1, NUMDIR
+          DO IS=1,NUMSIG
             IF (CAS(IS,ID) .gt. 0) THEN
               FP=ONE
               FM=ZERO
@@ -392,15 +392,15 @@
             CP_SIG=CAS(IS,ID) * FP
             CM_SIG=CAS(IS,ID) * FM
             B_SIG(IS)=eFact*(CP_SIG/DS_INCR(IS+1) - CM_SIG/DS_INCR(IS))
-            IF (IS .eq. MSC) THEN
-              CP_SIG_ip1=CAS(MSC,ID)*FP*PTAIL(5)
-              B_SIG(MSC)=B_SIG(MSC) - eFact*CP_SIG_ip1/DS_INCR(IS)
+            IF (IS .eq. NUMSIG) THEN
+              CP_SIG_ip1=CAS(NUMSIG,ID)*FP*PTAIL(5)
+              B_SIG(NUMSIG)=B_SIG(NUMSIG) - eFact*CP_SIG_ip1/DS_INCR(IS)
             END IF
             IF (IS .gt. 1) THEN
               CM_SIG_im1=CAS(IS-1,ID)*FM
               A_SIG(IS,ID)=eFact*CM_SIG_im1/DS_INCR(IS)
             END IF
-            IF (IS .lt. MSC) THEN
+            IF (IS .lt. NUMSIG) THEN
               CP_SIG_ip1=CAS(IS+1,ID)*FP
               C_SIG(IS,ID)=-eFact*CP_SIG_ip1/DS_INCR(IS+1)
             END IF
@@ -516,14 +516,14 @@
       USE DATAPOOL
       IMPLICIT NONE
       REAL(rkind) :: MaxNorm, SumNorm, p_is_converged
-      REAL(rkind) :: eSum(MSC,MDC)
-      REAL(rkind) :: BSIDE(MSC,MDC), DIAG(MSC,MDC)
-      REAL(rkind) :: ACLOC(MSC,MDC)
-      REAL(rkind) :: CAD(MSC,MDC), CAS(MSC,MDC)
-      REAL(rkind) :: BLOC(MSC,MDC)
-      REAL(rkind) :: ASPAR_DIAG(MSC,MDC)
+      REAL(rkind) :: eSum(NUMSIG,NUMDIR)
+      REAL(rkind) :: BSIDE(NUMSIG,NUMDIR), DIAG(NUMSIG,NUMDIR)
+      REAL(rkind) :: WALOC(NUMSIG,NUMDIR)
+      REAL(rkind) :: CAD(NUMSIG,NUMDIR), CAS(NUMSIG,NUMDIR)
+      REAL(rkind) :: BLOC(NUMSIG,NUMDIR)
+      REAL(rkind) :: ASPAR_DIAG(NUMSIG,NUMDIR)
       LOGICAL     :: test=.true.
-      REAL(rkind) :: ASPAR_LOC(MSC,MDC,MAX_DEG)
+      REAL(rkind) :: ASPAR_LOC(NUMSIG,NUMDIR,MAX_DEG)
 #ifdef DEBUG_ITERATION_LOOP
       integer iIter
       integer, save :: iPass = 0
@@ -622,7 +622,7 @@
        
         DO IP=1,NP_RES
 
-          ACLOC = AC2(:,:,IP)
+          WALOC = AC2(:,:,IP)
 
           IF (WAE_JGS_CFL_LIM) THEN
             IF (NumberOperationJGS(IP) .lt. CFLadvgeoI(IP)) THEN
@@ -635,7 +635,7 @@
           IF (test) THEN
 !            WRITE(STAT%FHNDL,*) 'IP=', IP
             NumberIterationSolver(IP) = NumberIterationSolver(IP) + 1
-            CALL SINGLE_VERTEX_COMPUTATION(JDX, ACLOC, eSum, ASPAR_DIAG)
+            CALL SINGLE_VERTEX_COMPUTATION(JDX, WALOC, eSum, ASPAR_DIAG)
 #ifdef DEBUG
             sumESUM = sumESUM + sum(abs(eSum))
 #endif
@@ -650,7 +650,7 @@
             IF (JGS_CHKCONV) THEN
               Sum_new = sum(eSum)
               if (Sum_new .gt. thr8) then
-                DiffNew=sum(abs(ACLOC - eSum))
+                DiffNew=sum(abs(WALOC - eSum))
                 p_is_converged = DiffNew/Sum_new
               else
                 p_is_converged = zero
@@ -784,17 +784,17 @@
       SUBROUTINE GET_BSIDE_DIAG(IP, ACin1, ACin2, BSIDE, DIAG, BLOC)
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
-      REAL(rkind), intent(in)  :: ACin1(MSC,MDC,MNP)
-      REAL(rkind), intent(in)  :: ACin2(MSC,MDC,MNP)
-      REAL(rkind), intent(out) :: BSIDE(MSC,MDC)
-      REAL(rkind), intent(out) :: DIAG (MSC,MDC)
-      REAL(rkind), intent(out) :: BLOC(MSC,MDC)
-      REAL(rkind)              :: PHI(MSC,MDC)
-      REAL(rkind)              :: DPHIDN(MSC,MDC)
+      REAL(rkind), intent(in)  :: ACin1(NUMSIG,NUMDIR,MNP)
+      REAL(rkind), intent(in)  :: ACin2(NUMSIG,NUMDIR,MNP)
+      REAL(rkind), intent(out) :: BSIDE(NUMSIG,NUMDIR)
+      REAL(rkind), intent(out) :: DIAG (NUMSIG,NUMDIR)
+      REAL(rkind), intent(out) :: BLOC(NUMSIG,NUMDIR)
+      REAL(rkind)              :: PHI(NUMSIG,NUMDIR)
+      REAL(rkind)              :: DPHIDN(NUMSIG,NUMDIR)
       REAL(rkind)              :: eVal
       REAL(rkind)              :: ePHI, TheFactor, DVS1, DVS2
-      REAL(rkind)              :: DAM(MSC), MAXDAC, eDAM
-      REAL(rkind)              :: DELFL(MSC), eFric, USFM
+      REAL(rkind)              :: DAM(NUMSIG), MAXDAC, eDAM
+      REAL(rkind)              :: DELFL(NUMSIG), eFric, USFM
       INTEGER IS, ID
       PHI=ZERO
       DPHIDN=ZERO
@@ -806,7 +806,7 @@
       END IF
       IF (LLIMT .and. WW3_STYLE_LIMIT_SRC_TERM) THEN
          DELFL  = COFRM4*DT4S
-         DO IS=1,MSC
+         DO IS=1,NUMSIG
 !            LIMFAK = 0.1
             MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
             IF ((ISOURCE .EQ. 1).or.(ISOURCE .EQ. 2)) THEN
@@ -820,7 +820,7 @@
                   MAXDAC = USFM*DELFL(IS)/PI2/SPSIG(IS)
                END IF
             END IF
-            DO ID=1,MDC
+            DO ID=1,NUMDIR
                TheFactor = DT4A / MAX(ONE, ONE - DT4A * DPHIDN(IS,ID))
                DVS1 = PHI(IS,ID) * TheFactor
                DVS2 = SIGN(MIN(MAXDAC, ABS(DVS1)), DVS1)
@@ -854,14 +854,14 @@
       SUBROUTINE GET_BLOCAL(IP, Ac1in, BLOC)
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: IP
-      REAL(rkind), intent(in)  :: AC1in(MSC,MDC,MNP)
-      REAL(rkind), INTENT(OUT) :: BLOC(MSC,MDC)
+      REAL(rkind), intent(in)  :: AC1in(NUMSIG,NUMDIR,MNP)
+      REAL(rkind), INTENT(OUT) :: BLOC(NUMSIG,NUMDIR)
       INTEGER ID, idx
       idx=IWBNDLC_REV(IP)
       IF ((LBCWA .OR. LBCSP).and.(idx.gt.0)) THEN
         BLOC = WBAC(:,:,idx)  * SI(IP)
       ELSE
-        DO ID=1,MDC
+        DO ID=1,NUMDIR
           BLOC(:,ID) = Ac1in(:,ID,IP) * IOBPD(ID,IP)*IOBWB(IP)*IOBDP(IP)*SI(IP)
         ENDDO
       END IF
@@ -872,29 +872,29 @@
       SUBROUTINE LINEAR_ASPAR_LOCAL(IP, ASPAR_LOC, ASPAR_DIAG, A_THE, C_THE, A_SIG, C_SIG)
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
-      REAL(rkind), intent(out) :: ASPAR_LOC(MSC,MDC,MAX_DEG)
-      REAL(rkind), intent(out) :: ASPAR_DIAG(MSC,MDC)
-      REAL(rkind), intent(out) :: A_THE(MSC,MDC), C_THE(MSC,MDC)
-      REAL(rkind), intent(out) :: A_SIG(MSC,MDC), C_SIG(MSC,MDC)
+      REAL(rkind), intent(out) :: ASPAR_LOC(NUMSIG,NUMDIR,MAX_DEG)
+      REAL(rkind), intent(out) :: ASPAR_DIAG(NUMSIG,NUMDIR)
+      REAL(rkind), intent(out) :: A_THE(NUMSIG,NUMDIR), C_THE(NUMSIG,NUMDIR)
+      REAL(rkind), intent(out) :: A_SIG(NUMSIG,NUMDIR), C_SIG(NUMSIG,NUMDIR)
       INTEGER :: POS_TRICK(3,2)
-      REAL(rkind) :: FL11(MSC,MDC), FL12(MSC,MDC), FL21(MSC,MDC), FL22(MSC,MDC), FL31(MSC,MDC), FL32(MSC,MDC)
-      REAL(rkind) :: CRFS(MSC,MDC,3), K1(MSC,MDC), KM(MSC,MDC,3), K(MSC,MDC,3), TRIA03
-      REAL(rkind) :: CXY(2,MSC,MDC,3)
+      REAL(rkind) :: FL11(NUMSIG,NUMDIR), FL12(NUMSIG,NUMDIR), FL21(NUMSIG,NUMDIR), FL22(NUMSIG,NUMDIR), FL31(NUMSIG,NUMDIR), FL32(NUMSIG,NUMDIR)
+      REAL(rkind) :: CRFS(NUMSIG,NUMDIR,3), K1(NUMSIG,NUMDIR), KM(NUMSIG,NUMDIR,3), K(NUMSIG,NUMDIR,3), TRIA03
+      REAL(rkind) :: CXY(2,NUMSIG,NUMDIR,3)
       REAL(rkind) :: DIFRU, USOC, WVC
-      REAL(rkind) :: DELTAL(MSC,MDC,3)
-      REAL(rkind) :: KP(MSC,MDC,3), NM(MSC,MDC)
-      REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
-      REAL(rkind) :: LAMBDA(2,MSC,MDC)
+      REAL(rkind) :: DELTAL(NUMSIG,NUMDIR,3)
+      REAL(rkind) :: KP(NUMSIG,NUMDIR,3), NM(NUMSIG,NUMDIR)
+      REAL(rkind) :: DTK(NUMSIG,NUMDIR), TMP3(NUMSIG,NUMDIR)
+      REAL(rkind) :: LAMBDA(2,NUMSIG,NUMDIR)
       INTEGER     :: I1, I2, I3
       INTEGER     :: ID, IS, IE, IPOS
       INTEGER     :: I, ICON
       INTEGER     :: IP_fall, IPie, TheVal
       INTEGER     :: ID1, ID2, POS1, POS2
-      REAL(rkind) :: CAD(MSC,MDC)
-      REAL(rkind) :: CAS(MSC,MDC)
-      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
-      REAL(rkind) :: CASS(0:MSC+1), B_SIG(MSC)
-      REAL(rkind) :: CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
+      REAL(rkind) :: CAD(NUMSIG,NUMDIR)
+      REAL(rkind) :: CAS(NUMSIG,NUMDIR)
+      REAL(rkind) :: CP_THE(NUMSIG,NUMDIR), CM_THE(NUMSIG,NUMDIR)
+      REAL(rkind) :: CASS(0:NUMSIG+1), B_SIG(NUMSIG)
+      REAL(rkind) :: CP_SIG(0:NUMSIG+1), CM_SIG(0:NUMSIG+1)
       REAL(rkind) :: eFact
       POS_TRICK(1,1) = 2
       POS_TRICK(1,2) = 3
@@ -914,8 +914,8 @@
 
         DO I=1,3
           IPie = INE(I,IE)
-          DO ID=1,MDC
-            DO IS=1,MSC
+          DO ID=1,NUMDIR
+            DO IS=1,NUMSIG
               IF (LSECU .OR. LSTCU) THEN
                 CXY(1,IS,ID,I) = CG(IS,IPie)*COSTH(ID)+CURTXY(IPie,1)
                 CXY(2,IS,ID,I) = CG(IS,IPie)*SINTH(ID)+CURTXY(IPie,2)
@@ -975,7 +975,7 @@
 !        I2=JA_IE(IPOS,2,IE)
 !        I3=JA_IE(IPOS,3,IE)
         K1(:,:) =  KP(:,:,IPOS)
-        DO ID=1,MDC
+        DO ID=1,NUMDIR
           DTK(:,ID) =  K1(:,ID) * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
         END DO
         TMP3(:,:)  =  DTK(:,:) * NM(:,:)
@@ -996,7 +996,7 @@
         CP_THE = MAX(ZERO,CAD)
         CM_THE = MIN(ZERO,CAD)
         eFact=(DT4D/DDIR)*SI(IP)
-        DO ID=1,MDC
+        DO ID=1,NUMDIR
           ID1 = ID_PREV(ID)
           ID2 = ID_NEXT(ID)
           A_THE(:,ID) = - eFact *  CP_THE(:,ID1)
@@ -1018,22 +1018,22 @@
           CAS=ZERO
         END IF
         eFact=DT4F*SI(IP)
-        DO ID = 1, MDC
-          CASS(1:MSC) = CAS(:,ID)
+        DO ID = 1, NUMDIR
+          CASS(1:NUMSIG) = CAS(:,ID)
           CASS(0)     = 0.
-          CASS(MSC+1) = CASS(MSC)
+          CASS(NUMSIG+1) = CASS(NUMSIG)
           CP_SIG = MAX(ZERO,CASS)
           CM_SIG = MIN(ZERO,CASS)
-          DO IS=1,MSC
+          DO IS=1,NUMSIG
             B_SIG(IS)=eFact*(CP_SIG(IS)/DS_INCR(IS-1) - CM_SIG(IS) /DS_INCR(IS))
           END DO
-          DO IS=2,MSC
+          DO IS=2,NUMSIG
             A_SIG(IS,ID) = - eFact*CP_SIG(IS-1)/DS_INCR(IS-1)
           END DO
-          DO IS=1,MSC-1
+          DO IS=1,NUMSIG-1
             C_SIG(IS,ID) = eFact*CM_SIG(IS+1)/DS_INCR(IS)
           END DO
-          B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
+          B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * PTAIL(5)
           ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
         END DO
       ELSE
@@ -1044,17 +1044,17 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SINGLE_VERTEX_COMPUTATION(JDX, ACLOC, eSum, ASPAR_DIAG)
+      SUBROUTINE SINGLE_VERTEX_COMPUTATION(JDX, WALOC, eSum, ASPAR_DIAG)
       IMPLICIT NONE
       integer, intent(inout) :: JDX
-      REAL(rkind), intent(in) :: ACLOC(MSC,MDC)
-      REAL(rkind), intent(out) :: eSum(MSC,MDC), ASPAR_DIAG(MSC,MDC)
+      REAL(rkind), intent(in) :: WALOC(NUMSIG,NUMDIR)
+      REAL(rkind), intent(out) :: eSum(NUMSIG,NUMDIR), ASPAR_DIAG(NUMSIG,NUMDIR)
       integer ID1, ID2, ID, IS, IP_ADJ, IADJ
-      REAL(rkind) :: NEG_P(MSC,MDC)
-      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
-      REAL(rkind) :: CP_SIG(MSC,MDC), CM_SIG(MSC,MDC)
-      REAL(rkind) :: A_THE(MSC,MDC), C_THE(MSC,MDC)
-      REAL(rkind) :: A_SIG(MSC,MDC), C_SIG(MSC,MDC)
+      REAL(rkind) :: NEG_P(NUMSIG,NUMDIR)
+      REAL(rkind) :: CP_THE(NUMSIG,NUMDIR), CM_THE(NUMSIG,NUMDIR)
+      REAL(rkind) :: CP_SIG(NUMSIG,NUMDIR), CM_SIG(NUMSIG,NUMDIR)
+      REAL(rkind) :: A_THE(NUMSIG,NUMDIR), C_THE(NUMSIG,NUMDIR)
+      REAL(rkind) :: A_SIG(NUMSIG,NUMDIR), C_SIG(NUMSIG,NUMDIR)
 
       IF (ASPAR_LOCAL_LEVEL .eq. 0) THEN
         ASPAR_DIAG=ASPAR_JAC(:,:,I_DIAG(IP))
@@ -1077,11 +1077,11 @@
           CP_THE = MAX(ZERO,CAD)
           CM_THE = MIN(ZERO,CAD)
           eFact=(DT4D/DDIR)*SI(IP)
-          DO ID=1,MDC
+          DO ID=1,NUMDIR
             ID1 = ID_PREV(ID)
             ID2 = ID_NEXT(ID)
-            eSum(:,ID) = eSum(:,ID) + eFact*CP_THE(:,ID1)*ACLOC(:,ID1)
-            eSum(:,ID) = eSum(:,ID) - eFact*CM_THE(:,ID2)*ACLOC(:,ID2)
+            eSum(:,ID) = eSum(:,ID) + eFact*CP_THE(:,ID1)*WALOC(:,ID1)
+            eSum(:,ID) = eSum(:,ID) - eFact*CM_THE(:,ID2)*WALOC(:,ID2)
           END DO
         END IF
         IF (FREQ_SHIFT_IMPL) THEN
@@ -1089,12 +1089,12 @@
           CP_SIG = MAX(ZERO,CAS)
           CM_SIG = MIN(ZERO,CAS)
           eFact=DT4F*SI(IP)
-          DO ID=1,MDC
-            DO IS=2,MSC
-              eSum(IS,ID)=eSum(IS,ID) + eFact*(CP_SIG(IS-1,ID)/DS_INCR(IS-1))*ACLOC(IS-1,ID)
+          DO ID=1,NUMDIR
+            DO IS=2,NUMSIG
+              eSum(IS,ID)=eSum(IS,ID) + eFact*(CP_SIG(IS-1,ID)/DS_INCR(IS-1))*WALOC(IS-1,ID)
             END DO
-            DO IS=1,MSC-1
-              eSum(IS,ID)=eSum(IS,ID) - eFact*(CM_SIG(IS+1,ID)/DS_INCR(IS))*ACLOC(IS+1,ID)
+            DO IS=1,NUMSIG-1
+              eSum(IS,ID)=eSum(IS,ID) - eFact*(CM_SIG(IS+1,ID)/DS_INCR(IS))*WALOC(IS+1,ID)
             END DO
           END DO
         END IF
@@ -1116,20 +1116,20 @@
           IF (J .ne. I_DIAG(IP)) eSum = eSum - ASPAR_JAC(:,:,J) * AC2(:,:,JA(J))
         END DO
         IF (REFRACTION_IMPL) THEN
-          DO ID=1,MDC
+          DO ID=1,NUMDIR
             ID1 = ID_PREV(ID)
             ID2 = ID_NEXT(ID)
-            eSum(:,ID) = eSum(:,ID) - A_THE(:,ID)*ACLOC(:,ID1)
-            eSum(:,ID) = eSum(:,ID) - C_THE(:,ID)*ACLOC(:,ID2)
+            eSum(:,ID) = eSum(:,ID) - A_THE(:,ID)*WALOC(:,ID1)
+            eSum(:,ID) = eSum(:,ID) - C_THE(:,ID)*WALOC(:,ID2)
           END DO
         END IF
         IF (FREQ_SHIFT_IMPL) THEN
-          DO ID=1,MDC
-            DO IS=2,MSC
-              eSum(IS,ID)=eSum(IS,ID) - A_SIG(IS,ID)*ACLOC(IS-1,ID)
+          DO ID=1,NUMDIR
+            DO IS=2,NUMSIG
+              eSum(IS,ID)=eSum(IS,ID) - A_SIG(IS,ID)*WALOC(IS-1,ID)
             END DO
-            DO IS=1,MSC-1
-              eSum(IS,ID)=eSum(IS,ID) - C_SIG(IS,ID)*ACLOC(IS+1,ID)
+            DO IS=1,NUMSIG-1
+              eSum(IS,ID)=eSum(IS,ID) - C_SIG(IS,ID)*WALOC(IS+1,ID)
             END DO
           END DO
         END IF
@@ -1149,20 +1149,20 @@
           eSum=eSum - ASPAR_LOC(:,:,IADJ)*AC2(:,:,IP_ADJ)
         END DO
         IF (REFRACTION_IMPL) THEN
-          DO ID=1,MDC
+          DO ID=1,NUMDIR
             ID1 = ID_PREV(ID)
             ID2 = ID_NEXT(ID)
-            eSum(:,ID) = eSum(:,ID) - A_THE(:,ID)*ACLOC(:,ID1)
-            eSum(:,ID) = eSum(:,ID) - C_THE(:,ID)*ACLOC(:,ID2)
+            eSum(:,ID) = eSum(:,ID) - A_THE(:,ID)*WALOC(:,ID1)
+            eSum(:,ID) = eSum(:,ID) - C_THE(:,ID)*WALOC(:,ID2)
           END DO
         END IF
         IF (FREQ_SHIFT_IMPL) THEN
-          DO ID=1,MDC
-            DO IS=2,MSC
-              eSum(IS,ID)=eSum(IS,ID) - A_SIG(IS,ID)*ACLOC(IS-1,ID)
+          DO ID=1,NUMDIR
+            DO IS=2,NUMSIG
+              eSum(IS,ID)=eSum(IS,ID) - A_SIG(IS,ID)*WALOC(IS-1,ID)
             END DO
-            DO IS=1,MSC-1
-              eSum(IS,ID)=eSum(IS,ID) - C_SIG(IS,ID)*ACLOC(IS+1,ID)
+            DO IS=1,NUMSIG-1
+              eSum(IS,ID)=eSum(IS,ID) - C_SIG(IS,ID)*WALOC(IS+1,ID)
             END DO
           END DO
         END IF
@@ -1275,20 +1275,20 @@
       integer IP
       integer ID1, ID2, ID, IS, IP_ADJ, IADJ
 #ifdef MPI_PARALL_GRID
-      REAL(rkind) :: Norm_L2_gl(MSC,MDC), Norm_LINF_gl(MSC,MDC)
+      REAL(rkind) :: Norm_L2_gl(NUMSIG,NUMDIR), Norm_LINF_gl(NUMSIG,NUMDIR)
 #endif
-      REAL(rkind) :: Norm_L2(MSC,MDC), Norm_LINF(MSC,MDC)
-      REAL(rkind) :: ASPAR_DIAG(MSC,MDC), ACLOC(MSC,MDC)
-      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
-      REAL(rkind) :: CP_SIG(MSC,MDC), CM_SIG(MSC,MDC)
-      REAL(rkind) :: A_THE(MSC,MDC), C_THE(MSC,MDC)
-      REAL(rkind) :: A_SIG(MSC,MDC), C_SIG(MSC,MDC)
-      REAL(rkind) :: BLOC(MSC,MDC)
-      REAL(rkind) :: NEG_P(MSC,MDC)
+      REAL(rkind) :: Norm_L2(NUMSIG,NUMDIR), Norm_LINF(NUMSIG,NUMDIR)
+      REAL(rkind) :: ASPAR_DIAG(NUMSIG,NUMDIR), WALOC(NUMSIG,NUMDIR)
+      REAL(rkind) :: CP_THE(NUMSIG,NUMDIR), CM_THE(NUMSIG,NUMDIR)
+      REAL(rkind) :: CP_SIG(NUMSIG,NUMDIR), CM_SIG(NUMSIG,NUMDIR)
+      REAL(rkind) :: A_THE(NUMSIG,NUMDIR), C_THE(NUMSIG,NUMDIR)
+      REAL(rkind) :: A_SIG(NUMSIG,NUMDIR), C_SIG(NUMSIG,NUMDIR)
+      REAL(rkind) :: BLOC(NUMSIG,NUMDIR)
+      REAL(rkind) :: NEG_P(NUMSIG,NUMDIR)
       Norm_L2=0
       Norm_LINF=0
       DO IP=1,NP_RES
-        ACLOC = AC2(:,:,IP)
+        WALOC = AC2(:,:,IP)
         IF (ASPAR_LOCAL_LEVEL .eq. 0) THEN
           ASPAR_DIAG=ASPAR_JAC(:,:,I_DIAG(IP))
           IF (SOURCE_IMPL) THEN
@@ -1315,7 +1315,7 @@
             CP_THE = MAX(ZERO,CAD)
             CM_THE = MIN(ZERO,CAD)
             eFact=(DT4D/DDIR)*SI(IP)
-            DO ID=1,MDC
+            DO ID=1,NUMDIR
               ID1 = ID_PREV(ID)
               ID2 = ID_NEXT(ID)
               eSum(:,ID) = eSum(:,ID) + eFact*CP_THE(:,ID1)*AC2(:,ID1,IP)
@@ -1327,11 +1327,11 @@
             CP_SIG = MAX(ZERO,CAS)
             CM_SIG = MIN(ZERO,CAS)
             eFact=DT4F*SI(IP)
-            DO ID=1,MDC
-              DO IS=2,MSC
+            DO ID=1,NUMDIR
+              DO IS=2,NUMSIG
                 eSum(IS,ID)=eSum(IS,ID) + eFact*(CP_SIG(IS-1,ID)/DS_INCR(IS-1))*AC2(IS-1,ID,IP)
               END DO
-              DO IS=1,MSC-1
+              DO IS=1,NUMSIG-1
                 eSum(IS,ID)=eSum(IS,ID) - eFact*(CM_SIG(IS+1,ID)/DS_INCR(IS))*AC2(IS+1,ID,IP)
               END DO
             END DO
@@ -1359,20 +1359,20 @@
             END IF
           END DO
           IF (REFRACTION_IMPL) THEN
-            DO ID=1,MDC
+            DO ID=1,NUMDIR
               ID1 = ID_PREV(ID)
               ID2 = ID_NEXT(ID)
-              eSum(:,ID) = eSum(:,ID) - A_THE(:,ID)*ACLOC(:,ID1)
-              eSum(:,ID) = eSum(:,ID) - C_THE(:,ID)*ACLOC(:,ID2)
+              eSum(:,ID) = eSum(:,ID) - A_THE(:,ID)*WALOC(:,ID1)
+              eSum(:,ID) = eSum(:,ID) - C_THE(:,ID)*WALOC(:,ID2)
             END DO
           END IF
           IF (FREQ_SHIFT_IMPL) THEN
-            DO ID=1,MDC
-              DO IS=2,MSC
-                eSum(IS,ID)=eSum(IS,ID) - A_SIG(IS,ID)*ACLOC(IS-1,ID)
+            DO ID=1,NUMDIR
+              DO IS=2,NUMSIG
+                eSum(IS,ID)=eSum(IS,ID) - A_SIG(IS,ID)*WALOC(IS-1,ID)
               END DO
-              DO IS=1,MSC-1
-                eSum(IS,ID)=eSum(IS,ID) - C_SIG(IS,ID)*ACLOC(IS+1,ID)
+              DO IS=1,NUMSIG-1
+                eSum(IS,ID)=eSum(IS,ID) - C_SIG(IS,ID)*WALOC(IS+1,ID)
               END DO
             END DO
           END IF
@@ -1393,20 +1393,20 @@
           END DO
           eSum=eSum - ASPAR_DIAG*AC2(:,:,IP)
           IF (REFRACTION_IMPL) THEN
-            DO ID=1,MDC
+            DO ID=1,NUMDIR
               ID1 = ID_PREV(ID)
               ID2 = ID_NEXT(ID)
-              eSum(:,ID) = eSum(:,ID) - A_THE(:,ID)*ACLOC(:,ID1)
-              eSum(:,ID) = eSum(:,ID) - C_THE(:,ID)*ACLOC(:,ID2)
+              eSum(:,ID) = eSum(:,ID) - A_THE(:,ID)*WALOC(:,ID1)
+              eSum(:,ID) = eSum(:,ID) - C_THE(:,ID)*WALOC(:,ID2)
             END DO
           END IF
           IF (FREQ_SHIFT_IMPL) THEN
-            DO ID=1,MDC
-              DO IS=2,MSC
-                eSum(IS,ID)=eSum(IS,ID) - A_SIG(IS,ID)*ACLOC(IS-1,ID)
+            DO ID=1,NUMDIR
+              DO IS=2,NUMSIG
+                eSum(IS,ID)=eSum(IS,ID) - A_SIG(IS,ID)*WALOC(IS-1,ID)
               END DO
-              DO IS=1,MSC-1
-                eSum(IS,ID)=eSum(IS,ID) - C_SIG(IS,ID)*ACLOC(IS+1,ID)
+              DO IS=1,NUMSIG-1
+                eSum(IS,ID)=eSum(IS,ID) - C_SIG(IS,ID)*WALOC(IS+1,ID)
               END DO
             END DO
           END IF
@@ -1443,8 +1443,8 @@
         Norm_LINF = max(Norm_LINF, abs(eSum))
       END DO
 #ifdef MPI_PARALL_GRID
-      CALL MPI_ALLREDUCE(Norm_LINF, Norm_LINF_gl, MSC*MDC,rtype,MPI_MAX,comm,ierr)
-      CALL MPI_ALLREDUCE(Norm_L2, Norm_L2_gl, MSC*MDC, rtype,MPI_SUM,comm,ierr)
+      CALL MPI_ALLREDUCE(Norm_LINF, Norm_LINF_gl, NUMSIG*NUMDIR,rtype,MPI_MAX,comm,ierr)
+      CALL MPI_ALLREDUCE(Norm_L2, Norm_L2_gl, NUMSIG*NUMDIR, rtype,MPI_SUM,comm,ierr)
       MaxNorm = maxval(Norm_L2_gl)
       SumNorm = sum(Norm_L2_gl)
 #else
@@ -1458,28 +1458,28 @@
       SUBROUTINE NEGATIVE_PART_B(IP, NEG_P, ASPAR_DIAG)
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
-      REAL(rkind), intent(out) :: NEG_P(MSC,MDC)
-      REAL(rkind), intent(out) :: ASPAR_DIAG(MSC,MDC)
+      REAL(rkind), intent(out) :: NEG_P(NUMSIG,NUMDIR)
+      REAL(rkind), intent(out) :: ASPAR_DIAG(NUMSIG,NUMDIR)
       INTEGER :: POS_TRICK(3,2)
-      REAL(rkind) :: FL11(MSC,MDC), FL12(MSC,MDC), FL21(MSC,MDC), FL22(MSC,MDC), FL31(MSC,MDC), FL32(MSC,MDC)
-      REAL(rkind) :: CRFS(MSC,MDC,3), K1(MSC,MDC), KM(MSC,MDC,3), K(MSC,MDC,3), TRIA03
-      REAL(rkind) :: CXY(2,MSC,MDC,3)
+      REAL(rkind) :: FL11(NUMSIG,NUMDIR), FL12(NUMSIG,NUMDIR), FL21(NUMSIG,NUMDIR), FL22(NUMSIG,NUMDIR), FL31(NUMSIG,NUMDIR), FL32(NUMSIG,NUMDIR)
+      REAL(rkind) :: CRFS(NUMSIG,NUMDIR,3), K1(NUMSIG,NUMDIR), KM(NUMSIG,NUMDIR,3), K(NUMSIG,NUMDIR,3), TRIA03
+      REAL(rkind) :: CXY(2,NUMSIG,NUMDIR,3)
       REAL(rkind) :: DIFRU, USOC, WVC
-      REAL(rkind) :: DELTAL(MSC,MDC,3)
-      REAL(rkind) :: KP(MSC,MDC,3), NM(MSC,MDC)
-      REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
-      REAL(rkind) :: LAMBDA(2,MSC,MDC)
-      REAL(rkind) :: eF(MSC,MDC)
+      REAL(rkind) :: DELTAL(NUMSIG,NUMDIR,3)
+      REAL(rkind) :: KP(NUMSIG,NUMDIR,3), NM(NUMSIG,NUMDIR)
+      REAL(rkind) :: DTK(NUMSIG,NUMDIR), TMP3(NUMSIG,NUMDIR)
+      REAL(rkind) :: LAMBDA(2,NUMSIG,NUMDIR)
+      REAL(rkind) :: eF(NUMSIG,NUMDIR)
       INTEGER     :: I1, I2, I3
       INTEGER     :: ID, IS, IE, IPOS
       INTEGER     :: I, ICON
       INTEGER     :: IPie, TheVal
       INTEGER     :: ID1, ID2, IP1, IP2
-      REAL(rkind) :: CAD(MSC,MDC)
-      REAL(rkind) :: CAS(MSC,MDC)
-      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
-      REAL(rkind) :: CASS(0:MSC+1), B_SIG(MSC)
-      REAL(rkind) :: CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
+      REAL(rkind) :: CAD(NUMSIG,NUMDIR)
+      REAL(rkind) :: CAS(NUMSIG,NUMDIR)
+      REAL(rkind) :: CP_THE(NUMSIG,NUMDIR), CM_THE(NUMSIG,NUMDIR)
+      REAL(rkind) :: CASS(0:NUMSIG+1), B_SIG(NUMSIG)
+      REAL(rkind) :: CP_SIG(0:NUMSIG+1), CM_SIG(0:NUMSIG+1)
       REAL(rkind) :: eFact
       POS_TRICK(1,1) = 2
       POS_TRICK(1,2) = 3
@@ -1498,8 +1498,8 @@
         I3 = INE(3,IE)
         DO I=1,3
           IPie = INE(I,IE)
-          DO ID=1,MDC
-            DO IS=1,MSC
+          DO ID=1,NUMDIR
+            DO IS=1,NUMSIG
               IF (LSECU .OR. LSTCU) THEN
                 CXY(1,IS,ID,I) = CG(IS,IPie)*COSTH(ID)+CURTXY(IPie,1)
                 CXY(2,IS,ID,I) = CG(IS,IPie)*SINTH(ID)+CURTXY(IPie,2)
@@ -1551,7 +1551,7 @@
         IP1=INE(POS_TRICK(IPOS,1),IE)
         IP2=INE(POS_TRICK(IPOS,2),IE)
         K1(:,:) =  KP(:,:,IPOS)
-        DO ID=1,MDC
+        DO ID=1,NUMDIR
           DTK(:,ID) =  K1(:,ID) * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
         END DO
         TMP3(:,:)  =  DTK(:,:) * NM(:,:)
@@ -1571,11 +1571,11 @@
           CP_THE = MAX(ZERO,CAD)
           CM_THE = MIN(ZERO,CAD)
           eFact=(DT4D/DDIR)*SI(IP)
-          DO ID=1,MDC
+          DO ID=1,NUMDIR
             ID1 = ID-1
             ID2 = ID+1
-            IF (ID == 1) ID1 = MDC
-            IF (ID == MDC) ID2 = 1
+            IF (ID == 1) ID1 = NUMDIR
+            IF (ID == NUMDIR) ID2 = 1
             NEG_P(:,ID)=NEG_P(:,ID) - eFact*CP_THE(:,ID1)*AC2(:,ID1,IP)
             NEG_P(:,ID)=NEG_P(:,ID) + eFact*CM_THE(:,ID2)*AC2(:,ID2,IP)
           END DO
@@ -1590,22 +1590,22 @@
         IF (TheVal .eq. 1) THEN
           CALL PROPSIGMA(IP,CAS)
           eFact=DT4F*SI(IP)
-          DO ID = 1, MDC
-            CASS(1:MSC) = CAS(:,ID)
+          DO ID = 1, NUMDIR
+            CASS(1:NUMSIG) = CAS(:,ID)
             CASS(0)     = 0.
-            CASS(MSC+1) = CASS(MSC)
+            CASS(NUMSIG+1) = CASS(NUMSIG)
             CP_SIG = MAX(ZERO,CASS)
             CM_SIG = MIN(ZERO,CASS)
-            DO IS=1,MSC
+            DO IS=1,NUMSIG
               B_SIG(IS)=eFact*(CP_SIG(IS)/DS_INCR(IS-1) - CM_SIG(IS) /DS_INCR(IS))
             END DO
-            DO IS=2,MSC
+            DO IS=2,NUMSIG
               NEG_P(IS,ID)=NEG_P(IS,ID) - eFact*CP_SIG(IS-1)/DS_INCR(IS-1)*AC2(IS-1,ID,IP)
             END DO
-            DO IS=1,MSC-1
+            DO IS=1,NUMSIG-1
               NEG_P(IS,ID)=NEG_P(IS,ID) + eFact*CM_SIG(IS+1)/DS_INCR(IS)*AC2(IS+1,ID,IP)
             END DO
-            B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
+            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * PTAIL(5)
             ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
           END DO
         END IF
@@ -1617,8 +1617,8 @@
       SUBROUTINE NEGATIVE_PART(IP, NEG_P, ASPAR_DIAG)
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
-      REAL(rkind), intent(out) :: NEG_P(MSC,MDC)
-      REAL(rkind), intent(out) :: ASPAR_DIAG(MSC,MDC)
+      REAL(rkind), intent(out) :: NEG_P(NUMSIG,NUMDIR)
+      REAL(rkind), intent(out) :: ASPAR_DIAG(NUMSIG,NUMDIR)
       REAL(rkind) :: FL11_X, FL12_X, FL21_X, FL22_X, FL31_X, FL32_X
       REAL(rkind) :: FL11_Y, FL12_Y, FL21_Y, FL22_Y, FL31_Y, FL32_Y
       REAL(rkind) :: FL11_U, FL12_U, FL21_U, FL22_U, FL31_U, FL32_U
@@ -1636,11 +1636,11 @@
       INTEGER     :: I, ICON
       INTEGER     :: IPie, TheVal, IP1, IP2
       INTEGER     :: ID1, ID2
-      REAL(rkind) :: CAD(MSC,MDC)
-      REAL(rkind) :: CAS(MSC,MDC)
-      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
-      REAL(rkind) :: CASS(0:MSC+1), B_SIG(MSC)
-      REAL(rkind) :: CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
+      REAL(rkind) :: CAD(NUMSIG,NUMDIR)
+      REAL(rkind) :: CAS(NUMSIG,NUMDIR)
+      REAL(rkind) :: CP_THE(NUMSIG,NUMDIR), CM_THE(NUMSIG,NUMDIR)
+      REAL(rkind) :: CASS(0:NUMSIG+1), B_SIG(NUMSIG)
+      REAL(rkind) :: CP_SIG(0:NUMSIG+1), CM_SIG(0:NUMSIG+1)
       REAL(rkind) :: eFact
       INTEGER :: POS_TRICK(3,2)
       POS_TRICK(1,1) = 2
@@ -1690,7 +1690,7 @@
         END IF
         IP1=INE(POS_TRICK(IPOS,1),IE)
         IP2=INE(POS_TRICK(IPOS,2),IE)
-        DO IS=1,MSC
+        DO IS=1,NUMSIG
           IF (LSPHE) THEN
             DO I=1,3
               IPie=INE(I,IE)
@@ -1733,7 +1733,7 @@
           CRFS_Y(2)= - ONESIXTH*(TWO *FL32_Y + TWO * FL11_Y + FL12_Y + FL31_Y )
           CRFS_Y(3)= - ONESIXTH*(TWO *FL12_Y + TWO * FL21_Y + FL22_Y + FL11_Y )
 
-          DO ID=1,MDC
+          DO ID=1,NUMDIR
             DO I=1,3
               K(I)=K_X(I)*COSTH(ID) + K_Y(I)*SINTH(ID) + K_U(I)
               CRFS(I)=CRFS_X(I)*COSTH(ID) + CRFS_Y(I)*SINTH(ID) + CRFS_U(I)
@@ -1764,11 +1764,11 @@
           CP_THE = MAX(ZERO,CAD)
           CM_THE = MIN(ZERO,CAD)
           eFact=(DT4D/DDIR)*SI(IP)
-          DO ID=1,MDC
+          DO ID=1,NUMDIR
             ID1 = ID-1
             ID2 = ID+1
-            IF (ID == 1) ID1 = MDC
-            IF (ID == MDC) ID2 = 1
+            IF (ID == 1) ID1 = NUMDIR
+            IF (ID == NUMDIR) ID2 = 1
             NEG_P(:,ID)=NEG_P(:,ID) - eFact*CP_THE(:,ID1)*AC2(:,ID1,IP)
             NEG_P(:,ID)=NEG_P(:,ID) + eFact*CM_THE(:,ID2)*AC2(:,ID2,IP)
           END DO
@@ -1783,22 +1783,22 @@
         IF (TheVal .eq. 1) THEN
           CALL PROPSIGMA(IP,CAS)
           eFact=DT4F*SI(IP)
-          DO ID = 1, MDC
-            CASS(1:MSC) = CAS(:,ID)
+          DO ID = 1, NUMDIR
+            CASS(1:NUMSIG) = CAS(:,ID)
             CASS(0)     = 0.
-            CASS(MSC+1) = CASS(MSC)
+            CASS(NUMSIG+1) = CASS(NUMSIG)
             CP_SIG = MAX(ZERO,CASS)
             CM_SIG = MIN(ZERO,CASS)
-            DO IS=1,MSC
+            DO IS=1,NUMSIG
               B_SIG(IS)=eFact*(CP_SIG(IS)/DS_INCR(IS-1) - CM_SIG(IS) /DS_INCR(IS))
             END DO
-            DO IS=2,MSC
+            DO IS=2,NUMSIG
               NEG_P(IS,ID)=NEG_P(IS,ID) - eFact*CP_SIG(IS-1)/DS_INCR(IS-1)*AC2(IS-1,ID,IP)
             END DO
-            DO IS=1,MSC-1
+            DO IS=1,NUMSIG-1
               NEG_P(IS,ID)=NEG_P(IS,ID) + eFact*CM_SIG(IS+1)/DS_INCR(IS)*AC2(IS+1,ID,IP)
             END DO
-            B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
+            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * PTAIL(5)
             ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
           END DO
         END IF
@@ -1869,7 +1869,7 @@
           K_CRFS_U(4:6,J)=CRFS_U
           IP1=INE(POS_TRICK(IPOS,1),IE)
           IP2=INE(POS_TRICK(IPOS,2),IE)
-          DO IS=1,MSC
+          DO IS=1,NUMSIG
             IF (LSPHE) THEN
               DO I=1,3
                 IPie=INE(I,IE)
@@ -1911,10 +1911,10 @@
             CRFS_Y(1)= - ONESIXTH*(TWO *FL31_Y + FL32_Y + FL21_Y + TWO * FL22_Y )
             CRFS_Y(2)= - ONESIXTH*(TWO *FL32_Y + TWO * FL11_Y + FL12_Y + FL31_Y )
             CRFS_Y(3)= - ONESIXTH*(TWO *FL12_Y + TWO * FL21_Y + FL22_Y + FL11_Y )
-            K_CRFS_MSC(1:3,IS,J)=K_X
-            K_CRFS_MSC(4:6,IS,J)=K_Y
-            K_CRFS_MSC(7:9,IS,J)=CRFS_X
-            K_CRFS_MSC(10:12,IS,J)=CRFS_Y
+            K_CRFS_NUMSIG(1:3,IS,J)=K_X
+            K_CRFS_NUMSIG(4:6,IS,J)=K_Y
+            K_CRFS_NUMSIG(7:9,IS,J)=CRFS_X
+            K_CRFS_NUMSIG(10:12,IS,J)=CRFS_Y
           END DO
         END DO
       END DO
@@ -1926,19 +1926,19 @@
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
       INTEGER, intent(inout) :: J
-      REAL(rkind), intent(out) :: NEG_P(MSC,MDC)
-      REAL(rkind), intent(out) :: ASPAR_DIAG(MSC,MDC)
-      REAL(rkind) :: K(MSC,MDC,3), CRFS(MSC,MDC,3)
-      REAL(rkind) :: DELTAL(MSC,MDC,3)
-      REAL(rkind) :: KM(MSC,MDC,3), KP(MSC,MDC,3)
-      REAL(rkind) :: NM(MSC,MDC), K1(MSC,MDC)
-      REAL(rkind) :: DTK(MSC,MDC), TMP3(MSC,MDC)
-      REAL(rkind) :: eF(MSC,MDC)
-      REAL(rkind) :: CAD(MSC,MDC)
-      REAL(rkind) :: CAS(MSC,MDC)
-      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
-      REAL(rkind) :: CASS(0:MSC+1), B_SIG(MSC)
-      REAL(rkind) :: CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
+      REAL(rkind), intent(out) :: NEG_P(NUMSIG,NUMDIR)
+      REAL(rkind), intent(out) :: ASPAR_DIAG(NUMSIG,NUMDIR)
+      REAL(rkind) :: K(NUMSIG,NUMDIR,3), CRFS(NUMSIG,NUMDIR,3)
+      REAL(rkind) :: DELTAL(NUMSIG,NUMDIR,3)
+      REAL(rkind) :: KM(NUMSIG,NUMDIR,3), KP(NUMSIG,NUMDIR,3)
+      REAL(rkind) :: NM(NUMSIG,NUMDIR), K1(NUMSIG,NUMDIR)
+      REAL(rkind) :: DTK(NUMSIG,NUMDIR), TMP3(NUMSIG,NUMDIR)
+      REAL(rkind) :: eF(NUMSIG,NUMDIR)
+      REAL(rkind) :: CAD(NUMSIG,NUMDIR)
+      REAL(rkind) :: CAS(NUMSIG,NUMDIR)
+      REAL(rkind) :: CP_THE(NUMSIG,NUMDIR), CM_THE(NUMSIG,NUMDIR)
+      REAL(rkind) :: CASS(0:NUMSIG+1), B_SIG(NUMSIG)
+      REAL(rkind) :: CP_SIG(0:NUMSIG+1), CM_SIG(0:NUMSIG+1)
       INTEGER ICON, ID, IS, idx, IE, IPOS, IP1, IP2, TheVal
       INTEGER ID1, ID2
       INTEGER :: POS_TRICK(3,2)
@@ -1956,10 +1956,10 @@
         J=J+1
         IE     =  IE_CELL2(IP,ICON)
         IPOS   = POS_CELL2(IP,ICON)
-        DO ID=1,MDC
+        DO ID=1,NUMDIR
           DO idx=1,3
-            K(:,ID,idx)=K_CRFS_MSC(idx,:,J)*COSTH(ID) + K_CRFS_MSC(idx+3,:,J)*SINTH(ID) + K_CRFS_U(idx,J)
-            CRFS(:,ID,idx)=K_CRFS_MSC(idx+6,:,J)*COSTH(ID) + K_CRFS_MSC(idx+9,:,J)*SINTH(ID) + K_CRFS_U(idx+3,J)
+            K(:,ID,idx)=K_CRFS_NUMSIG(idx,:,J)*COSTH(ID) + K_CRFS_NUMSIG(idx+3,:,J)*SINTH(ID) + K_CRFS_U(idx,J)
+            CRFS(:,ID,idx)=K_CRFS_NUMSIG(idx+6,:,J)*COSTH(ID) + K_CRFS_NUMSIG(idx+9,:,J)*SINTH(ID) + K_CRFS_U(idx+3,J)
           END DO
         END DO
         KM = MIN(ZERO,K)
@@ -1971,7 +1971,7 @@
         IP1=INE(POS_TRICK(IPOS,1),IE)
         IP2=INE(POS_TRICK(IPOS,2),IE)
         K1(:,:) =  KP(:,:,IPOS)
-        DO ID=1,MDC
+        DO ID=1,NUMDIR
           DTK(:,ID) =  K1(:,ID) * DT4A * IOBPD(ID,IP) * IOBWB(IP) * IOBDP(IP)
         END DO
         TMP3(:,:)  =  DTK(:,:) * NM(:,:)
@@ -1991,11 +1991,11 @@
           CP_THE = MAX(ZERO,CAD)
           CM_THE = MIN(ZERO,CAD)
           eFact=(DT4D/DDIR)*SI(IP)
-          DO ID=1,MDC
+          DO ID=1,NUMDIR
             ID1 = ID-1
             ID2 = ID+1
-            IF (ID == 1) ID1 = MDC
-            IF (ID == MDC) ID2 = 1
+            IF (ID == 1) ID1 = NUMDIR
+            IF (ID == NUMDIR) ID2 = 1
             NEG_P(:,ID)=NEG_P(:,ID) - eFact*CP_THE(:,ID1)*AC2(:,ID1,IP)
             NEG_P(:,ID)=NEG_P(:,ID) + eFact*CM_THE(:,ID2)*AC2(:,ID2,IP)
           END DO
@@ -2010,22 +2010,22 @@
         IF (TheVal .eq. 1) THEN
           CALL PROPSIGMA(IP,CAS)
           eFact=DT4F*SI(IP)
-          DO ID = 1, MDC
-            CASS(1:MSC) = CAS(:,ID)
+          DO ID = 1, NUMDIR
+            CASS(1:NUMSIG) = CAS(:,ID)
             CASS(0)     = 0.
-            CASS(MSC+1) = CASS(MSC)
+            CASS(NUMSIG+1) = CASS(NUMSIG)
             CP_SIG = MAX(ZERO,CASS)
             CM_SIG = MIN(ZERO,CASS)
-            DO IS=1,MSC
+            DO IS=1,NUMSIG
               B_SIG(IS)=eFact*(CP_SIG(IS)/DS_INCR(IS-1) - CM_SIG(IS) /DS_INCR(IS))
             END DO
-            DO IS=2,MSC
+            DO IS=2,NUMSIG
               NEG_P(IS,ID)=NEG_P(IS,ID) - eFact*CP_SIG(IS-1)/DS_INCR(IS-1)*AC2(IS-1,ID,IP)
             END DO
-            DO IS=1,MSC-1
+            DO IS=1,NUMSIG-1
               NEG_P(IS,ID)=NEG_P(IS,ID) + eFact*CM_SIG(IS+1)/DS_INCR(IS)*AC2(IS+1,ID,IP)
             END DO
-            B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
+            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * PTAIL(5)
             ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
           END DO
         END IF
@@ -2038,19 +2038,19 @@
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
       INTEGER, intent(inout) :: J
-      REAL(rkind), intent(out) :: NEG_P(MSC,MDC)
-      REAL(rkind), intent(out) :: ASPAR_DIAG(MSC,MDC)
-      REAL(rkind) :: K(MSC,3), CRFS(MSC,3)
-      REAL(rkind) :: DELTAL(MSC,3)
-      REAL(rkind) :: KM(MSC,3), KP(MSC,3)
-      REAL(rkind) :: NM(MSC)
-      REAL(rkind) :: DTK(MSC), TMP3(MSC)
-      REAL(rkind) :: eF(MSC)
-      REAL(rkind) :: CAD(MSC,MDC)
-      REAL(rkind) :: CAS(MSC,MDC)
-      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
-      REAL(rkind) :: CASS(0:MSC+1), B_SIG(MSC)
-      REAL(rkind) :: CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
+      REAL(rkind), intent(out) :: NEG_P(NUMSIG,NUMDIR)
+      REAL(rkind), intent(out) :: ASPAR_DIAG(NUMSIG,NUMDIR)
+      REAL(rkind) :: K(NUMSIG,3), CRFS(NUMSIG,3)
+      REAL(rkind) :: DELTAL(NUMSIG,3)
+      REAL(rkind) :: KM(NUMSIG,3), KP(NUMSIG,3)
+      REAL(rkind) :: NM(NUMSIG)
+      REAL(rkind) :: DTK(NUMSIG), TMP3(NUMSIG)
+      REAL(rkind) :: eF(NUMSIG)
+      REAL(rkind) :: CAD(NUMSIG,NUMDIR)
+      REAL(rkind) :: CAS(NUMSIG,NUMDIR)
+      REAL(rkind) :: CP_THE(NUMSIG,NUMDIR), CM_THE(NUMSIG,NUMDIR)
+      REAL(rkind) :: CASS(0:NUMSIG+1), B_SIG(NUMSIG)
+      REAL(rkind) :: CP_SIG(0:NUMSIG+1), CM_SIG(0:NUMSIG+1)
       INTEGER ICON, ID, IS, idx, IE, IPOS, IP1, IP2, TheVal
       INTEGER ID1, ID2
       INTEGER :: POS_TRICK(3,2)
@@ -2068,10 +2068,10 @@
         J=J+1
         IE     =  IE_CELL2(IP,ICON)
         IPOS   = POS_CELL2(IP,ICON)
-        DO ID=1,MDC
+        DO ID=1,NUMDIR
           DO idx=1,3
-            K(:,idx)=K_CRFS_MSC(idx,:,J)*COSTH(ID) + K_CRFS_MSC(idx+3,:,J)*SINTH(ID) + K_CRFS_U(idx,J)
-            CRFS(:,idx)=K_CRFS_MSC(idx+6,:,J)*COSTH(ID) + K_CRFS_MSC(idx+9,:,J)*SINTH(ID) + K_CRFS_U(idx+3,J)
+            K(:,idx)=K_CRFS_NUMSIG(idx,:,J)*COSTH(ID) + K_CRFS_NUMSIG(idx+3,:,J)*SINTH(ID) + K_CRFS_U(idx,J)
+            CRFS(:,idx)=K_CRFS_NUMSIG(idx+6,:,J)*COSTH(ID) + K_CRFS_NUMSIG(idx+9,:,J)*SINTH(ID) + K_CRFS_U(idx+3,J)
           END DO
           KM = MIN(ZERO,K)
           KP = MAX(ZERO,K)
@@ -2100,11 +2100,11 @@
           CP_THE = MAX(ZERO,CAD)
           CM_THE = MIN(ZERO,CAD)
           eFact=(DT4D/DDIR)*SI(IP)
-          DO ID=1,MDC
+          DO ID=1,NUMDIR
             ID1 = ID-1
             ID2 = ID+1
-            IF (ID == 1) ID1 = MDC
-            IF (ID == MDC) ID2 = 1
+            IF (ID == 1) ID1 = NUMDIR
+            IF (ID == NUMDIR) ID2 = 1
             NEG_P(:,ID)=NEG_P(:,ID) - eFact*CP_THE(:,ID1)*AC2(:,ID1,IP)
             NEG_P(:,ID)=NEG_P(:,ID) + eFact*CM_THE(:,ID2)*AC2(:,ID2,IP)
           END DO
@@ -2119,22 +2119,22 @@
         IF (TheVal .eq. 1) THEN
           CALL PROPSIGMA(IP,CAS)
           eFact=DT4F*SI(IP)
-          DO ID = 1, MDC
-            CASS(1:MSC) = CAS(:,ID)
+          DO ID = 1, NUMDIR
+            CASS(1:NUMSIG) = CAS(:,ID)
             CASS(0)     = 0.
-            CASS(MSC+1) = CASS(MSC)
+            CASS(NUMSIG+1) = CASS(NUMSIG)
             CP_SIG = MAX(ZERO,CASS)
             CM_SIG = MIN(ZERO,CASS)
-            DO IS=1,MSC
+            DO IS=1,NUMSIG
               B_SIG(IS)=eFact*(CP_SIG(IS)/DS_INCR(IS-1) - CM_SIG(IS) /DS_INCR(IS))
             END DO
-            DO IS=2,MSC
+            DO IS=2,NUMSIG
               NEG_P(IS,ID)=NEG_P(IS,ID) - eFact*CP_SIG(IS-1)/DS_INCR(IS-1)*AC2(IS-1,ID,IP)
             END DO
-            DO IS=1,MSC-1
+            DO IS=1,NUMSIG-1
               NEG_P(IS,ID)=NEG_P(IS,ID) + eFact*CM_SIG(IS+1)/DS_INCR(IS)*AC2(IS+1,ID,IP)
             END DO
-            B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
+            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * PTAIL(5)
             ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
           END DO
         END IF
@@ -2147,18 +2147,18 @@
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
       INTEGER, intent(inout) :: J
-      REAL(rkind), intent(out) :: NEG_P(MSC,MDC)
-      REAL(rkind), intent(out) :: ASPAR_DIAG(MSC,MDC)
+      REAL(rkind), intent(out) :: NEG_P(NUMSIG,NUMDIR)
+      REAL(rkind), intent(out) :: ASPAR_DIAG(NUMSIG,NUMDIR)
       REAL(rkind) :: K(3), CRFS(3)
       REAL(rkind) :: DELTAL(3)
       REAL(rkind) :: KM(3), KP(3)
       REAL(rkind) :: NM, DWDH, WKDEP
       REAL(rkind) :: DTK, TMP3
-      REAL(rkind) :: CAD(MDC)
-      REAL(rkind) :: CAS(MSC,MDC)
-      REAL(rkind) :: CP_THE(MDC), CM_THE(MDC)
-      REAL(rkind) :: CASS(0:MSC+1), B_SIG(MSC)
-      REAL(rkind) :: CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
+      REAL(rkind) :: CAD(NUMDIR)
+      REAL(rkind) :: CAS(NUMSIG,NUMDIR)
+      REAL(rkind) :: CP_THE(NUMDIR), CM_THE(NUMDIR)
+      REAL(rkind) :: CASS(0:NUMSIG+1), B_SIG(NUMSIG)
+      REAL(rkind) :: CP_SIG(0:NUMSIG+1), CM_SIG(0:NUMSIG+1)
       INTEGER ICON, ID, IS, idx, IE, IPOS, IP1, IP2, TheVal
       INTEGER ID1, ID2
       INTEGER :: POS_TRICK(3,2)
@@ -2176,11 +2176,11 @@
         J=J+1
         IE     =  IE_CELL2(IP,ICON)
         IPOS   = POS_CELL2(IP,ICON)
-        DO ID=1,MDC
-          DO IS=1,MSC
+        DO ID=1,NUMDIR
+          DO IS=1,NUMSIG
             DO idx=1,3
-              K(idx)=K_CRFS_MSC(idx,IS,J)*COSTH(ID) + K_CRFS_MSC(idx+3,IS,J)*SINTH(ID) + K_CRFS_U(idx,J)
-              CRFS(idx)=K_CRFS_MSC(idx+6,IS,J)*COSTH(ID) + K_CRFS_MSC(idx+9,IS,J)*SINTH(ID) + K_CRFS_U(idx+3,J)
+              K(idx)=K_CRFS_NUMSIG(idx,IS,J)*COSTH(ID) + K_CRFS_NUMSIG(idx+3,IS,J)*SINTH(ID) + K_CRFS_U(idx,J)
+              CRFS(idx)=K_CRFS_NUMSIG(idx+6,IS,J)*COSTH(ID) + K_CRFS_NUMSIG(idx+9,IS,J)*SINTH(ID) + K_CRFS_U(idx+3,J)
             END DO
             KM = MIN(ZERO,K)
             KP = MAX(ZERO,K)
@@ -2205,28 +2205,28 @@
         IF (IOBP(IP) .EQ. 2) TheVal=0
         IF (TheVal .eq. 1) THEN
           eFact=(DT4D/DDIR)*SI(IP)
-          DO IS = 1, MSC
+          DO IS = 1, NUMSIG
             WKDEP = WK(IS,IP) * DEP(IP)
             IF (WKDEP .LT. 13.) THEN
               DWDH = SPSIG(IS)/SINH(MIN(KDMAX,2.*WKDEP))
-              DO ID = 1, MDC
+              DO ID = 1, NUMDIR
                 CAD(ID) = DWDH * ( SINTH(ID)*DDEP(IP,1)-COSTH(ID)*DDEP(IP,2) )
               END DO
             ELSE
               CAD=ZERO
             ENDIF
             IF (LSTCU .OR. LSECU) THEN
-              DO ID = 1, MDC
+              DO ID = 1, NUMDIR
                 CAD(ID) = CAD(ID) + SIN2TH(ID)*DCUY(IP,1)-COS2TH(ID)*DCUX(IP,2)+SINCOSTH(ID)*( DCUX(IP,1)-DCUY(IP,2) )
               END DO
             END IF
             CP_THE = MAX(ZERO,CAD)
             CM_THE = MIN(ZERO,CAD)
-            DO ID=1,MDC
+            DO ID=1,NUMDIR
               ID1 = ID-1
               ID2 = ID+1
-              IF (ID == 1) ID1 = MDC
-              IF (ID == MDC) ID2 = 1
+              IF (ID == 1) ID1 = NUMDIR
+              IF (ID == NUMDIR) ID2 = 1
               NEG_P(IS,ID)=NEG_P(IS,ID) - eFact*CP_THE(ID1)*AC2(IS,ID1,IP)
               NEG_P(IS,ID)=NEG_P(IS,ID) + eFact*CM_THE(ID2)*AC2(IS,ID2,IP)
             END DO
@@ -2242,22 +2242,22 @@
         IF (TheVal .eq. 1) THEN
           CALL PROPSIGMA(IP,CAS)
           eFact=DT4F*SI(IP)
-          DO ID = 1, MDC
-            CASS(1:MSC) = CAS(:,ID)
+          DO ID = 1, NUMDIR
+            CASS(1:NUMSIG) = CAS(:,ID)
             CASS(0)     = 0.
-            CASS(MSC+1) = CASS(MSC)
+            CASS(NUMSIG+1) = CASS(NUMSIG)
             CP_SIG = MAX(ZERO,CASS)
             CM_SIG = MIN(ZERO,CASS)
-            DO IS=1,MSC
+            DO IS=1,NUMSIG
               B_SIG(IS)=eFact*(CP_SIG(IS)/DS_INCR(IS-1) - CM_SIG(IS) /DS_INCR(IS))
             END DO
-            DO IS=2,MSC
+            DO IS=2,NUMSIG
               NEG_P(IS,ID)=NEG_P(IS,ID) - eFact*CP_SIG(IS-1)/DS_INCR(IS-1)*AC2(IS-1,ID,IP)
             END DO
-            DO IS=1,MSC-1
+            DO IS=1,NUMSIG-1
               NEG_P(IS,ID)=NEG_P(IS,ID) + eFact*CM_SIG(IS+1)/DS_INCR(IS)*AC2(IS+1,ID,IP)
             END DO
-            B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
+            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * PTAIL(5)
             ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
           END DO
         END IF
@@ -2269,8 +2269,8 @@
       SUBROUTINE NEGATIVE_PART_F(IP, NEG_P, ASPAR_DIAG)
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
-      REAL(rkind), intent(out) :: NEG_P(MSC,MDC)
-      REAL(rkind), intent(out) :: ASPAR_DIAG(MSC,MDC)
+      REAL(rkind), intent(out) :: NEG_P(NUMSIG,NUMDIR)
+      REAL(rkind), intent(out) :: ASPAR_DIAG(NUMSIG,NUMDIR)
       REAL(rkind) :: FL11_X, FL12_X, FL21_X, FL22_X, FL31_X, FL32_X
       REAL(rkind) :: FL11_Y, FL12_Y, FL21_Y, FL22_Y, FL31_Y, FL32_Y
       REAL(rkind) :: FL11_U, FL12_U, FL21_U, FL22_U, FL31_U, FL32_U
@@ -2288,11 +2288,11 @@
       INTEGER     :: I, ICON
       INTEGER     :: IPie, TheVal, IP1, IP2
       INTEGER     :: ID1, ID2
-      REAL(rkind) :: CAD(MSC,MDC)
-      REAL(rkind) :: CAS(MSC,MDC)
-      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
-      REAL(rkind) :: CASS(0:MSC+1), B_SIG(MSC)
-      REAL(rkind) :: CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
+      REAL(rkind) :: CAD(NUMSIG,NUMDIR)
+      REAL(rkind) :: CAS(NUMSIG,NUMDIR)
+      REAL(rkind) :: CP_THE(NUMSIG,NUMDIR), CM_THE(NUMSIG,NUMDIR)
+      REAL(rkind) :: CASS(0:NUMSIG+1), B_SIG(NUMSIG)
+      REAL(rkind) :: CP_SIG(0:NUMSIG+1), CM_SIG(0:NUMSIG+1)
       REAL(rkind) :: eFact
       INTEGER :: POS_TRICK(3,2)
       POS_TRICK(1,1) = 2
@@ -2342,7 +2342,7 @@
         END IF
         IP1=INE(POS_TRICK(IPOS,1),IE)
         IP2=INE(POS_TRICK(IPOS,2),IE)
-        DO IS=1,MSC
+        DO IS=1,NUMSIG
           IF (LSPHE) THEN
             DO I=1,3
               IPie=INE(I,IE)
@@ -2385,7 +2385,7 @@
           CRFS_Y(2)= - ONESIXTH*(TWO *FL32_Y + TWO * FL11_Y + FL12_Y + FL31_Y )
           CRFS_Y(3)= - ONESIXTH*(TWO *FL12_Y + TWO * FL21_Y + FL22_Y + FL11_Y )
 
-          DO ID=1,MDC
+          DO ID=1,NUMDIR
             DO I=1,3
               K(I)=K_X(I)*COSTH(ID) + K_Y(I)*SINTH(ID) + K_U(I)
               CRFS(I)=CRFS_X(I)*COSTH(ID) + CRFS_Y(I)*SINTH(ID) + CRFS_U(I)
@@ -2416,11 +2416,11 @@
           CP_THE = MAX(ZERO,CAD)
           CM_THE = MIN(ZERO,CAD)
           eFact=(DT4D/DDIR)*SI(IP)
-          DO ID=1,MDC
+          DO ID=1,NUMDIR
             ID1 = ID-1
             ID2 = ID+1
-            IF (ID == 1) ID1 = MDC
-            IF (ID == MDC) ID2 = 1
+            IF (ID == 1) ID1 = NUMDIR
+            IF (ID == NUMDIR) ID2 = 1
             NEG_P(:,ID)=NEG_P(:,ID) - eFact*CP_THE(:,ID1)*AC2(:,ID1,IP)
             NEG_P(:,ID)=NEG_P(:,ID) + eFact*CM_THE(:,ID2)*AC2(:,ID2,IP)
           END DO
@@ -2435,22 +2435,22 @@
         IF (TheVal .eq. 1) THEN
           CALL PROPSIGMA(IP,CAS)
           eFact=DT4F*SI(IP)
-          DO ID = 1, MDC
-            CASS(1:MSC) = CAS(:,ID)
+          DO ID = 1, NUMDIR
+            CASS(1:NUMSIG) = CAS(:,ID)
             CASS(0)     = 0.
-            CASS(MSC+1) = CASS(MSC)
+            CASS(NUMSIG+1) = CASS(NUMSIG)
             CP_SIG = MAX(ZERO,CASS)
             CM_SIG = MIN(ZERO,CASS)
-            DO IS=1,MSC
+            DO IS=1,NUMSIG
               B_SIG(IS)=eFact*(CP_SIG(IS)/DS_INCR(IS-1) - CM_SIG(IS) /DS_INCR(IS))
             END DO
-            DO IS=2,MSC
+            DO IS=2,NUMSIG
               NEG_P(IS,ID)=NEG_P(IS,ID) - eFact*CP_SIG(IS-1)/DS_INCR(IS-1)*AC2(IS-1,ID,IP)
             END DO
-            DO IS=1,MSC-1
+            DO IS=1,NUMSIG-1
               NEG_P(IS,ID)=NEG_P(IS,ID) + eFact*CM_SIG(IS+1)/DS_INCR(IS)*AC2(IS+1,ID,IP)
             END DO
-            B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
+            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * PTAIL(5)
             ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
           END DO
         END IF
@@ -2462,15 +2462,15 @@
       SUBROUTINE NEGATIVE_PART_G(IP, NEG_P, ASPAR_DIAG)
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
-      REAL(rkind), intent(out) :: NEG_P(MSC,MDC)
-      REAL(rkind), intent(out) :: ASPAR_DIAG(MSC,MDC)
+      REAL(rkind), intent(out) :: NEG_P(NUMSIG,NUMDIR)
+      REAL(rkind), intent(out) :: ASPAR_DIAG(NUMSIG,NUMDIR)
       REAL(rkind) :: FL11_X, FL12_X, FL21_X, FL22_X, FL31_X, FL32_X
       REAL(rkind) :: FL11_Y, FL12_Y, FL21_Y, FL22_Y, FL31_Y, FL32_Y
       REAL(rkind) :: FL11_U, FL12_U, FL21_U, FL22_U, FL31_U, FL32_U
       REAL(rkind) :: CRFS(3), KM(3), K(3), TRIA03
       REAL(rkind) :: DELTAL(3)
       REAL(rkind) :: KP(3), NM, val1, val2
-      REAL(rkind) :: K_X(3,MSC), K_Y(3,MSC), CRFS_X(3,MSC), CRFS_Y(3,MSC)
+      REAL(rkind) :: K_X(3,NUMSIG), K_Y(3,NUMSIG), CRFS_X(3,NUMSIG), CRFS_Y(3,NUMSIG)
       REAL(rkind) :: CSX(3), CSY(3)
       REAL(rkind) :: CRFS_U(3), K_U(3), LAMBDA_UX, LAMBDA_UY
       REAL(rkind) :: UV_CUR(3,2)
@@ -2481,11 +2481,11 @@
       INTEGER     :: I, ICON
       INTEGER     :: IPie, TheVal, IP1, IP2
       INTEGER     :: ID1, ID2
-      REAL(rkind) :: CAD(MSC,MDC)
-      REAL(rkind) :: CAS(MSC,MDC)
-      REAL(rkind) :: CP_THE(MSC,MDC), CM_THE(MSC,MDC)
-      REAL(rkind) :: CASS(0:MSC+1), B_SIG(MSC)
-      REAL(rkind) :: CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
+      REAL(rkind) :: CAD(NUMSIG,NUMDIR)
+      REAL(rkind) :: CAS(NUMSIG,NUMDIR)
+      REAL(rkind) :: CP_THE(NUMSIG,NUMDIR), CM_THE(NUMSIG,NUMDIR)
+      REAL(rkind) :: CASS(0:NUMSIG+1), B_SIG(NUMSIG)
+      REAL(rkind) :: CP_SIG(0:NUMSIG+1), CM_SIG(0:NUMSIG+1)
       REAL(rkind) :: eFact
       INTEGER :: POS_TRICK(3,2)
       POS_TRICK(1,1) = 2
@@ -2535,7 +2535,7 @@
         END IF
         IP1=INE(POS_TRICK(IPOS,1),IE)
         IP2=INE(POS_TRICK(IPOS,2),IE)
-        DO IS=1,MSC
+        DO IS=1,NUMSIG
           IF (LSPHE) THEN
             DO I=1,3
               IPie=INE(I,IE)
@@ -2578,8 +2578,8 @@
           CRFS_Y(2,IS)= - ONESIXTH*(TWO*FL32_Y + TWO * FL11_Y + FL12_Y + FL31_Y)
           CRFS_Y(3,IS)= - ONESIXTH*(TWO*FL12_Y + TWO * FL21_Y + FL22_Y + FL11_Y)
         END DO
-        DO ID=1,MDC
-          DO IS=1,MSC
+        DO ID=1,NUMDIR
+          DO IS=1,NUMSIG
             DO I=1,3
               K(I)=K_X(I,IS)*COSTH(ID) + K_Y(I,IS)*SINTH(ID) + K_U(I)
               CRFS(I)=CRFS_X(I,IS)*COSTH(ID) + CRFS_Y(I,IS)*SINTH(ID) + CRFS_U(I)
@@ -2610,11 +2610,11 @@
           CP_THE = MAX(ZERO,CAD)
           CM_THE = MIN(ZERO,CAD)
           eFact=(DT4D/DDIR)*SI(IP)
-          DO ID=1,MDC
+          DO ID=1,NUMDIR
             ID1 = ID-1
             ID2 = ID+1
-            IF (ID == 1) ID1 = MDC
-            IF (ID == MDC) ID2 = 1
+            IF (ID == 1) ID1 = NUMDIR
+            IF (ID == NUMDIR) ID2 = 1
             NEG_P(:,ID)=NEG_P(:,ID) - eFact*CP_THE(:,ID1)*AC2(:,ID1,IP)
             NEG_P(:,ID)=NEG_P(:,ID) + eFact*CM_THE(:,ID2)*AC2(:,ID2,IP)
           END DO
@@ -2629,22 +2629,22 @@
         IF (TheVal .eq. 1) THEN
           CALL PROPSIGMA(IP,CAS)
           eFact=DT4F*SI(IP)
-          DO ID = 1, MDC
-            CASS(1:MSC) = CAS(:,ID)
+          DO ID = 1, NUMDIR
+            CASS(1:NUMSIG) = CAS(:,ID)
             CASS(0)     = 0.
-            CASS(MSC+1) = CASS(MSC)
+            CASS(NUMSIG+1) = CASS(NUMSIG)
             CP_SIG = MAX(ZERO,CASS)
             CM_SIG = MIN(ZERO,CASS)
-            DO IS=1,MSC
+            DO IS=1,NUMSIG
               B_SIG(IS)=eFact*(CP_SIG(IS)/DS_INCR(IS-1) - CM_SIG(IS) /DS_INCR(IS))
             END DO
-            DO IS=2,MSC
+            DO IS=2,NUMSIG
               NEG_P(IS,ID)=NEG_P(IS,ID) - eFact*CP_SIG(IS-1)/DS_INCR(IS-1)*AC2(IS-1,ID,IP)
             END DO
-            DO IS=1,MSC-1
+            DO IS=1,NUMSIG-1
               NEG_P(IS,ID)=NEG_P(IS,ID) + eFact*CM_SIG(IS+1)/DS_INCR(IS)*AC2(IS+1,ID,IP)
             END DO
-            B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
+            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * PTAIL(5)
             ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
           END DO
         END IF
@@ -2656,15 +2656,15 @@
       SUBROUTINE NEGATIVE_PART_H(IP, NEG_P, ASPAR_DIAG)
       IMPLICIT NONE
       INTEGER, intent(in) :: IP
-      REAL(rkind), intent(out) :: NEG_P(MSC,MDC)
-      REAL(rkind), intent(out) :: ASPAR_DIAG(MSC,MDC)
+      REAL(rkind), intent(out) :: NEG_P(NUMSIG,NUMDIR)
+      REAL(rkind), intent(out) :: ASPAR_DIAG(NUMSIG,NUMDIR)
       REAL(rkind) :: FL11_X, FL12_X, FL21_X, FL22_X, FL31_X, FL32_X
       REAL(rkind) :: FL11_Y, FL12_Y, FL21_Y, FL22_Y, FL31_Y, FL32_Y
       REAL(rkind) :: FL11_U, FL12_U, FL21_U, FL22_U, FL31_U, FL32_U
       REAL(rkind) :: CRFS(3), KM(3), K(3), TRIA03
       REAL(rkind) :: DELTAL(3)
       REAL(rkind) :: KP(3), NM, val1, val2
-      REAL(rkind) :: K_X(3,MSC), K_Y(3,MSC), CRFS_X(3,MSC), CRFS_Y(3,MSC)
+      REAL(rkind) :: K_X(3,NUMSIG), K_Y(3,NUMSIG), CRFS_X(3,NUMSIG), CRFS_Y(3,NUMSIG)
       REAL(rkind) :: CSX(3), CSY(3)
       REAL(rkind) :: CRFS_U(3), K_U(3), LAMBDA_UX, LAMBDA_UY
       REAL(rkind) :: UV_CUR(3,2)
@@ -2675,11 +2675,11 @@
       INTEGER     :: I, ICON
       INTEGER     :: IPie, TheVal, IP1, IP2
       INTEGER     :: ID1, ID2
-      REAL(rkind) :: CAS(MSC,MDC)
-      REAL(rkind) :: CASS(0:MSC+1), B_SIG(MSC)
-      REAL(rkind) :: CP_SIG(0:MSC+1), CM_SIG(0:MSC+1)
+      REAL(rkind) :: CAS(NUMSIG,NUMDIR)
+      REAL(rkind) :: CASS(0:NUMSIG+1), B_SIG(NUMSIG)
+      REAL(rkind) :: CP_SIG(0:NUMSIG+1), CM_SIG(0:NUMSIG+1)
       REAL(rkind) :: eFact, eCAD, eCP_THE, eCM_THE
-      REAL(rkind) :: CAD_U(MDC), DWDH(MSC), WKDEP
+      REAL(rkind) :: CAD_U(NUMDIR), DWDH(NUMSIG), WKDEP
 
       INTEGER :: POS_TRICK(3,2)
       POS_TRICK(1,1) = 2
@@ -2729,7 +2729,7 @@
         END IF
         IP1=INE(POS_TRICK(IPOS,1),IE)
         IP2=INE(POS_TRICK(IPOS,2),IE)
-        DO IS=1,MSC
+        DO IS=1,NUMSIG
           IF (LSPHE) THEN
             DO I=1,3
               IPie=INE(I,IE)
@@ -2772,8 +2772,8 @@
           CRFS_Y(2,IS)= - ONESIXTH*(TWO*FL32_Y + TWO * FL11_Y + FL12_Y + FL31_Y)
           CRFS_Y(3,IS)= - ONESIXTH*(TWO*FL12_Y + TWO * FL21_Y + FL22_Y + FL11_Y)
         END DO
-        DO ID=1,MDC
-          DO IS=1,MSC
+        DO ID=1,NUMDIR
+          DO IS=1,NUMSIG
             DO I=1,3
               K(I)=K_X(I,IS)*COSTH(ID) + K_Y(I,IS)*SINTH(ID) + K_U(I)
               CRFS(I)=CRFS_X(I,IS)*COSTH(ID) + CRFS_Y(I,IS)*SINTH(ID) + CRFS_U(I)
@@ -2801,29 +2801,29 @@
         IF (IOBP(IP) .EQ. 2) TheVal=0
         IF (TheVal .eq. 1) THEN
           eFact=(DT4D/DDIR)*SI(IP)
-          DO IS = 1, MSC
+          DO IS = 1, NUMSIG
             WKDEP = WK(IS,IP) * DEP(IP)
             IF (WKDEP .LT. 13.) THEN
               DWDH(IS) = SPSIG(IS)/SINH(MIN(KDMAX,2.*WKDEP))
-              DO ID = 1, MDC
+              DO ID = 1, NUMDIR
               END DO
             ELSE
               DWDH(IS)=ZERO
             ENDIF
           END DO
           IF (LSTCU .OR. LSECU) THEN
-            DO ID = 1, MDC
+            DO ID = 1, NUMDIR
               CAD_U(ID) = SIN2TH(ID)*DCUY(IP,1)-COS2TH(ID)*DCUX(IP,2)+SINCOSTH(ID)*( DCUX(IP,1)-DCUY(IP,2) )
             END DO
           ELSE
             CAD_U=ZERO
           END IF
-          DO ID=1,MDC
+          DO ID=1,NUMDIR
             ID1 = ID-1
             ID2 = ID+1
-            IF (ID == 1) ID1 = MDC
-            IF (ID == MDC) ID2 = 1
-            DO IS=1,MSC
+            IF (ID == 1) ID1 = NUMDIR
+            IF (ID == NUMDIR) ID2 = 1
+            DO IS=1,NUMSIG
               eCAD=DWDH(IS) * ( SINTH(ID)*DDEP(IP,1)-COSTH(ID)*DDEP(IP,2) ) + CAD_U(ID)
               eCP_THE=MAX(ZERO,eCAD)
               eCM_THE=MIN(ZERO,eCAD)
@@ -2842,22 +2842,22 @@
         IF (TheVal .eq. 1) THEN
           CALL PROPSIGMA(IP,CAS)
           eFact=DT4F*SI(IP)
-          DO ID = 1, MDC
-            CASS(1:MSC) = CAS(:,ID)
+          DO ID = 1, NUMDIR
+            CASS(1:NUMSIG) = CAS(:,ID)
             CASS(0)     = 0.
-            CASS(MSC+1) = CASS(MSC)
+            CASS(NUMSIG+1) = CASS(NUMSIG)
             CP_SIG = MAX(ZERO,CASS)
             CM_SIG = MIN(ZERO,CASS)
-            DO IS=1,MSC
+            DO IS=1,NUMSIG
               B_SIG(IS)=eFact*(CP_SIG(IS)/DS_INCR(IS-1) - CM_SIG(IS) /DS_INCR(IS))
             END DO
-            DO IS=2,MSC
+            DO IS=2,NUMSIG
               NEG_P(IS,ID)=NEG_P(IS,ID) - eFact*CP_SIG(IS-1)/DS_INCR(IS-1)*AC2(IS-1,ID,IP)
             END DO
-            DO IS=1,MSC-1
+            DO IS=1,NUMSIG-1
               NEG_P(IS,ID)=NEG_P(IS,ID) + eFact*CM_SIG(IS+1)/DS_INCR(IS)*AC2(IS+1,ID,IP)
             END DO
-            B_SIG(MSC) = B_SIG(MSC) + eFact*CM_SIG(MSC+1)/DS_INCR(MSC) * PTAIL(5)
+            B_SIG(NUMSIG) = B_SIG(NUMSIG) + eFact*CM_SIG(NUMSIG+1)/DS_INCR(NUMSIG) * PTAIL(5)
             ASPAR_DIAG(:,ID)=ASPAR_DIAG(:,ID) + B_SIG
           END DO
         END IF

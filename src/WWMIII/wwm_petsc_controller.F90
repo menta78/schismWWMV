@@ -46,8 +46,8 @@
       end subroutine
 
       !> calls the specific EIMPS_PETSC_{PARALLEL, SERIELL} subroutine
-      !> \param ISS frequency. From 1 to MSC
-      !> \param IDD direction. From 1 to MDC
+      !> \param ISS frequency. From 1 to NUMSIG
+      !> \param IDD direction. From 1 to NUMDIR
       subroutine EIMPS_PETSC(ISS, IDD)
 #ifdef MPI_PARALL_GRID
         use petsc_parallel, only: EIMPS_PETSC_PARALLEL

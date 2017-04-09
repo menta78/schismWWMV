@@ -24,7 +24,7 @@
         real(rkind) :: ZZETA
         REAL(rkind) :: tmp,TMP_X,TMP_Y,SINT,COST
         REAL(rkind) :: HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2
-        REAL(rkind) :: ACLOC(MSC,MDC) 
+        REAL(rkind) :: WALOC(NUMSIG,NUMDIR) 
  
         DO IP=1,MNP
           tmp=max(DEP8(IP)+ETA2(IP),hmin_radstress)
@@ -33,7 +33,7 @@
           eUSTOKES_loc=0
           eVSTOKES_loc=0
           eJpress_loc=0
-          DO IS=1,MSC
+          DO IS=1,NUMSIG
             eMult=SPSIG(IS)*DDIR*DS_INCR(IS)
             eWk=WK(IS,IP)
             kD=MIN(KDMAX, eWk*eDep)
@@ -44,7 +44,7 @@
             eSigma=SPSIG(IS)
             eUint=0
             eVint=0
-            DO ID=1,MDC
+            DO ID=1,NUMDIR
               eLoc=AC2(IS,ID,IP)*eMult
               eJPress=G9*(kD/eSinh2kd)*(1/eDep) * eLoc
               eJPress_loc=eJPress_loc + eJPress
@@ -85,7 +85,7 @@
         IMPLICIT NONE
 
         INTEGER :: IP,IL,IS,ID
-        REAL(rkind)  :: ACLOC(MSC,MDC)
+        REAL(rkind)  :: WALOC(NUMSIG,NUMDIR)
         REAL(rkind)  :: COSE2, SINE2, COSI2
         REAL(rkind)  :: EWK(MNP),EWS(MNP),EWN(MNP),ETOT(MNP),MDIR(MNP)
         REAL(rkind)  :: m0, m0d, tmp, EHFR, ELOC, EFTAIL, ZZETA, DVEC2RAD
@@ -130,31 +130,31 @@
             IF (IDRY(IP)==1) CYCLE
 
             DEPLOC = DEP(IP)
-            ACLOC = AC2(:,:,IP)
+            WALOC = AC2(:,:,IP)
             m0    = ZERO
             EWSIG  = ZERO
             ETOTS  = ZERO
             ETOTC  = ZERO
-            IF (MSC .GE. 2) THEN
-              DO ID = 1, MDC
+            IF (NUMSIG .GE. 2) THEN
+              DO ID = 1, NUMDIR
                 m0d = ZERO
-                DO IS = 2, MSC
-                  tmp = 0.5_rkind*(SPSIG(IS)*ACLOC(IS,ID)+SPSIG(IS-1)*ACLOC(IS-1,ID))*DS_INCR(IS)*DDIR
+                DO IS = 2, NUMSIG
+                  tmp = 0.5_rkind*(SPSIG(IS)*WALOC(IS,ID)+SPSIG(IS-1)*WALOC(IS-1,ID))*DS_INCR(IS)*DDIR
                   m0 = m0 + tmp
                   EWSIG  = EWSIG  + SPSIG(IS) * tmp
                   m0d = m0d + tmp
                 END DO
-                IF (MSC > 3) THEN
-                  EHFR = ACLOC(MSC,ID) * SPSIG(MSC)
-                  m0 = m0 + DDIR * EHFR * SPSIG(MSC) * EFTAIL
+                IF (NUMSIG > 3) THEN
+                  EHFR = WALOC(NUMSIG,ID) * SPSIG(NUMSIG)
+                  m0 = m0 + DDIR * EHFR * SPSIG(NUMSIG) * EFTAIL
                 endif
                 ETOTC  = ETOTC + m0d * COS(SPDIR(ID))
                 ETOTS  = ETOTS + m0d * SIN(SPDIR(ID))
               END DO
             ELSE
               DS = SGHIGH - SGLOW
-              DO ID = 1, MDC
-                m0d = ACLOC(1,ID) * DS * DDIR
+              DO ID = 1, NUMDIR
+                m0d = WALOC(1,ID) * DS * DDIR
                 m0 = m0 + m0d
               END DO
             END IF
@@ -198,10 +198,10 @@
             IF (IDRY(IP)==1) CYCLE
 
             IF (.NOT. LETOT) THEN
-              ACLOC = AC2(:,:,IP)
-              DO ID = 1, MDC
-                DO IS = 2, MSC
-                  ELOC  = 0.5_rkind * (SPSIG(IS)*ACLOC(IS,ID)+SPSIG(IS-1)*ACLOC(IS-1,ID))*DS_INCR(IS)*DDIR
+              WALOC = AC2(:,:,IP)
+              DO ID = 1, NUMDIR
+                DO IS = 2, NUMSIG
+                  ELOC  = 0.5_rkind * (SPSIG(IS)*WALOC(IS,ID)+SPSIG(IS-1)*WALOC(IS-1,ID))*DS_INCR(IS)*DDIR
                   COSE2 = COS(SPDIR(ID))**TWO
                   SINE2 = SIN(SPDIR(ID))**TWO
                   COSI2 = COS(SPDIR(ID)) * SIN(SPDIR(ID))

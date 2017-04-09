@@ -34,10 +34,10 @@
  LSTAG   = F,
  MINDIR  =  0.000000000000000E+000,
  MAXDIR  =   360.000000000000     ,
- MDC     =          36,
+ NUMDIR    =          36,
  FRLOW   =  5.000000000000000E-002,
  FRHIGH  =   1.00000000000000     ,
- MSC     =          36,
+ NUMSIG     =          36,
  FILEGRID        = system.dat                                                                                                        
                            ,
  IGRIDTYPE       =           1,
@@ -246,8 +246,8 @@
  FXDSCUT =  0.000000000000000E+000
  /
  &NUMS
- ICOMP   =           0,
- AMETHOD =           0,
+ ICOMP   =           3,
+ AMETHOD =           7,
  SMETHOD =           1,
  DMETHOD =           0,
  IMPL_GEOADVECT  = T,

@@ -531,9 +531,9 @@
              ! print only the mean number of iteration
              iterationSum = iterationSum + iteration
              solverTimeSum = solverTimeSum + (endTime - startTime)
-             if(ISS == MSC .and. IDD == MDC) then
-               write(DBG%FHNDL,*) "mean number of iterations", iterationSum / real((MSC*MDC))
-                print '("solver Time for all MSD MDC= ",f6.3," sec")', solverTimeSum
+             if(ISS == NUMSIG .and. IDD == NUMDIR) then
+               write(DBG%FHNDL,*) "mean number of iterations", iterationSum / real((NUMSIG*NUMDIR))
+                print '("solver Time for all MSD NUMDIR= ",f6.3," sec")', solverTimeSum
              endif
            endif
          endif

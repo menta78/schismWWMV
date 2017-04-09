@@ -57,8 +57,8 @@
      &                      G => G9, &
      &                      ZPI => PI2, &
      &                      EPSMIN => SMALL, &
-     &                      NANG => MDC, &
-     &                      NFRE => MSC, &
+     &                      NANG => NUMDIR, &
+     &                      NFRE => NUMSIG, &
      &                      INDEP => DEP
 
 ! ----------------------------------------------------------------------

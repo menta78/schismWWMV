@@ -251,11 +251,11 @@
       !
       ! Now the spectral interpolation arrays
       !
-      allocate(WAM_ID1(MDC), WAM_ID2(MDC), WAM_WD1(MDC), WAM_WD2(MDC), stat=istat)
+      allocate(WAM_ID1(NUMDIR), WAM_ID2(NUMDIR), WAM_WD1(NUMDIR), WAM_WD2(NUMDIR), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('CF_*_BOUC allocation error')
       WAM_ID1=0
       WAM_ID2=0
-      DO ID=1,MDC
+      DO ID=1,NUMDIR
         eDIR=SPDIR(ID) * RADDEG
         IsAssigned=.false.
         DO ID1=1,nbdir_wam
@@ -310,11 +310,11 @@
       END DO
 !      WRITE(STAT%FHNDL,*) 'Interpolation array for direction done'
 !      FLUSH(STAT%FHNDL)
-      allocate(WAM_IS1(MSC), WAM_IS2(MSC), WAM_WS1(MSC), WAM_WS2(MSC), stat=istat)
+      allocate(WAM_IS1(NUMSIG), WAM_IS2(NUMSIG), WAM_WS1(NUMSIG), WAM_WS2(NUMSIG), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('CF_*_BOUC allocation error')
       WAM_IS1=0
       WAM_IS2=0
-      DO IS=1,MSC
+      DO IS=1,NUMSIG
         IsAssigned=.FALSE.
         eFR=FR(IS)
         DO iFreq=1,nbfreq_wam-1
@@ -416,7 +416,7 @@
       SUBROUTINE READ_GRIB_WAM_BOUNDARY_WBAC_KERNEL(WBACOUT, IFILE, eTimeSearch)
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind), INTENT(OUT)   :: WBACOUT(MSC,MDC,IWBMNP)
+      REAL(rkind), INTENT(OUT)   :: WBACOUT(NUMSIG,NUMDIR,IWBMNP)
       integer, intent(in) :: IFILE
       real(rkind), intent(in) :: eTimeSearch
       !
@@ -425,13 +425,13 @@
       integer ID1, ID2, IS1, IS2
       integer ID, IS, J, IP
       real(rkind) WD1, WD2, WS1, WS2
-      real(rkind) ACLOC(MSC,MDC)
+      real(rkind) WALOC(NUMSIG,NUMDIR)
       integer IX, IY
       real(rkind) eAC_1, eAC_2, eAC
       real(rkind) EM, HS_WAM, eSum, quot
       integer M, K
       LOGICAL :: DoHSchecks = .TRUE.
-      real(rkind) ETOT, tmp(msc), DS, ETAIL, HS_WWM, EMwork
+      real(rkind) ETOT, tmp(NUMSIG), DS, ETAIL, HS_WWM, EMwork
       INTEGER SHIFTXY(4,2)
       SHIFTXY(1,1)=0
       SHIFTXY(1,2)=0
@@ -478,9 +478,9 @@
         END IF
         WRITE(STAT%FHNDL,*) '  step 2'
         FLUSH(STAT%FHNDL)
-        ACLOC=0
-        DO IS=1,MSC
-          DO ID=1,MDC
+        WALOC=0
+        DO IS=1,NUMSIG
+          DO ID=1,NUMDIR
             ID1=WAM_ID1(ID)
             ID2=WAM_ID2(ID)
             WD1=WAM_WD1(ID)
@@ -501,7 +501,7 @@
               eAC=WS1 * eAC_1 + WS2 * eAC_2
 !              WRITE(STAT%FHNDL,*) 'eAC=', eAC
 !              FLUSH(STAT%FHNDL)
-              ACLOC(IS,ID)=eAC / (SPSIG(IS) * PI2)
+              WALOC(IS,ID)=eAC / (SPSIG(IS) * PI2)
 !              WRITE(STAT%FHNDL,*) 'after write'
 !              FLUSH(STAT%FHNDL)
             END IF
@@ -511,16 +511,16 @@
 !        FLUSH(STAT%FHNDL)
         IF (DoHSchecks) THEN
           ETOT=0
-          DO ID=1,MDC
-            tmp(:) = acloc(:,id) * spsig
+          DO ID=1,NUMDIR
+            tmp(:) = WALOC(:,id) * spsig
             ETOT = ETOT + tmp(1) * ONEHALF * ds_incr(1)*ddir
-            do is = 2, msc
+            do is = 2, NUMSIG
               ETOT = ETOT + ONEHALF*(tmp(is)+tmp(is-1))*ds_band(is)*ddir
             end do
-            ETOT = ETOT + ONEHALF * tmp(msc) * ds_incr(msc)*ddir
+            ETOT = ETOT + ONEHALF * tmp(NUMSIG) * ds_incr(NUMSIG)*ddir
           END DO
-          DS    = SPSIG(MSC) - SPSIG(MSC-1)
-          ETAIL = SUM(ACLOC(MSC,:)) * SIGPOW(MSC,2) * DDIR * DS
+          DS    = SPSIG(NUMSIG) - SPSIG(NUMSIG-1)
+          ETAIL = SUM(WALOC(NUMSIG,:)) * SIGPOW(NUMSIG,2) * DDIR * DS
           ETOT  = ETOT + PTAIL(6) * ETAIL
           HS_WWM = 4*SQRT(MAX(0.0, ETOT))
           IF (ETOT .gt. 0) THEN
@@ -535,7 +535,7 @@
         END IF
 !        WRITE(STAT%FHNDL,*) '  step 4'
 !        FLUSH(STAT%FHNDL)
-        WBACOUT(:,:,IP)=ACLOC
+        WBACOUT(:,:,IP)=WALOC
 !        WRITE(STAT%FHNDL,*) '  step 5'
 !        FLUSH(STAT%FHNDL)
       END DO
@@ -548,7 +548,7 @@
       SUBROUTINE READ_GRIB_WAM_BOUNDARY_WBAC(WBACOUT)
       USE DATAPOOL
       IMPLICIT NONE
-      REAL(rkind), INTENT(OUT)   :: WBACOUT(MSC,MDC,IWBMNP)
+      REAL(rkind), INTENT(OUT)   :: WBACOUT(NUMSIG,NUMDIR,IWBMNP)
       !
       integer iTime
       real(rkind) DeltaDiff, eTimeSearch

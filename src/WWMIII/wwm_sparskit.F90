@@ -1430,12 +1430,12 @@
 ! lsol  : Unit Lower Triang. solve. Compressed Sparse Row (CSR) format.c
 ! ldsol : Lower Triang. solve.  Modified Sparse Row (MSR) format.      c
 ! lsolc : Unit Lower Triang. solve. Comp. Sparse Column (CSC) format.  c
-! ldsolc: Lower Triang. solve. Modified Sparse Column (MSC) format.    c
+! ldsolc: Lower Triang. solve. Modified Sparse Column (NUMSIG) format.    c
 ! ldsoll: Lower Triang. solve with level scheduling. MSR format.       c
 ! usol  : Unit Upper Triang. solve. Compressed Sparse Row (CSR) format.c
 ! udsol : Upper Triang. solve.  Modified Sparse Row (MSR) format.      c
 ! usolc : Unit Upper Triang. solve. Comp. Sparse Column (CSC) format.  c
-! udsolc: Upper Triang. solve.  Modified Sparse Column (MSC) format.   c
+! udsolc: Upper Triang. solve.  Modified Sparse Column (NUMSIG) format.   c
 !----------------------------------------------------------------------c
 ! 1)     M A T R I X    B Y    V E C T O R     P R O D U C T S         c
 !----------------------------------------------------------------------c
@@ -1980,7 +1980,7 @@
       integer n, jal(*)
       real(rkind) x(n), y(n), al(*)
 !-----------------------------------------------------------------------
-!    Solves     L x = y ;    L = nonunit Low. Triang. MSC format 
+!    Solves     L x = y ;    L = nonunit Low. Triang. NUMSIG format 
 !----------------------------------------------------------------------- 
 ! solves a (non-unit) lower triangular system by standard (sequential) 
 ! forward elimination - matrix stored in Modified Sparse Column format 
@@ -2215,7 +2215,7 @@
       integer n, jau(*) 
       real(rkind) x(n), y(n), au(*)  
 !-----------------------------------------------------------------------
-!    Solves     U x = y ;    U = nonunit Up. Triang. MSC format 
+!    Solves     U x = y ;    U = nonunit Up. Triang. NUMSIG format 
 !----------------------------------------------------------------------- 
 ! solves a (non-unit) upper triangular system by standard (sequential) 
 ! forward elimination - matrix stored in Modified Sparse Column format 

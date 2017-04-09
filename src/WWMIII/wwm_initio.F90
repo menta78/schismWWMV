@@ -48,26 +48,26 @@
 !
 ! spectral grid - shared
 !
-       ALLOCATE(MSC_HF(MNP), stat=istat)
+       ALLOCATE(NUMSIG_HF(MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 5')
-       MSC_HF = MSC
+       NUMSIG_HF = NUMSIG
 !
 ! action densities and source terms - shared
 !
-       ALLOCATE (AC2(MSC,MDC,MNP), stat=istat)
+       ALLOCATE (AC2(NUMSIG,NUMDIR,MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 8')
        AC2 = zero
 !       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 5'
 !       FLUSH(STAT%FHNDL)
 
-       ALLOCATE (AC1(MSC,MDC,MNP), stat=istat)
+       ALLOCATE (AC1(NUMSIG,NUMDIR,MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9')
        AC1 = zero
 !       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 6'
 !       FLUSH(STAT%FHNDL)
 
        IF ((.NOT. BLOCK_GAUSS_SEIDEL).and.(AMETHOD .eq. 7)) THEN
-         ALLOCATE (U_JACOBI(MSC,MDC,MNP), stat=istat)
+         ALLOCATE (U_JACOBI(NUMSIG,NUMDIR,MNP), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 9a')
          U_JACOBI = zero
        END IF
@@ -75,7 +75,7 @@
 !       FLUSH(STAT%FHNDL)
 
        IF (ICOMP .GE. 2) THEN
-         ALLOCATE (PHIA(MSC,MDC,MNP), DPHIDNA(MSC,MDC,MNP), stat=istat)
+         ALLOCATE (PHIA(NUMSIG,NUMDIR,MNP), DPHIDNA(NUMSIG,NUMDIR,MNP), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 10')
          PHIA = zero
          DPHIDNA = zero
@@ -98,11 +98,11 @@
        IF ((ICOMP .eq. 3).and.(AMETHOD .eq. 7).AND.(ASPAR_LOCAL_LEVEL .eq. 0)) THEN
 #ifdef WWM_SOLVER
          IF (REFRACTION_IMPL) THEN
-           allocate(CAD_THE(MSC,MDC,NP_RES), stat=istat)
+           allocate(CAD_THE(NUMSIG,NUMDIR,NP_RES), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 11.1')
          END IF
          IF (FREQ_SHIFT_IMPL) THEN
-           allocate(CAS_SIG(MSC,MDC,NP_RES), stat=istat)
+           allocate(CAS_SIG(NUMSIG,NUMDIR,NP_RES), stat=istat)
            IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 11.2')
          END IF
 #else
@@ -128,7 +128,7 @@
 !
 ! Boundary conditions - shared
 !
-       ALLOCATE( IOBDP(MNP), IOBPD(MDC,MNP), IOBP(MNP), IOBWB(MNP), stat=istat)
+       ALLOCATE( IOBDP(MNP), IOBPD(NUMDIR,MNP), IOBP(MNP), IOBWB(MNP), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 15')
        IOBDP  = 1
        IOBPD  = 0
@@ -139,7 +139,7 @@
 !
 ! phase velocity, wave number, group velocity, dwdh, kh
 !
-       ALLOCATE( WK(MSC,MNP), CG(MSC,MNP), WC(MNP,MSC), stat=istat)
+       ALLOCATE( WK(NUMSIG,MNP), CG(NUMSIG,MNP), WC(MNP,NUMSIG), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 16')
        WK = ZERO 
        CG = ZERO 
@@ -150,7 +150,7 @@
 ! phase velocity, wave number, group velocity, dwdh, kh
 !
        IF (MESTR .EQ. 7) THEN
-         ALLOCATE( DWKDX(MNP,MSC), DCGDY(MNP,MSC), DWKDY(MNP,MSC), DCGDX(MNP,MSC), stat=istat)
+         ALLOCATE( DWKDX(MNP,NUMSIG), DCGDY(MNP,NUMSIG), DWKDY(MNP,NUMSIG), DCGDX(MNP,NUMSIG), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 16')
          DWKDX = ZERO
          DCGDX = ZERO
@@ -225,7 +225,7 @@
 !  new stuff not ready  
 !
        IF (LCONV) THEN ! more work needed ...
-         ALLOCATE ( IP_IS_STEADY(MNP), IE_IS_STEADY(MNE), STAT2D(MSC,MDC), stat=istat)
+         ALLOCATE ( IP_IS_STEADY(MNP), IE_IS_STEADY(MNE), STAT2D(NUMSIG,NUMDIR), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 24')
          IP_IS_STEADY = 0
          IE_IS_STEADY = 0
@@ -253,7 +253,7 @@
 !       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 18'
 !       FLUSH(STAT%FHNDL)
 
-       ALLOCATE( TAUW(MNP), TAUTOT(MNP), TAUWX(MNP), TAUWY(MNP), TAUHF(MNP), TAUHFT2(0:IUSTAR,0:IALPHA,0:ILEVTAIL), TAUHFT(0:IUSTAR,0:IALPHA,MSC), TAUT(0:ITAUMAX,0:JUMAX,JPLEVT), stat=istat)
+       ALLOCATE( TAUW(MNP), TAUTOT(MNP), TAUWX(MNP), TAUWY(MNP), TAUHF(MNP), TAUHFT2(0:IUSTAR,0:IALPHA,0:ILEVTAIL), TAUHFT(0:IUSTAR,0:IALPHA,NUMSIG), TAUT(0:ITAUMAX,0:JUMAX,JPLEVT), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 27')
        TAUW = zero
        TAUTOT = zero
@@ -320,7 +320,7 @@
        ALLOCATE(EMEAN(MNP)); EMEAN = ZERO
 
        IF (ISOURCE == 2) THEN
-         ALLOCATE( MIJ(MNP), ENH(MNP,MSC+4,1), stat=istat)
+         ALLOCATE( MIJ(MNP), ENH(MNP,NUMSIG+4,1), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32b')
          MIJ = 0
          ENH = 1.d0
@@ -340,7 +340,7 @@
          ZIDLNEW = ZERO
          U10NEW = ZERO
          USNEW = ZERO
-         ALLOCATE( FCONST(MNP,MSC), stat=istat)
+         ALLOCATE( FCONST(MNP,NUMSIG), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32e')
          FCONST = 1
        ENDIF
@@ -354,7 +354,7 @@
 !        BETAMAX = 1.52
 !        ZALP    = 0.008
 !        TAUWSHELTER=0.0
-        IF(MSC.GT.30) THEN
+        IF(NUMSIG.GT.30) THEN
           ALPHA   = 0.0060
         ELSE
           ALPHA   = 0.0075
@@ -364,7 +364,7 @@
 !        BETAMAX = 1.52
 !        ZALP    = 0.0060
 !        TAUWSHELTER=0.6
-        IF(MSC.GT.30) THEN
+        IF(NUMSIG.GT.30) THEN
           ALPHA   = 0.0090
         ELSE
           ALPHA   = 0.0095
@@ -374,7 +374,7 @@
 !        BETAMAX = 1.52
 !        ZALP    = 0.0060
 !        TAUWSHELTER=0.0
-        IF(MSC.GT.30) THEN
+        IF(NUMSIG.GT.30) THEN
           ALPHA   = 0.003
         ELSE
           ALPHA   = 0.004
@@ -406,7 +406,7 @@
 !
       DEALLOCATE( SPSIG, SPDIR, FR, COSTH, SINTH, COS2TH, SIN2TH)
       DEALLOCATE( SINCOSTH, SIGPOW, DS_BAND, DS_INCR)
-      DEALLOCATE(MSC_HF)
+      DEALLOCATE(NUMSIG_HF)
 !
 ! action densities and source terms - shared
 !
@@ -573,9 +573,9 @@
       write(STAT%FHNDL,*) 'sum(YPtotal)=', sum(YPtotal)
       write(STAT%FHNDL,*) 'sum(DEPtotal)=', sum(DEPtotal)
       write(STAT%FHNDL,*) 'sum(INEtotal)=', sum(INEtotal)
-      write(STAT%FHNDL,*) NP_TOTAL, NE_TOTAL, MDC, MSC
+      write(STAT%FHNDL,*) NP_TOTAL, NE_TOTAL, NUMDIR, NUMSIG
       FLUSH(STAT%FHNDL)
-      CALL initFromGridDim(NP_TOTAL, XPtotal, YPtotal, DEPtotal, NE_TOTAL, INEtotal, MDC, MSC, comm)
+      CALL initFromGridDim(NP_TOTAL, XPtotal, YPtotal, DEPtotal, NE_TOTAL, INEtotal, NUMDIR, NUMSIG, comm)
       write(STAT%FHNDL,*) 'After initFromGridDim'
       FLUSH(STAT%FHNDL)
       call fillPublicVars
@@ -803,13 +803,13 @@
 #endif
 
 #if defined SCHISM
-      IF (MSC_SCHISM .NE. MSC .OR. MDC_SCHISM .NE. MDC) THEN
-        WRITE(DBG%FHNDL,*) 'MSC_SCHISM', MSC_SCHISM
-        WRITE(DBG%FHNDL,*) 'MSC', MSC
-        WRITE(DBG%FHNDL,*) 'MDC_SCHISM', MDC_SCHISM
-        WRITE(DBG%FHNDL,*) 'MDC', MDC
+      IF (NUMSIG_SCHISM .NE. NUMSIG .OR. NUMDIR_SCHISM .NE. NUMDIR) THEN
+        WRITE(DBG%FHNDL,*) 'NUMSIG_SCHISM', NUMSIG_SCHISM
+        WRITE(DBG%FHNDL,*) 'NUMSIG', NUMSIG
+        WRITE(DBG%FHNDL,*) 'NUMDIR_SCHISM', NUMDIR_SCHISM
+        WRITE(DBG%FHNDL,*) 'NUMDIR', NUMDIR
         FLUSH(DBG%FHNDL)
-        CALL PARALLEL_ABORT('THERE IS AND ERROR IN MSC2 OR MDC2 IN PARAM.IN')
+        CALL PARALLEL_ABORT('THERE IS AND ERROR IN NUMSIG2 OR NUMDIR2 IN PARAM.IN')
       END IF
 #endif
 
@@ -839,10 +839,10 @@
 #ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'WW3_FACP=', WW3_FACP
 #endif
-      allocate(WW3_SIG(0:MSC+1), stat=istat)
+      allocate(WW3_SIG(0:NUMSIG+1), stat=istat)
       FR1   = SPSIG(1)/PI2
       SIGMA   = FR1 * TPI / SFAC**2
-      DO IS=0, MSC+1
+      DO IS=0, NUMSIG+1
          SIGMA    = SIGMA * SFAC
          WW3_SIG (IS) = SIGMA
 #ifdef DEBUG
@@ -1115,9 +1115,9 @@
            ELSE IF (MESNL .EQ. 5) THEN
              IQGRID = 3
              INODE  = 1
-             CALL XNL_INIT(SPSIG,SPDIR,MSC,MDC,MyREAL(-4.0),G9,DEP,MNP,1,IQGRID,INODE,IERR_XNL)
+             CALL XNL_INIT(SPSIG,SPDIR,NUMSIG,NUMDIR,MyREAL(-4.0),G9,DEP,MNP,1,IQGRID,INODE,IERR_XNL)
              CALL INIT_CONSTANTS
-             CALL XNL_INIT(SPSIG,SPDIR,MSC,MDC,MyREAL(-4.0),G9,DEP,MNP,1,IQGRID,INODE,IERR_XNL)
+             CALL XNL_INIT(SPSIG,SPDIR,NUMSIG,NUMDIR,MyREAL(-4.0),G9,DEP,MNP,1,IQGRID,INODE,IERR_XNL)
              IF (IERR_XNL .GT. 0) CALL WWM_ABORT('IERR XNL_INIT')
            ENDIF
          ELSE IF (ISOURCE == 2) THEN
@@ -1156,7 +1156,7 @@
                WRITE(STAT%FHNDL,'("+TRACE...",A)')'COMPUTING STRESS TABLES'
                CALL STRESS
                WRITE(STAT%FHNDL,'("+TRACE...",A)')'COMPUTING HF TABLES'
-               CALL TAUHF_WAM(MSC)
+               CALL TAUHF_WAM(NUMSIG)
              ENDIF
            ENDIF
 
@@ -1186,10 +1186,10 @@
        REAL(rkind)     :: HS, TP, HSLESS, TPLESS, FDLESS
        REAL(rkind)     :: WIND10, WINDTH, VEC2DEG
        REAL(rkind)     :: WINDX, WINDY
-       REAL(rkind)     :: ACLOC(MSC,MDC)
-       REAL            :: VA(MSC,MDC)
+       REAL(rkind)     :: WALOC(NUMSIG,NUMDIR)
+       REAL            :: VA(NUMSIG,NUMDIR)
        REAL(rkind)     :: DEG
-       REAL(rkind)     :: TMPPAR(8,MNP), SSBRL(MSC,MDC)
+       REAL(rkind)     :: TMPPAR(8,MNP), SSBRL(NUMSIG,NUMDIR)
        REAL(rkind)     :: EPSMIN
        INTEGER         :: nbINIT1
        TMPPAR = 0.
@@ -1214,7 +1214,7 @@
              AC2(:,:,IP) = ZERO
              CYCLE
            ENDIF
-           ACLOC = 0.
+           WALOC = 0.
            WINDX  = WINDXY(IP,1)
            WINDY  = WINDXY(IP,2)
            WIND10 = SQRT(WINDX**2+WINDY**2)
@@ -1239,49 +1239,49 @@
                  SPPAR(6) = 2.
                  SPPAR(7) = 0.1
                  SPPAR(8) = 3.3
-                 CALL SPECTRAL_SHAPE(SPPAR,ACLOC,.FALSE.,'INITIAL CONDITION PARA', USE_OPTI_SPEC_SHAPE_INIT)
+                 CALL SPECTRAL_SHAPE(SPPAR,WALOC,.FALSE.,'INITIAL CONDITION PARA', USE_OPTI_SPEC_SHAPE_INIT)
                ELSE
-                 ACLOC = 1.E-8
+                 WALOC = 1.E-8
                END IF
              ELSE IF (INITSTYLE == 2 .AND. IBOUNDFORMAT == 3) THEN
                TMPPAR(5,IP) = 2.
                TMPPAR(6,IP) = 1.
                TMPPAR(7,IP) = 0.1
                TMPPAR(8,IP) = 3.3
-               CALL SPECTRAL_SHAPE(TMPPAR(:,IP),ACLOC,.FALSE.,'INITIAL CONDITION WW3', USE_OPTI_SPEC_SHAPE_INIT)
+               CALL SPECTRAL_SHAPE(TMPPAR(:,IP),WALOC,.FALSE.,'INITIAL CONDITION WW3', USE_OPTI_SPEC_SHAPE_INIT)
              ELSE IF (INITSTYLE == 3) THEN
-               DO ID=1,MDC
-                 DO IS=1,MSC
+               DO ID=1,NUMDIR
+                 DO IS=1,NUMSIG
                    READ(10003) K, M, VA(IS,ID)
                    IF ((K.ne.ID).or.(M.ne.IS)) THEN
                      CALL WWM_ABORT('Inconsistency in reading the input spectra')
                    END IF
-!                   ACLOC(IS,ID) =  MyREAL(VA(IS,ID)) / PI2 / SPSIG(IS)
-                   ACLOC(IS,ID) =  MyREAL(VA(IS,ID)) / CG(IS,IP)
+!                   WALOC(IS,ID) =  MyREAL(VA(IS,ID)) / PI2 / SPSIG(IS)
+                   WALOC(IS,ID) =  MyREAL(VA(IS,ID)) / CG(IS,IP)
                  ENDDO
                ENDDO
 #ifdef DEBUG
                WRITE(740+myrank,*) 'IP=', IP
-               WRITE(740+myrank,*) 'sum(VA)=', sum(VA), ' sum(ACLOC)=', sum(ACLOC)
+               WRITE(740+myrank,*) 'sum(VA)=', sum(VA), ' sum(WALOC)=', sum(WALOC)
 #endif
              ELSE IF (INITSTYLE == 4) THEN
                ! WAM style initialization to the noise
                EPSMIN=10E-7
-               DO ID=1,MDC
-                 DO IS=1,MSC
-                   ACLOC(IS,ID) =  EPSMIN / PI2 / SPSIG(IS)
+               DO ID=1,NUMDIR
+                 DO IS=1,NUMSIG
+                   WALOC(IS,ID) =  EPSMIN / PI2 / SPSIG(IS)
                  ENDDO
                ENDDO
              END IF ! INITSTYLE
-             IF (LMAXETOT .AND. ISHALLOW(IP) .EQ. 1) CALL BREAK_LIMIT(IP,ACLOC,SSBRL) ! Miche for initial cond.
+             IF (LMAXETOT .AND. ISHALLOW(IP) .EQ. 1) CALL BREAK_LIMIT(IP,WALOC,SSBRL) ! Miche for initial cond.
            ELSE
              FDLESS      = 0.
              HS          = 0.
              TP          = 0.
              WINDTH      = 0.
-             ACLOC       = 0.
+             WALOC       = 0.
            END IF ! DEP(IP) .GT. DMIN .AND. WIND10 .GT. SMALL
-           AC2(:,:,IP) = ACLOC
+           AC2(:,:,IP) = WALOC
          END DO ! IP
        ELSE IF (LHOTR .AND. .NOT. LINID) THEN
          WRITE(STAT%FHNDL,*) 'Calling the INPUT_HOTFILE'
@@ -1448,15 +1448,15 @@
 !    set the site output
 !
       IF (LOUTS) THEN
-        ALLOCATE (ACLOC_STATIONS(MSC,MDC,IOUTS), CDLOC_STATIONS(IOUTS), Z0LOC_STATIONS(IOUTS), stat=istat)
+        ALLOCATE (WALOC_STATIONS(NUMSIG,NUMDIR,IOUTS), CDLOC_STATIONS(IOUTS), Z0LOC_STATIONS(IOUTS), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 38')
 
         ALLOCATE (ALPHALOC_STATIONS(IOUTS), WINDXLOC_STATIONS(IOUTS), WINDYLOC_STATIONS(IOUTS), USTARLOC_STATIONS(IOUTS), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 39')
 
-        ALLOCATE (DEPLOC_STATIONS(IOUTS), WKLOC_STATIONS(IOUTS,MSC), CURTXYLOC_STATIONS(IOUTS,2), WATLEVLOC_STATIONS(IOUTS), stat=istat)
+        ALLOCATE (DEPLOC_STATIONS(IOUTS), WKLOC_STATIONS(IOUTS,NUMSIG), CURTXYLOC_STATIONS(IOUTS,2), WATLEVLOC_STATIONS(IOUTS), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 40')
-        ACLOC_STATIONS      = 0.
+        WALOC_STATIONS      = 0.
         DEPLOC_STATIONS     = 0.
         WKLOC_STATIONS      = 0.
         CURTXYLOC_STATIONS  = 0.
@@ -1515,9 +1515,9 @@
             END IF
           END DO
         END IF
-        ALLOCATE (DEPLOC_SUM(IOUTS), WKLOC_SUM(IOUTS,MSC), CURTXYLOC_SUM(IOUTS,2), ACLOC_SUM(MSC,MDC,IOUTS), USTAR_SUM(IOUTS), ALPHA_SUM(IOUTS), WINDY_SUM(IOUTS), WINDX_SUM(IOUTS), Z0_SUM(IOUTS), CD_SUM(IOUTS), WATLEVLOC_SUM(IOUTS), stat=istat)
+        ALLOCATE (DEPLOC_SUM(IOUTS), WKLOC_SUM(IOUTS,NUMSIG), CURTXYLOC_SUM(IOUTS,2), WALOC_SUM(NUMSIG,NUMDIR,IOUTS), USTAR_SUM(IOUTS), ALPHA_SUM(IOUTS), WINDY_SUM(IOUTS), WINDX_SUM(IOUTS), Z0_SUM(IOUTS), CD_SUM(IOUTS), WATLEVLOC_SUM(IOUTS), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 42')
-        ACLOC_SUM           = 0.
+        WALOC_SUM           = 0.
         WKLOC_SUM           = 0.
         DEPLOC_SUM          = 0.
         CURTXYLOC_SUM       = 0.
@@ -1549,10 +1549,10 @@
           END DO
         END IF
 #endif
-        STATION(:)%ISMAX = MSC
+        STATION(:)%ISMAX = NUMSIG
         IF (LSIGMAX) THEN
           DO IP = 1, IOUTS
-            DO IS = 1, MSC
+            DO IS = 1, NUMSIG
               IF (SPSIG(IS)/PI2 .GT. STATION(IP)%CUTOFF) THEN
                 STATION(IP)%ISMAX = IS - 1
                 EXIT
@@ -1571,7 +1571,7 @@
       USE DATAPOOL
       IMPLICIT NONE
       IF (LOUTS) THEN
-        DEALLOCATE (ACLOC_STATIONS)
+        DEALLOCATE (WALOC_STATIONS)
         DEALLOCATE (CDLOC_STATIONS)
         DEALLOCATE (Z0LOC_STATIONS)
         DEALLOCATE (ALPHALOC_STATIONS)
@@ -1586,7 +1586,7 @@
         DEALLOCATE (DEPLOC_SUM)
         DEALLOCATE (WKLOC_SUM)
         DEALLOCATE (CURTXYLOC_SUM)
-        DEALLOCATE (ACLOC_SUM)
+        DEALLOCATE (WALOC_SUM)
         DEALLOCATE (USTAR_SUM, ALPHA_SUM)
         DEALLOCATE (WINDY_SUM, WINDX_SUM)
         DEALLOCATE (Z0_SUM, CD_SUM, WATLEVLOC_SUM)

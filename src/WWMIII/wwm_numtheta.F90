@@ -8,10 +8,10 @@
          USE DATAPOOL
          IMPLICIT NONE
          LOGICAL                 :: ISEQ0
-         REAL(rkind)             :: GF(MDC)
-         REAL(rkind)             :: AMAT(3,MDC)
-         REAL(rkind)             :: TMPAC(MDC)
-         REAL(rkind)             :: CAD(MSC,MDC)
+         REAL(rkind)             :: GF(NUMDIR)
+         REAL(rkind)             :: AMAT(3,NUMDIR)
+         REAL(rkind)             :: TMPAC(NUMDIR)
+         REAL(rkind)             :: CAD(NUMSIG,NUMDIR)
          INTEGER                 :: ID1, ID2
          INTEGER                 :: IP, IS, ID, IT, ISTEP
          REAL(rkind)             :: AUX1, AUX2, REST, DT4DI
@@ -26,7 +26,7 @@
            IF (DEP(IP) .LT. DMIN) CYCLE
            IF (IOBP(IP) .EQ. 2) CYCLE
             CALL PROPTHETA(IP,CAD)
-            DO IS = 1, MSC
+            DO IS = 1, NUMSIG
                GF(:)     = 0.0
                AMAT(:,:) = 0.0
                TMPAC(:)  = AC2(IS,:,IP)
@@ -40,11 +40,11 @@
                END IF
                DT4DI = DT4D/MyREAL(ISTEP)
                DO IT = 1, ISTEP 
-                  DO ID = 1, MDC ! Start Iteration
+                  DO ID = 1, NUMDIR ! Start Iteration
                      ID1 = ID - 1
                      ID2 = ID + 1
                      IF (ID == 1) THEN
-                        ID1 = MDC
+                        ID1 = NUMDIR
                         AUX1 = (DT4DI/DDIR/2.0*CAD(IS,ID1))
                         A1M = -1.0*AUX1*RTHETA
                      ELSE
@@ -52,7 +52,7 @@
                         AMAT(1,ID) = -1.0*AUX1*RTHETA
                      END IF
                      AMAT(2,ID)  =   1.0
-                     IF (ID == MDC) THEN
+                     IF (ID == NUMDIR) THEN
                         ID2 = 1
                         AUX2 = (DT4DI/DDIR/2.0*CAD(IS,ID2))
                         AM1 = AUX2*RTHETA
@@ -62,7 +62,7 @@
                      END IF
                      GF(ID) = TMPAC(ID)-(1.0-RTHETA)*(AUX2*TMPAC(ID2)-AUX1*TMPAC(ID1) )
                   END DO
-                  CALL GAUS1D (MDC, AMAT, GF, AM1, A1M)
+                  CALL GAUS1D (NUMDIR, AMAT, GF, AM1, A1M)
                   TMPAC(:) = GF(:) 
                END DO  ! End Iteration
                AC2(IS,:,IP) = TMPAC(:)
@@ -81,15 +81,15 @@
 #ifdef DEBUG
          INTEGER ID
 #endif
-         REAL(rkind)    :: CAD(MSC,MDC)
-         REAL(rkind)    :: ACQ(0:MDC+1)
-         REAL(rkind)    :: CADS(0:MDC+1)
+         REAL(rkind)    :: CAD(NUMSIG,NUMDIR)
+         REAL(rkind)    :: ACQ(0:NUMDIR+1)
+         REAL(rkind)    :: CADS(0:NUMDIR+1)
          REAL(rkind)    :: DT4DI 
          REAL(rkind)    :: REST
          REAL(rkind)    :: CFLCAD
 !$OMP PARALLEL DEFAULT(NONE) & 
 !$OMP&         SHARED(AC2,SI,DAC_THE,DT4D,DDIR,LCIRD,LTHBOUND,MNP, & 
-!$OMP&                MSC,MDC,WK,DEP,DMIN,CURTXY,ICOMP,IOBP,DAC_ADV,DAC_SIG,DAC_SOU)  &
+!$OMP&                NUMSIG,NUMDIR,WK,DEP,DMIN,CURTXY,ICOMP,IOBP,DAC_ADV,DAC_SIG,DAC_SOU)  &
 !$OMP&         PRIVATE(IP,IS,DT4DI,ITER,CFLCAD,REST,CADS,CAD,ACQ)
 !$OMP DO 
          DO IP = 1, MNP
@@ -101,13 +101,13 @@
 #ifdef DEBUG
            WRITE(STAT%FHNDL,*) 'IP=', IP, ' MNP=', MNP
 #endif
-           DO IS = 1, MSC
-             ACQ(1:MDC) = AC2(IS,:,IP)
-             CADS(1:MDC) = CAD(IS,:)
+           DO IS = 1, NUMSIG
+             ACQ(1:NUMDIR) = AC2(IS,:,IP)
+             CADS(1:NUMDIR) = CAD(IS,:)
              CFLCAD = MAXVAL(ABS(CAD(IS,:)))*DT4D/DDIR
 #ifdef DEBUG
              WRITE(STAT%FHNDL,*) 'IS=', IS, ' DT4D=', DT4D, ' DDIR=', DDIR
-             DO ID=1,MDC
+             DO ID=1,NUMDIR
                WRITE(STAT%FHNDL,*) 'ID=', ID, ' cad=', CAD(IS,ID)
              END DO
 #endif
@@ -124,9 +124,9 @@
 #endif
              DT4DI = DT4D / MyREAL(ITER)
              DO IT = 1, ITER ! Iteration
-               CALL QUICKEST_DIR(MDC,LCIRD,ACQ,CADS,DT4DI,DDIR)
+               CALL QUICKEST_DIR(NUMDIR,LCIRD,ACQ,CADS,DT4DI,DDIR)
              END DO          ! end Interation
-             AC2(IS,:,IP) = MAX(ZERO,ACQ(1:MDC))
+             AC2(IS,:,IP) = MAX(ZERO,ACQ(1:NUMDIR))
            END DO
          END DO
 !$OMP END DO NOWAIT
@@ -140,16 +140,16 @@
          IMPLICIT NONE
 
          INTEGER        :: IP, IS, ID, IT, ISTEP, ID1, ID2
-         REAL(rkind)    :: CAD(MSC,MDC)
-         REAL(rkind)    :: TMP(MDC), REST, CFLCAD, DT4DI
-         REAL(rkind)    :: LP(MDC), LM(MDC), CP(MDC), CM(MDC), U0(MDC)
+         REAL(rkind)    :: CAD(NUMSIG,NUMDIR)
+         REAL(rkind)    :: TMP(NUMDIR), REST, CFLCAD, DT4DI
+         REAL(rkind)    :: LP(NUMDIR), LM(NUMDIR), CP(NUMDIR), CM(NUMDIR), U0(NUMDIR)
 
          DO IP = 1, MNP
            IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LTHBOUND) CYCLE
            IF (DEP(IP) .LT. DMIN) CYCLE
            IF (IOBP(IP) .EQ. 2) CYCLE
            CALL PROPTHETA(IP,CAD)
-           DO IS = 1, MSC
+           DO IS = 1, NUMSIG
              U0(:) = AC2(IS,:,IP)
              CP(:) = MAX(ZERO,CAD(IS,:))
              CM(:) = MIN(ZERO,CAD(IS,:))
@@ -164,11 +164,11 @@
              END IF
              DT4DI = DT4D / MyREAL(ISTEP)
              DO IT = 1, ISTEP
-               DO ID = 1, MDC
+               DO ID = 1, NUMDIR
                  ID1 = ID - 1
                  ID2 = ID + 1
-                 IF (ID .EQ. 1) ID1 = MDC
-                 IF (ID .EQ. MDC) ID2 = 1 
+                 IF (ID .EQ. 1) ID1 = NUMDIR
+                 IF (ID .EQ. NUMDIR) ID2 = 1 
                  LP(ID) = - 1./DDIR * ( CP(ID1) * U0(ID1) - CP(ID) * U0(ID) )
                  LM(ID) = - 1./DDIR * ( CM(ID2) * U0(ID2) - CM(ID) * U0(ID) )
                  TMP(ID) = U0(ID) - DT4DI * ( -LM(ID) + LP(ID) )
@@ -189,31 +189,31 @@
       IMPLICIT NONE
 
       INTEGER        :: IP, IS, ID, ID1, ID2
-      REAL(rkind)    :: CAD(MSC,MDC)
-      REAL(rkind)    :: TMP(MDC)
-      REAL(rkind)    :: CP(MDC), CM(MDC), U0(MDC)
-      REAL(rkind)    :: EMAT(MDC,MDC)
+      REAL(rkind)    :: CAD(NUMSIG,NUMDIR)
+      REAL(rkind)    :: TMP(NUMDIR)
+      REAL(rkind)    :: CP(NUMDIR), CM(NUMDIR), U0(NUMDIR)
+      REAL(rkind)    :: EMAT(NUMDIR,NUMDIR)
 
       DO IP = 1, MNP
         IF ((ABS(IOBP(IP)) .EQ. 1 .OR. ABS(IOBP(IP)) .EQ. 3) .AND. .NOT. LTHBOUND) CYCLE
         IF (DEP(IP) .LT. DMIN) CYCLE
         IF (IOBP(IP) .EQ. 2) CYCLE
         CALL PROPTHETA(IP,CAD)
-        DO IS = 1, MSC
+        DO IS = 1, NUMSIG
           U0 = AC2(IS,:,IP)
           CP = MAX(ZERO,CAD(IS,:))
           CM = MIN(ZERO,CAD(IS,:))
           EMAT=ZERO
-          DO ID=1,MDC
+          DO ID=1,NUMDIR
             ID1 = ID - 1
             ID2 = ID + 1
-            IF (ID .EQ. 1) ID1 = MDC
-            IF (ID .EQ. MDC) ID2 = 1 
+            IF (ID .EQ. 1) ID1 = NUMDIR
+            IF (ID .EQ. NUMDIR) ID2 = 1 
             EMAT(ID,ID ) = 1 + (DT4D/DDIR) * (CP(ID) - CM(ID))
             EMAT(ID,ID1) =   - (DT4D/DDIR) *  CP(ID1)
             EMAT(ID,ID2) =     (DT4D/DDIR) *  CM(ID2)
           END DO
-          CALL GAUSS_SOLVER(MDC, EMAT, TMP, U0)
+          CALL GAUSS_SOLVER(NUMDIR, EMAT, TMP, U0)
           AC2(IS,:,IP) = MAX(0._rkind,TMP)
         END DO
       END DO
@@ -230,11 +230,11 @@
          INTEGER :: IP, IS, ID, IT
          INTEGER :: ID1, ID11, ID2, ID22, ID23
 
-         REAL(rkind)    :: L(MDC), FLP(MDC)
-         REAL(rkind)    :: FLM(MDC), NFLP(MDC), NFLM(MDC)
-         REAL(rkind)    :: CP(MDC), CM(MDC)
+         REAL(rkind)    :: L(NUMDIR), FLP(NUMDIR)
+         REAL(rkind)    :: FLM(NUMDIR), NFLP(NUMDIR), NFLM(NUMDIR)
+         REAL(rkind)    :: CP(NUMDIR), CM(NUMDIR)
 
-         REAL(rkind)    :: CAD(MSC,MDC)
+         REAL(rkind)    :: CAD(NUMSIG,NUMDIR)
 
          REAL(rkind)    :: WP1, WP2, WP3, WM1, WM2, WM3
          REAL(rkind)    :: WI_P1, WI_P2, WI_P3, WI_M1, WI_M2, WI_M3
@@ -242,7 +242,7 @@
          REAL(rkind)    :: TMP, TMP1, TMP2, TMP3
          REAL(rkind)    :: BETAM1, BETAM2,BETAM3, BETAP1, BETAP2,BETAP3
 
-         REAL(rkind)    :: U0(MDC), U1(MDC), U2(MDC), U3(MDC)
+         REAL(rkind)    :: U0(NUMDIR), U1(NUMDIR), U2(NUMDIR), U3(NUMDIR)
 
          REAL(rkind)    :: FLPID, FLPID1, FLPID11, FLPID2, FLPID22
          REAL(rkind)    :: FLMID, FLMID1, FLMID2, FLMID22, FLMID23
@@ -274,7 +274,7 @@
            IF (IOBP(IP) .EQ. 2) CYCLE
            CALL PROPTHETA(IP,CAD)
 
-           DO IS = 1, MSC
+           DO IS = 1, NUMSIG
 
              U0(:) = AC2(IS,:,IP)
              CP(:) = MAX(ZERO,CAD(IS,:))
@@ -292,7 +292,7 @@
                  FLP(:) = CP(:) * U0(:)
                  FLM(:) = CM(:) * U0(:)
 
-                 DO ID = 1, MDC
+                 DO ID = 1, NUMDIR
 
                    ID1   = ID - 1
                    ID11  = ID - 2
@@ -301,16 +301,16 @@
                    ID23  = ID + 3
 
                    IF (ID .EQ. 1) THEN
-                     ID1  = MDC
-                     ID11 = MDC - 1
+                     ID1  = NUMDIR
+                     ID11 = NUMDIR - 1
                    ELSE IF (ID .EQ. 2) THEN
-                     ID11 = MDC 
-                   ELSE IF (ID .EQ. MDC - 2) THEN
+                     ID11 = NUMDIR 
+                   ELSE IF (ID .EQ. NUMDIR - 2) THEN
                       ID23 = 1
-                   ELSE IF (ID .EQ. MDC - 1) THEN
+                   ELSE IF (ID .EQ. NUMDIR - 1) THEN
                      ID22 = 1 
                      ID23 = 2
-                   ELSE IF (ID .EQ. MDC) THEN
+                   ELSE IF (ID .EQ. NUMDIR) THEN
                      ID2  = 1
                      ID22 = 2 
                      ID23 = 3
@@ -371,20 +371,20 @@
 
                  END DO
 
-                 DO ID = 1, MDC
+                 DO ID = 1, NUMDIR
                    ID1 = ID - 1
-                   IF (ID .EQ. 1) ID1 = MDC
+                   IF (ID .EQ. 1) ID1 = NUMDIR
                    L(ID)   = 1./DDIR * ( (NFLP(ID)-NFLP(ID1)) + (NFLM(ID)-NFLM(ID1)) ) 
                  END DO
 
-                 DO ID = 1, MDC
+                 DO ID = 1, NUMDIR
                    U1(ID) = U0(ID) -  DT4DI * L(ID)
                  END DO
 
                  FLP(:) = CP(:) * U1(:)
                  FLM(:) = CM(:) * U1(:)
 
-                 DO ID = 1, MDC
+                 DO ID = 1, NUMDIR
 
                    ID1   = ID - 1
                    ID11  = ID - 2
@@ -393,16 +393,16 @@
                    ID23  = ID + 3
 
                    IF (ID .EQ. 1) THEN
-                     ID1  = MDC
-                     ID11 = MDC - 1
+                     ID1  = NUMDIR
+                     ID11 = NUMDIR - 1
                    ELSE IF (ID .EQ. 2) THEN
-                     ID11 = MDC
-                   ELSE IF (ID .EQ. MDC - 2) THEN
+                     ID11 = NUMDIR
+                   ELSE IF (ID .EQ. NUMDIR - 2) THEN
                     ID23 = 1
-                   ELSE IF (ID .EQ. MDC - 1) THEN
+                   ELSE IF (ID .EQ. NUMDIR - 1) THEN
                      ID22 = 1
                      ID23 = 2
-                   ELSE IF (ID .EQ. MDC) THEN
+                   ELSE IF (ID .EQ. NUMDIR) THEN
                      ID2  = 1
                      ID22 = 2
                      ID23 = 3
@@ -468,20 +468,20 @@
 
                  END DO
 
-                 DO ID = 1, MDC
+                 DO ID = 1, NUMDIR
                    ID1 = ID - 1
-                   IF (ID .EQ. 1) ID1 = MDC
+                   IF (ID .EQ. 1) ID1 = NUMDIR
                    L(ID)   = 1./DDIR * ( (NFLP(ID)-NFLP(ID1)) + (NFLM(ID)-NFLM(ID1)) )
                  END DO
 
-                 DO ID = 1, MDC
+                 DO ID = 1, NUMDIR
                    U2(ID)      = 3./4. * U0(ID) + 1./4. * U1(ID) - 1./4. * DT4DI * L(ID)
                  END DO
 
                  FLP(:) = CP(:) * U2(:)
                  FLM(:) = CM(:) * U2(:)
 
-                 DO ID = 1, MDC
+                 DO ID = 1, NUMDIR
 
                    ID1   = ID - 1
                    ID11  = ID - 2
@@ -490,16 +490,16 @@
                    ID23  = ID + 3
 
                    IF (ID .EQ. 1) THEN
-                     ID1  = MDC
-                     ID11 = MDC - 1
+                     ID1  = NUMDIR
+                     ID11 = NUMDIR - 1
                    ELSE IF (ID .EQ. 2) THEN
-                     ID11 = MDC
-                   ELSE IF (ID .EQ. MDC - 2) THEN
+                     ID11 = NUMDIR
+                   ELSE IF (ID .EQ. NUMDIR - 2) THEN
                     ID23 = 1
-                   ELSE IF (ID .EQ. MDC - 1) THEN
+                   ELSE IF (ID .EQ. NUMDIR - 1) THEN
                      ID22 = 1
                      ID23 = 2
-                   ELSE IF (ID .EQ. MDC) THEN
+                   ELSE IF (ID .EQ. NUMDIR) THEN
                      ID2  = 1
                      ID22 = 2
                      ID23 = 3
@@ -560,13 +560,13 @@
 
                  END DO
 
-              DO ID = 1, MDC
+              DO ID = 1, NUMDIR
                  ID1 = ID - 1
-                 IF (ID .EQ. 1) ID1 = MDC
+                 IF (ID .EQ. 1) ID1 = NUMDIR
                  L(ID)   = 1./DDIR * ( (NFLP(ID)-NFLP(ID1)) + (NFLM(ID)-NFLM(ID1)) )
               END DO
  
-              DO ID = 1, MDC
+              DO ID = 1, NUMDIR
                 U3(ID) = 1./3. * U0(ID) + 2./3. * U2(ID) - 2./3. * DT4DI * L(ID)
               END DO
               U0(:) = U3(:)
@@ -584,7 +584,7 @@
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)        :: IP
-         REAL(rkind), INTENT(OUT)   :: CAD(MSC,MDC)
+         REAL(rkind), INTENT(OUT)   :: CAD(NUMSIG,NUMDIR)
          INTEGER        :: IS, ID
          REAL(rkind)    :: WKDEP, DWDH, CFL
 
@@ -604,19 +604,19 @@
 
                IF (DEP(IP) .GT. DMIN) THEN ! ar: obsolete check since done in calling routine ...
 
-                 DO IS = 1, MSC
+                 DO IS = 1, NUMSIG
                    WKDEP = WK(IS,IP) * DEP(IP)
                    IF (WKDEP .LT. 13.) THEN
                      DWDH = SPSIG(IS)/SINH(MIN(KDMAX,TWO*WKDEP))
-                     DO ID = 1, MDC
+                     DO ID = 1, NUMDIR
                        CAD(IS,ID) = DWDH*(SINTH(ID)*DDEP(IP,1))
                      END DO
                    END IF
                  END DO
 
                  IF (LSTCU .OR. LSECU) THEN
-                   DO IS = 1, MSC
-                     DO ID = 1, MDC
+                   DO IS = 1, NUMSIG
+                     DO ID = 1, NUMDIR
                        CAD(IS,ID) = CAD(IS,ID) + SIN2TH(ID)*DCUY(IP,1) + COSTH(ID)*DCUX(IP,1)
                      END DO
                    END DO
@@ -627,25 +627,25 @@
               CASE (2)
 
                IF (DEP(IP) .GT. DMIN) THEN
-                  DO IS = 1, MSC
+                  DO IS = 1, NUMSIG
                     WKDEP = WK(IS,IP) * DEP(IP)
                     IF (WKDEP .LT. 13.) THEN
                       DWDH = SPSIG(IS)/SINH(MIN(KDMAX,2.*WKDEP))
-                      DO ID = 1, MDC
+                      DO ID = 1, NUMDIR
                         CAD(IS,ID) = DWDH * ( SINTH(ID)*DDEP(IP,1)-COSTH(ID)*DDEP(IP,2) )
                       END DO
                     ENDIF
                   END DO
                   IF (LSTCU .OR. LSECU) THEN
-                    DO IS = 1, MSC
-                      DO ID = 1, MDC
+                    DO IS = 1, NUMSIG
+                      DO ID = 1, NUMDIR
                         CAD(IS,ID) = CAD(IS,ID) + SIN2TH(ID)*DCUY(IP,1)-COS2TH(ID)*DCUX(IP,2)+SINCOSTH(ID)*( DCUX(IP,1)-DCUY(IP,2) )
                       END DO
                     END DO
                   END IF
                   IF (LDIFR) THEN
-                    DO IS = 1, MSC
-                       DO ID = 1, MDC
+                    DO IS = 1, NUMSIG
+                       DO ID = 1, NUMDIR
                          CAD(IS,ID) = DIFRM(IP)*CAD(IS,ID)-CG(IS,IP)*(DIFRX(IP)*SINTH(ID)-DIFRY(IP)*COSTH(ID))
                        END DO
                     END DO
@@ -661,8 +661,8 @@
          END SELECT
 
          IF (LSPHE) THEN
-           DO IS = 1, MSC
-              DO ID = 1, MDC
+           DO IS = 1, NUMSIG
+              DO ID = 1, NUMDIR
                 CAD(IS,ID) = CAD(IS,ID)-CG(IS,IP)*COSTH(ID)*TAN(YP(IP)*DEGRAD)/REARTH
                 !WRITE(*,*) IS, ID, CG(IS,IP), COSTH(ID), TAN(YP(IP)*DEGRAD)/REARTH
               END DO
@@ -670,10 +670,10 @@
          END IF
 
          IF (LFILTERTH) THEN
-            DO IS = 1, MSC
+            DO IS = 1, NUMSIG
               CFL = MAXVAL(ABS(CAD(IS,:)))*DT4D/DDIR 
               IF (CFL .GT. MAXCFLTH) THEN
-                DO ID = 1, MDC
+                DO ID = 1, NUMDIR
                   CAD(IS,ID) = MAXCFLTH/CFL*CAD(IS,ID)
                 END DO
               END IF
