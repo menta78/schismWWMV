@@ -171,13 +171,13 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SNL4(IP, KMESPC, ACLOC, IMATRA, IMATDA)
+      SUBROUTINE SNL4(IP, KMESPC, ACLOC, PHI, DPHIDN)
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER             :: IP
          REAL(rkind)                :: KMESPC
-         REAL(rkind), INTENT(INOUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+         REAL(rkind), INTENT(INOUT) :: PHI(MSC,MDC), DPHIDN(MSC,MDC)
          REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
 
          REAL(rkind)                :: PWTAIL, FACHFR
@@ -348,20 +348,20 @@
             END DO
          END DO
 !
-!     *** SFNL -> energy density, IMATRA -> action density
+!     *** SFNL -> energy density, PHI -> action density
 !
          DO IS = 1, MSC
            SIGPI2 = SPSIG(IS)*PI2
            DO ID = 1, MDC
              IF (ICOMP >= 2) THEN
                IF (SFNL(IS,ID).GT.0.) THEN                                   
-                 IMATRA(IS,ID) = IMATRA(IS,ID) + SFNL(IS,ID) / SIGPI2
+                 PHI(IS,ID) = PHI(IS,ID) + SFNL(IS,ID) / SIGPI2
                ELSE
-                 IF (ACLOC(IS,ID) .GT. 10.E-10) IMATDA(IS,ID) =  IMATDA(IS,ID) - SFNL(IS,ID) / ACLOC(IS,ID)*SIGPI2
+                 IF (ACLOC(IS,ID) .GT. 10.E-10) DPHIDN(IS,ID) =  DPHIDN(IS,ID) - SFNL(IS,ID) / ACLOC(IS,ID)*SIGPI2
                END IF
              ELSE
-               IMATRA(IS,ID) = IMATRA(IS,ID) + SFNL(IS,ID) / SIGPI2 
-               IF (ACLOC(IS,ID) .GT. 10.E-10) IMATDA(IS,ID) = IMATDA(IS,ID) + SFNL(IS,ID) / ACLOC(IS,ID)*SIGPI2
+               PHI(IS,ID) = PHI(IS,ID) + SFNL(IS,ID) / SIGPI2 
+               IF (ACLOC(IS,ID) .GT. 10.E-10) DPHIDN(IS,ID) = DPHIDN(IS,ID) + SFNL(IS,ID) / ACLOC(IS,ID)*SIGPI2
              END IF
            END DO
          END DO

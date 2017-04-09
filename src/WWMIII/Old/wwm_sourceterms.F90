@@ -4,11 +4,11 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE LOCAL_DEBUG_IMATRA_IMATDA(IP, IPglob,IMATRA, IMATDA, string)
+      SUBROUTINE LOCAL_DEBUG_PHI_DPHIDN(IP, IPglob,PHI, DPHIDN, string)
       USE DATAPOOL
       IMPLICIT NONE
       integer, intent(in) :: IP, IPglob
-      REAL(rkind), intent(in) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+      REAL(rkind), intent(in) :: PHI(MSC,MDC), DPHIDN(MSC,MDC)
       character(*), intent(in) :: string
       integer, save :: idxcall = 0
       integer IPmap
@@ -17,16 +17,16 @@
       WRITE(STAT%FHNDL,*) 'IP=', IP, 'IPmap=', IPmap, ' IPglob=', IPglob
       IF (IPmap .eq. IPglob) THEN
         idxcall=idxcall+1
-        WRITE(STAT%FHNDL,*) 'LOCAL_DEBUG_IMATRA_IMATDA idxcall=', idxcall
+        WRITE(STAT%FHNDL,*) 'LOCAL_DEBUG_PHI_DPHIDN idxcall=', idxcall
         WRITE(STAT%FHNDL,*) 'string=', string
-        WRITE(STAT%FHNDL,*) 'min/max/sum(IMATRA)=', minval(IMATRA), maxval(IMATRA), sum(IMATRA)
-        WRITE(STAT%FHNDL,*) 'min/max/sum(IMATDA)=', minval(IMATDA), maxval(IMATDA), sum(IMATDA)
+        WRITE(STAT%FHNDL,*) 'min/max/sum(PHI)=', minval(PHI), maxval(PHI), sum(PHI)
+        WRITE(STAT%FHNDL,*) 'min/max/sum(DPHIDN)=', minval(DPHIDN), maxval(DPHIDN), sum(DPHIDN)
       END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SOURCETERMS (IP, ACLOC, IMATRA, IMATDA, LRECALC, ISELECT, CALLFROM)
+      SUBROUTINE SOURCETERMS (IP, ACLOC, PHI, DPHIDN, LRECALC, ISELECT, CALLFROM)
       
       USE DATAPOOL, ONLY : MSC, MDC, MNP, WK, LINID, THR, UFRIC, STAT
       USE DATAPOOL, ONLY : CD, TAUTOT, TAUWX, TAUWY, DEP, AC1, AC2
@@ -56,7 +56,7 @@
 
          INTEGER, INTENT(IN) :: IP, ISELECT
 
-         REAL(rkind), INTENT(OUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+         REAL(rkind), INTENT(OUT) :: PHI(MSC,MDC), DPHIDN(MSC,MDC)
          REAL(rkind), INTENT(IN)  :: ACLOC(MSC,MDC)
 
          LOGICAL, INTENT(IN) :: LRECALC
@@ -74,7 +74,7 @@
          REAL(rkind)    :: LPOW, MPOW, a1, a2
          REAL(rkind)    :: XRR, XPP, XFLT, XREL, FACP, XFILT
          REAL(rkind)    :: TEMP2(MSC), SSBRL(MSC,MDC)
-         REAL(rkind)    :: AWW3(NSPEC), IMATRAWW3(MSC,MDC), IMATDAWW3(MSC,MDC)
+         REAL(rkind)    :: AWW3(NSPEC), PHIWW3(MSC,MDC), DPHIDNWW3(MSC,MDC)
          REAL(rkind)    :: EDENS(MSC), KDS(MSC), ABAB(MSC)
          REAL(rkind)    :: WHITECAP(1:4),TMPAC(MDC,MSC),TEMP(MSC)
          REAL(rkind)    :: ACLOC1(MSC,MDC)
@@ -86,12 +86,12 @@
 
          REAL(rkind)    :: EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, AS
          REAL(rkind)    :: FMEANWS, TAUWAX, TAUWAY, XJ
-         REAL(rkind)    :: IMATDA1D(NSPEC), IMATRA1D(NSPEC), SUMACLOC, IMATRAT(MSC,MDC), BRLAMBDA(NSPEC)
-         REAL(rkind)    :: IMATRA_WAM(MDC,MSC), IMATDA_WAM(MDC,MSC), TAILFACTOR, SNL3(MSC,MDC), DSNL3(MSC,MDC)
+         REAL(rkind)    :: DPHIDN1D(NSPEC), PHI1D(NSPEC), SUMACLOC, PHIT(MSC,MDC), BRLAMBDA(NSPEC)
+         REAL(rkind)    :: PHI_WAM(MDC,MSC), DPHIDN_WAM(MDC,MSC), TAILFACTOR, SNL3(MSC,MDC), DSNL3(MSC,MDC)
          REAL(rkind)    :: SFNL(MSC,MDC), DSNL(MSC,MDC)
          
 #ifdef SNL4_TSA
-         REAL(rkind)    :: IMATRA_TSA(MDC,MSC), IMATDA_TSA(MDC,MSC), TMPAC_TSA(MDC,MSC), CG_TSA(MSC), WK_TSA(MSC), DEP_TSA
+         REAL(rkind)    :: PHI_TSA(MDC,MSC), DPHIDN_TSA(MDC,MSC), TMPAC_TSA(MDC,MSC), CG_TSA(MSC), WK_TSA(MSC), DEP_TSA
 #endif
 
          REAL(rkind)    :: XNL(MSC,MDC), DDIAG(MSC,MDC), ACLOC_WRT(MSC,MDC), DEP_WRT, SPSIG_WRT(MSC), SPDIR_WRT(MDC)
@@ -123,12 +123,12 @@
          SSBR        = zero
          SSBF        = zero
          TMPAC       = zero
-         IMATRA      = zero 
-         IMATDA      = zero 
-         IMATRAWW3   = zero 
-         IMATDAWW3   = zero 
-         IMATRA_WAM  = zero
-         IMATDA_WAM  = zero
+         PHI      = zero 
+         DPHIDN      = zero 
+         PHIWW3   = zero 
+         DPHIDNWW3   = zero 
+         PHI_WAM  = zero
+         DPHIDN_WAM  = zero
          QBLOCAL(IP) = zero 
 
          IF (MESDS == 1 .OR. MESIN .EQ. 1) THEN
@@ -159,9 +159,9 @@
 
          WRITE(STAT%FHNDL,*) 'Before DEBUG enclosed part'
 #ifdef DEBUG
-         WRITE(STAT%FHNDL,*) 'Before call to LOCAL_DEBUG_IMATRA_IMATDA'
-         CALL LOCAL_DEBUG_IMATRA_IMATDA(IP, 20506, IMATRA, "step 1")
-         WRITE(STAT%FHNDL,*) ' After call to LOCAL_DEBUG_IMATRA_IMATDA'
+         WRITE(STAT%FHNDL,*) 'Before call to LOCAL_DEBUG_PHI_DPHIDN'
+         CALL LOCAL_DEBUG_PHI_DPHIDN(IP, 20506, PHI, "step 1")
+         WRITE(STAT%FHNDL,*) ' After call to LOCAL_DEBUG_PHI_DPHIDN'
 #endif
 
 #ifdef TIMINGS
@@ -176,36 +176,36 @@
                IF (SUMACLOC .LT. THR .AND. WIND10 .GT. THR) THEN
                  CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
                  IF (.NOT. LINID) THEN
-                   CALL SIN_LIN_CAV(IP,WINDTH,FPM,IMATRA,SSINL)
+                   CALL SIN_LIN_CAV(IP,WINDTH,FPM,PHI,SSINL)
                  ENDIF
                ELSE
                  MSC_HF(IP) = MSC
                  AS      = 0. 
 #ifdef ST41
                  CALL W3SPR4_OLD ( AWW3, CG(:,IP), WK(:,IP), EMEAN, FMEAN, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS)
-                 CALL W3SIN4_OLD ( AWW3, CG(:,IP), WK(:,IP), WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, IMATRA1D, IMATDA1D, LLWS)
+                 CALL W3SIN4_OLD ( AWW3, CG(:,IP), WK(:,IP), WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, PHI1D, DPHIDN1D, LLWS)
                  CALL W3SPR4_OLD ( AWW3, CG(:,IP), WK(:,IP), EMEAN, FMEAN, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS)
-                 CALL W3SIN4_OLD ( AWW3, CG(:,IP), WK(:,IP), WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, IMATRA1D, IMATDA1D, LLWS)
+                 CALL W3SIN4_OLD ( AWW3, CG(:,IP), WK(:,IP), WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, PHI1D, DPHIDN1D, LLWS)
 #elif ST42
                  CALL W3SPR4 ( AWW3, CG(:,IP), WK(:,IP), EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS)
-                 CALL W3SIN4 ( IP, AWW3, CG(:,IP), WN2,  WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, IMATRA1D, IMATDA1D, LLWS, BRLAMBDA)
+                 CALL W3SIN4 ( IP, AWW3, CG(:,IP), WN2,  WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, PHI1D, DPHIDN1D, LLWS, BRLAMBDA)
                  CALL W3SPR4 ( AWW3, CG(:,IP), WK(:,IP), EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS)  
-                 CALL W3SIN4 ( IP, AWW3, CG(:,IP), WN2, WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, IMATRA1D, IMATDA1D, LLWS, BRLAMBDA) 
+                 CALL W3SIN4 ( IP, AWW3, CG(:,IP), WN2, WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, PHI1D, DPHIDN1D, LLWS, BRLAMBDA) 
 #else
                  WRITE(DBG%FHNDL,*) 'NO ST42 or ST41 chosen but MESIN == 1'
                  CALL WWM_ABORT('stop wwm_sourceterms l.176')
 #endif
-                 CALL ONED2TWOD(IMATRA1D,IMATRAWW3)
-                 SSINE = IMATRAWW3
-                 CALL ONED2TWOD(IMATDA1D,IMATDAWW3)
+                 CALL ONED2TWOD(PHI1D,PHIWW3)
+                 SSINE = PHIWW3
+                 CALL ONED2TWOD(DPHIDN1D,DPHIDNWW3)
                  DO ID = 1, MDC
-                   IMATRA(:,ID) = IMATRAWW3(:,ID) / CG(:,IP) + IMATRA(:,ID)
-                   IMATDA(:,ID) = ZERO!IMATDAWW3(:,ID) !/ CG(:,IP) 
+                   PHI(:,ID) = PHIWW3(:,ID) / CG(:,IP) + PHI(:,ID)
+                   DPHIDN(:,ID) = ZERO!DPHIDNWW3(:,ID) !/ CG(:,IP) 
                  END DO
                END IF
                IF (LNANINFCHK) THEN
-                 IF (SUM(IMATRA) .NE. SUM(IMATRA) .OR. SUM(IMATDA) .NE. SUM(IMATDA)) THEN
-                   WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT NORMAL', IP, 'DUE TO SIN', SUM(IMATRA), SUM(IMATDA)
+                 IF (SUM(PHI) .NE. SUM(PHI) .OR. SUM(DPHIDN) .NE. SUM(DPHIDN)) THEN
+                   WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT NORMAL', IP, 'DUE TO SIN', SUM(PHI), SUM(DPHIDN)
                    CALL WWM_ABORT('NAN AT wwm_sourceterms.F90 l.189')
                  END IF
                ENDIF
@@ -215,38 +215,38 @@
                CALL SET_WIND( IP, WIND10, WINDTH )
                IFRIC = 4
                CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
-               IF (.NOT. LINID) CALL SIN_LIN_CAV( IP, WINDTH, FPM, IMATRA, SSINL)
-               CALL SIN_MAKIN( IP, WIND10, WINDTH, KME01,ETOT,ACLOC,IMATRA,IMATDA,SSINE)
+               IF (.NOT. LINID) CALL SIN_LIN_CAV( IP, WINDTH, FPM, PHI, SSINL)
+               CALL SIN_MAKIN( IP, WIND10, WINDTH, KME01,ETOT,ACLOC,PHI,DPHIDN,SSINE)
              ELSE IF (MESIN == 4) THEN ! Donealan et al.
                CALL SET_WIND( IP, WIND10, WINDTH )
                IFRIC = 1
                CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
-               IF (.NOT. LINID) CALL SIN_LIN_CAV( IP, WINDTH,FPM,IMATRA,SSINL)
-               CALL SWIND_DBYB (IP,WIND10,WINDTH,IMATRA,SSINE)
+               IF (.NOT. LINID) CALL SIN_LIN_CAV( IP, WINDTH,FPM,PHI,SSINL)
+               CALL SWIND_DBYB (IP,WIND10,WINDTH,PHI,SSINE)
              ELSE IF (MESIN == 5) THEN ! Cycle 3
                CALL SET_WIND( IP, WIND10, WINDTH )
                IFRIC = 1
                CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
-               IF (.NOT. LINID) CALL SIN_LIN_CAV( IP, WINDTH,FPM,IMATRA,SSINL)
-               CALL SIN_EXP_KOMEN( IP, WINDTH, ACLOC, IMATRA, IMATDA, SSINE )
+               IF (.NOT. LINID) CALL SIN_LIN_CAV( IP, WINDTH,FPM,PHI,SSINL)
+               CALL SIN_EXP_KOMEN( IP, WINDTH, ACLOC, PHI, DPHIDN, SSINE )
              END IF ! MESIN
            END IF ! IOBP
            !IF (IDISP == IP) THEN
-             !CALL PLOT_SHADED_CONTOUR_POLAR(SPSIG/PI2,SPDIR*RADDEG,MSC,MDC,IMATRA/MAXVAL(IMATRA),50,MSC,MDC,'BEFORE ANY CALL')
+             !CALL PLOT_SHADED_CONTOUR_POLAR(SPSIG/PI2,SPDIR*RADDEG,MSC,MDC,PHI/MAXVAL(PHI),50,MSC,MDC,'BEFORE ANY CALL')
              !PAUSE
            !END IF
          END IF ! ISELECT 
 
 #ifdef DEBUG
-         CALL LOCAL_DEBUG_IMATRA_IMATDA(IP, 20506, IMATRA, "step 2")
+         CALL LOCAL_DEBUG_PHI_DPHIDN(IP, 20506, PHI, "step 2")
 #endif
 
 #ifdef TIMINGS
          call WAV_MY_WTIME(TIME3)
 #endif 
          IF (LNANINFCHK) THEN
-           IF (SUM(IMATRA) .NE. SUM(IMATRA) .OR. SUM(IMATDA) .NE. SUM(IMATDA)) THEN
-             WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT', IP, '   DUE TO SIN', SUM(IMATRA), SUM(IMATDA)
+           IF (SUM(PHI) .NE. SUM(PHI) .OR. SUM(DPHIDN) .NE. SUM(DPHIDN)) THEN
+             WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT', IP, '   DUE TO SIN', SUM(PHI), SUM(DPHIDN)
              CALL WWM_ABORT('NAN in wwm_sourceterm.F90 l.311')
            END IF
          ENDIF
@@ -254,13 +254,13 @@
          IF ((ISELECT.EQ.2 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.20) .AND. .NOT. LRECALC) THEN
            IF (IOBP(IP) .EQ. 0) THEN
              IF (MESNL .EQ. 1) THEN
-               CALL SNL41 (IP, KMWAM, ACLOC, IMATRA, IMATDA, SSNL4, DSSNL4)
+               CALL SNL41 (IP, KMWAM, ACLOC, PHI, DPHIDN, SSNL4, DSSNL4)
              ELSE IF (MESNL .EQ. 2) THEN
-               CALL SNL4(IP, KMWAM, ACLOC, IMATRA, IMATDA)
+               CALL SNL4(IP, KMWAM, ACLOC, PHI, DPHIDN)
              ELSE IF (MESNL .EQ. 3) THEN
-               CALL SNL42(IP, KMWAM, ACLOC, IMATRA, IMATDA)
+               CALL SNL42(IP, KMWAM, ACLOC, PHI, DPHIDN)
              ELSE IF (MESNL .EQ. 4) THEN
-               CALL SNL43(IP, KMWAM, ACLOC, IMATRA, IMATDA, SFNL, DSNL)
+               CALL SNL43(IP, KMWAM, ACLOC, PHI, DPHIDN, SFNL, DSNL)
              ELSE IF (MESNL .EQ. 5) THEN
                ACLOC_WRT = REAL(ACLOC)
                SPSIG_WRT = REAL(SPSIG)
@@ -271,8 +271,8 @@
                  WRITE (DBG%FHNDL,*) 'XNL_WRT ERROR', IERR_WRT
                  CALL WWM_ABORT('XNL_WRT ERROR')
                ELSE
-                 IMATRA(:,:) = IMATRA(:,:) + XNL (:,:)
-                 IMATDA(:,:) = IMATDA(:,:) + DDIAG(:,:)
+                 PHI(:,:) = PHI(:,:) + XNL (:,:)
+                 DPHIDN(:,:) = DPHIDN(:,:) + DDIAG(:,:)
                END IF
              ELSE IF (MESNL .EQ. 6) THEN
 #ifdef SNL4_TSA
@@ -285,31 +285,31 @@
                WK_TSA = WK(:,IP)
                DEP_TSA = DEP(IP)
                NZZ = (MSC*(MSC+1))/2
-               CALL W3SNLX ( TMPAC_TSA, CG_TSA, WK_TSA, DEP_TSA, NZZ, IMATRA_TSA, IMATDA_TSA)
+               CALL W3SNLX ( TMPAC_TSA, CG_TSA, WK_TSA, DEP_TSA, NZZ, PHI_TSA, DPHIDN_TSA)
                DO IS = 1, MSC
                  DO ID = 1, MDC
-                   IMATRA(IS,ID) = IMATRA(IS,ID) + IMATRA_TSA(ID,IS) / CG(IS,IP)
-                   IMATDA(IS,ID) = IMATDA(IS,ID) + IMATDA_TSA(ID,IS)
+                   PHI(IS,ID) = PHI(IS,ID) + PHI_TSA(ID,IS) / CG(IS,IP)
+                   DPHIDN(IS,ID) = DPHIDN(IS,ID) + DPHIDN_TSA(ID,IS)
                  END DO
                END DO
 #endif
              END IF
            END IF
            IF (IDISP == IP) THEN
-             !CALL PLOT_SHADED_CONTOUR_POLAR(SPSIG/PI2,SPDIR*RADDEG,MSC,MDC,IMATRA/MAXVAL(IMATRA),50,MSC,MDC,'BEFORE ANY CALL')
+             !CALL PLOT_SHADED_CONTOUR_POLAR(SPSIG/PI2,SPDIR*RADDEG,MSC,MDC,PHI/MAXVAL(PHI),50,MSC,MDC,'BEFORE ANY CALL')
              !PAUSE
            END IF
          END IF ! ISELECT
 
          IF (LNANINFCHK) THEN
-           IF (SUM(IMATRA) .NE. SUM(IMATRA) .OR. SUM(IMATDA) .NE. SUM(IMATDA)) THEN
+           IF (SUM(PHI) .NE. SUM(PHI) .OR. SUM(DPHIDN) .NE. SUM(DPHIDN)) THEN
              WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT', IP, 'DUE TO SNL4'
              CALL WWM_ABORT('NAN at wwm_sourceterms.F90 l.368')
            END IF
          ENDIF
 
 #ifdef DEBUG
-         CALL LOCAL_DEBUG_IMATRA_IMATDA(IP, 20506, IMATRA, "step 3")
+         CALL LOCAL_DEBUG_PHI_DPHIDN(IP, 20506, PHI, "step 3")
 #endif
 
 
@@ -318,26 +318,26 @@
 #endif 
          IF ((ISELECT.EQ.3 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.20) .AND. .NOT. LRECALC) THEN
 
-           IMATRAT = IMATRA
+           PHIT = PHI
 
            IF (IOBP(IP) .EQ. 0 .OR. IOBP(IP) .EQ. 4) THEN
 
              IF (MESDS == 1) THEN
 #ifdef ST41
-               CALL W3SDS4_OLD(AWW3,WK(:,IP),CG(:,IP),UFRIC(IP),USTDIR(IP),DEP(IP),IMATRA1D, IMATDA1D) 
+               CALL W3SDS4_OLD(AWW3,WK(:,IP),CG(:,IP),UFRIC(IP),USTDIR(IP),DEP(IP),PHI1D, DPHIDN1D) 
 #elif ST42
-               CALL W3SDS4(AWW3,WK(:,IP),CG(:,IP),UFRIC(IP),USTDIR(IP),DEP(IP),IMATRA1D,IMATDA1D,BRLAMBDA,WHITECAP)
+               CALL W3SDS4(AWW3,WK(:,IP),CG(:,IP),UFRIC(IP),USTDIR(IP),DEP(IP),PHI1D,DPHIDN1D,BRLAMBDA,WHITECAP)
 #endif
-               CALL ONED2TWOD(IMATRA1D,IMATRAWW3)
-               CALL ONED2TWOD(IMATDA1D,IMATDAWW3)
+               CALL ONED2TWOD(PHI1D,PHIWW3)
+               CALL ONED2TWOD(DPHIDN1D,DPHIDNWW3)
                DO ID = 1, MDC
-                 SSDS(:,ID)   = IMATRAWW3(:,ID) / CG(:,IP)
-                 IMATRA(:,ID) = IMATRA(:,ID)+IMATRAWW3(:,ID) / CG(:,IP)
-                 !IMATDA(:,ID) = IMATDA(:,ID)+IMATDAWW3(:,ID) !/ CG(:,IP)
+                 SSDS(:,ID)   = PHIWW3(:,ID) / CG(:,IP)
+                 PHI(:,ID) = PHI(:,ID)+PHIWW3(:,ID) / CG(:,IP)
+                 !DPHIDN(:,ID) = DPHIDN(:,ID)+DPHIDNWW3(:,ID) !/ CG(:,IP)
                END DO
              ELSE IF (MESDS == 2) THEN
              ELSE IF (MESDS == 3) THEN
-               CALL SDS_NEDWAM_CYCLE4( IP, KMWAM, SME01, ETOT, ACLOC, IMATRA, IMATDA, SSDS  ) ! NEDWAM 
+               CALL SDS_NEDWAM_CYCLE4( IP, KMWAM, SME01, ETOT, ACLOC, PHI, DPHIDN, SSDS  ) ! NEDWAM 
              ELSE IF (MESDS == 4) THEN
                ABAB = 1.
                LPOW = 4.
@@ -356,19 +356,19 @@
                    EDENS(IS) = EDENS(IS) + ACLOC(IS,ID) *  SPSIG(IS) * PI2 * DDIR
                  END DO
                END DO
-               CALL CALC_SDS(IP,MSC,EDENS,FR,Kds,ABAB,LPOW,MPOW,a1,a2,ACLOC,IMATRA,IMATDA,SSDS)
-!              CALL SSWELL(IP,ETOT,ACLOC,IMATRA,IMATDA,URMSTOP,CG0)
+               CALL CALC_SDS(IP,MSC,EDENS,FR,Kds,ABAB,LPOW,MPOW,a1,a2,ACLOC,PHI,DPHIDN,SSDS)
+!              CALL SSWELL(IP,ETOT,ACLOC,PHI,DPHIDN,URMSTOP,CG0)
              END IF
            END IF
 #ifdef VDISLIN
            IF (IDISP == IP) THEN
-             CALL PLOT_SHADED_CONTOUR_POLAR(SPSIG/PI2,SPDIR*RADDEG,MSC,MDC,IMATRAT-IMATRA,50,MSC,MDC,'BEFORE ANY CALL')
+             CALL PLOT_SHADED_CONTOUR_POLAR(SPSIG/PI2,SPDIR*RADDEG,MSC,MDC,PHIT-PHI,50,MSC,MDC,'BEFORE ANY CALL')
            END IF
 #endif
          END IF
 
 #ifdef DEBUG
-         CALL LOCAL_DEBUG_IMATRA_IMATDA(IP, 20506, IMATRA, "step 4")
+         CALL LOCAL_DEBUG_PHI_DPHIDN(IP, 20506, PHI, "step 4")
 #endif
 
 #ifdef TIMINGS
@@ -377,28 +377,28 @@
          IF (((ISELECT.EQ.4 .OR. ISELECT.EQ.10) .AND.ISHALLOW(IP).EQ.1) .AND. .NOT. LRECALC) THEN
            IF (SUMACLOC .GT. VERYSMALL) THEN
              IF ((MESTR .EQ. 1).or.(MESTR .eq. 5) ) THEN
-               CALL TRIAD_ELDEBERKY(IP,HS,SME01,ACLOC,IMATRA,IMATDA,SSNL3,DSSNL3)
+               CALL TRIAD_ELDEBERKY(IP,HS,SME01,ACLOC,PHI,DPHIDN,SSNL3,DSSNL3)
              ELSE IF (MESTR .EQ. 2) THEN
-               CALL SNL31 (IP,HS,SME01,ACLOC,IMATRA,IMATDA,SSNL3)
+               CALL SNL31 (IP,HS,SME01,ACLOC,PHI,DPHIDN,SSNL3)
              ELSE IF (MESTR .EQ. 3) THEN
-               CALL SNL32 (IP,HS,SME01,ACLOC,IMATRA,IMATDA,SSNL3)
+               CALL SNL32 (IP,HS,SME01,ACLOC,PHI,DPHIDN,SSNL3)
              ELSE IF (MESTR .EQ. 4) THEN
-               CALL SNL33 (IP,HS,SME01,ACLOC,IMATRA,IMATDA,SSNL3)
+               CALL SNL33 (IP,HS,SME01,ACLOC,PHI,DPHIDN,SSNL3)
              ELSE IF (MESTR .EQ. 6) THEN
                CALL WWM_ABORT('NOT READ YET')
-               CALL TRIAD_DINGEMANS (IP,ACLOC,IMATRA,IMATDA,SSNL3)
+               CALL TRIAD_DINGEMANS (IP,ACLOC,PHI,DPHIDN,SSNL3)
              ELSE IF (MESTR .EQ. 7) THEN
                CALL WWM_ABORT('NOT READ YET')
                CALL snl3ta(ip,snl3,dsnl3)
                SSNL3 = SNL3
-               IMATRA = IMATRA + SNL3
-               IMATDA = IMATDA + DSNL3
+               PHI = PHI + SNL3
+               DPHIDN = DPHIDN + DSNL3
              END IF
            END IF
          END IF
 
 #ifdef DEBUG
-         CALL LOCAL_DEBUG_IMATRA_IMATDA(IP, 20506, IMATRA, "step 5")
+         CALL LOCAL_DEBUG_PHI_DPHIDN(IP, 20506, PHI, "step 5")
 #endif
 
 
@@ -408,7 +408,7 @@
          IF (MESBR .EQ. 1) THEN
            IF (((ISELECT.EQ.5 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.30) .AND. ISHALLOW(IP) .EQ. 1) .AND. .NOT. LRECALC) THEN
              IF (IOBP(IP) == 0 .OR. IOBP(IP) == 4 .OR. IOBP(IP) == 3) THEN
-               CALL SDS_SWB(IP,SME01,KMWAM,ETOT,HS,ACLOC, IMATRA,IMATDA,SSBR,DSSBR)
+               CALL SDS_SWB(IP,SME01,KMWAM,ETOT,HS,ACLOC, PHI,DPHIDN,SSBR,DSSBR)
              END IF
            ENDIF
          END IF
@@ -417,26 +417,26 @@
 #endif 
 
 #ifdef DEBUG
-         CALL LOCAL_DEBUG_IMATRA_IMATDA(IP, 20506, IMATRA, "step 6")
+         CALL LOCAL_DEBUG_PHI_DPHIDN(IP, 20506, PHI, "step 6")
 #endif
 
          IF (MESBF .GE. 1) THEN
            IF (((ISELECT.EQ.6 .OR. ISELECT.EQ.10 .OR. ISELECT.EQ.30) .AND. ISHALLOW(IP) .EQ. 1) .AND. .NOT. LRECALC) THEN
              IF (IOBP(IP) == 0 .OR. IOBP(IP) == 4 .OR. IOBP(IP) == 3) THEN
-              CALL SDS_BOTF(IP,ACLOC,IMATRA,IMATDA,SSBR,DSSBR)
+              CALL SDS_BOTF(IP,ACLOC,PHI,DPHIDN,SSBR,DSSBR)
              END IF
            END IF
          ENDIF
 
          IF (LNANINFCHK) THEN
-           IF (SUM(IMATRA) .NE. SUM(IMATRA) .OR. SUM(IMATDA) .NE. SUM(IMATDA)) THEN
+           IF (SUM(PHI) .NE. SUM(PHI) .OR. SUM(DPHIDN) .NE. SUM(DPHIDN)) THEN
              WRITE(DBG%FHNDL,*) 'NAN AT GRIDPOINT', IP, '   DUE TO SBF' 
              CALL WWM_ABORT('NAN in wwm_sourceterms.F90 at l.419')
            END IF
          ENDIF
 
 #ifdef DEBUG
-         CALL LOCAL_DEBUG_IMATRA_IMATDA(IP, 20506, IMATRA, "step 7")
+         CALL LOCAL_DEBUG_PHI_DPHIDN(IP, 20506, PHI, "step 7")
 #endif
 
 #ifdef TIMINGS
@@ -451,11 +451,11 @@
              AS      = 0.
 #ifdef ST41
              CALL W3SPR4_OLD ( AWW3, CG(:,IP), WK(:,IP), EMEAN, FMEAN, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS)
-             CALL W3SIN4_OLD ( AWW3, CG(:,IP), WK(:,IP), WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, IMATRA1D, IMATDA1D, LLWS)
+             CALL W3SIN4_OLD ( AWW3, CG(:,IP), WK(:,IP), WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, PHI1D, DPHIDN1D, LLWS)
              CALL W3SPR4_OLD ( AWW3, CG(:,IP), WK(:,IP), EMEAN, FMEAN, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS)
 #elif ST42
              CALL W3SPR4 ( AWW3, CG(:,IP), WK(:,IP), EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS)
-             CALL W3SIN4 ( IP, AWW3, CG(:,IP), WN2,  WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, IMATRA1D, IMATDA1D, LLWS, BRLAMBDA)
+             CALL W3SIN4 ( IP, AWW3, CG(:,IP), WN2,  WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, PHI1D, DPHIDN1D, LLWS, BRLAMBDA)
              CALL W3SPR4 ( AWW3, CG(:,IP), WK(:,IP), EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS)
 #else
              WRITE(DBG%FHNDL,*) 'NO ST42 or ST41 chosen but MESIN == 1'

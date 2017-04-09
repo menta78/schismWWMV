@@ -169,20 +169,20 @@
  EXPORT_WALV_DELTC       =  0.000000000000000E+000
  /
  &ENGS
- ISOURCE =           1,
+ ISOURCE =           2,
  MESNL   =           1,
  MESIN   =           1,
  IFRIC   =           1,
- MESBF   =           0,
+ MESBF   =           1,
  FRICC   =  1.900000000000000E-002,
- MESBR   =           0,
+ MESBR   =           1,
  ICRIT   =           1,
  IBREAK  =           1,
  ALPBJ   =   1.00000000000000     ,
  BRHD    =  0.700000000000000     ,
  LMAXETOT        = T,
  MESDS   =           1,
- MESTR   =           0,
+ MESTR   =           1,
  TRICO   =   1.00000000000000     ,
  TRIRA   =   2.50000000000000     ,
  TRIURS  =  0.100000000000000     

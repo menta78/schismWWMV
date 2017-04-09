@@ -2,14 +2,14 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SHALLOW_WATER (IP, ACLOC, IMATRA, IMATDA, SSBR, DSSBR, SSBF, DSSBF, SSBRL, SSNL3, DSSNL3)
+      SUBROUTINE SHALLOW_WATER (IP, ACLOC, PHI, DPHIDN, SSBR, DSSBR, SSBF, DSSBF, SSBRL, SSNL3, DSSNL3)
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)      :: IP
          REAL(rkind), INTENT(IN)  :: ACLOC(MSC,MDC)
 
-         REAL(rkind), INTENT(INOUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+         REAL(rkind), INTENT(INOUT) :: PHI(MSC,MDC), DPHIDN(MSC,MDC)
          REAL(rkind), INTENT(OUT) :: SSNL3(MSC,MDC),DSSNL3(MSC,MDC)
          REAL(rkind), INTENT(OUT) :: SSBR(MSC,MDC),DSSBR(MSC,MDC)
          REAL(rkind), INTENT(OUT) :: SSBRL(MSC,MDC)
@@ -46,15 +46,15 @@
 
          IF (ICOMP .GE. 2) THEN
            IF (optionCall .EQ. 1) THEN
-             IMATDA = IMATDA + DSSBR + DSSNL3 + DSSBF
-             IMATRA = IMATRA + SSBR  + SSNL3  + SSBF
+             DPHIDN = DPHIDN + DSSBR  + MAX(ZERO,-DSSNL3) + DSSBF
+             PHI    =    PHI +  SSBR  + MAX(ZERO,SSNL3)   
            ELSE IF (optionCall .EQ. 2) THEN 
-             IMATDA = IMATDA + DSSBR + DSSNL3 + DSSBF
-             IMATRA = IMATRA + SSBR  + SSNL3  + SSBF
+             DPHIDN = DPHIDN + DSSBR + DSSNL3 + DSSBF
+             PHI    = PHI    +  SSBR  + SSNL3  + SSBF
            ENDIF
          ELSE 
-           IMATDA = IMATDA + DSSBR + DSSNL3 + DSSBF
-           IMATRA = IMATRA + SSBR  + SSNL3  + SSBF
+           DPHIDN = DPHIDN + DSSBR + DSSNL3 + DSSBF
+           PHI    = PHI    +  SSBR  + SSNL3  + SSBF
          ENDIF
 
       END SUBROUTINE

@@ -2,7 +2,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SDS_NEDWAM_CYCLE4( IP, KMESPC, SMESPC, ETOT, ACLOC, IMATRA, IMATDA, SSDS )
+      SUBROUTINE SDS_NEDWAM_CYCLE4( IP, KMESPC, SMESPC, ETOT, ACLOC, PHI, DPHIDN, SSDS )
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -10,7 +10,7 @@
          REAL(rkind), INTENT(IN)      :: KMESPC, SMESPC, ETOT
          REAL(rkind), INTENT(IN)      :: ACLOC(MSC,MDC)
          REAL(rkind), INTENT(OUT)     :: SSDS(MSC,MDC)
-         REAL(rkind), INTENT(INOUT)   :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+         REAL(rkind), INTENT(INOUT)   :: PHI(MSC,MDC), DPHIDN(MSC,MDC)
  
          INTEGER                      :: IS, ID
          REAL(rkind)                  :: BSAT(MSC), PSAT(MSC), C_K(MSC)
@@ -57,10 +57,10 @@
            DO ID = 1, MDC
              SSDS(IS,ID)      = CDS * SATDIS * STP_OV * C_K(IS) * SIGMA
              IF (ICOMP .GE. 2) THEN
-               IMATDA(IS,ID) = IMATDA(IS,ID) + SSDS(IS,ID)
+               DPHIDN(IS,ID) = DPHIDN(IS,ID) + SSDS(IS,ID)
              ELSE IF (ICOMP .LT. 2) THEN
-               IMATDA(IS,ID) = IMATDA(IS,ID) - SSDS(IS,ID)
-               IMATRA(IS,ID) = IMATRA(IS,ID) - SSDS(IS,ID) * ACLOC(IS,ID)
+               DPHIDN(IS,ID) = DPHIDN(IS,ID) - SSDS(IS,ID)
+               PHI(IS,ID) = PHI(IS,ID) - SSDS(IS,ID) * ACLOC(IS,ID)
              END IF
            END DO
          END DO
@@ -70,7 +70,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SDS_NEDWAM_CYCLE3( IP, KMESPC, SMESPC, ETOT, ACLOC, IMATRA, IMATDA, SSDS )
+      SUBROUTINE SDS_NEDWAM_CYCLE3( IP, KMESPC, SMESPC, ETOT, ACLOC, PHI, DPHIDN, SSDS )
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -78,7 +78,7 @@
          REAL(rkind), INTENT(IN)      :: KMESPC, SMESPC, ETOT
          REAL(rkind), INTENT(OUT)     :: SSDS(MSC,MDC)
          REAL(rkind)   , INTENT(IN)   :: ACLOC(MSC,MDC)
-         REAL(rkind)   , INTENT(INOUT):: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+         REAL(rkind)   , INTENT(INOUT):: PHI(MSC,MDC), DPHIDN(MSC,MDC)
 
          INTEGER                      :: IS, ID
          REAL(rkind)                  :: BSAT(MSC), PSAT(MSC), C_K(MSC)
@@ -123,10 +123,10 @@
            DO ID = 1, MDC
              SSDS(IS,ID)      = CDS * SATDIS * STP_OV * C_K(IS) * SIGMA
              IF (ICOMP .GE. 2) THEN
-               IMATDA(IS,ID) = IMATDA(IS,ID) + SSDS(IS,ID)
+               DPHIDN(IS,ID) = DPHIDN(IS,ID) + SSDS(IS,ID)
              ELSE IF (ICOMP .LT. 2 ) THEN
-               IMATDA(IS,ID) = IMATDA(IS,ID) - SSDS(IS,ID)
-               IMATRA(IS,ID) = IMATRA(IS,ID) - SSDS(IS,ID) * ACLOC(IS,ID)
+               DPHIDN(IS,ID) = DPHIDN(IS,ID) - SSDS(IS,ID)
+               PHI(IS,ID) = PHI(IS,ID) - SSDS(IS,ID) * ACLOC(IS,ID)
              END IF
            END DO
          END DO

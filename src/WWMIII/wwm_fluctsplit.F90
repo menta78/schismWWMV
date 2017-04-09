@@ -1352,21 +1352,21 @@
          IF (ISOURCE == 2) THEN
            DO IP = 1, MNP
              IF (IOBWB(IP) .EQ. 1) THEN
-               GTEMP2 = IMATRAA(IS,ID,IP)/MAX((ONE-DT4A*IMATDAA(IS,ID,IP)),ONE)
+               GTEMP2 = PHIA(IS,ID,IP)/MAX((ONE-DT4A*DPHIDNA(IS,ID,IP)),ONE)
                DELFL  = COFRM4(IS)*DT4S
                USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
                FLHAB  = ABS(GTEMP2*DT4S)
                FLHAB  = MIN(FLHAB,USFM*DELFL)/DT4S
                B(IP)             = B(IP)+SIGN(FLHAB,GTEMP2)*DT4S*SI(IP) 
-               !LIMFAC            = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2))/MAX(THR,ABS(IMATRAA(IP,IS,ID))))
-               !ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP))-DT4A*LIMFAC*IMATDAA(IP,IS,ID) 
+               !LIMFAC            = MIN(ONE,ABS(SIGN(FLHAB,GTEMP2))/MAX(THR,ABS(PHIA(IP,IS,ID))))
+               !ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP))-DT4A*LIMFAC*DPHIDNA(IP,IS,ID) 
              ENDIF
            END DO
          ELSE
            DO IP = 1, MNP
              IF (IOBWB(IP) .EQ. 1) THEN
-               ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + IMATDAA(IS,ID,IP) * DT4A * SI(IP) ! Add source term to the diagonal
-               B(IP)             = B(IP) + IMATRAA(IS,ID,IP) * DT4A * SI(IP) ! Add source term to the right hand side
+               ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + DPHIDNA(IS,ID,IP) * DT4A * SI(IP) ! Add source term to the diagonal
+               B(IP)             = B(IP) + PHIA(IS,ID,IP) * DT4A * SI(IP) ! Add source term to the right hand side
              ENDIF
            END DO
          ENDIF
@@ -1392,7 +1392,7 @@
 !         WRITE(DBG%FHNDL,*) DT4A, MSC, MDC, MNE
 !         WRITE(DBG%FHNDL,*) 'WRITE CG', SUM(CG)
 !         WRITE(DBG%FHNDL,*) SUM(XP), SUM(YP)
-!         WRITE(DBG%FHNDL,*) SUM(IMATRAA), SUM(IMATDAA)
+!         WRITE(DBG%FHNDL,*) SUM(PHIA), SUM(DPHIDNA)
 !         WRITE(DBG%FHNDL,*) SUM(B), SUM(X)
 !         WRITE(DBG%FHNDL,*) SUM(IPAR), SUM(FPAR)
 !         WRITE(DBG%FHNDL,*) SUM(WKSP), SUM(INIU)
@@ -1550,8 +1550,8 @@
              IF (IOBWB(IP) .EQ. 1) THEN
                !GTEMP1 = MAX((1.-DT4A*FL(IP,ID,IS)),1.)
                !GTEMP2 = SL(IP,ID,IS)/GTEMP1/PI2/SPSIG(IS)
-               GTEMP1 = MAX((ONE-DT4A*IMATDAA(IS,ID,IP)),ONE)
-               GTEMP2 = IMATRAA(IP,IS,ID)/GTEMP1!/PI2/SPSIG(IS)
+               GTEMP1 = MAX((ONE-DT4A*DPHIDNA(IS,ID,IP)),ONE)
+               GTEMP2 = PHIA(IP,IS,ID)/GTEMP1!/PI2/SPSIG(IS)
                DELT = DT4S
                XIMP = 1.0
                DELT5 = XIMP*DELT
@@ -1565,15 +1565,15 @@
                !!B(IP)  = B(IP) + GTEMP2 * DT4A * SI(IP) ! Add source term to the right hand side
                !ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) - GTEMP2 * SI(IP)
 !This is then for the shallow water physics take care about ISELECT 
-               !ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + IMATDAA(IS,ID,IP) * DT4A * SI(IP) ! Add source term to the diagonal
-               !B(IP)             = B(IP) + IMATRAA(IP,IS,ID) * DT4A * SI(IP) ! Add source term to the right hand side
+               !ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + DPHIDNA(IS,ID,IP) * DT4A * SI(IP) ! Add source term to the diagonal
+               !B(IP)             = B(IP) + PHIA(IP,IS,ID) * DT4A * SI(IP) ! Add source term to the right hand side
              ENDIF
            END DO
          ELSE 
            DO IP = 1, MNP
              IF (IOBWB(IP) .EQ. 1) THEN
-               ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + IMATDAA(IS,ID,IP) * DT4A * SI(IP) ! Add source term to the diagonal
-               B(IP)             = B(IP) + IMATRAA(IS,ID,IP) * DT4A * SI(IP) ! Add source term to the right hand side
+               ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + DPHIDNA(IS,ID,IP) * DT4A * SI(IP) ! Add source term to the diagonal
+               B(IP)             = B(IP) + PHIA(IS,ID,IP) * DT4A * SI(IP) ! Add source term to the right hand side
              ENDIF
            END DO
          ENDIF
@@ -1641,7 +1641,7 @@
 !         WRITE(DBG%FHNDL,*) DT4A, MSC, MDC, MNE
 !         WRITE(DBG%FHNDL,*) 'WRITE CG', SUM(CG)
 !         WRITE(DBG%FHNDL,*) SUM(XP), SUM(YP)
-!         WRITE(DBG%FHNDL,*) SUM(IMATRAA), SUM(IMATDAA)
+!         WRITE(DBG%FHNDL,*) SUM(PHIA), SUM(DPHIDNA)
 !         WRITE(DBG%FHNDL,*) SUM(B), SUM(X)
 !         WRITE(DBG%FHNDL,*) SUM(IPAR), SUM(FPAR)
 !         WRITE(DBG%FHNDL,*) SUM(WKSP), SUM(INIU)
@@ -1870,8 +1870,8 @@
 
          IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN
            DO IP = 1, MNP
-             ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + IMATDAA(IS,ID,IP) * DT4A * SI(IP) ! Add source term to the diagonal
-             B(IP)             = B(IP) + IMATRAA(IS,ID,IP) * DT4A * SI(IP)             ! Add source term to the right hand side
+             ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + DPHIDNA(IS,ID,IP) * DT4A * SI(IP) ! Add source term to the diagonal
+             B(IP)             = B(IP) + PHIA(IS,ID,IP) * DT4A * SI(IP)             ! Add source term to the right hand side
            END DO
          END IF
 
@@ -2082,8 +2082,8 @@
 
          IF (ICOMP .GT. 0 .AND. SMETHOD .GT. 0)  THEN
            DO IP = 1, MNP
-             ASPAR1(I_DIAG(IP)) = ASPAR1(I_DIAG(IP)) + IMATDAA(IS,ID,IP) * DT1 * SI(IP) ! Add sourcee term to the diagonal
-             B1(IP)             = B1(IP) + IMATRAA(IS,ID,IP) * DT1 * SI(IP)             ! Add source term to the right hand side
+             ASPAR1(I_DIAG(IP)) = ASPAR1(I_DIAG(IP)) + DPHIDNA(IS,ID,IP) * DT1 * SI(IP) ! Add sourcee term to the diagonal
+             B1(IP)             = B1(IP) + PHIA(IS,ID,IP) * DT1 * SI(IP)             ! Add source term to the right hand side
            END DO
          END IF
 
@@ -2119,8 +2119,8 @@
 
          IF (ICOMP .GT. 0 .AND. SMETHOD .GT. 0)  THEN
            DO IP = 1, MNP
-             ASPAR2(I_DIAG(IP)) = ASPAR2(I_DIAG(IP)) + IMATDAA(IS,ID,IP) * DT2 * SI(IP) ! Add sourcee term to the diagonal
-             B2(IP)             = B2(IP) + IMATRAA(IS,ID,IP) * DT2 * SI(IP)             ! Add source term to the right hand side
+             ASPAR2(I_DIAG(IP)) = ASPAR2(I_DIAG(IP)) + DPHIDNA(IS,ID,IP) * DT2 * SI(IP) ! Add sourcee term to the diagonal
+             B2(IP)             = B2(IP) + PHIA(IS,ID,IP) * DT2 * SI(IP)             ! Add source term to the right hand side
            END DO
          END IF
 

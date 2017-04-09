@@ -206,8 +206,8 @@
          IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0) THEN
            DO IP = 1, NP_RES
              IF (IOBWB(IP) .EQ. 1) THEN
-               ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + IMATDAA(ISS,IDD,IP) * DT4A * SI(IP) ! Add source term to the diagonal
-               B(IP)             = B(IP) + IMATRAA(ISS,IDD,IP) * DT4A * SI(IP) ! Add source term to the right hand side
+               ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + DPHIDNA(ISS,IDD,IP) * DT4A * SI(IP) ! Add source term to the diagonal
+               B(IP)             = B(IP) + PHIA(ISS,IDD,IP) * DT4A * SI(IP) ! Add source term to the right hand side
              ENDIF
            END DO
          ENDIF

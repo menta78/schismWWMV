@@ -59,12 +59,12 @@
       ENDIF
       DO K = 1, NANG
         DO M = 1, NFRE
-          SSDSO(M,K) = SSDS(K,M)
-          DSSDSO(M,K) = DSSDS(K,M)
-          SSNL4O(M,K) = SSNL4(K,M)
+          SSDSO(M,K)   = SSDS(K,M)
+          DSSDSO(M,K)  = DSSDS(K,M)
+          SSNL4O(M,K)  = SSNL4(K,M)
           DSSNL4O(M,K) = DSSNL4(K,M)
-          SSINO(M,K) = SSIN(K,M)
-          DSSINO(M,K) = DSSIN(K,M)
+          SSINO(M,K)   = SSIN(K,M)
+          DSSINO(M,K)  = DSSIN(K,M)
         ENDDO
       ENDDO
       END SUBROUTINE WAM_PRE 

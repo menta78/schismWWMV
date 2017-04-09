@@ -10,14 +10,14 @@
       REAL(rkind), INTENT(INOUT) :: ACLOC(MSC,MDC)
       INTEGER       :: IS, ID
       REAL(rkind)   :: NEWDAC, SSBR(MSC,MDC)
-      REAL(rkind)   :: IMATRA(MSC,MDC), IMATDA(MSC,MDC), ACOLD(MSC,MDC)
+      REAL(rkind)   :: PHI(MSC,MDC), DPHIDN(MSC,MDC), ACOLD(MSC,MDC)
 
       ACOLD = ACLOC
-      CALL INT_PATANKAR(IP,ACLOC,IMATRA,IMATDA)
+      CALL INT_PATANKAR(IP,ACLOC,PHI,DPHIDN)
       DO IS = 1, MSC
         DO ID = 1, MDC
-          NEWDAC = IMATRA(IS,ID) * DT / (ONE-DT*MIN(ZERO,IMATDA(IS,ID)))
-!          write(*,*) NEWDAC / ( IMATRA(IS,ID) * DT )
+          NEWDAC = PHI(IS,ID) * DT / (ONE-DT*MIN(ZERO,DPHIDN(IS,ID)))
+!          write(*,*) NEWDAC / ( PHI(IS,ID) * DT )
           ACLOC(IS,ID) = MAX( ZERO, ACOLD(IS,ID) + NEWDAC )
         END DO
       END DO
@@ -28,12 +28,12 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INT_PATANKAR(IP,ACLOC,IMATRA,IMATDA)
+      SUBROUTINE INT_PATANKAR(IP,ACLOC,PHI,DPHIDN)
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(IN)      :: IP
       REAL(rkind), INTENT(IN)  :: ACLOC(MSC,MDC)
-      REAL(rkind), INTENT(OUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+      REAL(rkind), INTENT(OUT) :: PHI(MSC,MDC), DPHIDN(MSC,MDC)
       REAL(rkind)   :: SSINL(MSC,MDC)
       REAL(rkind)   :: SSINE(MSC,MDC),DSSINE(MSC,MDC)
       REAL(rkind)   :: SSDS(MSC,MDC),DSSDS(MSC,MDC)
@@ -49,7 +49,7 @@
       REAL(rkind)   :: SSNL4_WW3(MSC,MDC), SSBF_WW3(MSC,MDC)
       REAL(rkind)   :: SSBR_WW3(MSC,MDC)
 #endif
-      IMATDA = ZERO; IMATRA = ZERO
+      DPHIDN = ZERO; PHI = ZERO
 
       IF (IOBP(IP) .NE. 0 .AND. .NOT. LSOUBOUND) THEN
         RETURN
@@ -74,7 +74,7 @@
       END IF
 #endif
 !
-      CALL DEEP_WATER(IP, ACLOC, IMATRA, IMATDA, SSINE, DSSINE, SSDS, DSSDS, SSNL4, DSSNL4, SSINL)
+      CALL DEEP_WATER(IP, ACLOC, PHI, DPHIDN, SSINE, DSSINE, SSDS, DSSDS, SSNL4, DSSNL4, SSINL)
 !
 #ifdef DEBUG
       IF (IP .eq. TESTNODE) THEN
@@ -82,7 +82,7 @@
       END IF
 #endif
 !
-      IF (ISHALLOW(IP) .EQ. 1) CALL SHALLOW_WATER(IP, ACLOC, IMATRA, IMATDA, SSBR, DSSBR, SSBF, DSSBF, SSBRL, SSNL3, DSSNL3)
+      IF (ISHALLOW(IP) .EQ. 1) CALL SHALLOW_WATER(IP, ACLOC, PHI, DPHIDN, SSBR, DSSBR, SSBF, DSSBF, SSBRL, SSNL3, DSSNL3)
 !
 #ifdef DEBUG
       IF (IP .eq. TESTNODE) THEN
@@ -118,8 +118,8 @@
          WRITE(740+myrank,*) 'BOT. FRIC(DSSBF) =', SUM(DSSBF), MINVAL(DSSBF), MAXVAL(DSSBF)
          WRITE(740+myrank,*) 'BREAKING(SSBR)   =', SUM(SSBR),  MINVAL(SSBR),  MAXVAL(SSBR)
          WRITE(740+myrank,*) 'BREAKING(DSSBR)  =', SUM(DSSBR), MINVAL(DSSBR), MAXVAL(DSSBR)
-         WRITE(740+myrank,*) 'TOTAL SRC(IMATRA)=', SUM(IMATRA), MINVAL(IMATRA), MAXVAL(IMATRA)
-         WRITE(740+myrank,*) 'TOTAL SRC(IMATDA)=', SUM(IMATDA), MINVAL(IMATDA), MAXVAL(IMATDA)
+         WRITE(740+myrank,*) 'TOTAL SRC(PHI)=', SUM(PHI), MINVAL(PHI), MAXVAL(PHI)
+         WRITE(740+myrank,*) 'TOTAL SRC(DPHIDN)=', SUM(DPHIDN), MINVAL(DPHIDN), MAXVAL(DPHIDN)
       END IF
 #endif
 
@@ -133,7 +133,7 @@
       WRITE(*,'(A20,6E20.10)') 'SNL4', SUM(SSNL4), SUM(DSSNL4), MINVAL(SSNL4), MAXVAL(SSNL4), MINVAL(DSSNL4), MAXVAL(DSSNL4)
       WRITE(*,'(A20,6E20.10)') 'BOTTOM FRICTION', SUM(SSBF), SUM(DSSBF), MINVAL(SSBF), MAXVAL(SSBF), MINVAL(DSSBF), MAXVAL(DSSBF)
       WRITE(*,'(A20,6E20.10)') 'BREAKING', SUM(SSBR), SUM(DSSBR), MINVAL(SSBR), MAXVAL(SSBR), MINVAL(DSSBR), MAXVAL(DSSBR)
-      WRITE(*,'(A20,6E20.10)') 'TOTAL SOURCE TERMS', SUM(IMATRA), SUM(IMATDA), MINVAL(IMATRA), MAXVAL(IMATRA), MINVAL(IMATDA), MAXVAL(IMATDA)
+      WRITE(*,'(A20,6E20.10)') 'TOTAL SOURCE TERMS', SUM(PHI), SUM(DPHIDN), MINVAL(PHI), MAXVAL(PHI), MINVAL(DPHIDN), MAXVAL(DPHIDN)
 #endif
       END SUBROUTINE
 !**********************************************************************
@@ -199,19 +199,19 @@
          USE DATAPOOL
          IMPLICIT NONE
          INTEGER     :: IP
-         REAL(rkind) :: ACLOC(MSC,MDC),IMATRA(MSC,MDC),IMATDA(MSC,MDC)
+         REAL(rkind) :: ACLOC(MSC,MDC),PHI(MSC,MDC),DPHIDN(MSC,MDC)
 
          DO IP = 1, MNP
            ACLOC = AC2(:,:,IP)
            IF (SMETHOD == 1) THEN
-             CALL INT_PATANKAR(IP,ACLOC,IMATRA,IMATDA)
+             CALL INT_PATANKAR(IP,ACLOC,PHI,DPHIDN)
            ENDIF
-           IMATRAA(:,:,IP) = IMATRA
-           IMATDAA(:,:,IP) = IMATDA
+           PHIA(:,:,IP) = PHI
+           DPHIDNA(:,:,IP) = DPHIDN
          ENDDO
 
 #ifdef DEBUG_SOURCE_TERM
-         WRITE(*,*) 'SOURCES_IMPLICIT', SUM(IMATRAA), SUM(IMATDAA)
+         WRITE(*,*) 'SOURCES_IMPLICIT', SUM(PHIA), SUM(DPHIDNA)
 #endif
       END SUBROUTINE
 !**********************************************************************

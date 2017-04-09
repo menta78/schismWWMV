@@ -3,7 +3,7 @@ MODULE SdsBabanin
 
 CONTAINS
 
-  subroutine calc_Sds(ip,nfreq,EDENS,f,Kds,ANAR_IN,LPOW,MPOW,a1,a2,ACLOC,IMATRA,IMATDA,SSDS)
+  subroutine calc_Sds(ip,nfreq,EDENS,f,Kds,ANAR_IN,LPOW,MPOW,a1,a2,ACLOC,PHI,DPHIDN,SSDS)
     USE DATAPOOL
     IMPLICIT NONE
 
@@ -23,7 +23,7 @@ CONTAINS
     integer                 , INTENT(IN)  ::  nfreq      ! # freqs
     real(rkind)             , INTENT(OUT) ::  SSDS(MSC,MDC) !
     real(rkind)             , INTENT(IN)  :: ACLOC(MSC,MDC)
-    real(rkind)             , INTENT(INOUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+    real(rkind)             , INTENT(INOUT) :: PHI(MSC,MDC), DPHIDN(MSC,MDC)
     real(rkind)             , INTENT(OUT) ::  Kds(:)     ! Kds(f)=Sds(f)/E(f)
 
     real(rkind)             ::  Sds(nfreq)     ! Sds(f), the source term
@@ -155,10 +155,10 @@ CONTAINS
       DO ID = 1, MDC
         SSDS(IS,ID) = KDS(IS)
         IF (ICOMP .GE. 2) THEN
-          IMATDA(IS,ID) = IMATDA(IS,ID) + Kds(IS)
+          DPHIDN(IS,ID) = DPHIDN(IS,ID) + Kds(IS)
         ELSE
-          IMATDA(IS,ID) = IMATDA(IS,ID) - kds(IS)
-          IMATRA(IS,ID) = IMATRA(IS,ID) - kds(IS) * ACLOC(IS,ID)
+          DPHIDN(IS,ID) = DPHIDN(IS,ID) - kds(IS)
+          PHI(IS,ID) = PHI(IS,ID) - kds(IS) * ACLOC(IS,ID)
         END IF
       END DO
     END DO
@@ -508,10 +508,10 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
 
 
 !****************************************************************
-  SUBROUTINE SSWELL (IP,ETOT,ACLOC,IMATRA, IMATDA,URMSTOP,CGo)
+  SUBROUTINE SSWELL (IP,ETOT,ACLOC,PHI, DPHIDN,URMSTOP,CGo)
 
 ! note that CGo is for diagnostic purposes only, may be excluded
-! excluded : SPCDIR AC2 DEP2 IMATRA
+! excluded : SPCDIR AC2 DEP2 PHI
 
 !****************************************************************
     USE DATAPOOL, ONLY : RKIND, RHOAW, RHOW, SPSIG, G9, WK, THR, MSC, SIGPOW
@@ -523,8 +523,8 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
     REAL(rkind)   , INTENT(IN)    :: CGo(:,:)   ! CGo(MSC,MICMAX) ! group velocity without currents, but includes depth effects
     REAL(rkind)   , INTENT(IN)    :: URMSTOP
 
-    REAL(rkind)   , INTENT(INOUT) :: IMATDA(:,:) ! IMATDA(MDC,MSC)
-    REAL(rkind)   , INTENT(INOUT) :: IMATRA(:,:) ! IMATDA(MDC,MSC)
+    REAL(rkind)   , INTENT(INOUT) :: DPHIDN(:,:) ! DPHIDN(MDC,MSC)
+    REAL(rkind)   , INTENT(INOUT) :: PHI(:,:) ! DPHIDN(MDC,MSC)
     REAL(rkind)   , INTENT(IN)    :: ACLOC(:,:) ! ACLOC(MDC,MSC)
 
 !   local constants:
@@ -545,7 +545,7 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
 ! In general....
 ! @N/@t=S/sig=C(sig)*E(sig,theta)/sig=C(sig)*N(sig,theta)
 ! where C(sig) has units of rad/sec
-! ...so if we are passing to IMATDA, we just need to pass C(sig)
+! ...so if we are passing to DPHIDN, we just need to pass C(sig)
 ! Here, SWDIS(IS) is my C(sig)
 
     aorb=2.0*sqrt(ETOT)
@@ -575,15 +575,15 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
 
     DO IS=1, MSC 
       DO ID = 1, MSC
-         IMATDA(IS,ID) = IMATDA(IS,ID) + SWDIS(IS)
-         IF (ACLOC(IS,ID) .GT. THR) IMATRA(IS,ID) = SWDIS(IS) * ACLOC(IS,ID)
+         DPHIDN(IS,ID) = DPHIDN(IS,ID) + SWDIS(IS)
+         IF (ACLOC(IS,ID) .GT. THR) PHI(IS,ID) = SWDIS(IS) * ACLOC(IS,ID)
       END DO
     END DO
 
     RETURN
   END SUBROUTINE SSWELL
 
-  SUBROUTINE SWIND_DBYB (IP,WIND10,THETAW,IMATRA,SSINE)   ! 30.21
+  SUBROUTINE SWIND_DBYB (IP,WIND10,THETAW,PHI,SSINE)   ! 30.21
 
     use datapool
     implicit none
@@ -595,7 +595,7 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
 
     REAL(rkind)      :: THETAW, SIGMA, SWINEB, CTW, STW, COSDIF, TEMP2, UoverC, WIND10
 !
-    REAL(rkind)      :: S_IN(MSC,MDC), IMATRA(MSC,MDC)
+    REAL(rkind)      :: S_IN(MSC,MDC), PHI(MSC,MDC)
     REAL(rkind), INTENT(OUT) :: SSINE(MSC,MDC)
 !
     REAL(rkind)      :: DMAX,AINV
@@ -686,7 +686,7 @@ subroutine calc_Lfactor(ip,Lfactor_S,S_in,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WI
        DO ID = 1, MDC
           IF ( WIND10 .GT. VERYSMALL ) THEN
              S_IN(IS,ID)= S_IN(IS,ID) * Lfactor(IS)
-             IMATRA(IS,ID) = IMATRA(IS,ID) + S_IN(IS,ID)/SPSIG(IS) 
+             PHI(IS,ID) = PHI(IS,ID) + S_IN(IS,ID)/SPSIG(IS) 
              SWINEB=S_IN(IS,ID)/(AC2(IS,ID,IP)*SPSIG(IS))
           END IF
        ENDDO

@@ -59,16 +59,8 @@
           STRI = SA(IS,ID) - TWO*(TRI_WISP*SA(IS+TRI_ISP1,ID) + TRI_WISP1*SA(IS+TRI_ISP,ID))
           IF (ABS(STRI) .LT. THR) CYCLE
           eCont = STRI / SIGPI
-          IF (ICOMP .GE. 2) THEN
-            IF (STRI .GT. 0.) THEN
-              SSNL3(IS,ID)  = eCont
-            ELSE
-              DSSNL3(IS,ID) = - eCont/ACLOC(IS,ID)
-            END IF
-          ELSE
-            SSNL3(IS,ID)  = eCont
-            DSSNL3(IS,ID) = eCont / ACLOC(IS,ID)
-          END IF
+          SSNL3(IS,ID)  = eCont
+          DSSNL3(IS,ID) = eCont / ACLOC(IS,ID)
         END DO
       END DO
       END SUBROUTINE

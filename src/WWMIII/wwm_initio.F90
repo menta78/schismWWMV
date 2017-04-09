@@ -75,10 +75,10 @@
 !       FLUSH(STAT%FHNDL)
 
        IF (ICOMP .GE. 2) THEN
-         ALLOCATE (IMATRAA(MSC,MDC,MNP), IMATDAA(MSC,MDC,MNP), stat=istat)
+         ALLOCATE (PHIA(MSC,MDC,MNP), DPHIDNA(MSC,MDC,MNP), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 10')
-         IMATRAA = zero
-         IMATDAA = zero
+         PHIA = zero
+         DPHIDNA = zero
        END IF
 
 !       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 8'
@@ -415,7 +415,7 @@
       END IF
       DEALLOCATE (AC2, AC1)
       IF (ICOMP .GE. 2) THEN
-        DEALLOCATE (IMATRAA, IMATDAA)
+        DEALLOCATE (PHIA, DPHIDNA)
       END IF
 
       IF (LITERSPLIT) THEN

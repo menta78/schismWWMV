@@ -711,8 +711,8 @@
 !
 ! ... implicit source terms
 !
-         REAL(rkind), ALLOCATABLE        :: IMATDAA(:,:,:)
-         REAL(rkind), ALLOCATABLE        :: IMATRAA(:,:,:)
+         REAL(rkind), ALLOCATABLE        :: DPHIDNA(:,:,:)
+         REAL(rkind), ALLOCATABLE        :: PHIA(:,:,:)
 !
 ! ... boundary mappings
 !

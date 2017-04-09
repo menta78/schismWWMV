@@ -207,7 +207,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SIN_EXP_KOMEN( IP, WINDTH, ACLOC, IMATRA, IMATDA, SSINE )
+      SUBROUTINE SIN_EXP_KOMEN( IP, WINDTH, ACLOC, PHI, DPHIDN, SSINE )
          USE DATAPOOL
          IMPLICIT NONE
 !
@@ -217,7 +217,7 @@
          REAL(rkind)   , INTENT(IN)   :: WINDTH
          REAL(rkind)   , INTENT(IN)   :: ACLOC(MSC,MDC)
          REAL(rkind)   , INTENT(OUT)  :: SSINE(MSC,MDC)
-         REAL(rkind)   , INTENT(INOUT):: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+         REAL(rkind)   , INTENT(INOUT):: PHI(MSC,MDC), DPHIDN(MSC,MDC)
 
          INTEGER                      :: IS, ID
          REAL(rkind)                  :: AUX1, AUX2, AUX3
@@ -235,7 +235,7 @@
               SWINB = MAX( 0.0_rkind, SWINB * SPSIG(IS) )
               SSINE(IS,ID) = SWINB * ACLOC(IS,ID)
               !WRITE(DBG%FHNDL,'(2I10,4F15.8)') IS, ID, SSINE(IS,ID), AUX3, AUX2, AUX1
-              IMATRA(IS,ID) = IMATRA(IS,ID) + SSINE(IS,ID)
+              PHI(IS,ID) = PHI(IS,ID) + SSINE(IS,ID)
             END DO
          END DO
 
@@ -244,7 +244,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SIN_MAKIN(IP, WIND10, WINDTH, KMESPC, ETOT, ACLOC, IMATRA, IMATDA, SSINE)
+      SUBROUTINE SIN_MAKIN(IP, WIND10, WINDTH, KMESPC, ETOT, ACLOC, PHI, DPHIDN, SSINE)
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -252,7 +252,7 @@
          REAL(rkind)   , INTENT(IN)    :: WIND10, WINDTH
          REAL(rkind)   , INTENT(IN)    :: ACLOC(MSC,MDC)
          REAL(rkind)   , INTENT(OUT)   :: SSINE(MSC,MDC)
-         REAL(rkind)   , INTENT(INOUT) :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+         REAL(rkind)   , INTENT(INOUT) :: PHI(MSC,MDC), DPHIDN(MSC,MDC)
 
          INTEGER             :: IS, ID
          REAL(rkind)                :: AUX1, AUX2
@@ -321,16 +321,16 @@
 
              IF (ICOMP .GE. 2) THEN
                IF (SWINB .LT. 0) THEN
-                 IMATDA(IS,ID) = - SWINB
+                 DPHIDN(IS,ID) = - SWINB
                ELSE
-                 IMATRA(IS,ID) =  IMATRA(IS,ID) + SSINE(IS,ID)
+                 PHI(IS,ID) =  PHI(IS,ID) + SSINE(IS,ID)
                END IF
              ELSE IF (ICOMP .LT. 2) THEN
                IF (SWINB .LT. 0) THEN
-                 IMATDA(IS,ID) = SWINB
-                 IMATRA(IS,ID) = IMATRA(IS,ID) + SSINE(IS,ID)
+                 DPHIDN(IS,ID) = SWINB
+                 PHI(IS,ID) = PHI(IS,ID) + SSINE(IS,ID)
                ELSE
-                 IMATRA(IS,ID) = IMATRA(IS,ID) + SSINE(IS,ID)
+                 PHI(IS,ID) = PHI(IS,ID) + SSINE(IS,ID)
                END IF
              END IF
 

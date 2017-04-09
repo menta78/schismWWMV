@@ -862,17 +862,17 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-     SUBROUTINE CONVERT_VS_VD_WWM(IP, VS, VD, IMATRA_R, IMATDA_R)
+     SUBROUTINE CONVERT_VS_VD_WWM(IP, VS, VD, PHI_R, DPHIDN_R)
      USE DATAPOOL
      IMPLICIT NONE
      INTEGER, intent(in) :: IP
      REAL(rkind), intent(in) :: VS(NSPEC), VD(NSPEC)
-     REAL(rkind), intent(out) :: IMATRA_R(MSC,MDC), IMATDA_R(MSC,MDC)
+     REAL(rkind), intent(out) :: PHI_R(MSC,MDC), DPHIDN_R(MSC,MDC)
      INTEGER :: IS, ID
      DO IS=1,MSC
        DO ID=1,MDC
-          IMATRA_R(IS,ID) = VS(ID + (IS-1) * MDC) / CG(IS,IP)
-          IMATDA_R(IS,ID) = VD(ID + (IS-1) * MDC)
+          PHI_R(IS,ID) = VS(ID + (IS-1) * MDC) / CG(IS,IP)
+          DPHIDN_R(IS,ID) = VD(ID + (IS-1) * MDC)
        END DO
      END DO
      END SUBROUTINE
@@ -2961,11 +2961,11 @@
             WRITE(STAT%FHNDL,*) 'ID=', ID, ' IOBPD=', IOBPD(ID,IP)
           END DO
           IF (ICOMP .GE. 2) THEN
-            WRITE(STAT%FHNDL,*) 'min/max(IMATRAA)=', minval(IMATRAA(:,:,IP)), maxval(IMATRAA(:,:,IP))
-            WRITE(STAT%FHNDL,*) 'min/max(IMATDAA)=', minval(IMATDAA(:,:,IP)), maxval(IMATDAA(:,:,IP))
+            WRITE(STAT%FHNDL,*) 'min/max(PHIA)=', minval(PHIA(:,:,IP)), maxval(PHIA(:,:,IP))
+            WRITE(STAT%FHNDL,*) 'min/max(DPHIDNA)=', minval(DPHIDNA(:,:,IP)), maxval(DPHIDNA(:,:,IP))
             DO IS=1,MSC
               DO ID=1,MDC
-                WRITE(STAT%FHNDL,*) 'ID/IS=', ID, IS, ' TR/TD=', IMATRAA(IS,ID,IP), IMATDAA(IS,ID,IP)
+                WRITE(STAT%FHNDL,*) 'ID/IS=', ID, IS, ' TR/TD=', PHIA(IS,ID,IP), DPHIDNA(IS,ID,IP)
               END DO
             END DO
           END IF

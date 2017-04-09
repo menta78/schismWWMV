@@ -789,20 +789,20 @@
       REAL(rkind), intent(out) :: BSIDE(MSC,MDC)
       REAL(rkind), intent(out) :: DIAG (MSC,MDC)
       REAL(rkind), intent(out) :: BLOC(MSC,MDC)
-      REAL(rkind)              :: IMATRA(MSC,MDC)
-      REAL(rkind)              :: IMATDA(MSC,MDC)
+      REAL(rkind)              :: PHI(MSC,MDC)
+      REAL(rkind)              :: DPHIDN(MSC,MDC)
       REAL(rkind)              :: eVal
-      REAL(rkind)              :: eIMATRA, TheFactor, DVS1, DVS2
+      REAL(rkind)              :: ePHI, TheFactor, DVS1, DVS2
       REAL(rkind)              :: DAM(MSC), MAXDAC, eDAM
       REAL(rkind)              :: DELFL(MSC), eFric, USFM
       INTEGER IS, ID
-      IMATRA=ZERO
-      IMATDA=ZERO
+      PHI=ZERO
+      DPHIDN=ZERO
       IF (LNONL) THEN
          CALL SOURCES_IMPLICIT 
       ELSE
-        IMATDA = IMATDAA(:,:,IP)
-        IMATRA = IMATRAA(:,:,IP)
+        DPHIDN = DPHIDNA(:,:,IP)
+        PHI = PHIA(:,:,IP)
       END IF
       IF (LLIMT .and. WW3_STYLE_LIMIT_SRC_TERM) THEN
          DELFL  = COFRM4*DT4S
@@ -821,11 +821,11 @@
                END IF
             END IF
             DO ID=1,MDC
-               TheFactor = DT4A / MAX(ONE, ONE - DT4A * IMATDA(IS,ID))
-               DVS1 = IMATRA(IS,ID) * TheFactor
+               TheFactor = DT4A / MAX(ONE, ONE - DT4A * DPHIDN(IS,ID))
+               DVS1 = PHI(IS,ID) * TheFactor
                DVS2 = SIGN(MIN(MAXDAC, ABS(DVS1)), DVS1)
-               eIMATRA = DVS2 / TheFactor
-               IMATRA(IS,ID)  = eIMATRA
+               ePHI = DVS2 / TheFactor
+               PHI(IS,ID)  = ePHI
             END DO
          END DO
       END IF
@@ -835,16 +835,16 @@
       CALL GET_BLOCAL(IP, ACin1, BLOC)
 !
       IF (optionCall .eq. 1) THEN
-        BSIDE = eVal * IMATRA
-        DIAG  = eVal * IMATDA
+        BSIDE = eVal * PHI
+        DIAG  = eVal * DPHIDN
       ELSE IF (optionCall .eq. 2) THEN
-        BSIDE =  eVal * (IMATRA - MIN(ZERO,IMATDA) * Acin2(:,:,IP))
-        DIAG  = -eVal * MIN(ZERO,IMATDA)
+        BSIDE =  eVal * (PHI - MIN(ZERO,DPHIDN) * Acin2(:,:,IP))
+        DIAG  = -eVal * MIN(ZERO,DPHIDN)
       END IF
 !
 
 #ifdef DEBUG_SOURCE_TERM
-      WRITE(*,'(I10,10G20.10,A40)') IP, SUM(ACin1), SUM(ACin2), SUM(IMATRA), SUM(IMATDA), SUM(BSIDE), SUM(DIAG), SUM(BLOC), eval, 'GET_BSIDE_DIAG'
+      WRITE(*,'(I10,10G20.10,A40)') IP, SUM(ACin1), SUM(ACin2), SUM(PHI), SUM(DPHIDN), SUM(BSIDE), SUM(DIAG), SUM(BLOC), eval, 'GET_BSIDE_DIAG'
 #endif
 
       END SUBROUTINE

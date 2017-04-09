@@ -2,7 +2,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE ST4_PRE (IP, ACLOC, IMATRA, IMATDA, SSINE, DSSINE, SSDS, DSSDS, SSNL4, DSSNL4, SSINL)
+      SUBROUTINE ST4_PRE (IP, ACLOC, PHI, DPHIDN, SSINE, DSSINE, SSDS, DSSDS, SSNL4, DSSNL4, SSINL)
       USE DATAPOOL
       USE W3SRC4MD
       IMPLICIT NONE
@@ -10,7 +10,7 @@
       INTEGER, INTENT(IN)        :: IP
       REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
 
-      REAL(rkind), INTENT(OUT)   :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+      REAL(rkind), INTENT(OUT)   :: PHI(MSC,MDC), DPHIDN(MSC,MDC)
       REAL(rkind), INTENT(OUT)   :: SSINE(MSC,MDC), DSSINE(MSC,MDC) 
       REAL(rkind), INTENT(OUT)   :: SSDS(MSC,MDC),DSSDS(MSC,MDC)
       REAL(rkind), INTENT(OUT)   :: SSNL4(MSC,MDC),DSSNL4(MSC,MDC)
@@ -104,15 +104,15 @@
 !
       IF (ICOMP .GE. 2) THEN
         IF (optionCall .eq. 1) then
-          IMATRA = SSINL + SSINE  + SSNL4  + SSDS
-          IMATDA =                - DSSNL4 - DSSDS 
+          PHI = SSINL + SSINE  + SSNL4  + SSDS
+          DPHIDN =                - DSSNL4 - DSSDS 
         ELSEIF (optionCall .eq. 2) then
-          IMATRA = SSINL + SSINE  + SSNL4  + SSDS
-          IMATDA =         DSSINE + DSSNL4 + DSSDS
+          PHI = SSINL + SSINE  + SSNL4  + SSDS
+          DPHIDN =         DSSINE + DSSNL4 + DSSDS
         ENDIF
       ELSE 
-        IMATRA = SSINL + SSINE  + SSNL4  + SSDS
-        IMATDA =         DSSINE + DSSNL4 + DSSDS
+        PHI = SSINL + SSINE  + SSNL4  + SSDS
+        DPHIDN =         DSSINE + DSSNL4 + DSSDS
       ENDIF
 !
       END SUBROUTINE
@@ -133,9 +133,9 @@
 
         INTEGER                    :: IS, ID, IK, ITH, ITH2, IS0
 
-        REAL(rkind)                :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+        REAL(rkind)                :: PHI(MSC,MDC), DPHIDN(MSC,MDC)
         REAL(rkind)                :: AWW3(NSPEC), WN2(MSC*MDC), BRLAMBDA(NSPEC)
-        REAL(rkind)                :: IMATDA1D(NSPEC), IMATRA1D(NSPEC), TMP_DS(MSC)
+        REAL(rkind)                :: DPHIDN1D(NSPEC), PHI1D(NSPEC), TMP_DS(MSC)
 
         REAL(rkind)                :: ETOT, FAVG, FMEAN1, WNMEAN, AS, FAVGWS
         REAL(rkind)                :: TAUWAX, TAUWAY, AMAX, WIND10, WINDTH
@@ -164,16 +164,16 @@
         CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
         CALL W3SPR4 ( AWW3, CG(:,IP), WK(:,IP), EMEAN(IP), FMEAN(IP), FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS(IP))
         IF (EMEAN(IP) .LT. THR .AND. WIND10 .GT. THR) CALL SIN_LIN_CAV(IP,WINDTH,FPM,SSINL)
-        CALL W3SIN4 ( IP, AWW3, CG(:,IP), WN2,  WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, IMATRA1D, IMATDA1D, LLWS, BRLAMBDA)
+        CALL W3SIN4 ( IP, AWW3, CG(:,IP), WN2,  WIND10, UFRIC(IP), RHOAW, AS, WINDTH, Z0(IP), CD(IP), TAUWX(IP), TAUWY(IP), TAUWAX, TAUWAY, PHI1D, DPHIDN1D, LLWS, BRLAMBDA)
         CALL W3SPR4 ( AWW3, CG(:,IP), WK(:,IP), EMEAN(IP), FMEAN(IP), FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS(IP))
-        CALL CONVERT_VS_VD_WWM(IP, IMATRA1D, IMATDA1D, SSINE, DSSINE)
+        CALL CONVERT_VS_VD_WWM(IP, PHI1D, DPHIDN1D, SSINE, DSSINE)
 !
 ! dissipation 
 !
-        CALL W3SDS4(AWW3,WK(:,IP),CG(:,IP),UFRIC(IP),USTDIR(IP),DEP(IP),IMATRA1D,IMATDA1D,BRLAMBDA,WHITECAP)
-        CALL CONVERT_VS_VD_WWM(IP, IMATRA1D, IMATDA1D, SSDS, DSSDS)
-        IMATRA = IMATRA + SSDS
-        IMATDA = IMATDA + DSSDS
+        CALL W3SDS4(AWW3,WK(:,IP),CG(:,IP),UFRIC(IP),USTDIR(IP),DEP(IP),PHI1D,DPHIDN1D,BRLAMBDA,WHITECAP)
+        CALL CONVERT_VS_VD_WWM(IP, PHI1D, DPHIDN1D, SSDS, DSSDS)
+        PHI = PHI + SSDS
+        DPHIDN = DPHIDN + DSSDS
 
 ! missing high freq. tail contribution -> 2do
 

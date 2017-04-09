@@ -2,14 +2,14 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE CYCLE3_PRE (IP, ACLOC, IMATRA, IMATDA, SSINE, DSSINE, SSDS, DSSDS, SSNL4, DSSNL4, SSINL)
+      SUBROUTINE CYCLE3_PRE (IP, ACLOC, PHI, DPHIDN, SSINE, DSSINE, SSDS, DSSDS, SSNL4, DSSNL4, SSINL)
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)        :: IP
          REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
 
-         REAL(rkind), INTENT(OUT)   :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+         REAL(rkind), INTENT(OUT)   :: PHI(MSC,MDC), DPHIDN(MSC,MDC)
          REAL(rkind), INTENT(OUT)   :: SSINL(MSC,MDC)
          REAL(rkind), INTENT(OUT)   :: SSINE(MSC,MDC),DSSINE(MSC,MDC)
          REAL(rkind), INTENT(OUT)   :: SSDS(MSC,MDC),DSSDS(MSC,MDC)
@@ -39,24 +39,24 @@
          IF (MESDS .GT. 0) CALL SDS_CYCLE3_NEW ( IP, KMWAM, SME10, ETOT, ACLOC, SSDS, DSSDS )
          IF (MESNL .GT. 0) CALL SNL41(IP, KMWAM, ACLOC, SSNL4, DSSNL4)
 
-         IMATRA = SSINL + SSINE +  SSDS +  SSNL4 
-         IMATDA =        DSSINE + DSSDS + DSSNL4 
+         PHI = SSINL + SSINE +  SSDS +  SSNL4 
+         DPHIDN =        DSSINE + DSSDS + DSSNL4 
 
          IF (LSOURCESLIM) THEN
            DO IS = 1, MSC
              MAXDAC = 0.00081_rkind/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
              DO ID = 1, MDC
-               NEWDAC = IMATRA(IS,ID)*DT4A/(1.0-DT4A*MIN(ZERO,IMATDA(IS,ID)))
+               NEWDAC = PHI(IS,ID)*DT4A/(1.0-DT4A*MIN(ZERO,DPHIDN(IS,ID)))
                LIMDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
-               IMATRA(IS,ID) = LIMDAC/DT4A
+               PHI(IS,ID) = LIMDAC/DT4A
                !SSLIM(IS,ID)  = SIGN(ABS(NEWDAC-LIMDAC)/DT4A,NEWDAC)
-               !DSSLIM(IS,ID) = SIGN(ABS(IMATDA(IS,ID)-ABS(LIMFAC*IMATDA(IS,ID))),NEWDAC)
+               !DSSLIM(IS,ID) = SIGN(ABS(DPHIDN(IS,ID)-ABS(LIMFAC*DPHIDN(IS,ID))),NEWDAC)
              ENDDO
            ENDDO
          ENDIF
 
          !WRITE(*,*) 'wind, th, fpm and sum sources'
-         !WRITE(*,*) WIND10, WINDTH, FPM, SUM(IMATRA), SUM(IMATDA)
+         !WRITE(*,*) WIND10, WINDTH, FPM, SUM(PHI), SUM(DPHIDN)
 
       END SUBROUTINE
 !**********************************************************************

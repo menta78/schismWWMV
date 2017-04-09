@@ -757,7 +757,7 @@
         use datapool, only : IOBPD, IOBWB, DEP, DMIN, CCON, IE_CELL
         use datapool, only : TRIA, LBCWA, LBCSP, LINHOM, IWBMNP, IOBDP
         use datapool, only : IWBNDLC, WBAC, SI, ICOMP, SMETHOD
-        use datapool, only : IMATRAA, DT4A, MAXMNECON, AC2, RKIND
+        use datapool, only : PHIA, DT4A, MAXMNECON, AC2, RKIND
         use datapool, only : TWO, RKIND, iplg, exchange_p2d
         USE DATAPOOL, ONLY : SOURCE_IMPL
         use petscpool
@@ -860,7 +860,7 @@
                 do IDD = 1, MDC ! over all directions
                   if(IOBPD(IDD,IP) .EQ. 1) then
                     IF (SOURCE_IMPL) THEN
-                      value = IMATRAA(IP,ISS,IDD) * DT4A * SI(IP) ! Add source term to the right hand side
+                      value = PHIA(IP,ISS,IDD) * DT4A * SI(IP) ! Add source term to the right hand side
                       idx=toRowIndex(IPpetsc, ISS, IDD) + 1
                       myBtemp(idx) = value + myBtemp(idx)
                     END IF
@@ -1347,7 +1347,7 @@
       !> use newer code from fluct
       SUBROUTINE calcASPAR()
         use datapool, only : MSC, MDC, MNP
-        use datapool, only : LBCWA, LBCSP, LINHOM, IWBMNP, I_DIAG, SI, IMATDAA
+        use datapool, only : LBCWA, LBCSP, LINHOM, IWBMNP, I_DIAG, SI, DPHIDNA
         use datapool, only : IWBNDLC, IOBWB, IOBPD, DT4A
         use datapool, only : ICOMP, SMETHOD
         USE DATAPOOL, ONLY : SOURCE_IMPL
@@ -1426,7 +1426,7 @@
                 do IDD = 1, MDC ! over all directions
                   if (IOBPD(IDD,IP) .EQ. 1) then 
                     IF (SOURCE_IMPL) THEN
-                      value1 =  IMATDAA(ISS,IDD,IP) * DT4A * SI(IP)
+                      value1 =  DPHIDNA(ISS,IDD,IP) * DT4A * SI(IP)
 #  ifndef DIRECT_METHOD
                       idx=aspar2petscAspar(IP, ISS, IDD, I_DIAG(IP))
 #  else
@@ -2096,7 +2096,7 @@
         use datapool, only : IOBPD, IOBWB, DEP, DMIN, CCON, IE_CELL, I_DIAG, DT4S
         use datapool, only : TRIA, LBCWA, LBCSP, LINHOM, IWBMNP, COFRM4, USNEW
         use datapool, only : IWBNDLC, WBAC, SI, ICOMP, SMETHOD, FMEAN, FMEANWS
-        use datapool, only : IMATRAA, IMATDAA, DT4A, MAXMNECON, AC2, RKIND
+        use datapool, only : PHIA, DPHIDNA, DT4A, MAXMNECON, AC2, RKIND
         use datapool, only : TWO, RKIND, iplg, exchange_p2d, lsourceswam
         USE DATAPOOL, ONLY : SOURCE_IMPL
         use petscpool
@@ -2179,7 +2179,7 @@
                 do IDD = 1, MDC ! over all directions
                   if (IOBPD(IDD,IP) .EQ. 1) then
                     IF (SOURCE_IMPL) THEN
-                      value1 =  IMATDAA(ISS,IDD,IP) * DT4A * SI(IP)
+                      value1 =  DPHIDNA(ISS,IDD,IP) * DT4A * SI(IP)
 #  ifndef DIRECT_METHOD
                       idx=aspar2petscAspar(IP, ISS, IDD, I_DIAG(IP))
 #  else
@@ -2199,8 +2199,8 @@
               IPpetsc = ALO2PLO(IP-1) + 1
               do iss = 1, msc
                 do idd = 1, mdc
-                  GTEMP1 = MAX((1.-DT4A*IMATDAA(ISS,IDD,IP)),1.)
-                  GTEMP2 = IMATRAA(IP,ISS,IDD)/GTEMP1
+                  GTEMP1 = MAX((1.-DT4A*DPHIDNA(ISS,IDD,IP)),1.)
+                  GTEMP2 = PHIA(IP,ISS,IDD)/GTEMP1
                   DELFL  = COFRM4(ISS)*DT4S
                   USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
                   FLHAB  = ABS(GTEMP2*DT4S)
@@ -2308,7 +2308,7 @@
                 do IDD = 1, MDC ! over all directions
                   if(IOBPD(IDD,IP) .EQ. 1) then
                     IF (SOURCE_IMPL) THEN
-                      value = IMATRAA(IP,ISS,IDD) * DT4A * SI(IP) ! Add source term to the right hand side
+                      value = PHIA(IP,ISS,IDD) * DT4A * SI(IP) ! Add source term to the right hand side
                       idx=toRowIndex(IPpetsc, ISS, IDD) + 1
                       myBtemp(idx) = value + myBtemp(idx)
                     END IF
@@ -2324,8 +2324,8 @@
               IPpetsc = ALO2PLO(IP-1) + 1
               do iss = 1, msc
                 do idd = 1, mdc 
-                  GTEMP1 = MAX((1.-DT4A*IMATDAA(ISS,IDD,IP)),1.)
-                  GTEMP2 = IMATRAA(IP,ISS,IDD)/GTEMP1
+                  GTEMP1 = MAX((1.-DT4A*DPHIDNA(ISS,IDD,IP)),1.)
+                  GTEMP2 = PHIA(IP,ISS,IDD)/GTEMP1
                   DELFL  = COFRM4(ISS)*DT4S
                   USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
                   FLHAB  = ABS(GTEMP2*DT4S)

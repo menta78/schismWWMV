@@ -2,14 +2,14 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE ECMWF_PRE (IP, ACLOC, IMATRA, IMATDA, SSINE, DSSINE, SSDS, DSSDS, SSNL4, DSSNL4, SSINL)
+      SUBROUTINE ECMWF_PRE (IP, ACLOC, PHI, DPHIDN, SSINE, DSSINE, SSDS, DSSDS, SSNL4, DSSNL4, SSINL)
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)        :: IP
 
          REAL(rkind), INTENT(IN)    :: ACLOC(MSC,MDC)
-         REAL(rkind), INTENT(OUT)   :: IMATRA(MSC,MDC), IMATDA(MSC,MDC)
+         REAL(rkind), INTENT(OUT)   :: PHI(MSC,MDC), DPHIDN(MSC,MDC)
          REAL(rkind), INTENT(OUT)   :: SSINE(MSC,MDC),DSSINE(MSC,MDC), SSINL(MSC,MDC)
          REAL(rkind), INTENT(OUT)   :: SSDS(MSC,MDC),DSSDS(MSC,MDC)
          REAL(rkind), INTENT(OUT)   :: SSNL4(MDC,MSC),DSSNL4(MDC,MSC)
@@ -39,8 +39,18 @@
          DO ID = 1, MDC
            DO IS = 1, MSC 
              JAC = ONE/PI2/SPSIG(IS)
-             IMATRA(IS,ID) = SL(ID,IS)*JAC
-             IMATDA(IS,ID) = FL(ID,IS)
+             IF (ICOMP .GE. 2) THEN
+               IF (optionCall .eq. 1) THEN
+                 PHI(IS,ID)    = (SSINE(IS,ID) + SSNL4(IS,ID)) * JAC
+                 DPHIDN(IS,ID) = - DSSDS(IS,ID) 
+               ELSE IF (optionCall .eq. 2) THEN
+                 PHI(IS,ID)    = SL(ID,IS)*JAC
+                 DPHIDN(IS,ID) = FL(ID,IS)
+               ENDIF
+             ELSE
+               PHI(IS,ID) = SL(ID,IS)*JAC
+               DPHIDN(IS,ID) = FL(ID,IS)
+             ENDIF
            ENDDO
          ENDDO
 
@@ -48,7 +58,7 @@
            CALL SET_WIND( IP, WIND10, WINDTH )
            CALL SET_FRICTION( IP, ACLOC, WIND10, WINDTH, FPM )
            CALL SIN_LIN_CAV(IP,WINDTH,FPM,SSINL)
-           IMATRA = IMATRA + SSINL
+           PHI = PHI + SSINL
          ELSE
            SSINL = ZERO
          ENDIF
@@ -64,7 +74,7 @@
          REAL(rkind), INTENT(INOUT)    :: ACLOC(MSC,MDC)
          INTEGER                       :: IS, ID
          REAL(rkind)                   :: VEC2RAD, FPM
-         REAL(rkind)                   :: IMATRA(MSC,MDC)
+         REAL(rkind)                   :: PHI(MSC,MDC)
          REAL(rkind)                :: FL3(MDC,MSC), FL(MDC,MSC), SL(MDC,MSC)
          THWOLD(IP) = THWNEW(IP)
          THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))

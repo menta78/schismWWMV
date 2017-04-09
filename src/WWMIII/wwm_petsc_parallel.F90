@@ -410,8 +410,8 @@
              IF (IOBWB(IP) .EQ. 1) THEN
                !GTEMP1 = MAX((1.-DT4A*FL(IP,ID,IS)),1.)
                !GTEMP2 = SL(IP,ID,IS)/GTEMP1/PI2/SPSIG(IS)
-               GTEMP1 = MAX((1.-DT4A*IMATDAA(IP,ISS,IDD)),1.)
-               GTEMP2 = IMATRAA(IP,ISS,IDD)/GTEMP1!/PI2/SPSIG(IS)
+               GTEMP1 = MAX((1.-DT4A*DPHIDNA(IP,ISS,IDD)),1.)
+               GTEMP2 = PHIA(IP,ISS,IDD)/GTEMP1!/PI2/SPSIG(IS)
                DELT = DT4S
                XIMP = 1.0
                DELT5 = XIMP*DELT
@@ -425,15 +425,15 @@
                !!B(IP)  = B(IP) + GTEMP2 * DT4A * SI(IP) ! Add source term to the right hand side
                !ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) - GTEMP2 * SI(IP)
 !This is then for the shallow water physics take care about ISELECT 
-               !ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + IMATDAA(IP,IS,ID) * DT4A * SI(IP) ! Add source term to the diagonal
-               !B(IP)             = B(IP) + IMATRAA(IP,IS,ID) * DT4A * SI(IP) ! Add source term to the right hand side
+               !ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + DPHIDNA(IP,IS,ID) * DT4A * SI(IP) ! Add source term to the diagonal
+               !B(IP)             = B(IP) + PHIA(IP,IS,ID) * DT4A * SI(IP) ! Add source term to the right hand side
              ENDIF
            END DO
          ELSE IF (ICOMP .GE. 2 .AND. SMETHOD .GT. 0 .AND. .NOT. LSOURCESWAM) THEN
            DO IP = 1, MNP
              IF (IOBWB(IP) .EQ. 1) THEN
-               ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + IMATDAA(IP,ISS,IDD) * DT4A * SI(IP) ! Add source term to the diagonal
-               B(IP)             = B(IP) + IMATRAA(IP,ISS,IDD) * DT4A * SI(IP) ! Add source term to the right hand side
+               ASPAR(I_DIAG(IP)) = ASPAR(I_DIAG(IP)) + DPHIDNA(IP,ISS,IDD) * DT4A * SI(IP) ! Add source term to the diagonal
+               B(IP)             = B(IP) + PHIA(IP,ISS,IDD) * DT4A * SI(IP) ! Add source term to the right hand side
              ENDIF
            END DO
          ENDIF
