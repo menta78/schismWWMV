@@ -1720,7 +1720,7 @@
          REAL(rkind)    :: EX, EY, FF, DEG
 !
          IF (LENERGY) THEN
-           UNITFAC = PWIND(2) * G9  ! for true energy
+           UNITFAC = RHOW * G9  ! for true energy
          ELSE
            UNITFAC = 1.0
          END IF

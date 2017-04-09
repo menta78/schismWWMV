@@ -14,8 +14,8 @@
 !
 !     *** set values for the nonlinear four-wave interactions ***
 !
-         LAMM2  = (ONE-LAMBDA)**TWO
-         LAMP2  = (ONE+LAMBDA)**TWO
+         LAMM2  = (ONE-LAMBDANL4)**TWO
+         LAMP2  = (ONE+LAMBDANL4)**TWO
          DELTH3 = ACOS((LAMM2**TWO+4-LAMP2**2)/(4*LAMM2))
          AUX1   = SIN(DELTH3)
          DELTH4 = ASIN(-AUX1*LAMM2/LAMP2)
@@ -34,14 +34,14 @@
          WIDM   = CIDM - MyREAL(IDM)
          WIDM1  = ONE - WIDM
 
-         ISP    = INT(LOG(ONE+LAMBDA)/XISLN)
+         ISP    = INT(LOG(ONE+LAMBDANL4)/XISLN)
          ISP1   = ISP + 1
-         WISP   = (ONE+LAMBDA-XIS**ISP)/(XIS**ISP1-XIS**ISP)
+         WISP   = (ONE+LAMBDANL4-XIS**ISP)/(XIS**ISP1-XIS**ISP)
          WISP1  = ONE - WISP
 
-         ISM    = INT(LOG(ONE-LAMBDA)/XISLN)
+         ISM    = INT(LOG(ONE-LAMBDANL4)/XISLN)
          ISM1   = ISM - 1
-         WISM   = (XIS**ISM-(ONE-LAMBDA))/(XIS**ISM-XIS**ISM1)
+         WISM   = (XIS**ISM-(ONE-LAMBDANL4))/(XIS**ISM-XIS**ISM1)
          WISM1  = ONE - WISM
 !
 !     *** Range of calculations ***
@@ -120,8 +120,8 @@
         AF11(IS) = FREQ**11
        END DO
 
-       DAL1 = ONE / (ONE + LAMBDA)**4
-       DAL2 = ONE / (ONE - LAMBDA)**4
+       DAL1 = ONE / (ONE + LAMBDANL4)**4
+       DAL2 = ONE / (ONE - LAMBDANL4)**4
        DAL3 = TWO * DAL1 * DAL2
 
        SNLC1  = ONE / (G9**4)
