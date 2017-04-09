@@ -40,10 +40,10 @@
            DO IS = 1, NUMSIG 
              JAC = ONE/PI2/SPSIG(IS)
              IF (ICOMP .GE. 2) THEN
-               IF (optionCall .eq. 1) THEN
+               IF (SMETHOD .eq. 1) THEN
                  PHI(IS,ID)    = (SSINE(IS,ID) + SSNL4(IS,ID)) * JAC
                  DPHIDN(IS,ID) = - DSSDS(IS,ID) 
-               ELSE IF (optionCall .eq. 2) THEN
+               ELSE IF (SMETHOD .eq. 2) THEN
                  PHI(IS,ID)    = SL(ID,IS)*JAC
                  DPHIDN(IS,ID) = FL(ID,IS)
                ENDIF

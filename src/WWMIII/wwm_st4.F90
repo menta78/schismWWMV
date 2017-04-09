@@ -103,10 +103,10 @@
       ENDIF
 !
       IF (ICOMP .GE. 2) THEN
-        IF (optionCall .eq. 1) then
+        IF (SMETHOD .eq. 1) then
           PHI = SSINL + SSINE  + SSNL4  + SSDS
           DPHIDN =                - DSSNL4 - DSSDS 
-        ELSEIF (optionCall .eq. 2) then
+        ELSEIF (SMETHOD .eq. 2) then
           PHI = SSINL + SSINE  + SSNL4  + SSDS
           DPHIDN =         DSSINE + DSSNL4 + DSSDS
         ENDIF

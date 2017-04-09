@@ -834,10 +834,10 @@
 
       CALL GET_BLOCAL(IP, ACin1, BLOC)
 !
-      IF (optionCall .eq. 1) THEN
+      IF (SMETHOD .eq. 1) THEN
         BSIDE = eVal * PHI
         DIAG  = eVal * DPHIDN
-      ELSE IF (optionCall .eq. 2) THEN
+      ELSE IF (SMETHOD .eq. 2) THEN
         BSIDE =  eVal * (PHI - MIN(ZERO,DPHIDN) * Acin2(:,:,IP))
         DIAG  = -eVal * MIN(ZERO,DPHIDN)
       END IF

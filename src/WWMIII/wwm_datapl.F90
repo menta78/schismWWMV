@@ -1157,7 +1157,6 @@
          LOGICAL                :: L_SOLVER_NORM = .FALSE.
          REAL(rkind)            :: JGS_DIFF_SOLVERTHR = 1.e-5
          LOGICAL                :: JGS_CHKCONV = .TRUE.
-         integer, parameter     :: optionCall = 1 ! option call 2 is working and 1 is destroyed
          INTEGER                :: ASPAR_LOCAL_LEVEL = 0
          LOGICAL                :: IMPL_GEOADVECT = .TRUE.
                              ! value 0 CAD_THE, CAS_THE and ASPAR_JAC used
