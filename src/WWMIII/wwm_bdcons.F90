@@ -156,7 +156,7 @@
       CHARACTER(LEN=*), INTENT(IN) :: CALLFROM
       LOGICAL, INTENT(IN) :: LDEBUG
 
-      INTEGER  ID, IS, LSHAPE, ITPER, ISP, ISIGMP
+      INTEGER  ID, IS, LSHAPE, ITPER, ISPEAK, ISIGMP
       REAL(rkind) ::   APSHAP, AUX1, AUX2, AUX3, AM0, AM1, AS2, AS3, ETOT, VEC2DEG
       REAL(rkind) ::  COEFF, SYF , MPER, PKPER, DIFPER, EHFR
       REAL(rkind) ::  MS, DEG, ETOTS, ETOTC, FF, CPSHAP, PPSHAP, DM, EAD, DS
@@ -203,7 +203,7 @@
         DIFPER = 1.E10
         DO IS = 1, NUMSIG
           IF (ABS(PKPER - PI2/SPSIG(IS)) .LT. DIFPER) THEN
-            ISP = IS
+            ISPEAK = IS
             DIFPER = ABS(PKPER - PI2/SPSIG(IS))
           END IF
         ENDDO
@@ -271,8 +271,8 @@
 !
         ELSE IF (LSHAPE .EQ. 3) THEN
 
-          IF (IS.EQ.ISP) THEN
-            ISBIN = ISP
+          IF (IS.EQ.ISPEAK) THEN
+            ISBIN = ISPEAK
             WALOC(IS,NUMDIR) = ( SPPAR(1)**2 ) / ( 16. * SIGPOW(IS,2) * FRINTF )
           ELSE
             WALOC(IS,NUMDIR) = 0.
@@ -2917,7 +2917,7 @@
       real, allocatable :: ABPIO(:)
       REAL(rkind) :: eCLATS, eCG, DEPLOC, eVal
       REAL XFR, eTH, FREQ1
-      INTEGER NBI, idx, IB, I, J, NSPEC_out, IK, ITH, ISP
+      INTEGER NBI, idx, IB, I, J, NSPEC_out, IK, ITH, ISPEAK
       INTEGER NK, NTH, IPglob
       INTEGER TheOut
       INTEGER TIME2(2)
@@ -3010,9 +3010,9 @@
              CALL ALL_FROM_TABLE(SPSIGLOC,DEPLOC,WVK,WVCG,WVKDEP,WVN,WVC)
              eCG = WVCG              
              DO ITH=1,NTH
-               ISP = ITH + (IK-1)*NTH
+               ISPEAK = ITH + (IK-1)*NTH
                eVal= WBAC_GL(IK,ITH,IB)*eCG/eCLATS
-               ABPIO(ISP) = MySNGL(eVal)
+               ABPIO(ISPEAK) = MySNGL(eVal)
              END DO
            END DO
            WRITE(TheOut) ABPIO

@@ -34,10 +34,10 @@
  LSTAG   = F,
  MINDIR  =  0.000000000000000E+000,
  MAXDIR  =   360.000000000000     ,
- MDC     =          36,
+ NUMDIR     =          36,
  FRLOW   =  5.000000000000000E-002,
  FRHIGH  =   1.00000000000000     ,
- MSC     =          36,
+ NUMSIG     =          36,
  FILEGRID        = system.dat                                                                                                        
                            ,
  IGRIDTYPE       =           1,
@@ -169,7 +169,7 @@
  EXPORT_WALV_DELTC       =  0.000000000000000E+000
  /
  &ENGS
- ISOURCE =           2,
+ ISOURCE =           3,
  MESNL   =           1,
  MESIN   =           1,
  IFRIC   =           1,

@@ -143,7 +143,7 @@
 
         IMPLICIT  NONE
 
-        INTEGER :: IK, ISP, ITH, ITH0
+        INTEGER :: IK, IS, ITH, ITH0
         REAL(rkind)    :: SIGMA, FR1, RTH0
 
         NK    = NUMSIG
@@ -241,10 +241,10 @@
         END DO
 !        WRITE(740+myrank,*) 'DTH=', DTH
 
-        DO ISP=1, NSPEC
-          IK         = 1 + (ISP-1)/NTH
-          SIG2 (ISP) = SIG (IK)
-          DDEN2(ISP) = DDEN(IK)
+        DO IS=1, NSPEC
+          IK         = 1 + (IS-1)/NTH
+          SIG2 (IS) = SIG (IK)
+          DDEN2(IS) = DDEN(IK)
         END DO
 
         FTE = 0.25_rkind * SIG(NK) * DTH * SIG(NK)
