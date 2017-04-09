@@ -942,9 +942,8 @@
          INTEGER          :: ISPTR, ISP1TR, ISMTR, ISM1TR
          REAL(rkind)             :: WISPTR, WISP1TR, WISMTR, WISM1TR
 
-         REAL(rkind)                   :: PGIVE(8), PWIND(31), PQUAD(6), PWCAP(12)
          REAL(rkind)                   :: TAIL_ARR(8), PSHAP(6), PBOTF(6), PTRIAD(5), TRI_ARR(5)
-         REAL(rkind)                   :: PSURF(6)
+         REAL(rkind)                   :: PSURF(6), PGIVE(8)
 
          REAL(rkind), ALLOCATABLE      :: QBLOCAL(:) !, SBR(:,:), SBF(:,:)
 #ifndef SCHISM
@@ -965,7 +964,7 @@
          INTEGER                       :: ISHGH, ISCLW, ISCHG, IDLOW, IDHGH
          REAL(rkind)                   :: AWG1, AWG2, AWG3, AWG4, AWG5, AWG6, AWG7, AWG8
          REAL(rkind)                   :: SWG1, SWG2, SWG3, SWG4, SWG5, SWG6, SWG7, SWG8
-         REAL(rkind)                   :: SNLC1, SNLCS1, SNLCS2, SNLCS3
+         REAL(rkind)                   :: SNLC1, SNLC2,SNLCS1, SNLCS2, SNLCS3, LAMBDA
          REAL(rkind), ALLOCATABLE      :: AF11(:)
 !
 ! ... output parameter ... wwmDoutput.mod

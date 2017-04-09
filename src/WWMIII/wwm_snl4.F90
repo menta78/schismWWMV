@@ -7,17 +7,16 @@
          IMPLICIT NONE
          INTEGER      :: IS, ISLOW
          REAL(rkind)  :: AUX1, FREQ
-         REAL(rkind)  :: LAMBDA, LAMM2, LAMP2
+         REAL(rkind)  :: LAMM2, LAMP2
          REAL(rkind)  :: DELTH3, DELTH4
          REAL(rkind)  :: CIDP, WIDP, WIDP1, CIDM, WIDM, WIDM1
          REAL(rkind)  :: WISP, WISP1, WISM, WISM1
 !
 !     *** set values for the nonlinear four-wave interactions ***
 !
-         LAMBDA = PQUAD(1)
-         LAMM2  = (1.0-LAMBDA)**2.0
-         LAMP2  = (1.0+LAMBDA)**2.0
-         DELTH3 = ACOS((LAMM2**2.0+4.0-LAMP2**2.0)/(4.0*LAMM2))
+         LAMM2  = (ONE-LAMBDA)**TWO
+         LAMP2  = (ONE+LAMBDA)**TWO
+         DELTH3 = ACOS((LAMM2**TWO+4-LAMP2**2)/(4*LAMM2))
          AUX1   = SIN(DELTH3)
          DELTH4 = ASIN(-AUX1*LAMM2/LAMP2)
 !
@@ -27,23 +26,23 @@
          IDP    = INT(CIDP)
          IDP1   = IDP + 1
          WIDP   = CIDP - MyREAL(IDP)
-         WIDP1  = 1.0 - WIDP
+         WIDP1  = ONE - WIDP
 
          CIDM   = ABS(DELTH3/DDIR)
          IDM    = INT(CIDM)
          IDM1   = IDM + 1
          WIDM   = CIDM - MyREAL(IDM)
-         WIDM1  = 1.0 - WIDM
+         WIDM1  = ONE - WIDM
 
-         ISP    = INT(LOG(1.0+LAMBDA)/XISLN)
+         ISP    = INT(LOG(ONE+LAMBDA)/XISLN)
          ISP1   = ISP + 1
-         WISP   = (1.0+LAMBDA-XIS**ISP)/(XIS**ISP1-XIS**ISP)
-         WISP1  = 1.0 - WISP
+         WISP   = (ONE+LAMBDA-XIS**ISP)/(XIS**ISP1-XIS**ISP)
+         WISP1  = ONE - WISP
 
-         ISM    = INT(LOG(1.0-LAMBDA)/XISLN)
+         ISM    = INT(LOG(ONE-LAMBDA)/XISLN)
          ISM1   = ISM - 1
-         WISM   = (XIS**ISM-(1.0-LAMBDA))/(XIS**ISM-XIS**ISM1)
-         WISM1  = 1.0 - WISM
+         WISM   = (XIS**ISM-(ONE-LAMBDA))/(XIS**ISM-XIS**ISM1)
+         WISM1  = ONE - WISM
 !
 !     *** Range of calculations ***
 !
@@ -75,15 +74,15 @@
 !
 !     *** quadratic interpolation
 !
-         SWG1 = AWG1**2.0
-         SWG2 = AWG2**2.0
-         SWG3 = AWG3**2.0
-         SWG4 = AWG4**2.0
+         SWG1 = AWG1**2
+         SWG2 = AWG2**2
+         SWG3 = AWG3**2
+         SWG4 = AWG4**2
 
-         SWG5 = AWG5**2.0
-         SWG6 = AWG6**2.0
-         SWG7 = AWG7**2.0
-         SWG8 = AWG8**2.0
+         SWG5 = AWG5**2
+         SWG6 = AWG6**2
+         SWG7 = AWG7**2
+         SWG8 = AWG8**2
 !
 !     *** Fill scaling array (f**11)                           ***
 !     *** compute the radian frequency**11 for IS=ISHGH, ISLOW ***
@@ -106,20 +105,37 @@
 
 
        DO IS = 1, NUMSIG
-        AF11(IS) = (SPSIG(IS)/PI2)**11.0
+         AF11(IS) = (SPSIG(IS)/PI2)**11
        END DO
 
        FREQ = FR(NUMSIG) 
        DO IS = NUMSIG+1, ISHGH
-        FREQ     = FREQ*XIS
-        AF11(IS) = FREQ**11.0
+         FREQ     = FREQ*XIS
+         AF11(IS) = FREQ**11
        END DO
 
        FREQ = FR(1) 
        DO IS = 0, ISLOW, -1
         FREQ     = FREQ/XIS
-        AF11(IS) = FREQ**11.0
+        AF11(IS) = FREQ**11
        END DO
+
+       DAL1 = ONE / (ONE + LAMBDA)**4
+       DAL2 = ONE / (ONE - LAMBDA)**4
+       DAL3 = TWO * DAL1 * DAL2
+
+       SNLC1  = ONE / (G9**4)
+
+       IF (ISOURCE .EQ. 1) THEN
+         SNLC2 = 2.5E7
+       ELSE
+         SNLC2 = 2.78E7
+       END IF
+
+       SNLCS1 = 5.5_rkind
+       SNLCS2 = 6._rkind/7._rkind
+       SNLCS3 = -1.25_rkind
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -136,7 +152,7 @@
          INTEGER                    :: I, J, IS, ID, ID0, IDDUM
          REAL(rkind)                :: X, X2, E00, EP1, EM1, EP2, EM2
          REAL(rkind)                :: CONS, FACTOR
-         REAL(rkind)                :: JACOBI, SIGPI, PI3, LAMBDA, FACHFR, PWTAIL
+         REAL(rkind)                :: JACOBI, SIGPI, PI3, FACHFR, PWTAIL
          REAL(rkind)                :: SA1A, SA1B, SA2A, SA2B
 
          REAL(rkind)                :: UE(NUMSIG4MI:NUMSIG4MA, NUMDIR4MI:NUMDIR4MA)
@@ -162,20 +178,7 @@
          DSNL = 0.
 
          PWTAIL = TAIL_ARR(1)
-
          JACOBI = PI2
-
-         LAMBDA = PQUAD(1)
-
-         DAL1 = 1.0 / (1.0 + LAMBDA)**4.0
-         DAL2 = 1.0 / (1.0 - LAMBDA)**4.0
-         DAL3 = 2.0 * DAL1 * DAL2
-
-         SNLC1  = 1.0 / (G9**4.0)
-
-         SNLCS1 = PQUAD(3)
-         SNLCS2 = PQUAD(4)
-         SNLCS3 = PQUAD(5)
 !
 ! 1.  Calculate prop. constant --------------------------------------- *
 !
@@ -185,7 +188,7 @@
 !
 !        High frequency factor:
 !
-         FACHFR = 1.0 / (XIS**PWTAIL)
+         FACHFR = ONE / (XIS**PWTAIL)
 !
 !     *** Prepare auxiliary spectrum               ***
 !     *** set action original spectrum in array UE ***
@@ -228,22 +231,22 @@
      &               AWG7 * UE(IS+ISM ,ID+IDM1) +       &
      &               AWG8 * UE(IS+ISM ,ID+IDM )
 !
-               SA1A   = E00 * ( EP1*DAL1 + EM1*DAL2 ) * PQUAD(2)
-               SA1B   = SA1A - EP1*EM1*DAL3 * PQUAD(2)
-               SA2A   = E00 * ( EP2*DAL1 + EM2*DAL2 ) * PQUAD(2)
-               SA2B   = SA2A - EP2*EM2*DAL3 * PQUAD(2)
+               SA1A   = E00 * ( EP1*DAL1 + EM1*DAL2 ) * SNLC2 
+               SA1B   = SA1A - EP1*EM1*DAL3 * SNLC2 
+               SA2A   = E00 * ( EP2*DAL1 + EM2*DAL2 ) * SNLC2
+               SA2B   = SA2A - EP2*EM2*DAL3 * SNLC2
                FACTOR = CONS * AF11(IS) * E00
 
                SA1(IS,ID) = FACTOR*SA1B
                SA2(IS,ID) = FACTOR*SA2B
 
                DA1C(IS,ID) = CONS * AF11(IS) * ( SA1A + SA1B )
-               DA1P(IS,ID) = FACTOR * ( DAL1*E00 - DAL3*EM1 ) * PQUAD(2)
-               DA1M(IS,ID) = FACTOR * ( DAL2*E00 - DAL3*EP1 ) * PQUAD(2)
+               DA1P(IS,ID) = FACTOR * ( DAL1*E00 - DAL3*EM1 ) * SNLC2
+               DA1M(IS,ID) = FACTOR * ( DAL2*E00 - DAL3*EP1 ) * SNLC2
 
                DA2C(IS,ID) = CONS * AF11(IS) * ( SA2A + SA2B )
-               DA2P(IS,ID) = FACTOR * ( DAL1*E00 - DAL3*EM2 ) * PQUAD(2)
-               DA2M(IS,ID) = FACTOR * ( DAL2*E00 - DAL3*EP2 ) * PQUAD(2)
+               DA2P(IS,ID) = FACTOR * ( DAL1*E00 - DAL3*EM2 ) * SNLC2
+               DA2M(IS,ID) = FACTOR * ( DAL2*E00 - DAL3*EP2 ) * SNLC2
 
             END DO
          END DO
@@ -274,7 +277,7 @@
         DO I = 1, NUMSIG
            SIGPI = SPSIG(I) * JACOBI
            DO J = 1, NUMDIR
-              SFNL(I,J) =   -2.0 * ( SA1(I,J) + SA2(I,J) )         &
+              SFNL(I,J) =   -TWO * ( SA1(I,J) + SA2(I,J) )         &
      &        + AWG1 * ( SA1(I-ISP1,J-IDP1) + SA2(I-ISP1,J+IDP1) )   &
      &        + AWG2 * ( SA1(I-ISP1,J-IDP ) + SA2(I-ISP1,J+IDP ) )   &
      &        + AWG3 * ( SA1(I-ISP ,J-IDP1) + SA2(I-ISP ,J+IDP1) )   &
@@ -283,7 +286,7 @@
      &        + AWG6 * ( SA1(I-ISM1,J+IDM ) + SA2(I-ISM1,J-IDM ) )   &
      &        + AWG7 * ( SA1(I-ISM ,J+IDM1) + SA2(I-ISM ,J-IDM1) )   &
      &        + AWG8 * ( SA1(I-ISM ,J+IDM ) + SA2(I-ISM ,J-IDM ) )
-              DSNL(I,J) =   -2.0 * ( DA1C(I,J) + DA2C(I,J) )        &
+              DSNL(I,J) =   -TWO * ( DA1C(I,J) + DA2C(I,J) )        &
      &        + SWG1 * ( DA1P(I-ISP1,J-IDP1) + DA2P(I-ISP1,J+IDP1) )  &
      &        + SWG2 * ( DA1P(I-ISP1,J-IDP ) + DA2P(I-ISP1,J+IDP ) )  &
      &        + SWG3 * ( DA1P(I-ISP ,J-IDP1) + DA2P(I-ISP ,J+IDP1) )  &

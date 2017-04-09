@@ -1012,19 +1012,6 @@
          INTEGER :: IP
          REAL(rkind)    :: PTAIL_ARR
 !
-!2do: Check with WAM parameterization and WW3
-!
-         PQUAD(1) = 0.25
-         IF (ISOURCE .EQ. 1) THEN
-           PQUAD(2) = 2.5E7
-         ELSE
-           PQUAD(2) = 2.78E7
-         END IF
-         PQUAD(3) = 5.5_rkind
-         PQUAD(4) = 6._rkind/7._rkind
-         PQUAD(5) = -1.25_rkind
-         PQUAD(6) = zero
-!
 ! High frequency tail integration factors as defined in the SWAN model.
 !
          TAIL_ARR(1) = 4._rkind
