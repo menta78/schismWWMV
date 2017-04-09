@@ -46,11 +46,9 @@
            DO IS = 1, MSC
              MAXDAC = 0.00081_rkind/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
              DO ID = 1, MDC
-               NEWDAC = PHI(IS,ID)*DT4A/(1.0-DT4A*MIN(ZERO,DPHIDN(IS,ID)))
-               LIMDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
+               NEWDAC     = PHI(IS,ID)*DT4A/(1.0-DT4A*MIN(ZERO,DPHIDN(IS,ID)))
+               LIMDAC     = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
                PHI(IS,ID) = LIMDAC/DT4A
-               !SSLIM(IS,ID)  = SIGN(ABS(NEWDAC-LIMDAC)/DT4A,NEWDAC)
-               !DSSLIM(IS,ID) = SIGN(ABS(DPHIDN(IS,ID)-ABS(LIMFAC*DPHIDN(IS,ID))),NEWDAC)
              ENDDO
            ENDDO
          ENDIF
@@ -87,17 +85,10 @@
          N2     = 4
          FAC    = CDS * (STP_OV / STP_PM)**N2
  
-         IF (SOURCE_IMPL) THEN
-           DO IS = 1, MSC
-             DSSDS(IS,:) = FAC * SMESPC * (WK(IS,IP)/KMESPC)
-             SSDS(IS,:)  = - DSSDS(IS,:) * ACLOC(IS,:) 
-           END DO
-         ELSE
-           DO IS = 1, MSC
-             DSSDS(IS,:) = - FAC * SMESPC * (WK(IS,IP)/KMESPC)
-             SSDS(IS,:)  =   DSSDS(IS,:) * ACLOC(IS,:)
-           END DO
-         ENDIF
+         DO IS = 1, MSC
+           DSSDS(IS,:) = - FAC * SMESPC * (WK(IS,IP)/KMESPC)
+           SSDS(IS,:)  =   DSSDS(IS,:) * ACLOC(IS,:)
+         END DO
 
       END SUBROUTINE
 !**********************************************************************
@@ -162,13 +153,8 @@
              COSDIF        = MyCOS(SPDIR(ID)-WINDTH)
              SWINB         = AUX1 * ( AUX3  * COSDIF - ONE )
              SWINB         = MAX( ZERO, SWINB * SPSIG(IS) )
-             IF (SOURCE_IMPL) THEN
-               DSSINE(IS,ID) = ZERO 
-               SSINE(IS,ID)  = SWINB * ACLOC(IS,ID)
-             ELSE
-               DSSINE(IS,ID) = SWINB 
-               SSINE(IS,ID)  = SWINB * ACLOC(IS,ID)
-             ENDIF
+             DSSINE(IS,ID) = SWINB 
+             SSINE(IS,ID)  = SWINB * ACLOC(IS,ID)
            END DO
          END DO
 

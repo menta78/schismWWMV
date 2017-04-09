@@ -171,20 +171,20 @@
  EXPORT_WALV_DELTC       =  0.000000000000000E+000
  /
  &ENGS
- ISOURCE =           3,
- MESNL   =           0,
- MESIN   =           0,
+ ISOURCE =           1,
+ MESNL   =           1,
+ MESIN   =           1,
  IFRIC   =           1,
- MESBF   =           0,
+ MESBF   =           1,
  FRICC   =  6.700000000000000E-002,
- MESBR   =           0,
+ MESBR   =           1,
  ICRIT   =           1,
  IBREAK  =           1,
  ALPBJ   =   1.00000000000000     ,
  BRHD    =  0.730000000000000     ,
  LMAXETOT        = T, 
- MESDS   =        0,
- MESTR   =        0,
+ MESDS   =        1,
+ MESTR   =        1,
  TRICO   =   1.00000000000000     ,
  TRIRA   =   2.50000000000000     ,
  TRIURS  =  0.100000000000000     
@@ -416,9 +416,6 @@
  LOUTITER        = F,
  IOUTS   =           1,
  NOUTS   = P-1                                                                                                                       
- XOUTS   =   1950.00000000000     , 199*0.000000000000000E+000  ,
- YOUTS   =   304.000000000000     , 199*0.000000000000000E+000  ,
- CUTOFF  =  0.440000000000000     , 199*0.000000000000000E+000  ,
  LSIGMAX = T,
  LSP1D   = F,
  LSP2D   = F,
