@@ -965,6 +965,7 @@
          INTEGER                       :: ISHGH, ISCLW, ISCHG, IDLOW, IDHGH
          REAL(rkind)                   :: AWG1, AWG2, AWG3, AWG4, AWG5, AWG6, AWG7, AWG8
          REAL(rkind)                   :: SWG1, SWG2, SWG3, SWG4, SWG5, SWG6, SWG7, SWG8
+         REAL(rkind)                   :: SNLC1, SNLCS1, SNLCS2, SNLCS3
          REAL(rkind), ALLOCATABLE      :: AF11(:)
 !
 ! ... output parameter ... wwmDoutput.mod

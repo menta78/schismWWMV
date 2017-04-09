@@ -134,12 +134,9 @@
          REAL(rkind), INTENT(OUT)   :: SFNL(NUMSIG,NUMDIR), DSNL(NUMSIG,NUMDIR)
 !
          INTEGER                    :: I, J, IS, ID, ID0, IDDUM
-         REAL(rkind)                :: X, X2
-         REAL(rkind)                :: SNLC1, SNLCS1, SNLCS2, SNLCS3, CONS, FACTOR
-         REAL(rkind)                :: JACOBI, SIGPI, PI3
-         REAL(rkind)                :: FACHFR, PWTAIL
-         REAL(rkind)                :: LAMBDA
-         REAL(rkind)                :: E00, EP1, EM1, EP2, EM2
+         REAL(rkind)                :: X, X2, E00, EP1, EM1, EP2, EM2
+         REAL(rkind)                :: CONS, FACTOR
+         REAL(rkind)                :: JACOBI, SIGPI, PI3, LAMBDA, FACHFR, PWTAIL
          REAL(rkind)                :: SA1A, SA1B, SA2A, SA2B
 
          REAL(rkind)                :: UE(NUMSIG4MI:NUMSIG4MA, NUMDIR4MI:NUMDIR4MA)
