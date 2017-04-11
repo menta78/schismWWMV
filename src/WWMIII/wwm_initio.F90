@@ -1098,7 +1098,7 @@
 
          IF (ISOURCE .NE. 2) THEN
            IF (MESNL .GT. 0 .and. MESNL .LT. 5) THEN
-             CALL PARAMETER4SNL
+             CALL DIASNL4PARAM 
            ELSE IF (MESNL .EQ. 5) THEN
              IQGRID = 3
              INODE  = 1
