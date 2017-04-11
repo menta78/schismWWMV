@@ -240,6 +240,18 @@
           CASE('ierosion')
             READ(line_str,*) var1, var2, ierosion
 
+          CASE('alphd') !1120:+alphd,refht,Tbp,im_pick_up
+            READ(line_str,*) var1, var2, alphd
+
+          CASE('refht')
+            READ(line_str,*) var1, var2, refht
+
+          CASE('Tbp')
+            READ(line_str,*) var1, var2, Tbp
+
+          CASE('im_pick_up')
+            READ(line_str,*) var1, var2, im_pick_up
+
         END SELECT
 
       ENDDO !scan sediment.in

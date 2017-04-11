@@ -19,6 +19,11 @@
 #ifdef USE_HA
       USE harm
 #endif
+
+#ifdef USE_PETSC
+      USE petsc_schism
+#endif
+
       implicit none
       include 'mpif.h'
 
@@ -108,6 +113,10 @@
 !-------------------------------------------------------------------------------
 
       if(ihydraulics/=0) call finalize_hydraulic_structures
+
+#ifdef USE_PETSC
+      call finalize_petsc
+#endif
 
 #ifdef INCLUDE_TIMING
       wtmp2=mpi_wtime()

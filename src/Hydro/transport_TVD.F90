@@ -54,7 +54,7 @@
 
 
 !     Working temporary arrays in this routine
-      real(rkind) :: iupwind_e(ne) !to mark upwind prisms when TVD is used
+      real(rkind) :: iupwind_e(nea) !to mark upwind prisms when TVD is used
       real(rkind), allocatable :: trel_tmp(:,:,:) !tracer @ elements and half levels
       real(rkind), allocatable :: flux_adv_hface(:,:) ! original horizontal flux (the local x-driection) 
       real(rkind), allocatable :: flux_mod_hface(:,:,:) !limited advective fluxes on horizontal faces
@@ -63,11 +63,11 @@
       real(rkind), allocatable :: up_rat_vface(:,:,:) !upwind ratios for vertical faces
       real(rkind) :: buf(2,1),buf2(2,1)
 
-#ifdef DEBUG
-      real(rkind) :: dtbe(ne)
-#endif
+!#ifdef DEBUG
+!      real(rkind) :: dtbe(ne)
+!#endif
 
-      real(rkind) :: psumtr(ntr),delta_tr(ntr),adv_tr(ntr), &
+      real(rkind) :: psumtr(ntr),delta_tr(ntr),adv_tr(ntr),dtb_min3(ne), &
      &alow(nvrt),bdia(nvrt),cupp(nvrt),rrhs(ntr,nvrt),soln(ntr,nvrt),gam(nvrt), &
      &swild(max(3,nvrt)),swild4(3,2),trel_tmp_outside(ntr)
       integer :: nwild(2)
@@ -109,14 +109,22 @@
       wtimer(9,2)=wtimer(9,2)+mpi_wtime()-cwtmp
 #endif
 
+!$OMP parallel default(shared) private(j,is_land,k,vnor1,vnor2,i,nd,toth,kup,kdo,psum,psumtr, &
+!$OMP jsj,ie,tmp,iup,ido,ind1,delta_tr,l,rat,jj,ref_flux,same_sign,vj,ndim,kin,alow,bdia,cupp, &
+!$OMP bigv,dtb_by_bigv,av_df,av_dz,adv_tr,iel,trel_tmp_outside,ibnd,nwild,ll,ndo,lll,ind2,rrhs, &
+!$OMP nd1,nd2,hdif_tmp,av_h,difnum,soln,gam)
+
 !'    Modify here 3D velocity for transport (for whatever reason) - make sure volume conservation is not violated
 !     For rewetted elements, tr_el takes the value from last wet step
 
 !     Compute (pre-limiting) fluxes at all faces 
+!$OMP workshare
       flux_adv_hface=-1.d34 !flags
+!$OMP end workshare
 !      flux_adv_vface=-1.d34 !flags
 
 !     Horizontal fluxes
+!$OMP do
       do j=1,ns !resident side
         if(idry_s(j)==1) cycle
         is_land=(isdel(2,j)==0.and.isbs(j)<=0)
@@ -139,9 +147,11 @@
           endif !is_land
         enddo !k=kbs(i)+1,nvrt
       enddo !j=1,ns
+!$OMP end do
 
 !     Compute vertical fluxes - already done in schism_step
 
+!$OMP master
 !     Exchange flux_adv
 #ifdef INCLUDE_TIMING
       cwtmp=mpi_wtime()
@@ -155,11 +165,17 @@
 #ifdef INCLUDE_TIMING
       cwtmp2=mpi_wtime()
 #endif
+!$OMP end master
+!$OMP barrier
 
 !     Mark upwind prisms for efficiency
       if(ltvd) then
+!$OMP   workshare
         iupwind_e=0
-        do i=1,ne
+!$OMP   end workshare
+
+!$OMP   do 
+        do i=1,nea
           if(itvd_e(i)==0) then
             iupwind_e(i)=1 
           else !itvd_e=1
@@ -172,13 +188,16 @@
             enddo !j
           endif !itvd_e
         enddo !i=1,ne
+!$OMP   end do
       endif !ltvd
 
       do i=1,ntr
+!$OMP   workshare
         flux_mod_hface(i,1:nvrt,1:ns)=flux_adv_hface(1:nvrt,1:ns)
         !flux_adv_vface from step routine. This routine cannot handle
         !settling vel. and assumes flux_adv_vface is same across all tracers
         flux_mod_vface(i,1:nvrt,1:ne)=flux_adv_vface(1:nvrt,1,1:ne)
+!$OMP   end workshare
       enddo !i
 
 !     Debug
@@ -192,25 +211,30 @@
 !        enddo !k
 !      enddo !i
 
-#ifdef DEBUG
-      dtbe=dt !min (over all subcycles and all levels) time step allowed at each element
-#endif
+!#ifdef DEBUG
+!      dtbe=dt !min (over all subcycles and all levels) time step allowed at each element
+!#endif
 
+!$OMP single
       it_sub=0
       time_r=dt !time remaining
       difnum_max_l=0 !max. diffusion number reached by this process (check stability)
+!$OMP end single
       loop11: do
 !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+!$OMP single
       it_sub=it_sub+1
+!$OMP end single
 
 !     Compute flux limiters and modify fluxes
       if(ltvd) then !TVD is used for all tracers
+!$OMP   workshare
         up_rat_hface=-1.d34 !flags
         up_rat_vface=-1.d34 !flags
+!$OMP   end workshare
+
 !       Vertical limiters
-#ifdef DEBUG
-        ntot_v=0 !total # of vertical faces that have large limiters (for first tracer)
-#endif
+!$OMP   do
         do i=1,ne
           if(idry_e(i)==1) cycle
 
@@ -249,32 +273,31 @@
               ie=ic3(j,i)
               if(ie/=0) then; if(idry_e(ie)==0.and.kup>=kbs(jsj)+1.and.ssign(j,i)*flux_adv_hface(kup,jsj)<0) then
 #ifdef DEBUG
-              if(flux_adv_hface(kup,jsj)<-1.d33) then
-                write(errmsg,*)'Left out horizontal flux (5):',jsj,kup
-                call parallel_abort(errmsg)
-              endif
+                if(flux_adv_hface(kup,jsj)<-1.d33) then
+                  write(errmsg,*)'Left out horizontal flux (5):',jsj,kup
+                  call parallel_abort(errmsg)
+                endif
 #endif
                 psum=psum+abs(flux_adv_hface(kup,jsj))
                 psumtr(1:ntr)=psumtr(1:ntr)+abs(flux_adv_hface(kup,jsj))*(tr_el(1:ntr,kup,ie)-tr_el(1:ntr,kup,i))
               endif; endif
             enddo !j
 
-! This is the clculation of the TVD stability/variation. Selection is a performance killer.
+! This is the calculation of the TVD stability/variation. Selection is a performance killer.
             do j=1,ntr
               tmp=(tr_el(j,kup,i)-tr_el(j,kdo,i))*abs(flux_adv_vface(k,1,i))
               if(abs(tmp)>1.e-20) up_rat_vface(j,k,i)=psumtr(j)/tmp !otherwise it remains at -1
             enddo !j
 
-#ifdef DEBUG
-            if( flux_lim( up_rat_vface(1,k,i))> 0.1) ntot_v=ntot_v+1
-#endif            
+!#ifdef DEBUG
+!            if( flux_lim( up_rat_vface(1,k,i))> 0.1) ntot_v=ntot_v+1
+!#endif            
           enddo !k=kbe(i)+1,nvrt-1
         enddo !i=1,ne
+!$OMP   end do
 
 !       Horizontal limiters
-#ifdef DEBUG
-        ntot_h=0 !total # of horizontal faces that have large limiters (for 1st tracer)
-#endif
+!$OMP   do
         do i=1,ns !residents
           if(idry_s(i)==1) cycle
 
@@ -366,11 +389,12 @@
               tmp=(tr_el(j,k,iup)-tr_el(j,k,ido))*abs(flux_adv_hface(k,i))
               if(abs(tmp)>1.e-20) up_rat_hface(j,k,i)=psumtr(j)/tmp
             enddo !j
-#ifdef DEBUG
-            if(flux_lim( up_rat_hface(1,k,i))>0.1) ntot_h=ntot_h+1
-#endif
+!#ifdef DEBUG
+!            if(flux_lim( up_rat_hface(1,k,i))>0.1) ntot_h=ntot_h+1
+!#endif
           enddo !k=kbs(i)+1,nvrt
         enddo !i=1,ns
+!$OMP   end do
 
 !       Debug
 !        if(it==1.and.it_sub==1) then
@@ -383,31 +407,20 @@
 !          stop
 !        endif
 
-!       Reset upwind ratios and flux_mod for upwind prism faces
-        do i=1,ne
-          if(iupwind_e(i)/=0) then
-            up_rat_vface(:,:,i)=0
-            do j=1,i34(i) !sides
-              up_rat_hface(:,:,elside(j,i))=0
-            enddo !j
-          endif
-        enddo !i=1,ne
+!       Reset upwind ratios for upwind prism faces
+!$OMP   do
+        do i=1,ns
+          do j=1,2
+            ie=isdel(j,i)
+            if(ie>0) then; if(iupwind_e(ie)/=0) then
+              up_rat_hface(:,:,i)=0; exit
+            endif; endif
+          enddo !j
+        enddo !i
+!$OMP   end do
 
-#ifdef INCLUDE_TIMING
-        timer_ns(1)=timer_ns(1)+mpi_wtime()-cwtmp2
-#endif
-
+!$OMP   master
 !       Exchange up_rat
-!        if(ntr==2) then
-!#ifdef INCLUDE_TIMING
-!          cwtmp=mpi_wtime()
-!#endif
-!          call exchange_s3d_2(up_rat_hface)
-!          call exchange_e3d_2(up_rat_vface)
-!#ifdef INCLUDE_TIMING
-!          wtimer(9,2)=wtimer(9,2)+mpi_wtime()-cwtmp
-!#endif
-!        else if(ntr==ntracers) then
 #ifdef INCLUDE_TIMING
         cwtmp=mpi_wtime()
 #endif
@@ -416,16 +429,27 @@
 #ifdef INCLUDE_TIMING
         wtimer(9,2)=wtimer(9,2)+mpi_wtime()-cwtmp
 #endif
-!        else
-!          call parallel_abort('Transport: unknown tracer number')
-!        endif
 
 #ifdef INCLUDE_TIMING
         cwtmp2=mpi_wtime()
 #endif
+!$OMP   end master
+
+!       Reset upwind ratios 
+!$OMP   do
+        do i=1,nea
+          if(iupwind_e(i)/=0) then
+            up_rat_vface(:,:,i)=0
+!            do j=1,i34(i) !sides
+!              up_rat_hface(:,:,elside(j,i))=0
+!            enddo !j
+          endif
+        enddo !i=1,ne
+!$OMP   end do
 
 !       Modifed fluxes flux_mod (their signs do not change) 
 !       Vertical fluxes
+!$OMP   do
         do i=1,ne !residents
           if(idry_e(i)==1) cycle
 
@@ -494,8 +518,10 @@
             enddo !j
           enddo !k=kbe(i)+1,nvrt-1  
         enddo !i=1,ne
+!$OMP   end do
 
 !       Horizontal fluxes
+!$OMP   do
         do i=1,ns
           if(idry_s(i)==1.or.isdel(2,i)==0.or.idry_e(isdel(1,i))==1) cycle
           if(idry_e(isdel(2,i))==1) cycle
@@ -565,6 +591,7 @@
             enddo !j
           enddo !k=kbs(i)+1,nvrt
         enddo !i=1,ns
+!$OMP   end do
 
       endif !ltvd; flux limiter
 
@@ -574,10 +601,18 @@
 !     Implicit vertical flux for upwind; explicit for TVD
 
       if(ltvd.or.it_sub==1) then !for upwind, only compute dtb for the first step
-        dtbl=time_r
-        ie01=0 !element # where the exteme is attained (local)
-        lev01=0 !level #
-        in_st=0 !tracer #
+!!$OMP   single
+!        dtbl=time_r
+!        ie01=0 !element # where the exteme is attained (local)
+!        lev01=0 !level #
+!        in_st=0 !tracer #
+!!$OMP   end single
+
+!$OMP   workshare
+        dtb_min3(:)=time_r !init
+!$OMP   end workshare
+
+!$OMP   do
         do i=1,ne
           if(idry_e(i)==1) cycle
 
@@ -603,7 +638,7 @@
               if(k>=kbs(jsj)+1) then
                 ref_flux = flux_mod_hface(1,k,jsj) !flux_mod(:) same sign as flux_adv
                 same_sign = (ssign(j,i)*ref_flux)<0
-!DIR$ IVDEP 
+!!DIR$ IVDEP 
                 if((ie/=0.and.idry_e(max(1,ie))==0.or.ie==0.and.isbs(jsj)>0).and.same_sign) then
                   do jj=1,ntr
 #ifdef DEBUG
@@ -630,20 +665,27 @@
             do jj=1,ntr
               if(psumtr(jj)/=0) then
                 tmp=vj/psumtr(jj)*(1-1.e-6) !safety factor included
-                if(tmp<dtbl) then
-                  dtbl=tmp 
-                  ie01=i; lev01=k; in_st=jj
+                if(tmp<dtb_min3(i)) then
+                  !dtbl=tmp 
+                  dtb_min3(i)=tmp
+                  !ie01=i; lev01=k; in_st=jj
                 endif
-#ifdef DEBUG
-                if(tmp<dtbe(i)) dtbe(i)=tmp
-#endif
+!#ifdef DEBUG
+!                if(tmp<dtbe(i)) dtbe(i)=tmp
+!#endif
               endif
             enddo !jj
 
 !            if(qj/=0) dtb_altl=min(dtb_altl,vj/(1+nplus)/qj*(1-1.e-10)) !safety factor included
           enddo !k=kbe(i)+1,nvrt
         enddo !i=1,ne
+!$OMP   end do
 
+!$OMP   workshare
+        dtbl=minval(dtb_min3)
+!$OMP   end workshare
+
+!$OMP   master
 #ifdef INCLUDE_TIMING
         cwtmp=mpi_wtime()
         timer_ns(1)=timer_ns(1)+cwtmp-cwtmp2
@@ -664,18 +706,25 @@
 #endif
 
 !       Output time step
-        if(myrank==int(buf2(2,1)).and.ie01>0) &
-     &write(12,'(a20,5(1x,i10),1x,f14.3,1x,e22.10)') &
-     &'TVD-upwind dtb info:',it,it_sub,ielg(ie01),lev01,in_st,dtb,it*dt !,dtb_alt 
+!        if(myrank==int(buf2(2,1)).and.ie01>0) &
+!     &write(12,'(a20,5(1x,i10),1x,f14.3,1x,e22.10)') &
+!     &'TVD-upwind dtb info:',it,it_sub,ielg(ie01),lev01,in_st,dtb,it*dt !,dtb_alt 
+!$OMP   end master
 
       endif !ltvd.or.it_sub==1; compute dtb
 
+!$OMP master
       dtb=min(dtb,time_r) !for upwind
       time_r=time_r-dtb
+!$OMP end master
+!$OMP barrier
 
 !     Store last step's S,T
+!$OMP workshare
       trel_tmp(1:ntr,:,:)=tr_el(1:ntr,:,1:nea)
+!$OMP end workshare
 
+!$OMP do reduction(max: difnum_max_l)
       do i=1,ne
         if(idry_e(i)==1) cycle
 
@@ -833,39 +882,6 @@
               endif
 #endif
 
-!              if(imod==0) then !TS
-!                if(itetype(ibnd)==0) then !set to be same as interior (so cancel out below)
-!                  trel_tmp_outside(1)=trel_tmp(1,k,i)
-!                else if(itetype(ibnd)==1.or.itetype(ibnd)==2) then
-!                  trel_tmp_outside(1)=tobc(ibnd)*tth(1,1,ibnd)+(1-tobc(ibnd))*trel_tmp(1,k,i)
-!                else if(itetype(ibnd)==3) then
-!                  tmp=(tem0(k,isidenode(1,jsj))+tem0(k-1,isidenode(2,jsj)))/2.d0
-!                  trel_tmp_outside(1)=tobc(ibnd)*tmp+(1-tobc(ibnd))*trel_tmp(1,k,i)
-!                else if(itetype(ibnd)==4) then
-!                  tmp=(tth(k,ind1,ibnd)+tth(k-1,ind1,ibnd)+tth(k,ind2,ibnd)+tth(k-1,ind2,ibnd))/4
-!                  trel_tmp_outside(1)=tobc(ibnd)*tmp+(1-tobc(ibnd))*trel_tmp(1,k,i)
-!                else
-!                  write(errmsg,*)'TRASNPORT: INVALID VALUE FOR ITETYPE'
-!                  call parallel_abort(errmsg)
-!                endif !itetype
-!
-!                if(isatype(ibnd)==0) then !set to be same as interior (so cancel out below)
-!                  trel_tmp_outside(2)=trel_tmp(2,k,i)
-!                else if(isatype(ibnd)==1.or.isatype(ibnd)==2) then
-!                  trel_tmp_outside(2)=sobc(ibnd)*sth(1,1,ibnd)+(1-sobc(ibnd))*trel_tmp(2,k,i)
-!                else if(isatype(ibnd)==3) then
-!                  tmp=(sal0(k,isidenode(1,jsj))+sal0(k-1,isidenode(2,jsj)))/2.d0
-!                  trel_tmp_outside(2)=sobc(ibnd)*tmp+(1-sobc(ibnd))*trel_tmp(2,k,i)
-!                else if(isatype(ibnd)==4) then
-!                  tmp=(sth(k,ind1,ibnd)+sth(k-1,ind1,ibnd)+sth(k,ind2,ibnd)+sth(k-1,ind2,ibnd))/4
-!                  trel_tmp_outside(2)=sobc(ibnd)*tmp+(1-sobc(ibnd))*trel_tmp(2,k,i)
-!                else
-!                  write(errmsg,*)'TRASNPORT: INVALID VALUE FOR ISATYPE'
-!                  call parallel_abort(errmsg)
-!                endif !isatype
-!
-!              else !tracers
-
               do jj=1,natrm
                 if(ntrs(jj)<=0) cycle
 
@@ -952,7 +968,8 @@
                 if(av_h<=0) call parallel_abort('TRANSPORT: Height<=0')
                 !Check diffusion number; write warning message
                 difnum=dtb_by_bigv*hdif_tmp/delj(jsj)*av_h*distj(jsj)
-                if(difnum>difnum_max_l) difnum_max_l=difnum
+!                if(difnum>difnum_max_l) difnum_max_l=difnum
+                difnum_max_l=max(difnum_max_l,difnum)
                 rrhs(1:ntr,kin)=rrhs(1:ntr,kin)+difnum*(trel_tmp(1:ntr,k,iel)-trel_tmp(1:ntr,k,i))
               endif !k>=
             enddo !j    
@@ -987,7 +1004,9 @@
           tr_el(:,k,i)=tr_el(:,kbe(i)+1,i)
         enddo !k
       enddo !i=1,ne
+!$OMP end do
 
+!$OMP master
 !     Update ghosts
 #ifdef INCLUDE_TIMING
       cwtmp=mpi_wtime()
@@ -1002,30 +1021,34 @@
       cwtmp2=mpi_wtime()
       wtimer(9,2)=wtimer(9,2)+cwtmp2-cwtmp
 #endif      
+!$OMP end master
+!$OMP barrier
 
       if(time_r<1.e-8) exit loop11
 !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
        end do loop11
 
+!$OMP end parallel
+
 !     Output warning for diffusion number
       if(difnum_max_l>0.5) write(12,*)'Transport: diffusion # exceeds 0.5:',it,difnum_max_l
 !'
 
-#ifdef DEBUG
-!     Output _estimated_ # of divisions etc.
-      if(ltvd) then 
-#ifdef INCLUDE_TIMING
-        cwtmp=mpi_wtime()
-#endif
-        call mpi_allreduce(ntot_h,ntot_hgb,1,itype,MPI_SUM,comm,ierr)
-        call mpi_allreduce(ntot_v,ntot_vgb,1,itype,MPI_SUM,comm,ierr)
-#ifdef INCLUDE_TIMING
-        wtimer(9,2)=wtimer(9,2)+mpi_wtime()-cwtmp
-#endif
-        if(myrank==0) &
-          write(16,*)'Total # of vertical and S faces limited = ',ntot_hgb,ntot_vgb
-      endif !ltvd
-#endif /*DEBUG*/
+!#ifdef DEBUG
+!!     Output _estimated_ # of divisions etc.
+!      if(ltvd) then 
+!#ifdef INCLUDE_TIMING
+!        cwtmp=mpi_wtime()
+!#endif
+!        call mpi_allreduce(ntot_h,ntot_hgb,1,itype,MPI_SUM,comm,ierr)
+!        call mpi_allreduce(ntot_v,ntot_vgb,1,itype,MPI_SUM,comm,ierr)
+!#ifdef INCLUDE_TIMING
+!        wtimer(9,2)=wtimer(9,2)+mpi_wtime()-cwtmp
+!#endif
+!        if(myrank==0) &
+!          write(16,*)'Total # of vertical and S faces limited = ',ntot_hgb,ntot_vgb
+!      endif !ltvd
+!#endif /*DEBUG*/
       if(myrank==0) write(17,*)it,it_sub
       
 !     Deallocate
@@ -1034,7 +1057,7 @@
 
 !     Debug output of time steps allowed at each element
 #ifdef DEBUG
-      call schism_output_custom(istat,5,1,205,'dtbe',1,ne,dtbe)
+      call schism_output_custom(istat,5,1,205,'dtbe',1,ne,dtb_min3)
       if(myrank==0.and.istat==1) write(16,*)'done outputting dtbe.66'
 #endif
 

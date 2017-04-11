@@ -42,12 +42,16 @@ module schism_glbl
   real(rkind),parameter :: small2=small1*100 !slightly larger number
   real(rkind),parameter :: pi=3.141592653589793d0
   real(rkind),parameter :: grav=9.81d0
-  real(rkind),parameter :: rho0=1000.d0 !1025. !ref. density for S=33 and T=10C
-  real(rkind),parameter :: shw=4184.d0 !Specific heat of water (C_p); dimension J/kg/K
+!  real(rkind),parameter :: rho0=1000.d0 !1025. 
+!  real(rkind),parameter :: shw=4184.d0 !Specific heat of water (C_p); dimension J/kg/K
 !  real(rkind),parameter :: rearth=6378206.4d0 !earth radius
   real(rkind),parameter :: omega_e=7.292d-5 !angular freq. of earth rotation
   !For water quality model
   integer,parameter :: NDTWQ=1   !add by YC
+
+  !# of threads in openMP. Note that this is the # at the start of run (thus the 'default'), but
+  !you can change # of threads in some loops (after that, it should revert to default)
+  integer,save :: nthreads
 
   ! For timing
   integer,parameter :: mxtimer=20          ! Max number of wallclock timers
@@ -73,12 +77,12 @@ module schism_glbl
 
   integer,parameter :: natrm=10 !# of _available_ tracer models at the moment (including T,S)
   !Parameters from param.in
-  integer,save :: ipre,indvel,imm,ihot,ics,iwbl,iharind,nws, &
+  integer,save :: ipre,indvel,imm,ihot,ics,iwbl,iharind,nws,iwindoff, &
                   &ibc,nrampbc,nrampwind,nramp,nramp_ss,ibdef,ihorcon,nstep_wwm,icou_elfe_wwm, &
                   &iwind_form,irec_nu,itur,ihhat,inu_elev, &
                   &inu_uv,ibcc_mean,iflux,iout_sta,nspool_sta,nhot,nhot_write, &
-                  &moitn0,mxitn0,nchi,ibtrack_test,idrag,islip,ibtp,inunfl, &
-                  &inv_atm_bnd,ieos_type,ieos_pres,iupwind_mom,inter_mom,ishapiro,ihydlg
+                  &moitn0,mxitn0,nchi,ibtrack_test,islip,ibtp,inunfl, &
+                  &inv_atm_bnd,ieos_type,ieos_pres,iupwind_mom,inter_mom,ishapiro,ihydlg,isav
   integer,save :: ntrs(natrm)
 
   real(rkind),save :: dt,h0,drampbc,drampwind,dramp,dramp_ss,wtiminc,npstime,npstiminc, &
@@ -88,7 +92,7 @@ module schism_glbl
                       &vnh1,vnh2,vnf1,vnf2,rnday,btrack_nudge,hmin_man, &
                       &prmsl_ref,hmin_radstress,dzb_decay,eos_a,eos_b,eps1_tvd_imp,eps2_tvd_imp, &
                       &xlsc0,rearth_pole,rearth_eq,hvis_coef0,disch_coef(10),hw_depth,hw_ratio, &
-                      &slr_rate
+                      &slr_rate,rho0,shw,sav_cd
 
   ! Misc. variables shared between routines
   integer,save :: nz_r,ieqstate,kr_co, &
@@ -119,7 +123,7 @@ module schism_glbl
   character(len=12),save :: ifile_char
   character(len=48),save,dimension(mnout) :: outfile,variable_nm,variable_dim
   integer,save :: ihfskip,nrec,nspool,ifile,ifile_len, &
-                  &noutput,ifort12(100),it_main,iths_main
+                  &noutput,it_main,iths_main
   integer,save,dimension(mnout) :: ichan,iof !,mrec,irec
   integer,save,allocatable :: ichan_ns(:),iof_ns(:)
   real(rkind) :: time_stamp !simulation time in sec
@@ -330,7 +334,7 @@ module schism_glbl
   real(rkind),save :: th_dt3(nthfiles3) !time step for source/sink .th (ascii)
   real(rkind),save :: th_time3(2,nthfiles3) !2 time stamps for reading source/sink .th (ascii)
   real(rkind),save,allocatable :: trth(:,:,:,:) !time series of b.c. for T,S, tracers
-!  logical,save,allocatable :: lelbc(:)
+  logical,save,allocatable :: lelbc(:)
   integer,save,allocatable :: iettype(:),ifltype(:),itrtype(:,:), &
                              &jspc(:)          
   integer,save,allocatable :: isblock_nd(:,:),isblock_el(:),iq_block_lcl(:),iq_block(:)
@@ -412,7 +416,7 @@ module schism_glbl
                                   &tau(:,:),windfactor(:),pr1(:),airt1(:), &
                                   &shum1(:),pr2(:),airt2(:),shum2(:),pr(:), &
                                   &sflux(:),srad(:),tauxz(:),tauyz(:),fluxsu(:), &
-                                  &fluxlu(:),hradu(:),hradd(:),chi(:),cori(:), &
+                                  &fluxlu(:),hradu(:),hradd(:),cori(:), & !chi(:)
                                   &Cd(:),rough_p(:),erho(:,:),hvis_coef(:,:),d2uv(:,:,:), &
                                   &sparsem(:,:),bcc(:,:,:), & !t_nudge(:),s_nudge(:), &
                                   &tr_nudge(:,:),dr_dxy(:,:,:),fun_lat(:,:), &
@@ -485,8 +489,8 @@ module schism_glbl
 !ICM added by YC
 !#ifdef USE_ICM
 ! arrays for waterquality model added by YC
-  real(rkind),save,allocatable :: WSRP(:),WSLP(:),WSPB1(:),WSPB2(:),WSPB3(:),turb(:),WRea(:),PSQ(:)
-  integer,save,allocatable :: PSK(:)
+!  real(rkind),save,allocatable :: WSRP(:),WSLP(:),WSPB1(:),WSPB2(:),WSPB3(:),turb(:),WRea(:),PSQ(:)
+!  integer,save,allocatable :: PSK(:)
 !#endif
 
 !#ifdef USE_ECO 
@@ -511,6 +515,78 @@ module schism_glbl
 
 ! Marsh model
   integer,save,allocatable     :: imarsh(:),ibarrier_m(:)
+
+! SAV
+  real(rkind),save,allocatable     :: sav_alpha(:),sav_h(:),sav_nv(:)
+
+!Tsinghua group for 2-phase-mixture flow 
+!  integer,save :: inflow_mth                  !Tsinghua group !1120:close
+!  INTEGER,save :: im_pick_up                  !Tsinghua group:bottom pick-up option flag
+!  INTEGER,save :: Two_phase_mix               !TWO PHASE MIXTURE THEORY OPTION
+!  REAL(rkind),save :: diffmin_m               ! Minimum diff of sediment flow   
+!  REAL(rkind),save :: diffmax_m               ! Maximum diff of sediment flow
+!  REAL(rkind),save :: alphd                   ! alphd is correction coefficient of sed deposition
+!  REAL(rkind),save :: refht                   ! *D50   reference height of pick-up flux for zhong formulation
+!  REAL(rkind),save :: Tbp                     ! Nodimesional bursting period Cao(1997) 
+!Tsinghua group:0825
+  REAL(rkind),save :: Cbeta,beta0,c_miu,Cv_max,ecol,ecol1,sigf,sigepsf,Ceps1,Ceps2,Ceps3,Acol,sig_s,fi_c,ksi_c,kpz !1013+kpz
+  REAL(rkind),save,ALLOCATABLE :: Dpzz(:,:)     !at nodes & whole levels 
+  REAL(rkind),save,ALLOCATABLE :: Tpzz(:,:)     !at nodes & whole levels 
+!0825
+!  REAL(rkind),save,ALLOCATABLE :: phai_m(:,:,:)         !tsinghua-lxn-setteing factor !1120:close
+!  REAL(rkind),save,ALLOCATABLE :: beta_m(:,:,:)         !diffusion factor
+!  REAL(rkind),save,ALLOCATABLE :: Tpxyz_m(:,:,:,:)      !stress of mixture 
+!  REAL(rkind),save,ALLOCATABLE :: Dpxyz_m(:,:,:,:)      !diffusion coefficient of particle
+!  REAL(rkind),save,ALLOCATABLE :: Vpxyz_m(:,:,:)        !viscous coefficient of mixture in horizontal
+!  REAL(rkind),save,ALLOCATABLE :: drfv_m(:,:,:,:,:)     !drift velocity at element in three directions at n/n-1 step
+!  REAL(rkind),save,ALLOCATABLE :: volv_m(:,:,:,:,:)     !volume velocity at element in three directions at n/n-1 step
+!  REAL(rkind),save,ALLOCATABLE :: vwater_m(:,:,:)       !water velocity in three directions
+!  REAL(rkind),save,ALLOCATABLE :: vsed_m(:,:,:,:)       !sediment velocity in three directions
+!  REAL(rkind),save,ALLOCATABLE :: drfvx_nd(:,:,:)       !drift velocity at node in x
+!  REAL(rkind),save,ALLOCATABLE :: drfvy_nd(:,:,:)       !drift velocity at node in y
+!  REAL(rkind),save,ALLOCATABLE :: drfvz_nd(:,:,:)       !drift velocity at node in z
+!  REAL(rkind),save,ALLOCATABLE :: vwaterx_nd(:,:)       !water velocity at node in x
+!  REAL(rkind),save,ALLOCATABLE :: vwatery_nd(:,:)       !water velocity at node in y
+!  REAL(rkind),save,ALLOCATABLE :: vwaterz_nd(:,:)       !water velocity at node in z
+!  REAL(rkind),save,ALLOCATABLE :: vsedx_nd(:,:,:)       !sediment velocity at node in x
+!  REAL(rkind),save,ALLOCATABLE :: vsedy_nd(:,:,:)       !sediment velocity at node in y
+!  REAL(rkind),save,ALLOCATABLE :: vsedz_nd(:,:,:)       !sediment velocity at node in z
+!  REAL(rkind),save,ALLOCATABLE :: dis_m(:,:)            !element center to side center (i34,nea)
+!  REAL(rkind),save,ALLOCATABLE :: ratiodis_m(:,:)       !weight of dis_m 
+!0821    
+  REAL(rkind),save,ALLOCATABLE :: Vpx(:,:)      !x drift velocity at side centers & whole levels 
+  REAL(rkind),save,ALLOCATABLE :: Vpy(:,:)      !y drift velocity at side centers & whole levels
+  REAL(rkind),save,ALLOCATABLE :: Vpx2(:,:),Vpy2(:,:),Vpz2(:,:) !x,y,z drift velocity at nodes & whole levels 0927.1 1006
+  REAL(rkind),save,ALLOCATABLE :: TDxz(:,:),TDyz(:,:) !x,y diff stress tensor side centers & whole levels 1006  
+  REAL(rkind),save,ALLOCATABLE :: Phai(:,:,:)     !correction of settle term at nodes & whole levels 1006 
+  REAL(rkind),save,ALLOCATABLE :: dfhm(:,:,:)     !diff in transport Eq. at nodes & whole levels 1007 
+  REAL(rkind),save,ALLOCATABLE :: Dpxz(:,:)     !at nodes & whole levels 
+  REAL(rkind),save,ALLOCATABLE :: Dpyz(:,:)     !at nodes & whole levels 
+  REAL(rkind),save,ALLOCATABLE :: taufp_t(:,:)  !at nodes & whole levels 
+  REAL(rkind),save,ALLOCATABLE :: ws(:,:)       !Ws at nodes & whole levels
+  REAL(rkind),save,ALLOCATABLE :: epsf(:,:)     !epsf at nodes & whole levels
+  REAL(rkind),save,ALLOCATABLE :: q2fp(:,:)     !kfp at nodes & whole levels
+  REAL(rkind),save,ALLOCATABLE :: q2p(:,:)      !kp at nodes & whole levels
+  REAL(rkind),save,ALLOCATABLE :: q2f(:,:)      !kp at nodes & whole levels
+  REAL(rkind),save,ALLOCATABLE :: kppian(:,:)   !at nodes & whole levels
+  REAL(rkind),save,ALLOCATABLE :: miuft(:,:)    !miuft at nodes & whole levels
+  REAL(rkind),save,ALLOCATABLE :: miuepsf(:,:)  !at nodes & whole levels
+  REAL(rkind),save,ALLOCATABLE :: trndtot(:,:)  !tot sed volumetric conc at nodes & whole levels
+  REAL(rkind),save,ALLOCATABLE :: miup(:,:)     !at nodes & whole levels
+  REAL(rkind),save,ALLOCATABLE :: miup_t(:,:)   !at nodes & whole levels
+  REAL(rkind),save,ALLOCATABLE :: miup_c(:,:)   !at nodes & whole levels
+  REAL(rkind),save,ALLOCATABLE :: Kp_tc(:,:)    !at nodes & whole levels
+  REAL(rkind),save,ALLOCATABLE :: Kp_t(:,:)     !at nodes & whole levels
+  REAL(rkind),save,ALLOCATABLE :: Kp_c(:,:)     !at nodes & whole levels
+  REAL(rkind),save,ALLOCATABLE :: Kft(:,:)      !Kf at nodes & whole levels
+  REAL(rkind),save,ALLOCATABLE :: taup(:,:)     !relax time at nodes & whole levels
+  REAL(rkind),save,ALLOCATABLE :: taup_c(:,:)   !collide time at nodes & whole levels
+  REAL(rkind),save,ALLOCATABLE :: g0(:,:)       !at nodes & whole levels
+  REAL(rkind),save,ALLOCATABLE :: SDav(:,:)     !average SD50 at nodes & whole levels
+  REAL(rkind),save,ALLOCATABLE :: Srhoav(:,:)   !average Srho at nodes & whole levels
+  REAL(rkind),save,ALLOCATABLE :: kesit(:,:)    !kesi_tau Srho at nodes & whole levels
+!0821        
+!Tsinghua group----------------------------------
 
 !End module variables declaration
 

@@ -351,10 +351,6 @@
         use schism_glbl, only : rkind, npa, uu2, vv2, tr_nd, & !tnd, snd, &
      &                     kfp, idry, nvrt, ivcor,ipgl,fdb,lfdb
         use schism_msgp, only : myrank,parallel_abort
-#ifdef USE_BULK_FLUX_FORMULATION
-        use schism_glbl, only : tr_nd, prho
-        use bulk_flux_mod, only : bulk_flux
-#endif
         implicit none
 
 ! input/output variables
@@ -381,17 +377,6 @@
         real(rkind) :: x_tmp, y_tmp, sflux_frac
         integer i_node_tmp
         logical, save :: first_call = .true.
-        real(rkind) cloud(npa)
-#ifdef USE_BULK_FLUX_FORMULATION
-        real(rkind) lrflx(npa), srflx(npa)
-#endif
-
-#if !defined PREC_EVAP && defined USE_BULK_FLUX_FORMULATION
-        real(rkind) precip_flux(npa)
-#endif
-#if !defined PREC_EVAP && defined USE_BULK_FLUX_FORMULATION
-        precip_flux=0
-#endif
 
 ! define the local variables num_nodes
         num_nodes = npa
@@ -418,7 +403,7 @@
 #endif
 
 ! output debugging info
-        do i_node = 1, num_nodes
+        do i_node = 1, num_nodes !=npa
 
 ! specify the surface level at this node (depends on coordinate system)
           if (ivcor .eq. -1) then         ! z
@@ -443,35 +428,20 @@
         enddo !i_node
 
 ! calculate the turbulent fluxes at the nodes
-
-#ifdef USE_BULK_FLUX_FORMULATION
-        cloud=0 ! only for the LONGWAVE option, not needed in general.
-        srflx = shortwave_d
-        lrflx = longwave_d
-        CALL bulk_flux (prho, tr_nd(1,:,:),                    &
-     &                  q_air, p_air, t_air, u_air, v_air,     &
-     &                  cloud,                                 &
-     &                  precip_flux, lrflx,                    &
-     &                  sen_flux, lat_flux,                    &
-     &                  srflx,                                 &
-# ifdef PREC_EVAP
-     &                  evap_flux,                             &
-# endif
-     &                  tau_xz, tau_yz)
-#else
-# ifdef DEBUG
+#ifdef DEBUG
         write(38,*) 'above turb_fluxes'
-# endif
+#endif
+
         call turb_fluxes (num_nodes, &
      &                    u_air, v_air, p_air, t_air, q_air, &
      &                    sen_flux, lat_flux, &
-# ifdef PREC_EVAP
+#ifdef PREC_EVAP
      &                    evap_flux, &
-# endif
+#endif
      &                    tau_xz, tau_yz)
-# ifdef DEBUG
+
+#ifdef DEBUG
         write(38,*) 'below turb_fluxes'
-# endif
 #endif
 
 ! now calculate upwards longwave flux at the surface, using black-body
@@ -480,7 +450,8 @@
         write(38,*) 'calculating longwave_u'
 #endif
 
-        do i_node = 1, num_nodes
+!$OMP parallel do default(shared) private(i_node,sfc_lev)
+        do i_node = 1, num_nodes !npa
 
 ! specify the surface level at this node (depends on coordinate system)
           if (ivcor .eq. -1) then         ! z
@@ -492,7 +463,8 @@
           longwave_u(i_node) = emissivity * stefan * &
      &( t_freeze + tr_nd(1,sfc_lev,i_node) ) ** 4
 
-        enddo
+        enddo !i_node
+!$OMP end parallel do 
 
 ! reset flux values if the nws flag is set
         if (nws .eq. 3) then
@@ -581,25 +553,14 @@
 
 ! input/output variables
         integer, intent(in) :: num_nodes
-        real(rkind), dimension(num_nodes), intent(in) :: &
-     &    u_air, v_air, p_air, t_air, q_air
-        real(rkind), dimension(num_nodes), intent(out) :: &
-     &    sen_flux, lat_flux, tau_xz, tau_yz
+        real(rkind), dimension(num_nodes), intent(in) :: u_air, v_air, p_air, t_air, q_air
+        real(rkind), dimension(num_nodes), intent(out) :: sen_flux, lat_flux, tau_xz, tau_yz
 #ifdef PREC_EVAP
-        real(rkind), dimension(num_nodes), intent(out) :: &
-     &    evap_flux
+        real(rkind), dimension(num_nodes), intent(out) :: evap_flux
 #endif
 
 ! local variables
-        integer i_node, iter, sfc_lev
         integer, parameter :: max_iter = 10
-        real(rkind) u_star, theta_star, q_star, z_0, monin
-        real(rkind) zeta_u, zeta_t, one_third, w_star, mix_ratio
-        real(rkind) t_v, speed, psi_m, psi_h
-        real(rkind) re, z_0_t, e_sfc, q_sfc, rho_air, rb
-        real(rkind) theta_air, theta_v_air, delta_theta, delta_q
-        real(rkind) delta_theta_v, theta_v_star, speed_res, tau
-        real(rkind) speed_air, speed_water, esat_flat_r
         real(rkind), parameter :: speed_air_warn = 50.0
         real(rkind), parameter :: speed_air_stop = 100.0
         real(rkind), parameter :: speed_water_warn = 5.0
@@ -623,7 +584,16 @@
         real(rkind), parameter :: latent = 2.501e6
         real(rkind), parameter :: r_air = 287.0
         integer, parameter :: printit = 1000
-        logical converged, dry
+
+        integer :: i_node, iter, sfc_lev
+        real(rkind) :: u_star, theta_star, q_star, z_0, monin
+        real(rkind) :: zeta_u, zeta_t, one_third, w_star, mix_ratio
+        real(rkind) :: t_v, speed, psi_m, psi_h
+        real(rkind) :: re, z_0_t, e_sfc, q_sfc, rho_air, rb
+        real(rkind) :: theta_air, theta_v_air, delta_theta, delta_q
+        real(rkind) :: delta_theta_v, theta_v_star, speed_res, tau
+        real(rkind) :: speed_air, speed_water, esat_flat_r,tmp
+        logical :: converged, dry
 
 #ifdef DEBUG
         write(38,*) 'enter turb_fluxes'
@@ -633,7 +603,12 @@
         one_third = 1.0 / 3.0
 
 ! now loop over all points
-        do i_node = 1, num_nodes
+!$OMP parallel do default(shared) private(i_node,dry,sfc_lev,e_sfc,q_sfc,mix_ratio, &
+!$OMP theta_air,theta_v_air,delta_theta,delta_q,delta_theta_v,t_v,rho_air,speed_air, &
+!$OMP speed_water,u_star,w_star,speed,iter,z_0,rb,zeta_u,monin,zeta_t,converged, &
+!$OMP re,z_0_t,theta_star,q_star,theta_v_star,speed_res,tau,tmp)
+        do i_node = 1, num_nodes !=npa
+!=================================================================
 #ifdef DEBUG
           if (mod(i_node-1,printit) .eq. 0) then
             write(38,*)
@@ -671,11 +646,9 @@
 ! and delta_theta_v
           theta_air = (t_air(i_node) + t_freeze) + 0.0098*z_t
           theta_v_air = theta_air * (1.0 + 0.608 * mix_ratio)
-          delta_theta = theta_air - &
-     &                  (tr_nd(1,sfc_lev,i_node) + t_freeze)
+          delta_theta = theta_air -(tr_nd(1,sfc_lev,i_node) + t_freeze)
           delta_q = q_air(i_node) - q_sfc
-          delta_theta_v = delta_theta * (1.0 + 0.608 * mix_ratio) &
-     &                  + 0.608 * theta_air * delta_q
+          delta_theta_v = delta_theta * (1.0 + 0.608 * mix_ratio)+0.608 * theta_air * delta_q
 
 ! calculate the air virtual temperature and density
           t_v = (t_air(i_node) + t_freeze) * (1.0 + 0.608 * mix_ratio)
@@ -809,127 +782,54 @@
               if(mod(i_node-1,printit).eq.0) write(38,*) 'limiting zeta_u, zeta_t, monin!'
 !'
 #endif
-            endif
+            endif !zeta_t
 
 ! caulculate u_star, depending on zeta
-            if (zeta_u .lt. zeta_m) then                ! very unstable
-
-              u_star = speed * karman &
-     &               / ( log(zeta_m*monin/z_0) &
-     &                   - psi_m(zeta_m) &
+            if(zeta_u .lt. zeta_m) then ! very unstable
 ! extra term?
-     &                   + psi_m(z_0/monin) &
-     &                   + 1.14 * ((-zeta_u)**(one_third) - &
-     &                           (-zeta_m)**(one_third)) )
-
-            else if (zeta_u .lt. 0.0) then              ! unstable
-
-              u_star = speed * karman &
-     &               / ( log(z_u/z_0) &
-     &                   - psi_m(zeta_u) &
-! extra term?
-     &                   + psi_m(z_0/monin) &
-     &                 )
-
-            else if (zeta_u .le. 1.0) then              ! neutral/stable
-
-              u_star = speed * karman &
-     &               / ( log(z_u/z_0) + 5.0*zeta_u &
-! extra term?
-     &                   - 5.0*z_0/monin &
-     &                 )
-
-            else                                        ! very stable
-
-              u_star = speed * karman &
-     &               / ( log(monin/z_0) + 5.0 &
-     &                   + 5.0*log(zeta_u) &
-! extra term?
-     &                   - 5.0*z_0/monin &
-     &                   + zeta_u - 1.0 )
-
+              u_star = speed * karman/(log(zeta_m*monin/z_0)-psi_m(zeta_m)+ psi_m(z_0/monin) &
+     &+1.14*((-zeta_u)**(one_third)-(-zeta_m)**(one_third)))
+            else if (zeta_u .lt. 0.0) then ! unstable
+              u_star = speed*karman/(log(z_u/z_0)-psi_m(zeta_u)+psi_m(z_0/monin))
+            else if (zeta_u .le. 1.0) then ! neutral/stable
+              u_star = speed*karman/(log(z_u/z_0)+5.0*zeta_u-5.0*z_0/monin)
+            else  ! very stable
+              u_star = speed*karman/(log(monin/z_0)+5.0+5.0*log(zeta_u)-5.0*z_0/monin+zeta_u-1.0)
             endif
 
 ! caulculate theta_star and q_star, depending on zeta
-            if (zeta_t .lt. zeta_h) then                ! very unstable
-
-              theta_star = karman * delta_theta &
-     &                   / ( log(zeta_h*monin/z_0_t) &
-     &                       - psi_h(zeta_h) &
-! extra term?
-     &                       + psi_h(z_0_t/monin) &
-     &                       + 0.8 * ((-zeta_h)**(-one_third) - &
-     &                                (-zeta_t)**(-one_third)) )
-
-              q_star = karman * delta_q &
-     &                   / ( log(zeta_h*monin/z_0_t) &
-     &                       - psi_h(zeta_h) &
-! extra term?
-     &                       + psi_h(z_0_t/monin) &
-     &                       + 0.8 * ((-zeta_h)**(-one_third) - &
-     &                                (-zeta_t)**(-one_third)) )
-
-            else if (zeta_t .lt. 0.0) then              ! unstable
-
-              theta_star = karman * delta_theta &
-     &                   / ( log(z_t/z_0_t) &
-     &                       - psi_h(zeta_t) &
-! extra term?
-     &                       + psi_h(z_0_t/monin) &
-     &                     )
-
-              q_star = karman * delta_q &
-     &                   / ( log(z_t/z_0_t) &
-     &                       - psi_h(zeta_t) &
-! extra term?
-     &                       + psi_h(z_0_t/monin) &
-     &                     )
-
-            else if (zeta_t .lt. 1.0) then              ! neutral/stable
-
-              theta_star = karman * delta_theta &
-     &                   / ( log(z_t/z_0_t) &
-     &                       + 5.0*zeta_t &
-! extra term?
-     &                       - 5.0*z_0_t/monin &
-     &                     )
-
-              q_star = karman * delta_q &
-     &                   / ( log(z_t/z_0_t) &
-     &                       + 5.0*zeta_t &
-! extra term?
-     &                       - 5.0*z_0_t/monin &
-     &                     )
-
-            else                                        ! very stable
-
-              theta_star = karman * delta_theta &
-     &                   / ( log(monin/z_0_t) + 5.0 &
-     &                       + 5.0*log(zeta_t) &
-! extra term?
-     &                       - 5.0*z_0_t/monin &
-     &                       + zeta_t - 1.0 )
-
-              q_star = karman * delta_q &
-     &                   / ( log(monin/z_0_t) + 5.0 &
-     &                       + 5.0*log(zeta_t) &
-! extra term?
-     &                       - 5.0*z_0_t/monin &
-     &                       + zeta_t - 1.0 )
-
+            if(zeta_t.lt.zeta_h) then ! very unstable
+              tmp=karman/(log(zeta_h*monin/z_0_t)-psi_h(zeta_h) &
+     &+ psi_h(z_0_t/monin)+0.8*((-zeta_h)**(-one_third)-(-zeta_t)**(-one_third)))
+!              theta_star = karman*delta_theta/(log(zeta_h*monin/z_0_t)-psi_h(zeta_h) &
+!     &+ psi_h(z_0_t/monin)+0.8*((-zeta_h)**(-one_third)-(-zeta_t)**(-one_third)))
+!              q_star = karman*delta_q/(log(zeta_h*monin/z_0_t)- psi_h(zeta_h) &
+!     &+ psi_h(z_0_t/monin)+0.8*((-zeta_h)**(-one_third) -(-zeta_t)**(-one_third)))
+            else if(zeta_t.lt.0.0) then ! unstable
+              tmp=karman/(log(z_t/z_0_t)-psi_h(zeta_t)+psi_h(z_0_t/monin))
+!              theta_star = karman * delta_theta/(log(z_t/z_0_t)-psi_h(zeta_t)+psi_h(z_0_t/monin))
+!              q_star = karman*delta_q/(log(z_t/z_0_t)-psi_h(zeta_t)+psi_h(z_0_t/monin))
+            else if(zeta_t.lt.1.0) then ! neutral/stable
+              tmp=karman/(log(z_t/z_0_t)+5.0*zeta_t-5.0*z_0_t/monin)
+!              theta_star = karman * delta_theta/(log(z_t/z_0_t)+5.0*zeta_t-5.0*z_0_t/monin)
+!              q_star = karman*delta_q/(log(z_t/z_0_t)+5.0*zeta_t-5.0*z_0_t/monin)
+            else ! very stable
+              tmp=karman/(log(monin/z_0_t) + 5.0+5.0*log(zeta_t)-5.0*z_0_t/monin+zeta_t-1.0)
+!              theta_star = karman * delta_theta/(log(monin/z_0_t) + 5.0+5.0*log(zeta_t)-5.0*z_0_t/monin+zeta_t-1.0)
+!              q_star = karman*delta_q/(log(monin/z_0_t)+5.0+5.0*log(zeta_t)-5.0*z_0_t/monin+zeta_t-1.0)
             endif
 
+            theta_star=tmp*delta_theta
+            q_star=tmp*delta_q
+
 ! calculate theta_v_star and monin
-            theta_v_star = theta_star * (1.0 + 0.608 * mix_ratio) &
-     &                   + 0.608 * theta_air * q_star
-            monin = theta_v_air * u_star * u_star &
-     &            / (karman * g * theta_v_star)
+            theta_v_star = theta_star*(1.0+0.608*mix_ratio)+0.608*theta_air*q_star
+            monin = theta_v_air*u_star*u_star/(karman*g*theta_v_star)
 
 ! depending on surface layer stability, calculate the effective
 ! near-surface wind speed
 ! (ie relative to the flowing water surface)
             if (delta_theta_v .ge. 0.0) then                  ! stable
-
               speed = &
      &          max( sqrt( &
 #ifndef SCHISM
@@ -944,8 +844,7 @@
             else                                              ! unstable
 
 ! calculate the convective velocity scale
-              w_star = (-g * theta_v_star * u_star * z_i / theta_v_air) &
-     &                 ** one_third
+              w_star = (-g*theta_v_star*u_star*z_i/theta_v_air)**one_third
 
               speed = &
 #ifndef SCHISM
@@ -1020,10 +919,12 @@
 #endif
 
 ! end of wet/dry block
-        endif
+        endif !.not. dry
 
+!=================================================================
 ! end of loop over points
-        enddo
+        enddo !i_node
+!$OMP end parallel do 
 
 #ifdef DEBUG
         write(38,*) 'exit turb_fluxes'
@@ -1569,10 +1470,9 @@
 #ifdef DEBUG
         write(38,*) 'reducing shortwave'
 #endif
+!new21
         do i_node = 1, num_nodes_out
-          shortwave_d(i_node) = &
-     &      max( (1.0- albedo(i_node))*shortwave_d(i_node), &
-     &           0.0_rkind)
+          shortwave_d(i_node)=max((1.0-albedo(i_node))*shortwave_d(i_node),0.0_rkind)
         enddo
 
 ! set first_call to false, so subsequent calls will know that they're
@@ -1755,7 +1655,7 @@
 ! confine lon to -180->180 range, convert lon/lat to radians
           call fix_coords (info%lon, info%lat, info%nx, info%ny)
 
-! get the number of nodes and elements for the data grid
+! get the number of nodes and elements for the sflux grid
           info%num_nodes = info%nx * info%ny
           info%num_elems = (info%nx - 1) * (info%ny - 1) * 2
 
@@ -1777,11 +1677,11 @@
           call check_allocation('real grid variables', &
      &                          'get_dataset_info', alloc_stat)
 
-! create list of all nodes for this grid
+! create list of all nodes for this grid as in .gr3 format
           call list_nodes (info%node_i, info%node_j, info%node_num, &
      &                     info%num_nodes, info%nx, info%ny)
 
-! create list of all elements for this grid
+! create list of all elements for this grid as in .gr3 format
           call list_elems (info%elem_nodes, info%node_num, &
      &                     info%nx, info%ny, info%num_elems)
 
@@ -1793,7 +1693,7 @@
      &                     num_nodes_out, info%in_elem_for_out_node, &
      &                     info%weight)
 
-        endif
+        endif !info%exist
 
       return
       end !get_dataset_info
@@ -2157,8 +2057,11 @@
      &                       nx, ny)
 
         use schism_glbl, only : rkind
+        use schism_msgp, only : myrank,comm
+!        use mpi
         implicit none
         include 'netcdf.inc'
+        include 'mpif.h'
 
         character, intent(in) ::  file_name*50, data_name*50
         integer, intent(in) :: nx, ny
@@ -2168,17 +2071,24 @@
 ! coord_tmp must be default real (netcdf)
         real coord_tmp(nx,ny)
 
+        if(myrank == 0)then
 ! open file_name and enter read-only mode
-        iret = nf_open(file_name, NF_NOWRITE, ncid)
-        call check_err(iret)
+          iret = nf_open(file_name, NF_NOWRITE, ncid)
+          call check_err(iret)
 
 ! get the variable id for this variable
-        iret = nf_inq_varid(ncid, data_name, var_id)
-        call check_err(iret)
+          iret = nf_inq_varid(ncid, data_name, var_id)
+          call check_err(iret)
 
 ! read the coordinate data
-        iret = nf_get_var_real (ncid, var_id, coord_tmp)
-        call check_err(iret)
+          iret = nf_get_var_real (ncid, var_id, coord_tmp)
+          call check_err(iret)
+! close the netCDF file
+          iret = nf_close(ncid)
+          call check_err(iret)
+        endif
+! Distribute data
+        call mpi_bcast(coord_tmp,nx*ny,mpi_real,0,comm,iret)
 
 ! convert from file real type to data real type
         do j = 1, ny
@@ -2187,10 +2097,6 @@
           enddo
         enddo
 
-! close the netCDF file
-        iret = nf_close(ncid)
-        call check_err(iret)
-        
       return
       end !read_coord
 !-----------------------------------------------------------------------
@@ -2198,8 +2104,11 @@
      &                      nx, ny, time_num)
 
         use schism_glbl, only : rkind
+        use schism_msgp, only : myrank,comm
+!        use mpi
         implicit none
         include 'netcdf.inc'
+        include 'mpif.h'        
 
         character(*), intent(in) ::  file_name, data_name
         integer, intent(in) :: nx, ny, time_num
@@ -2219,19 +2128,26 @@
         data_count(2) = ny
         data_count(3) = 1
 
+        if(myrank == 0)then
 ! open file_name and enter read-only mode
-        iret = nf_open(file_name, NF_NOWRITE, ncid)
-        call check_err(iret)
+          iret = nf_open(file_name, NF_NOWRITE, ncid)
+          call check_err(iret)
 
 ! get the variable id for this variable
-        iret = nf_inq_varid(ncid, data_name, var_id)
-        call check_err(iret)
+          iret = nf_inq_varid(ncid, data_name, var_id)
+          call check_err(iret)
 
 ! read the data
-        iret = nf_get_vara_real(ncid, var_id, data_start, &
+          iret = nf_get_vara_real(ncid, var_id, data_start, &
      &                          data_count, data_tmp)
-        call check_err(iret)
+          call check_err(iret)
 
+! close the netCDF file
+          iret = nf_close(ncid)
+          call check_err(iret)
+        endif
+! distribute data
+        call mpi_bcast(data_tmp,nx*ny,mpi_real,0,comm,iret)
 ! convert from file real type to data real type
         do j = 1, ny
           do i = 1, nx
@@ -2239,10 +2155,6 @@
           enddo
         enddo
 
-! close the netCDF file
-        iret = nf_close(ncid)
-        call check_err(iret)
-        
       return
       end !read_data
 !-----------------------------------------------------------------------
@@ -2334,8 +2246,7 @@
         logical zero_ae, completed_check
 
 ! calculate and store the areas of the input grid elements
-        do i_elem = 1, num_elems
-
+        do i_elem = 1, num_elems !sflux grid
           i1 = node_i(elem_nodes(i_elem,1))
           j1 = node_j(elem_nodes(i_elem,1))
           x1 = x_in(i1,j1)
@@ -2350,10 +2261,7 @@
           j3 = node_j(elem_nodes(i_elem,3))
           x3 = x_in(i3,j3)
           y3 = y_in(i3,j3)
-
-          area_in(i_elem) = 0.5 * &
-     &                      ( (x1-x3)*(y2-y3) + (x3-x2)*(y1-y3) )
-
+          area_in(i_elem)=0.5*((x1-x3)*(y2-y3)+(x3-x2)*(y1-y3))
         enddo
 
 ! now loop over the nodes of the output grid, searching for the
@@ -2364,7 +2272,8 @@
         top = 1
         floor = 1
 
-        do i_node = 1, num_nodes_out
+!cannot use OMP due to dependency   
+        do i_node = 1, num_nodes_out !npa
 
           ae_min = 1.0e25
           in_elem_for_out_node(i_node) = 0
@@ -2470,6 +2379,8 @@
           if ( (.not. completed_check) .and. (.not. zero_ae) ) goto 100
 
 ! if we didnt find a good ae_min, then there are problems
+! Currently, use nearest elem for interpolation even if no parent is found, b/cos
+! node may be outside dataset '2'!
           if (in_elem_for_out_node(i_node) .eq. 0) then
             write(errmsg,*)'Could not find suitable element in input ', &
                            'grid for output node #', i_node, &
@@ -2515,7 +2426,7 @@
           x4 = x_out(i_node)
           y4 = y_out(i_node)
 
-! now calculate the weighting functions
+! now calculate the weighting functions, which may be <0!
           weight(i_node,1) = ( (x4-x3)*(y2-y3) + (x2-x3)*(y3-y4) ) &
      &                     / ( 2.0*area_in(i_elem) )
           weight(i_node,2) = ( (x4-x1)*(y3-y1) - (y4-y1)*(x3-x1) ) &
@@ -2808,7 +2719,8 @@
         integer i_node, i_elem, i1, i2, i3, j1, j2, j3
 
 ! loop over the output nodes
-        do i_node = 1, num_nodes_out
+!$OMP parallel do default(shared) private(i_node,i_elem,i1,j1,i2,j2,i3,j3)
+        do i_node = 1, num_nodes_out !npa
 
 ! get the locations of the nodes for the surrounding element on the
 ! input grid
@@ -2826,7 +2738,8 @@
      &                     + data_in(i2,j2) * weight(i_node,2) &
      &                     + data_in(i3,j3) * weight(i_node,3)
 
-        enddo
+        enddo !i_node
+!$OMP end parallel do 
 
       return
       end !interp_grid
@@ -2882,11 +2795,11 @@
             data_out = data_1
 
 ! if data_1 and data_2 exist, then combine
-          else
+          else !has data_2
 
 ! loop over output nodes, calculating combined value
-            do i_node = 1, num_nodes_out
-
+!$OMP parallel do default(shared) private(i_node,bad_node_2,local_weight_2,sum_weights)
+            do i_node = 1, num_nodes_out !npa
 ! determine if this node is within grid for data_2
               bad_node_2 = ( &
      &            info_2%weight(i_node,1) .lt. 0.0 .or. &
@@ -2913,7 +2826,8 @@
      &            local_weight_2         * data_2(i_node) ) / &
      &          sum_weights
 
-            enddo
+            enddo !i_node
+!$OMP end parallel do
 
           endif  ! got_data_2 block
           

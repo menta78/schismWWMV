@@ -77,14 +77,14 @@
           !Also remove elem. that has an open bnd node where vel. is
           !imposed, because a uniform profile is imposed there leading
           !to large stress
-          itmp=0 !flag
-          do j=1,i34(i)
-            ibnd=isbnd(1,elnode(j,i)) !global
-            if(ibnd>0) then; if(ifltype(ibnd)/=0) then
-              itmp=1; exit
-            endif; endif
-          enddo !j
-          if(itmp==1) cycle
+!          itmp=0 !flag
+!          do j=1,i34(i)
+!            ibnd=isbnd(1,elnode(j,i)) !global
+!            if(ibnd>0) then; if(ifltype(ibnd)/=0) then !0324
+!              itmp=1; exit
+!            endif; endif
+!          enddo !j
+!          if(itmp==1) cycle
 
           kb0 = kbe(i)
           kb1 = kbe(i)+1

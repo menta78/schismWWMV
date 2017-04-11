@@ -348,7 +348,7 @@
 
       USE sed_mod
       USE schism_glbl, ONLY : rkind,i34,elnode,nea,npa,nne,idry,idry_e,xctr,   &
-     &yctr,np,indel,errmsg,elside,iself,nxq,xcj,ycj,ics,xel,yel
+     &yctr,np,indel,errmsg,elside,iself,nxq,xcj,ycj,ics,xel,yel,mnei_p
       USE schism_msgp
       
       IMPLICIT NONE
@@ -454,7 +454,7 @@
       ! Use JCG solver to calc hbed_ised
       hbed_ised=0.0d0 !initial guess
       !Right now zero-flux b.c. is imposed
-      CALL solve_jcg(it,moitn,mxitn,rtol,mcoefd,hbed_ised,qsan,bc_sed,lbc_sed)
+      CALL solve_jcg(mnei_p,np,npa,it,moitn,mxitn,rtol,mcoefd,hbed_ised,qsan,bc_sed,lbc_sed)
 
 !---------------------------------------------------------------------
 ! - Bed/bottom level change due to bedload transport in [m]

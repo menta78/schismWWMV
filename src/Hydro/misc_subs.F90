@@ -83,18 +83,20 @@
         ztmp(kz)=-hmod2 !to avoid underflow
         ztmp(nvrt)=eta2(inode)
 
-        do k=kz+1,nvrt-1
-          kin=k-kz+1
-          if(hmod2<=h_c) then
+        if(hmod2<=h_c) then
+          do k=kz+1,nvrt-1
+            kin=k-kz+1
             ztmp(k)=sigma(kin)*(hmod2+eta2(inode))+eta2(inode)
-           !todo: assert
-          else if(eta2(inode)<=-h_c-(dp(inode)-h_c)*theta_f/s_con1) then
-            write(errmsg,*)'ZCOOR: Pls choose a larger h_c:',eta2(inode),h_c,itag
-            call parallel_abort(errmsg)
-          else
+          enddo !k
+        else if(eta2(inode)<=-h_c-(dp(inode)-h_c)*theta_f/s_con1) then
+          write(errmsg,*)'ZCOOR: Pls choose a larger h_c:',eta2(inode),h_c,itag
+          call parallel_abort(errmsg)
+        else
+          do k=kz+1,nvrt-1
+            kin=k-kz+1
             ztmp(k)=eta2(inode)*(1+sigma(kin))+h_c*sigma(kin)+(hmod2-h_c)*cs(kin)
-          endif
-        enddo !k
+          enddo !k
+        endif
 
         if(dp(inode)<=h_s) then
           kbpl=kz
@@ -135,6 +137,7 @@
         call parallel_abort('ZCOOR: unknown z-coor.')
       endif !ivcor
 
+#ifdef DEBUG
       do k=kbpl+1,nvrt
         !todo: assert
         if(ztmp(k)-ztmp(k-1)<=0) then
@@ -143,6 +146,7 @@
           call parallel_abort(errmsg)
         endif
       enddo !k
+#endif
 
       end subroutine zcoor
       
@@ -152,6 +156,7 @@
 !-------------------------------------------------------------------------------
 ! Routine to update level indices and wetting and drying.
 ! Used when resolution is fine enough.
+! ONLY WORKS WITH PURE TRI's
 !-------------------------------------------------------------------------------
 !#ifdef USE_MPIMODULE
 !      use mpi
@@ -178,7 +183,7 @@
       real(rkind) :: out2(12+nvrt),sutmp(nvrt),svtmp(nvrt),swild2(2,nvrt)
 
       real(rkind),allocatable :: swild(:,:,:)
-      logical :: srwt_xchng(1),prwt_xchng(1)
+      logical :: srwt_xchng(1),prwt_xchng(1),ltmp
       logical :: srwt_xchng_gb(1),prwt_xchng_gb(1)
       logical :: cwtime
 !-------------------------------------------------------------------------------
@@ -190,8 +195,15 @@
 !...  A node is wet if and only if at least one surrounding element is wet
 !...  A side is wet if and only if at least one surrounding element is wet
 !     Initialize element flags for first step
+
+!$OMP parallel default(shared) private(i,j,nd)
+
       if(it==iths) then
+!$OMP   workshare
         idry_e=0
+!$OMP   end workshare
+
+!$OMP   do
         do i=1,nea
           do j=1,i34(i)
             nd=elnode(j,i)
@@ -201,18 +213,36 @@
             endif
           enddo !j
         enddo !i
+!$OMP   end do
       endif !it
 
 !      if(it/=iths) idry_e0=idry_e !save only for upwindtrack()
 
 !...  Wetting/drying algorithm
+!$OMP workshare
       idry_e2=idry_e !starting from step n's indices
+!$OMP end workshare
+!$OMP end parallel 
+
       if(it/=iths) then
 
 !       Make dry first (to speed up iteration)
-        do i=1,np
-          if(dp(i)+eta2(i)<=h0) idry_e2(indel(1:nne(i),i))=1
+!        do i=1,np
+!          if(dp(i)+eta2(i)<=h0) idry_e2(indel(1:nne(i),i))=1
+!        enddo !i
+
+!$OMP parallel do default(shared) private(i,j,nd)
+        do i=1,ne
+          do j=1,i34(i)
+            nd=elnode(j,i)
+            if(eta2(nd)+dp(nd)<=h0) then
+              idry_e2(i)=1
+              exit
+            endif
+          enddo !j
         enddo !i
+!$OMP end parallel do
+
         call exchange_e2di(idry_e2)
 
 !Debug
@@ -242,15 +272,40 @@
           if(itr>100) call parallel_abort('LEVELS1: Too many iterations in wet/dry')
 !'
 
+!$OMP parallel default(shared) private(i,j,ie,id,m,isd)
+
 !         Interface (shoreline) sides
+!$OMP     workshare
           icolor=0 !nodes on the interface sides
           icolor2=0 !interface sides
+!$OMP     end workshare
+
+!$OMP     do
           do i=1,ns
             if(isdel(2,i)/=0) then; if(idry_e2(isdel(1,i))+idry_e2(isdel(2,i))==1) then
-              icolor(isidenode(1:2,i))=1
+!              icolor(isidenode(1:2,i))=1
               icolor2(i)=1
             endif; endif
           enddo !i
+!$OMP     end do
+
+!$OMP     do
+          loopinun: do i=1,np
+            do j=1,nne(i)
+              ie=indel(j,i)
+              id=iself(j,i)
+              do m=1,2 !2 neighboring sides
+                isd=elside(nxq(m+i34(ie)-3,id,i34(ie)),ie)
+                if(icolor2(isd)==1) then
+                  icolor(i)=1
+                  cycle loopinun
+                endif
+              enddo !m
+            enddo !j
+          end do loopinun !i
+!$OMP     end do
+!$OMP end parallel
+
           call exchange_p2di(icolor)
           call exchange_s2di(icolor2)
           
@@ -373,14 +428,19 @@
             call exchange_e2di(idry_e2)
             call exchange_p2d(eta2)
 
-            srwt_xchng(1)=.false. !flag for wetting occurring
+!            srwt_xchng(1)=.false. !flag for wetting occurring
+            ltmp=.false. !flag for wetting occurring
+!$OMP parallel do default(shared) private(i) reduction(.or.: ltmp)
             do i=1,ns
+              ltmp=ltmp.or.inew(i)/=0
               if(inew(i)/=0) then
-                srwt_xchng(1)=.true.
+!                srwt_xchng(1)=.true.
                 su2(1:nvrt,i)=su2(1:nvrt,i)/inew(i)
                 sv2(1:nvrt,i)=sv2(1:nvrt,i)/inew(i)
               endif
             enddo !i
+!$OMP end parallel do 
+            srwt_xchng(1)=ltmp
 
             istop=2
             go to 991
@@ -495,12 +555,14 @@
           enddo !i=1,nsdf; shoreline sides
 
 !         Compute average vel. for rewetted sides
+!$OMP parallel do default(shared) private(i)
           do i=1,ns
             if(inew(i)/=0) then
               su2(1:nvrt,i)=su2(1:nvrt,i)/inew(i)
               sv2(1:nvrt,i)=sv2(1:nvrt,i)/inew(i)
             endif !inew(i)/=0
           enddo !i=1,ns
+!$OMP end parallel do
 
 991       continue
 
@@ -524,22 +586,44 @@
             deallocate(swild)
           endif !srwt_xchng_gb
 
+          ltmp=.false. !for vel. exchange
+!$OMP parallel default(shared) private(i,j,iwet,ie,sutmp,svtmp,icount,m,jj,isd2)
+
 !         Enforce wet/dry flag consistency between nodes and elements due to added wet elements
+!$OMP     workshare
           idry2=1
-          do i=1,nea
-            if(idry_e2(i)==0) idry2(elnode(1:3,i))=0
+!$OMP     end workshare
+!          do i=1,nea
+!            if(idry_e2(i)==0) idry2(elnode(1:3,i))=0
+!          enddo !i
+
+!$OMP     do
+          do i=1,np
+            do j=1,nne(i)
+              if(idry_e2(indel(j,i))==0) then
+                idry2(i)=0; exit
+              endif
+            enddo !j
           enddo !i
+!$OMP     end do
+
+!$OMP     master
           call exchange_p2di(idry2)
+!$OMP     end master
+!$OMP     barrier
 
 !         Compute su2 sv2 for newly wetted sides (due to reasons other than the wetting above)
+!$OMP     do
           do i=1,nea
             inew(i)=0 !use for temp. storage of new element wet/dry flags
             do j=1,3
               if(idry2(elnode(j,i))==1) inew(i)=1
             enddo !j
           enddo !i=1,nea
+!$OMP     end do
 
-          srwt_xchng(1)=.false. !for vel. exchange
+!$OMP     do reduction(.or.: ltmp)
+!          srwt_xchng(1)=.false. !for vel. exchange
           do i=1,ns
             if(.not.(idry_e2(isdel(1,i))==1.and.(isdel(2,i)==0.or.isdel(2,i)>0.and.idry_e2(max(1,isdel(2,i)))==1))) cycle
 !           Dry side that may need new vel.
@@ -563,35 +647,30 @@
      &isdel(2,isd2)>0.and.idry_e2(max(1,isdel(2,isd2)))==0) then !at least one wet element
                     icount=icount+1
 
-!                    if(ics==1) then
-                    swild2(1,1:nvrt)=su2(1:nvrt,isd2)
-                    swild2(2,1:nvrt)=sv2(1:nvrt,isd2)
-!                    else !ics=2
-!                      !Assuming plane rotation
-!                      dot11=dot_product(sframe(1:3,1,isd2),sframe(1:3,1,i))
-!                      dot21=dot_product(sframe(1:3,2,isd2),sframe(1:3,1,i))
-!                      swild2(1,1:nvrt)=su2(1:nvrt,isd2)*dot11+sv2(1:nvrt,isd2)*dot21
-!                      dot12=dot_product(sframe(1:3,1,isd2),sframe(1:3,2,i))
-!                      dot22=dot_product(sframe(1:3,2,isd2),sframe(1:3,2,i))
-!                      swild2(2,1:nvrt)=su2(1:nvrt,isd2)*dot12+sv2(1:nvrt,isd2)*dot22
-!                    endif !ics
-
-                    sutmp(1:nvrt)=sutmp(1:nvrt)+swild2(1,1:nvrt) !su2(1:nvrt,isd2)
-                    svtmp(1:nvrt)=svtmp(1:nvrt)+swild2(2,1:nvrt) !sv2(1:nvrt,isd2)
+!                    swild2(1,1:nvrt)=su2(1:nvrt,isd2)
+!                    swild2(2,1:nvrt)=sv2(1:nvrt,isd2)
+                    sutmp(1:nvrt)=sutmp(1:nvrt)+su2(1:nvrt,isd2)
+                    svtmp(1:nvrt)=svtmp(1:nvrt)+sv2(1:nvrt,isd2)
                   endif
                 enddo !jj
               enddo !m=1,2; 2 elements
 
+              ltmp=ltmp.or.icount/=0
               if(icount/=0) then
-                srwt_xchng(1)=.true.
+!                srwt_xchng(1)=.true.
                 su2(1:nvrt,i)=sutmp(1:nvrt)/icount
                 sv2(1:nvrt,i)=svtmp(1:nvrt)/icount
               endif
             endif !iwet
           enddo !i=1,ns
+!$OMP     end do
 
+!$OMP     workshare
           idry_e2(1:nea)=inew(1:nea)
-!          call exchange_e2di(idry_e2)
+!$OMP     end workshare
+!$OMP end parallel
+          srwt_xchng(1)=ltmp
+
           call mpi_allreduce(srwt_xchng,srwt_xchng_gb,1,MPI_LOGICAL,MPI_LOR,comm,ierr)
           if(srwt_xchng_gb(1)) then
             allocate(swild(2,nvrt,nsa),stat=istat)
@@ -624,42 +703,90 @@
         endif
       endif !it/=iths
 
+!$OMP parallel default(shared) private(i,j,nd,n1,n2,n3,k,stmp,ttmp,icount)
+
 !...  Isolated dry nodes (do nothing for isolated wet)
-      do i=1,np
-        if(dp(i)+eta2(i)<=h0) idry_e2(indel(1:nne(i),i))=1
+!      do i=1,np
+!        if(dp(i)+eta2(i)<=h0) idry_e2(indel(1:nne(i),i))=1
+!      enddo !i
+
+!$OMP do
+      do i=1,ne
+        do j=1,i34(i)
+          nd=elnode(j,i)
+          if(eta2(nd)+dp(nd)<=h0) then
+            idry_e2(i)=1
+            exit
+          endif
+        enddo !j
       enddo !i
+!$OMP end do
+
+!$OMP master
       call exchange_e2di(idry_e2)
+!$OMP end master
+!$OMP barrier
 
 !...  Wet/dry flags for nodes/sides
+!$OMP workshare
       idry2=1; idry_s2=1
-      do i=1,nea
-        if(idry_e2(i)==0) then
-          idry2(elnode(1:3,i))=0
-          idry_s2(elside(1:3,i))=0
-        endif
+!$OMP end workshare
+!      do i=1,nea
+!        if(idry_e2(i)==0) then
+!          idry2(elnode(1:3,i))=0
+!          idry_s2(elside(1:3,i))=0
+!        endif
+!      enddo !i
+
+!$OMP do
+      do i=1,np
+        do j=1,nne(i)
+          if(idry_e2(indel(j,i))==0) then
+            idry2(i)=0; exit
+          endif
+        enddo !j
       enddo !i
+!$OMP end do
+
+!$OMP do
+      do i=1,ns
+        do j=1,2
+          if(isdel(j,i)>0) then; if(idry_e2(isdel(j,i))==0) then
+            idry_s2(i)=0; exit
+          endif; endif
+        enddo !j
+      enddo !i
+!$OMP end do
+
+!$OMP master
       call exchange_p2di(idry2)
       call exchange_s2di(idry_s2)
+!$OMP end master
+!$OMP barrier
 
 !...  Reset vel. at dry sides
+!$OMP do
       do i=1,nsa
         if(idry_s2(i)==1) then
           su2(1:nvrt,i)=0
           sv2(1:nvrt,i)=0
         endif
       enddo !i
+!$OMP end do
 
 !...  Limit elevation at dry nodes
+!$OMP do
       do i=1,npa
         if(idry2(i)==1) then
           !eta2(i)=min(0.d0,-dp(i))
           eta2(i)=min(eta2(i),-dp(i))
         endif
       enddo !i
+!$OMP end do
 
 !...  z-coor. for nodes
 !...  
-      !iback=0
+!$OMP do
       do i=1,npa
         if(ivcor==2) then; if(eta2(i)<=h0-h_s) then
           write(errmsg,*)'Deep depth dry:',iplg(i)
@@ -670,64 +797,9 @@
           if(ivcor/=1) kbp(i)=0
         else !wet
           call zcoor(1,i,kbp(i),znl(:,i))
-
-          !if(dp(i)+eta2(i)<=h0) then
-          !  write(errmsg,*)'levels1: (2):',i,dp(i)+eta2(i)
-          !  call parallel_abort(errmsg)
-          !endif
-
-!!         S-levels
-!          do k=kz,nvrt
-!            kin=k-kz+1
-!
-!            if(hmod(i)<=h_c) then
-!              !iback(i)=1
-!              znl(k,i)=sigma(kin)*(hmod(i)+eta2(i))+eta2(i)
-!            else if(eta2(i)<=-h_c-(hmod(i)-h_c)*theta_f/s_con1) then !hmod(i)>h_c>=0
-!              write(errmsg,*)'Pls choose a larger h_c (2):',eta2(i),h_c
-!              call parallel_abort(errmsg)
-!            else
-!              znl(k,i)=eta2(i)*(1+sigma(kin))+h_c*sigma(kin)+(hmod(i)-h_c)*cs(kin)
-!            endif
-!          enddo !k=kz,nvrt
-!
-!!         z-levels
-!          if(dp(i)<=h_s) then
-!            kbp(i)=kz
-!          else !bottom index 
-!            if(imm>0.or.it==iths.or.lmorph) then
-!              kbp(i)=0 !flag
-!              do k=1,kz-1
-!                if(-dp(i)>=ztot(k).and.-dp(i)<ztot(k+1)) then
-!                  kbp(i)=k
-!                  exit
-!                endif
-!              enddo !k
-!              if(kbp(i)==0) then
-!                write(errmsg,*)'Cannot find a bottom level for node (3):',i
-!!'
-!                call parallel_abort(errmsg)
-!              endif
-!            endif !imm
-!
-!            if(kbp(i)>=kz.or.kbp(i)<1) then
-!              write(errmsg,*)'Impossible 92:',kbp(i),kz,i
-!              call parallel_abort(errmsg)
-!            endif
-!            znl(kbp(i),i)=-dp(i)
-!            do k=kbp(i)+1,kz-1
-!              znl(k,i)=ztot(k)
-!            enddo !k
-!          endif
-!
-!          do k=kbp(i)+1,nvrt
-!            if(znl(k,i)-znl(k-1,i)<=0) then
-!              write(errmsg,*)'Inverted z-levels at:',i,k,znl(k,i)-znl(k-1,i),eta2(i),hmod(i)
-!              call parallel_abort(errmsg)
-!            endif
-!          enddo !k
         endif !wet ot dry
       enddo !i=1,npa
+!$OMP end do
 
 !     Debug
 !      fdb='dry_0000'
@@ -742,7 +814,11 @@
 !      enddo !i
 
 !     Compute element bottom index
+!$OMP workshare
       kbe=0
+!$OMP end workshare
+
+!$OMP do
       do i=1,nea
         if(idry_e2(i)/=0) cycle
 
@@ -762,9 +838,11 @@
           endif; endif
         enddo !k
       enddo !i
+!$OMP end do
 
 !     Compute side bottom index. For wet side and its wet adjacent element,
 !     kbs>=kbe
+!$OMP do
       do i=1,nsa
         kbs(i)=0 !dry
         if(idry_s2(i)==0) then !wet side with 2 wet nodes
@@ -791,15 +869,13 @@
           enddo !k
         endif !wet side
       enddo !i=1,nsa
+!$OMP end do
 
 !     Compute vel., S,T for re-wetted nodes (q2 and xl are fine)
-      prwt_xchng(1)=.false.
       if(it/=iths) then
-        do i=1,npa !ghosts not updated
+!$OMP   do
+        do i=1,np 
           if(idry(i)==1.and.idry2(i)==0) then
-            if(.not.prwt_xchng(1).and.i>np) prwt_xchng(1)=.true. !ghost rewetted; need exchange
-            if(i>np) cycle !do rest for residents
-
             do k=1,nvrt
               uu2(k,i)=0
               vv2(k,i)=0
@@ -827,7 +903,26 @@
               endif
             enddo !k=1,nvrt
           endif !rewetted
-        enddo !i=1,npa
+        enddo !i=1,np
+!$OMP   end do
+      endif !it/=iths
+
+!$OMP end parallel
+
+!     Check wet/dry in ghost zone
+      prwt_xchng(1)=.false.
+      if(it/=iths) then
+        do i=np+1,npa !check ghosts wet/dry
+          if(idry(i)==1.and.idry2(i)==0) then
+            prwt_xchng(1)=.true. !ghost rewetted; need exchange
+            exit
+          endif
+
+!          if(idry(i)==1.and.idry2(i)==0) then
+!            if(.not.prwt_xchng(1).and.i>np) prwt_xchng(1)=.true. !ghost
+!            rewetted; need exchange
+!            if(i>np) cycle !do rest for residents
+        enddo !i
       endif !it/=iths
 
       if(nproc>1) then
@@ -908,14 +1003,16 @@
 
 ! Flag for comm timing
       cwtime=it/=iths
+!$OMP parallel default(shared) private(i,j,ie,n1,n2,n3,n4,k,utmp,vtmp,ttmp,stmp,icount,nd,jj,isd)
 
 !...  z-coor. for nodes
 !...  
+!$OMP do
       do i=1,npa
         if(dp(i)+eta2(i)<=h0) then !dry
           idry2(i)=1 
           if(ivcor==2) then; if(dp(i)>=h_s) then
-            write(errmsg,*)'Deep depth dry:',i
+            write(errmsg,*)'Deep depth dry:',iplg(i)
             call parallel_abort(errmsg)
           endif; endif
           if(ivcor/=1) kbp(i)=0
@@ -924,6 +1021,7 @@
           call zcoor(0,i,kbp(i),znl(:,i))
         endif !wet ot dry
       enddo !i=1,npa
+!$OMP end do
 
 !     Debug
 !      fdb='dry_0000'
@@ -943,17 +1041,22 @@
 !...
 !      if(it/=iths) idry_e0=idry_e !save only for upwindtrack()
 
+!$OMP do
       do i=1,nea
         idry_e2(i)=maxval(idry2(elnode(1:i34(i),i)))
       enddo !i
+!$OMP end do
 
 !      write(10,*)'Element'
 !      do i=1,nea
 !        write(10,*)i,ielg(i),idry_e2(i)
 !      enddo !i
 
-!      idry_s_new(1:npa)=idry(:) !temporary save
+!$OMP workshare
       idry2=1 !dry unless wet
+!$OMP end workshare
+
+!$OMP do
       do i=1,np
         do j=1,nne(i)
           ie=indel(j,i)
@@ -962,7 +1065,9 @@
           endif
         enddo !j
       enddo !i
+!$OMP end do
 
+!$OMP master
 #ifdef INCLUDE_TIMING
       if(cwtime) cwtmp=mpi_wtime()
 #endif
@@ -970,6 +1075,8 @@
 #ifdef INCLUDE_TIMING
       if(cwtime) wtimer(10,2)=wtimer(10,2)+mpi_wtime()-cwtmp
 #endif
+!$OMP end master
+!$OMP barrier
 
 !      write(10,*)'nodes'
 !      do i=1,npa
@@ -1002,7 +1109,11 @@
 !#endif
 
 !     Compute element bottom index
+!$OMP workshare
       kbe=0
+!$OMP end workshare
+
+!$OMP do
       do i=1,nea
         if(idry_e2(i)/=0) cycle
 
@@ -1027,15 +1138,13 @@
           endif; endif
         enddo !k
       enddo !i
+!$OMP end do
 
 !     Compute vel., S,T for re-wetted nodes (q2 and xl are fine)
-      prwt_xchng(1)=.false.
       if(it/=iths) then
-        do i=1,npa !ghosts not updated
-          if(idry(i)==1.and.idry2(i)==0) then
-            if(.not.prwt_xchng(1).and.i>np) prwt_xchng(1)=.true. !ghost rewetted; need exchange
-            if(i>np) cycle !do rest for residents
-
+!$OMP   do
+        do i=1,np
+          if(idry(i)==1.and.idry2(i)==0) then !rewetted
             do k=1,nvrt
               !uu2(k,i)=0
               !vv2(k,i)=0
@@ -1072,18 +1181,25 @@
             enddo !k=1,nvrt
           endif !rewetted
         enddo !i=1,npa
+!$OMP   end do
       endif !it/=iths
 
 !...  z-coor. for sides
 !...  A side is wet if and only if at least one of its elements is wet
+!$OMP workshare
       idry_s2=1 !reinitialize to wipe out previous temp. storage
+!$OMP end workshare
+
+!$OMP do
       do i=1,ns
         do j=1,2 !elements
           ie=isdel(j,i)
           if(ie/=0.and.idry_e2(max(1,ie))==0) idry_s2(i)=0
         enddo !j
       enddo !i
+!$OMP end do
 
+!$OMP master
 #ifdef INCLUDE_TIMING
       if(cwtime) cwtmp=mpi_wtime()
 #endif
@@ -1091,6 +1207,8 @@
 #ifdef INCLUDE_TIMING
       if(cwtime) wtimer(10,2)=wtimer(10,2)+mpi_wtime()-cwtmp
 #endif
+!$OMP end master
+!$OMP barrier
 
 !      write(10,*)'Side'
 !      do i=1,nsa
@@ -1130,6 +1248,7 @@
 !#endif
 
 !     Compute side bottom index
+!$OMP do
       do i=1,nsa
         n1=isidenode(1,i)
         n2=isidenode(2,i)
@@ -1157,15 +1276,13 @@
           enddo !k
         endif !wet side
       enddo !i=1,nsa
+!$OMP end do
 
 !     Compute vel., S,T for re-wetted sides 
-      srwt_xchng(1)=.false.
       if(it/=iths) then
-        do i=1,nsa
+!$OMP   do
+        do i=1,ns
           if(idry_s(i)==1.and.idry_s2(i)==0) then
-            if(.not.srwt_xchng(1).and.i>ns) srwt_xchng(1)=.true. !rewetted ghost side; needs exchange
-            if(i>ns) cycle !do the rest only for residents
-
             n1=isidenode(1,i)
             n2=isidenode(2,i)
             do k=1,nvrt
@@ -1210,7 +1327,38 @@
             enddo !k
           endif !rewetted
         enddo !i=1,ns
+!$OMP   end do
       endif !it/=iths
+
+!$OMP end parallel
+
+!     Check wet/dry in ghost zone
+      prwt_xchng(1)=.false. !node
+      srwt_xchng(1)=.false. !side
+
+      if(it/=iths) then
+        do i=np+1,npa !check ghosts wet/dry
+          if(idry(i)==1.and.idry2(i)==0) then
+            prwt_xchng(1)=.true. !ghost rewetted; need exchange
+            exit
+          endif
+
+!          if(idry(i)==1.and.idry2(i)==0) then
+!            if(.not.prwt_xchng(1).and.i>np) prwt_xchng(1)=.true. !ghost rewetted; need exchange
+!            if(i>np) cycle !do rest for residents
+        enddo !i
+  
+        do i=ns+1,nsa !ghost
+          if(idry_s(i)==1.and.idry_s2(i)==0) then
+            srwt_xchng(1)=.true.
+            exit
+          endif
+ 
+!          if(idry_s(i)==1.and.idry_s2(i)==0) then
+!            if(.not.srwt_xchng(1).and.i>ns) srwt_xchng(1)=.true. !rewetted ghost side; needs exchange
+!            if(i>ns) cycle !do the rest only for residents
+        enddo !i
+      endif !it/
 
       if(nproc>1) then
 #ifdef INCLUDE_TIMING
@@ -1312,6 +1460,9 @@
       real(rkind) :: swild(2),swild2(nvrt,2),swild3(nvrt),swild5(4,2)
       real(rkind), allocatable :: swild4(:,:,:) !swild4 used for exchange
 
+!$OMP parallel default(shared) private(i,k,j,isd,isd2,isd3,swild5,ud1,ud2, &
+!$OMP vd1,vd2,weit_w,icount,ie,id,weit,l,nfac0,ltmp,ltmp2,nfac)
+
 !     swild=-99; swild2=-99; swild3=-99 !initialize for calling vinter
 !     Nodal vel.
 !     For ics=2, it is in nodal frame
@@ -1319,7 +1470,11 @@
 !-------------------------------------------------------------------------------
 !     Compute discontinuous hvel first 
 !     Defined in element frame for ics=2
+!$OMP workshare
       ufg=0; vfg=0
+!$OMP end workshare
+
+!$OMP do
       do i=1,nea
         do k=1,nvrt
           !Save side vel.
@@ -1372,8 +1527,13 @@
           enddo !j
         enddo !k
       enddo !i=1,nea
+!$OMP end do
 
+!$OMP workshare
       uu2=0; vv2=0; ww2=0 !initialize and for dry nodes etc.
+!$OMP end workshare
+
+!$OMP do
       do i=1,np !resident only
         if(idry(i)==1) cycle
 
@@ -1410,14 +1570,15 @@
 !                call vinter
 !              endif
 !            else !along S
-            swild(1)=we(k,ie)
+!            swild(1)=we(k,ie)
 !            endif !Z or S
 
-            ww2(k,i)=ww2(k,i)+swild(1)*area(ie)
+!            ww2(k,i)=ww2(k,i)+swild(1)*area(ie)
+            ww2(k,i)=ww2(k,i)+we(k,ie)*area(ie)
             weit_w=weit_w+area(ie)
           enddo !j
           if(icount==0) then
-            write(errmsg,*)'Isolated wet node (8):',i
+            write(errmsg,*)'Isolated wet node (8):',iplg(i)
             call parallel_abort(errmsg)
           else
             uu2(k,i)=uu2(k,i)/icount
@@ -1433,11 +1594,16 @@
           ww2(k,i)=0 !ww2(kbp(i),i) 
         enddo !k
       enddo !i=1,np
+!$OMP end do
 
 !-------------------------------------------------------------------------------
       else !indvel=1: averaging vel.
 !-------------------------------------------------------------------------------
+!$OMP workshare
       uu2=0; vv2=0; ww2=0 !initialize and for dry nodes etc.
+!$OMP end workshare
+
+!$OMP do
       do i=1,np !resident only
         if(idry(i)==1) cycle
 
@@ -1547,12 +1713,16 @@
           ww2(k,i)=0 !ww2(kbp(i),i) 
         enddo !k
       enddo !i=1,np
+!$OMP end do
 !-------------------------------------------------------------------------------
       endif !discontinous or averaging vel.
+
+!$OMP end parallel
 
 !     Exchange ghosts
       allocate(swild4(3,nvrt,npa),stat=istat)
       if(istat/=0) call parallel_abort('nodalvel: fail to allocate')
+!new21
       swild4(1,:,:)=uu2(:,:)
       swild4(2,:,:)=vv2(:,:)
       swild4(3,:,:)=ww2(:,:)
@@ -1560,9 +1730,6 @@
       cwtmp=mpi_wtime()
 #endif
       call exchange_p3d_3(swild4)
-!      call exchange_p3dw(uu2)
-!      call exchange_p3dw(vv2)
-!      call exchange_p3dw(ww2)
 #ifdef INCLUDE_TIMING
       wtimer(10,2)=wtimer(10,2)+mpi_wtime()-cwtmp
 #endif
@@ -1681,8 +1848,8 @@
 !     From Pond and Pickard's book.					   *
 !     validity region: T: [-2,40], S: [0:42], p: [0,1000bars]
 !     Inputs: 
-!            indx: info re: where this routine is called; for debug only
-!            igb: global index for ndoe/elem. etc for debug only
+!            indx: info on where this routine is called; for debug only
+!            igb: global index for node/elem. etc for debug only
 !            tem2,sal2: T,S (assumed to be at wet spots).
 !            zc0: z-coord. (for pressure)
 !     Output: density.
@@ -1698,7 +1865,7 @@
 #endif /*USE_TIMOR*/
      &                 )
       use schism_glbl, only: rkind,grav,rho0,tempmin,tempmax,saltmin,saltmax,errmsg, &
-     &ifort12,ddensed,ieos_type,eos_a,eos_b,ieos_pres
+     &ddensed,ieos_type,eos_a,eos_b,ieos_pres
       use schism_msgp, only : parallel_abort
       implicit none
 
@@ -1726,10 +1893,10 @@
         call parallel_abort(errmsg)
       endif
       if(tem<tempmin.or.tem>tempmax.or.sal<saltmin.or.sal>saltmax) then
-        if(ifort12(6)==0) then
-          ifort12(6)=1
-          write(12,*)'Invalid temp. or salinity for density:',tem,sal,indx,igb
-        endif
+!        if(ifort12(6)==0) then
+!          ifort12(6)=1
+        write(12,*)'Invalid temp. or salinity for density:',tem,sal,indx,igb
+!        endif
         tem=max(tempmin,min(tem,tempmax))
         sal=max(saltmin,min(sal,saltmax))
       endif
@@ -1837,7 +2004,13 @@
       else
         drho_dz=(prho(j+1,i)-prho(j-1,i))/(znl(j+1,i)-znl(j-1,i))
       endif
-      bvf=grav/rho0*drho_dz
+!Tsinghua group-------------------------
+      !if(Two_phase_mix==1) then
+      bvf=grav/prho(j,i)*drho_dz
+      !else
+      !  bvf=grav/rho0*drho_dz
+      !endif    
+!Tsinghua group-------------------------
       Gh=xl(j,i)**2/2/q2(j,i)*bvf
       Gh=min(max(Gh,-0.28_rkind),0.0233_rkind)
 
@@ -2291,8 +2464,14 @@
       real(rkind) :: swild(nvrt) !,swild2(nvrt,nea,2)
       real(rkind) :: swild2(nvrt,2)
 
+!$OMP parallel default(shared) private(i,k,swild,swild2,kl)
+
+!$OMP workshare
       rho_mean=-99
+!$OMP end workshare
+
 !     T,S @ elements
+!$OMP do
       do i=1,nea
         if(idry_e(i)==1) cycle
 
@@ -2331,6 +2510,9 @@
      &                            )
         enddo !k
       enddo !i=1,nea
+!$OMP end do
+!$OMP end parallel
+
       end subroutine mean_density
 
 !     Kronecker delta
@@ -2354,12 +2536,14 @@
 !     Bottom extrapolation has 2 options based on h_bcc1
 !     If ics=2, dvar_dxy is defined in eframe of 1st adjacent elem. (as
 !     eframe is along lon/lat and the 2 eframes are close).
+!     ONLY works for pure tri and only invoked by WWM at the moment!
 !===============================================================================
       subroutine hgrad_nodes(imet_dry,ihbnd,nvrt1,npa1,nsa1,var_nd,dvar_dxy)
       use schism_glbl
       use schism_msgp, only : parallel_abort
       implicit none
 
+!new21
       !imet_dry: flag used for internal wet sides only. 1: zero out derivative along Pts '3' and '4' if one of
       !them is dry; 2: relocate the dry node to sidecenter.
       !Currently, only radiation stress uses imet_dry=2.
@@ -2527,7 +2711,7 @@
 
             if(imet_dry==1) then !zero out the derivative along 3-4
               swild2(kbs(i):nvrt,3:4)=0
-            else !use sideceter i as '4'
+            else !use sidecenter i as '4'
               x43=(xn1+xn2)/2-xn3
               y43=(yn1+yn2)/2-yn3
               swild2(kbs(i):nvrt,4)=(swild2(kbs(i):nvrt,1)+swild2(kbs(i):nvrt,2))/2
@@ -2936,15 +3120,31 @@
 
       real(rkind) :: wild(3,2)
 
-      do j=1,3 !nodes
-        nd=elnode(j,nnel)
-        if(ics==1) then
-          wild(j,1)=xnd(nd)
-          wild(j,2)=ynd(nd)
-        else !lat/lon
-          call project_pt('g2l',xnd(nd),ynd(nd),znd(nd),gcor0,frame0,wild(j,1),wild(j,2),tmp)
-        endif !ics
-      enddo !j
+      if(ics==1) then
+        wild(1,1)=xnd(elnode(1,nnel))
+        wild(1,2)=ynd(elnode(1,nnel))
+        wild(2,1)=xnd(elnode(2,nnel))
+        wild(2,2)=ynd(elnode(2,nnel))
+        wild(3,1)=xnd(elnode(3,nnel))
+        wild(3,2)=ynd(elnode(3,nnel))
+      else !lat/lon
+        nd=elnode(1,nnel)
+        call project_pt('g2l',xnd(nd),ynd(nd),znd(nd),gcor0,frame0,wild(1,1),wild(1,2),tmp)
+        nd=elnode(2,nnel)
+        call project_pt('g2l',xnd(nd),ynd(nd),znd(nd),gcor0,frame0,wild(2,1),wild(2,2),tmp)
+        nd=elnode(3,nnel)
+        call project_pt('g2l',xnd(nd),ynd(nd),znd(nd),gcor0,frame0,wild(3,1),wild(3,2),tmp)
+      endif !ics
+
+!      do j=1,3 !nodes
+!        nd=elnode(j,nnel)
+!        if(ics==1) then
+!          wild(j,1)=xnd(nd)
+!          wild(j,2)=ynd(nd)
+!        else !lat/lon
+!          call project_pt('g2l',xnd(nd),ynd(nd),znd(nd),gcor0,frame0,wild(j,1),wild(j,2),tmp)
+!        endif !ics
+!      enddo !j
 
       arco(1)=signa(xt,wild(2,1),wild(3,1),yt,wild(2,2),wild(3,2))/area(nnel)
       arco(2)=signa(wild(1,1),xt,wild(3,1),wild(1,2),yt,wild(3,2))/area(nnel)
@@ -3202,6 +3402,7 @@
 !     Numerical/analytical integration related to quad elements
 !     Inputs:
 !            indx: 1, return \int \phi_ip*\phi_ll dA; 2, return \int \nabla\phi_ip \cdot \nabla\phi_ll dA
+!                  3: return \int \nabla\phi_ip \cdot (d\phi_ll/dy,-d\phi_ll/dx) dA
 !            ie: elem. # (local)
 !            ip,ll: local node indices \in[1:4] of shape function
 !===============================================================================
@@ -3256,18 +3457,20 @@
           do j=1,2 !xi pt
             rjac=area(ie)/4+pt(j)/8*coe1+pt(i)/8*coe2 !Jacobian
             if(rjac<=0) call parallel_abort('quad_int: Jac<=0')
+            x_xi=0.25*(wild(1)+pt(i)*wild(3)) !dx/d\xi
+            x_et=0.25*(wild(5)+pt(j)*wild(3))
+            y_xi=0.25*(wild(2)+pt(i)*wild(4))
+            y_et=0.25*(wild(6)+pt(j)*wild(4))
+            !Following 4 do not have Jacobian
+            phiip_x=y_et/4.*ixi_n(ip)*(1+iet_n(ip)*pt(i))-y_xi/4.*iet_n(ip)*(1+ixi_n(ip)*pt(j)) !d\phi_ip/dx *J
+            phiip_y=x_xi/4.*iet_n(ip)*(1+ixi_n(ip)*pt(j))-x_et/4.*ixi_n(ip)*(1+iet_n(ip)*pt(i))
+            phill_x=y_et/4.*ixi_n(ll)*(1+iet_n(ll)*pt(i))-y_xi/4.*iet_n(ll)*(1+ixi_n(ll)*pt(j))
+            phill_y=x_xi/4.*iet_n(ll)*(1+ixi_n(ll)*pt(j))-x_et/4.*ixi_n(ll)*(1+iet_n(ll)*pt(i))
 
             if(indx==2) then
-              x_xi=0.25*(wild(1)+pt(i)*wild(3)) !dx/d\xi
-              x_et=0.25*(wild(5)+pt(j)*wild(3))
-              y_xi=0.25*(wild(2)+pt(i)*wild(4))
-              y_et=0.25*(wild(6)+pt(j)*wild(4))
-              !Following 4 do not have Jacobian
-              phiip_x=y_et/4.*ixi_n(ip)*(1+iet_n(ip)*pt(i))-y_xi/4.*iet_n(ip)*(1+ixi_n(ip)*pt(j)) !d\phi_ip/dx *J
-              phiip_y=x_xi/4.*iet_n(ip)*(1+ixi_n(ip)*pt(j))-x_et/4.*ixi_n(ip)*(1+iet_n(ip)*pt(i))
-              phill_x=y_et/4.*ixi_n(ll)*(1+iet_n(ll)*pt(i))-y_xi/4.*iet_n(ll)*(1+ixi_n(ll)*pt(j))
-              phill_y=x_xi/4.*iet_n(ll)*(1+ixi_n(ll)*pt(j))-x_et/4.*ixi_n(ll)*(1+iet_n(ll)*pt(i))
               rint=(phiip_x*phill_x+phiip_y*phill_y)/rjac
+            else if(indx==3) then
+              rint=(phiip_x*phill_y-phiip_y*phill_x)/rjac 
             else
               call parallel_abort('quad_int: unknown indx')
             endif

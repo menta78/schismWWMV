@@ -110,7 +110,6 @@
        INTEGER :: drag_formulation       ! key for drag fourmulation method
        INTEGER :: ised_bc_bot            !bottom b.c. option flag
        INTEGER :: ierosion               !Erosion formulation
-
        INTEGER :: comp_ws                ! activation of Soulsby settling velocity
        INTEGER :: comp_tauce             ! activation of Soulsby critical shear stress
        INTEGER :: bedforms_rough         ! activation of roughness predictor
@@ -118,8 +117,11 @@
        INTEGER :: irough_bdld            ! activation of the bedload transport induced roughness
        INTEGER :: slope_avalanching      ! activation of the avalanching computation
        INTEGER :: bedmass_filter         ! activation of the bedmass filter
-
-
+       REAL(rkind) :: alphd              !correction coefficient of sed deposition !1120:+alphd,refht,Tbp,im_pick_up
+       REAL(rkind) :: refht              !*D50   reference height of pick-up flux for zhong formulation
+       REAL(rkind) :: Tbp                !Nodimesional bursting period Cao(1997)
+       INTEGER :: im_pick_up             !bottom pick-up option flag
+       
        INTEGER :: nstp,nnew     !used to store 2 steps for bed_mass
 
 !----------------------
@@ -144,6 +146,10 @@
        REAL(rkind) :: sed_morph_time          ! active morpology is turned on after sed_morph_time (in days)
        REAL(rkind) :: depo_scale              !scale for depositional mass in 1 formulation
        REAL(rkind) :: relath                  !relative height of reference point for calculating the beddeformation    
+
+!---------------------------------------------Tsinghua group                                           
+       REAL(rkind) :: Thero_ustar = 1.d-10    ! used to avoid ustar<0        
+!---------------------------------------------Tsinghua group 
 
        REAL(rkind), ALLOCATABLE  :: bedthick_overall(:)        ! bed thickness; bedthick_overall(npa)
 !       REAL(rkind), ALLOCATABLE :: Csed(:)      ! initial concentration used during analytical initialization
@@ -224,5 +230,7 @@
        REAL(rkind), ALLOCATABLE :: uorb(:)   !RMS Orbital velocity from WWM (m.s-1); uorb(nea)
        REAL(rkind), ALLOCATABLE :: uorbp(:)  !Peak orbital velocity from WWM (m.s-1); uorbp(nea) - not really used
 
+       ! Variable shared by sed_carrying subroutines-Tsinghua group
+       REAL(rkind), ALLOCATABLE  :: sedcaty(:,:)   !Sedimeny carrying capacity (nea,ntr_l)    
 !--------------------------------------------------------------------!
        END MODULE sed_mod

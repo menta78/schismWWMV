@@ -98,14 +98,17 @@
      &                      kbe,ze,pi,nne,indel,tr_el,flx_bt,    &
      &                      errmsg,ielg,iplg,nond_global,iond_global,&
      &                      ipgl,nope_global,np_global,dp,h0,dpe,    &
-     &                      iegl,out_wwm,pi,eta2,dp00,dldxy,we,time_stamp
+     &                      iegl,out_wwm,pi,eta2,dp00,dldxy,we,time_stamp, &
+     &                      itur,Phai
+                            !Tsinghua group:+alphd,im_pick_up,Two_phase_mix
+                            !phai_m !1120:-alphd,im_pick_up,Two_phase_mix,phai_m  +itur,Phai
       USE schism_msgp
       use misc_modules
 
       IMPLICIT NONE
       include 'mpif.h'
 
-      SAVE
+!      SAVE
 
 !- Local variables --------------------------------------------------!
 
@@ -117,24 +120,19 @@
       REAL(rkind),INTENT(OUT) :: tot_bedmass !total bed mass [kg]
 
 
-!      INTEGER :: nwild(nea+12)
-!      INTEGER :: ibnd,isd,isd00,ind1,ind2,ndo,ndf(npa)
-      INTEGER :: ie,nd,ip,ifl
-      INTEGER :: Ksed,i,indx,ised,j,k,ks,l
-      INTEGER :: nm1,nm2,nm3 !bnew
       INTEGER, PARAMETER :: top = 1      ! Top layer of bed
-!      INTEGER , PARAMETER :: sf_dam = 1  ! Slope form. Damgaard
-!      INTEGER , PARAMETER :: sf_del = 2  ! Slope form. Delft 
-!      INTEGER , PARAMETER :: sf_car = 3  ! Slope form. Carmo 
-
       REAL(rkind), PARAMETER :: eps = 1.0d-14
 
-      REAL(rkind) :: hdep(nea),hbed(npa) !depth change (in dt) due to suspended load and bedload
-      REAL(rkind) :: hbed_ised(npa),hdep_nd(npa),ta,tmp
-      REAL(rkind) :: time
-      REAL(rkind) :: cff, cff1, cff2, cff3, cffL, cffR, dltL, dltR
-      REAL(rkind) :: cu, cff4, cff6, aref, cff7, cff8, cff9
-      REAL(rkind) :: thck_avail,thck_to_add,eros_mss,depo_mss,flux_eros,flux_depo
+!      INTEGER :: nwild(nea+12)
+!      INTEGER :: ibnd,isd,isd00,ind1,ind2,ndo,ndf(npa)
+      INTEGER,save :: ie,nd,ip,ifl
+      INTEGER,save :: Ksed,i,indx,ised,j,k,ks,l
+      INTEGER,save :: nm1,nm2,nm3 !bnew
+
+      REAL(rkind),save :: time,ta,tmp
+      REAL(rkind),save :: cff, cff1, cff2, cff3, cffL, cffR, dltL, dltR
+      REAL(rkind),save :: cu, cff4, cff6, aref, cff7, cff8, cff9
+      REAL(rkind),save :: thck_avail,thck_to_add,eros_mss,depo_mss,flux_eros,flux_depo
  
       ! - For suspended sediment
 !      INTEGER, dimension(nvrt,nea)     :: ksource
@@ -148,41 +146,50 @@
 !      REAL(rkind), DIMENSION(nvrt,nea) :: WR
 !      REAL(rkind), DIMENSION(nvrt,nea) :: WL
       ! - For bed load
-      REAL(rkind) :: cff5
-      REAL(rkind) :: bedld_mass
-      REAL(rkind) :: smgdr, osmgd, Umag
-      REAL(rkind) :: tauc0
-      REAL(rkind) :: derx1,derx2,derx3,dery1,dery2,dery3
-      REAL(rkind) :: yp,xp,flux      
-!      REAL(rkind), DIMENSION(nea,mntr) :: dep_mass
+      REAL(rkind),save :: cff5
+      REAL(rkind),save :: bedld_mass
+      REAL(rkind),save :: smgdr, osmgd, Umag
+      REAL(rkind),save :: tauc0
+      REAL(rkind),save :: derx1,derx2,derx3,dery1,dery2,dery3
+      REAL(rkind),save :: yp,xp,flux      
       REAL(rkind), allocatable :: dep_mass(:,:)
 
       ! - For MPM bed load
-      REAL(rkind) :: alphas,tauc
+      REAL(rkind),save :: alphas,tauc
 
       ! - For VR bed load
-      REAL(rkind) :: tsta,dpar
+      REAL(rkind),save :: tsta,dpar
 
       ! - For morphology
-      INTEGER     :: kbed
-      REAL(rkind) :: qsan(npa) 
-      REAL(rkind) :: dhnd(npa) !total depth change in dt (=sus+bedload)
+      INTEGER,save     :: kbed
+
+      REAL(rkind),save, allocatable :: hdep(:),hbed(:) !depth change (in dt) due to suspended load and bedload
+      REAL(rkind),save, allocatable :: hbed_ised(:),hdep_nd(:)
+      REAL(rkind),save, allocatable :: qsan(:) 
+      REAL(rkind),save, allocatable :: dhnd(:) !total depth change in dt (=sus+bedload)
 
       ! - For waves
-      REAL(rkind) :: htot
-      REAL(rkind) :: kpeak
+      REAL(rkind),save :: htot
+      REAL(rkind),save :: kpeak
 
       !Dumping
       INTEGER,save :: ne_dump
-      INTEGER, allocatable :: ie_dump(:)
+      INTEGER, save, allocatable :: ie_dump(:)
       REAL(rkind),save :: t_dump  !time in dumping option
-      REAL(rkind), allocatable :: vol_dump(:)
+      REAL(rkind), save, allocatable :: vol_dump(:)
     
       logical, save :: first_call=.true.
 
 !- Start Statement --------------------------------------------------!
       allocate(dep_mass(nea,ntr_l),stat=i)
       if(i/=0) call parallel_abort('SED: alloc failed')
+
+      if(.not.allocated(hdep)) allocate(hdep(nea))
+      if(.not.allocated(hbed)) allocate(hbed(npa))
+      if(.not.allocated(hbed_ised)) allocate(hbed_ised(npa))
+      if(.not.allocated(hdep_nd)) allocate(hdep_nd(npa))
+      if(.not.allocated(qsan)) allocate(qsan(npa))
+      if(.not.allocated(dhnd)) allocate(dhnd(npa))
 
       ! Used to laternately store bed_mass from 2 steps
       nstp = 1+MOD(it-1,2)
@@ -208,6 +215,7 @@
       anglev   = 0.d0
       bedldu   = 0.d0
       bedldv   = 0.d0
+      sedcaty  = 0.d0 !Tsinghua group
 
       DO i=1,nea
         FX_r(i)  = 0.d0
@@ -470,6 +478,8 @@
           CALL bedchange_bedload(ised,it,moitn,mxitn,rtol,qsan,      &
           &                      hbed,hbed_ised)
           IF(myrank.EQ.0) WRITE(16,*)'SED: leaving bedchange_bedload:',ised,it
+        ELSE !0326a
+          bed_mass(:,:,nnew,:)=bed_mass(:,:,nstp,:)
         ENDIF
 
 !-----------------------------------------------------------------------
@@ -582,6 +592,8 @@
 !---------------------------------------------------------------------
       IF (suspended_load == 1) THEN
         IF(myrank.EQ.0) WRITE(16,*)'SED: Entering suspended load...'
+
+        IF(ised_bc_bot==2) call sed_pickup(im_pick_up) !Tsinghua group
         SED_LOOP: DO ised=1,ntr_l
           indx=isand(ised) !into 1:ntracers
           DO i=1,nea
@@ -593,6 +605,9 @@
                 !semi-Lagrangian to calculate depo_mss=\int (D-w_s*c) dt
                 !depo_mss=dt*Wsed(ised)*tr_el(indx,kbe(i)+1,i) !>=0; kg/m/m
 
+!                if(itur==5) then !1228
+!                  depo_mss=alphd*dt*Wsed(ised)*tr_el(indx,kbe(i)+1,i)*sum(Phai(kbe(i),ised,elnode(1:i34(i),i)))/i34(i)
+!                else
                 cff=ze(nvrt,i)-ze(kbe(i),i) !total depth
                 cff1=ze(kbe(i)+1,i)-ze(kbe(i),i) !bottom depth
 
@@ -643,19 +658,20 @@
                     depo_mss=depo_mss+(cff6+tr_el(indx,k-1,i))/2*(min(cff9,cff8)-cff7) !>=0
                     !depo_mss=depo_mss+cff6*(min(cff9,cff8)-cff7) !>=0 (lower depos. flux)
                   enddo !k
- 
+
                   !Deal with above F.S. case
                   if(Ksed==nvrt+1) then
                     cff7=(ze(nvrt,i)+ze(nvrt-1,i))/2
                     depo_mss=depo_mss+(min(ze(nvrt,i),cff9)-cff7)*tr_el(indx,nvrt,i)
                   endif
                 endif !we(kbe(i)+1,i) <> Wsed(ised)
- 
+
                 !Debug
                 !depo_mss=0
 
                 !Apply a scale to depo_mss
                 depo_mss=depo_mss*depo_scale
+!                endif !itur==5
 
 ! - Compute erosion, eros_mss (kg/m/m) following 
 !  (original erosion flux is in kg/m/m/s; note dt below)
@@ -673,8 +689,8 @@
                   else
                     cff4=cff2-1 ![-]
                   endif !cff2
-                  cff3=tau_ce(ised)*rhom !critical shear stress in Pa
-                  eros_mss=Erate(ised)*cff3 !kg/m/m/s; Erate (M_E in original paper) in [s/m]
+                  cff3=tau_ce(ised)*rhom ![Pa]; tau_ce: critical shear stress in m^2/s/s
+                  eros_mss=Erate(ised)*cff3*cff4 !kg/m/m/s; Erate (M_E in original paper) in [s/m]
                   eros_mss=MAX(0.0d0,cff1*dt*eros_mss) !kg/m/m
                 else
                   CALL parallel_abort('SED3D: unknown erosion formula')
@@ -723,8 +739,66 @@
                 flx_bt(indx,i)=-flux_eros ![kg/m/m/s]
 
               case(2) !Tsinghua Univ. group
-!Xiaonan's addition here
+                !Xiaonan's addition here
                 !Calculate flx_bt=D-E-w_s*T_{kbe+1}, and several other variables (e.g. bed_mass)
+                ! - Compute erosion, eros_mss (kg/m/m) following Ariathurai and Arulanandan (1978)
+                cff1=(1.0d0-bed(top,i,iporo))*bed_frac(top,i,ised)
+                eros_mss=MAX(0.0d0,dt*sedcaty(i,ised)*Srho(ised)*cff1) !kg/m/m  !sedcaty(i,ised) m/s
+
+!Tsinghua group---------------------------------------------------
+                if (itur==5) then !1120:itur==5
+!                  depo_mss=alphd*dt*Wsed(ised)*tr_el(indx,kbe(i)+1,i)*phai_m(kbe(i)+1,indx,i) !1120:close
+                  depo_mss=alphd*dt*Wsed(ised)*tr_el(indx,kbe(i)+1,i)*sum(Phai(kbe(i)+1,ised,elnode(1:i34(i),i)))/i34(i)
+                else
+                  depo_mss=alphd*dt*Wsed(ised)*tr_el(indx,kbe(i)+1,i)    !dt*Wsed(ised)*tr_el(indx,kbe(i)+1,i)
+                endif !itur
+!Tsinghua group---------------------------------------------------
+                eros_mss=MIN(eros_mss,MIN(Srho(ised)*cff1*bottom(i,iactv),bed_mass(top,i,nnew,ised))+depo_mss) !>=0
+
+                IF (sed_morph>=1) THEN
+                  ! - Apply morphology factor to flux and settling...
+                  eros_mss=eros_mss*morph_fac(ised)
+                  depo_mss=depo_mss*morph_fac(ised)
+
+                  ! - Depth change due to erosion/deposition of suspended sediment
+                  if(bed(top,i,iporo)==1) then
+                    WRITE(errmsg,*)'SED3D: bed(top,i,iporo)==1; ',top,i,iporo
+                    CALL parallel_abort(errmsg)
+                  endif
+                  hdep(i)=hdep(i)+(eros_mss-depo_mss)/Srho(ised)/(1.0d0-bed(top,i,iporo))
+                ENDIF !sed_morph
+
+                ! - If first time step of deposit, then store deposit material in
+                ! temporary array, dep_mass.
+                IF (eros_mss<depo_mss) THEN
+                  IF(time>bed(top,i,iaged)+1.1d0*dt.and.bed(top,i,ithck)>newlayer_thick) THEN
+                    dep_mass(i,ised)=depo_mss-eros_mss !>0 !kg/m/m
+                  ENDIF
+                  bed(top,i,iaged)=time
+                ENDIF
+
+                ! - Update bed mass arrays.
+                !jl.  The whole nnew/bnew,nstp is way more confusing than need be
+                bed_mass(top,i,nnew,ised)=MAX(bed_mass(top,i,nnew,ised)-eros_mss+depo_mss,0.0d0)
+                DO k=2,Nbed
+                  bed_mass(k,i,nnew,ised)=bed_mass(k,i,nstp,ised)
+                  if(bed_mass(k,i,nnew,ised)<0) then
+                    WRITE(errmsg,*)'SED3D: bed_m<0',k,bed_mass(k,i,nnew,ised)
+                    CALL parallel_abort(errmsg)
+                  endif
+                ENDDO
+                !bed_mass(top,i,nnew,ised)=MAX(bed_mass(top,i,nnew,ised),0.0d0) 
+
+                !Save erosion and depo. fluxes [kg/m/m/s] for b.c. of transport eq.
+                flux_eros= eros_mss/dt !>=0
+                !Update flx_bt for transport solver
+                flx_bt(indx,i)=-flux_eros ![kg/m/m/s]
+
+                if(flx_bt(indx,i)/=flx_bt(indx,i)) then
+                  WRITE(errmsg,*)'flx_bt: has nan; ',indx,ielg(i),eros_mss,depo_mss,sedcaty(i,ised)
+                  CALL parallel_abort(errmsg)
+                endif
+
               case default
                 call parallel_abort('SED: unknown ised_bc_bot')
             end select
@@ -878,9 +952,14 @@
             ELSE IF(thck_avail==0) THEN
               write(12,*)'SED3D: not enough sed; likely all eroded:', &
      &ielg(i),thck_avail,thck_to_add,bed(:,i,ithck),it
-              bed(:,i,ithck)=0
-              bed_frac(:,i,:)=0
-              bed_mass(:,i,nnew,:)=0
+              bottom(i,iactv)=bed(top,i,ithck) !0326
+              bed(2:Nbed,i,ithck)=0
+              bed_frac(2:Nbed,i,:)=0
+              bed_mass(2:Nbed,i,nnew,:)=0
+
+!              bed(:,i,ithck)=0
+!              bed_frac(:,i,:)=0
+!              bed_mass(:,i,nnew,:)=0
             ELSE !thck_avail>0
 ! - Catch here if there was not enough bed material
               IF(thck_avail<thck_to_add) THEN
@@ -1190,4 +1269,185 @@
       first_call=.false.
 
       end SUBROUTINE sediment
-     
+    
+!**************************************************************************** tsinghua group
+! Numerical integration in the calculation percentage of sediment-carring capacity
+!****************************************************************************
+      FUNCTION ERF(x)
+      use schism_glbl, only : rkind,pi
+      implicit none
+   
+      real(rkind) :: ERF
+      real(rkind), intent(in) ::x
+      ERF=2.d0/SQRT(pi)*(x-x**3.0/3.d0+x**5.0/10.d0-x**7.d0/42.d0+x**9.d0/216.d0)
+      END FUNCTION ERF
+
+
+!*****************************************************************************
+!pick-up flux-Tsinghua
+!*****************************************************************************
+      subroutine sed_pickup(flag)
+
+      USE sed_mod
+      USE schism_glbl, ONLY : rkind,nea,nvrt,kbe,ze,pi,&
+                               xnd,ynd,h0,errmsg,ielg,idry_e,dave,&
+                               rho0,grav,q2,i34,elnode,tr_el
+                               !Tsinghua group:+tr_el,refht,Tbp !1120:-refht,Tbp 
+      USE schism_msgp
+      
+      IMPLICIT NONE
+      include 'mpif.h'
+
+      SAVE
+
+      !- Local variables !
+      integer, intent(in) :: flag
+      INTEGER :: ised,k,i,indx,j,nd
+      INTEGER, PARAMETER :: top = 1      ! Top layer of bed
+      INTEGER, PARAMETER :: mirror = 16  ! FD for mirror.out
+      REAL(rkind),PARAMETER :: nuf = 1.36d-6
+      REAL(rkind),PARAMETER :: kf = 0.4d0
+      REAL(rkind),PARAMETER :: muf  = 0.3d0
+      REAL(rkind),PARAMETER :: Spmax = 0.6d0
+      REAL(rkind),PARAMETER :: Bstar = 0.06d0
+      REAL(rkind),PARAMETER :: Eta0  = 0.5d0
+      REAL(rkind),PARAMETER :: Clift = 0.1d0
+
+      REAL(rkind) :: cff0,cff1,cff2,cff3,cff4,cff5
+      REAL(rkind) :: tmp,FAI,s,downstmp,upstmp,thetal,q2tmp,q2ha0_m
+      REAL(rkind) :: sc1,sc2,sc3,dz1,dz2,dz3
+      REAL(rkind) :: sum_sc,sum_dz,sum_scdz,sum_dz2,sp_limit
+
+      REAL(rkind),allocatable :: theta(:),Rep(:)
+      REAL(rkind),allocatable :: Scdp(:),tau_p(:),tau_f(:)
+      REAL(rkind),allocatable :: theta_cr(:),Dstar(:)
+      REAL(rkind),allocatable :: Dpm(:),Keci(:),Prob(:)
+
+      REAL(rkind) :: ERF,thetacr
+
+      IF(myrank==0) WRITE(mirror,*)'SED: Start the pick-up function'
+      !- Start Statement --------------------------------------------------!
+      allocate(theta(ntr_l),Rep(ntr_l),Scdp(ntr_l), &
+                &tau_p(ntr_l),tau_f(ntr_l),Prob(ntr_l), &
+                &Dstar(ntr_l),Dpm(ntr_l),Keci(ntr_l), &
+                &theta_cr(ntr_l),stat=i)
+      if(i/=0) call parallel_abort('Pick-up function: fail to allocate')
+      
+      DO i=1,nea
+          
+        cff0=0.d0; cff1=0.d0; cff2=0.d0; cff3=0.d0; cff4=0.d0; cff5=0.d0
+        tmp=0.d0; downstmp=0.d0; upstmp=0.d0;FAI=0.d0;thetal=0.d0
+        theta=0.d0;Rep=0.d0;Scdp=0.d0;tau_p=0.d0;tau_f=0.d0;q2tmp=0.d0
+        theta_cr=0.d0;Dstar=0.d0;Dpm=0.d0;Keci=0.d0;Prob=0.d0;q2ha0_m=0.d0
+
+        IF(idry_e(i)==1) CYCLE
+
+!       cff0=(bustr(i)*bustr(i)+bvstr(i)*bvstr(i))**0.25d0                               !friction velocity  
+        cff0=(abs(bustr(i))+abs(bvstr(i)))**0.5d0          
+!************************************************************************** 
+        do ised=1,ntr_l
+          indx=isand(ised) !into 1:ntracers
+          if(cff0.LE.Thero_ustar) cff0=Thero_ustar
+          s=Srho(ised)/rho0
+          cff5=((s-1)*grav*Sd50(ised))**0.5d0
+          theta(ised)=min(10.d0,max(1.d-14,cff0*cff0/(grav*Sd50(ised)*(s-1))))            !Shields number
+          thetal=4.d0/(3.d0*Clift)
+          Rep(ised)=cff0*Sd50(ised)/nuf                                !Sediment reynolds number
+          if (Rep(ised).LE.1.d-14) THEN
+            WRITE(errmsg,*)'sediment reynolds number is zero',ised,ielg(i),Rep(ised)
+            CALL parallel_abort(errmsg)
+          end if
+          Scdp(ised)=((32.d0/Rep(ised))**0.67d0+1.d0)**1.5d0                           !Cd
+          Dstar(ised)=Sd50(ised)*(grav*(s-1.0d0)/(nuf*nuf))**(1.0d0/3.0d0)             !D*
+          theta_cr(ised)=thetacr(Dstar(ised))
+          Dpm(ised)=1.2d0*(1.d0-exp(-0.095d0*Dstar(ised)))                             !Dp
+!********************************************************************* above is the 
+          tau_p(ised)=s*Wsed(ised)/((s-1)*grav)                      
+          tau_f(ised)=0.4d0*kf*refht*Sd50(ised)/muf/cff0
+          cff1=tau_f(ised)/tau_p(ised)*(1+2.d0*s)                                       !beta
+          cff2=(3.d0+cff1)/(1.d0+cff1+2.d0*s)                                           !Ct
+          Keci(ised)=2.d0*cff2*cff2*Dpm(ised)/(3.d0*muf)
+          if (Keci(ised).LE.1.d-10) THEN
+            WRITE(errmsg,*)'Keci is zero',ised,ielg(i),Keci(ised)
+            CALL parallel_abort(errmsg)
+          end if
+!*********************************************************************  
+          tmp=Bstar/theta(ised)-1.d0/Eta0
+          if(tmp.GE.0.d0) then
+            Prob(ised)=max(0.d0,0.5d0-0.5d0*ERF(tmp)) 
+          else
+            Prob(ised)=min(1.d0,0.5d0+0.5d0*ERF(abs(tmp))) 
+          endif
+
+          select case(flag)
+            case(0) !Zhong
+              upstmp=Spmax*Prob(ised)*sqrt(Keci(ised))*cff0
+              downstmp=sqrt(2.d0*pi)*(1+3.d0*Scdp(ised)*refht/(2.d0*s))
+              FAI=exp(-1.d0*(1.d0/theta(ised)-1.d0/thetal)*refht/(s*Keci(ised)))
+              sedcaty(i,ised)=Erate(ised)*upstmp*FAI/downstmp
+            case(1) !Van
+              cff3=cff5*(theta_cr(ised))**0.5d0
+              upstmp=max(0.d0,(cff0*cff0/cff3/cff3-1.d0))
+              sedcaty(i,ised)=Erate(ised)*0.00033*Dstar(ised)**0.3d0*upstmp**1.5d0*cff5
+            case(2) !Cao
+              cff3=cff5*(theta_cr(ised))**0.5d0
+              upstmp=max(0.d0,(cff0*cff0/cff3/cff3-1.d0))
+              downstmp=(0.02d0*Spmax/nuf/Tbp)*((s-1.d0)*grav)**0.5d0
+              sedcaty(i,ised)=Erate(ised)*downstmp*Sd50(ised)**1.5d0*upstmp*theta(ised)*cff5
+            case(3) !Cheng
+              do k=kbe(i)+1,nvrt
+                 do j=1,i34(i)
+                    nd=elnode(j,i)
+                    q2ha0_m=q2ha0_m+(q2(k,nd)+q2(k-1,nd))/2.d0  
+                 end do !j
+                q2ha0_m=q2ha0_m/i34(i)
+                q2tmp=q2ha0_m*(ze(k,i)-ze(k-1,i))+q2tmp 
+              end do
+              q2tmp=q2tmp/(ze(nvrt,i)-ze(kbe(i),i))     !depth-average kinetic energy
+              upstmp=(dave(i)/cff5)**8.d0
+              downstmp=(q2tmp/(cff5*cff5))**(-0.8d0)
+              sedcaty(i,ised)=Erate(ised)*2.81d0*1.d-13*upstmp*downstmp*Dstar(ised)**2.4d0*cff5
+!Tsinghua group----------------------------
+!            case(4) !Zhou
+!              sedcaty(i,ised)=Erate(ised)*(tau_wc(i)/tau_ce(ised)-1.0d0)/Srho(ised)
+             case(4) !cheng-new
+                upstmp=dave(i)/cff5
+                if (abs(dave(i)).LE.1.d-5) then
+                    downstmp=0.d0
+                else
+                    downstmp=exp(-40.0/upstmp)
+                endif
+                sedcaty(i,ised)=Erate(ised)*1.d-4*upstmp*downstmp*Dstar(ised)**2.5d0*cff5
+!Tsinghua group----------------------------
+            case default
+              call parallel_abort('SED: unknown im_pick_up')
+          end select
+
+!          if(ielg(i)==1) write(200,*),sedcaty(i,ised),FAI,upstmp,downstmp
+!          if(ielg(i)==1) write(300,*),theta(ised),Rep(ised),Scdp(ised),theta_cr(ised),Dpm(ised)
+!          if(ielg(i)==1) write(400,*),cff0,cff1,cff2,cff5,tmp
+!          if(ielg(i)==1) write(500,*),tau_p(ised),tau_f(ised),Keci(ised),Prob(ised),Erate(ised)
+
+          if (sedcaty(i,ised)/=sedcaty(i,ised)) THEN
+            WRITE(errmsg,*)'pick function is NaN',ised,ielg(i),sedcaty(i,ised)
+            CALL parallel_abort(errmsg)
+          end if
+        enddo  !ised=1,ntr_l
+      ENDDO !i=1,nea
+
+      deallocate(theta,Rep,Scdp,tau_p,tau_f,Dstar,Dpm,Keci,Prob,theta_cr)
+      IF(myrank==0) WRITE(mirror,*)'SED: End the pick-up function'
+      end subroutine sed_pickup  !End the calculation sediment carring-capacity. 
+
+      function thetacr(D)
+      use schism_glbl, only : rkind
+      implicit none
+   
+      real(rkind) :: thetacr
+      real(rkind), intent(in) ::D
+      if(D.LE.4.0) thetacr=0.24d0/D
+      if((D.GT.4.0).AND.(D.LE.10.0)) thetacr=0.14d0/(D**0.64d0)
+      if((D.GT.10.0).AND.(D.LE.20.0)) thetacr=0.04d0/(D**0.10d0)
+      if((D.GT.20.0).AND.(D.LE.150.0)) thetacr=0.013d0/(D**0.29d0)
+      if(D.GT.150.0) thetacr=0.055d0
+      end function thetacr 

@@ -1851,8 +1851,8 @@ subroutine aquire_hgrid(full_aquire)
     n2=isidenode(2,j)
     if(ics==1) then
       thetan=atan2(xnd(n1)-xnd(n2),ynd(n2)-ynd(n1))
-      sframe(1,1,j)=cos(thetan) !old snx
-      sframe(2,1,j)=sin(thetan) !old sny
+      sframe(1,1,j)=cos(thetan) 
+      sframe(2,1,j)=sin(thetan)
       sframe(1,2,j)=-sframe(2,1,j)
       sframe(2,2,j)=sframe(1,1,j)
     else !lat/lon

@@ -122,6 +122,8 @@
         IF(i/=0) CALL parallel_abort('Sed: Hz allocation failure')
       ALLOCATE(bottom(nea,MBOTP),stat=i)
         IF(i/=0) CALL parallel_abort('Sed: bottom allocation failure')
+      ALLOCATE(sedcaty(nea,ntr_l),stat=i)                         !Tsinghua group:pick up sediment flux
+        IF(i/=0) CALL parallel_abort('Sed: sedcaty allocation failure')
 
       !--------------------------------------------------------------!
       !* 3D arrays defined on elements
@@ -198,6 +200,7 @@
       mcoefd(:,:) = IniVal
       Hz(:,:)     = IniVal
       bottom(:,:) = IniVal
+      sedcaty(:,:)= IniVal                                           !Tsinghua group
 
       !--------------------------------------------------------------!
       !* 3D arrays defined on elements

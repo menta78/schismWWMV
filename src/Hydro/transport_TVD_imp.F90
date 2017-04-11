@@ -59,13 +59,14 @@
 !      real(rkind), parameter :: eps2=1e-14 !convergence criteria (implicit)
 
 !     Working temporary arrays in this routine
-      real(rkind) :: iupwind_e(nea) !to mark upwind prisms when TVD is used
       real(rkind), allocatable :: trel_tmp(:,:,:) !tracer @ elements and half levels
       real(rkind), allocatable :: flux_adv_hface(:,:) ! original horizontal flux (the local x-driection) 
       real(rkind), allocatable :: flux_mod_hface(:,:,:) !limited advective fluxes on horizontal faces
       real(rkind), allocatable :: up_rat_hface(:,:,:) !upwind ratios for horizontal faces
+!      real(rkind), allocatable :: psum2(:,:,:)
 
-      real(rkind) :: buf(2,1),buf2(2,1)
+      real(rkind) :: iupwind_e(nea) !to mark upwind prisms when TVD is used
+      real(rkind) :: dtb_min3(ne),buf(2,1),buf2(2,1)
       real(rkind) :: flux_mod_v1(nvrt) !coefficient of limited advective fluxes on vertical faces (space)
       real(rkind) :: flux_mod_v2(nvrt) !coefficient of limited advective fluxes on vertical faces (time)
       real(rkind) :: rrat(nvrt) !upwind ratios for vertical faces (spatial limiter)
@@ -76,22 +77,22 @@
 !      real(rkind) :: psi2(nvrt) !time limiter from the current iteration
 !      real(rkind) :: vdf_c1(nvrt) !coefficients related to vertical diffusive flux
 !      real(rkind) :: vdf_c2(nvrt) !coefficients related to vertical diffusive flux
-#ifdef DEBUG
       real(rkind) :: r_s(nvrt),r_s0(nvrt) !local Courant number
-      real(rkind) :: dtbe(ne)
-#endif
+!#ifdef DEBUG
+!      real(rkind) :: dtbe(ne)
+!#endif
 
       real(rkind) :: psumtr(ntr),delta_tr(ntr),adv_tr(ntr), &
-     &alow(nvrt),bdia(nvrt),cupp(nvrt),rrhs(ntr,nvrt),soln(ntr,nvrt),gam(nvrt), &
+     &alow(nvrt),bdia(nvrt),cupp(nvrt),rrhs(1,nvrt),soln(1,nvrt),gam(nvrt), &
      &swild(max(3,nvrt)),swild4(3,2),trel_tmp_outside(ntr)
       integer :: nwild(2)
 
       integer :: istat,i,j,k,l,m,khh2,ie,n1,n2,n3,isd,isd0,isd1,isd2,isd3,j0, &
-                 &nd,it_sub,ntot_v,ntot_vgb,ntot_h,ntot_hgb,kup,kdo,jsj,kb, &
-                 &kb1,iup,ido,ie01,lev01,in_st,jj,ll,lll,ndim,kin,iel,ibnd, &
+                 &nd,it_sub,ntot_v,ntot_vgb,kup,kdo,jsj,kb, &
+                 &kb1,iup,ido,ie01,lev01,in_st,ie02,lev02,in_st2,jj,ll,lll,ndim,kin,iel,ibnd, &
                  &ndo,ind1,ind2,nd1,nd2,ibio,iterK,iele_max,iterK_MAX,it_sum1,it_sum2
       real(rkind) :: vnor1,vnor2,xcon,ycon,zcon,dot1,sum1,tmp,cwtmp,toth, &
-                     &time_r,psum,rat,dtbl,dtb,vj,av_df,av_dz,hdif_tmp, &
+                     &time_r,psum,rat,dtbl,dtbl2,dtb,vj,av_df,av_dz,hdif_tmp, &
                      &av_h,difnum,cwtmp2,bigv,dt_by_bigv,dtb_by_bigv, &
                      &term1,term2,term6,strat1,strat2,denom
 
@@ -105,6 +106,7 @@
 
       allocate(trel_tmp(ntr,nvrt,nea),flux_adv_hface(nvrt,nsa), &
               &flux_mod_hface(ntr,nvrt,ns),up_rat_hface(ntr,nvrt,nsa),stat=istat) 
+!      allocate(psum2(ntr,nvrt,ne))
       if(istat/=0) call parallel_abort('Transport: fail to allocate')
 
 !     For TVD, prepare some arrays for 2-tier ghosts
@@ -124,11 +126,16 @@
 !'    Modify here 3D velocity for transport (for whatever reason) - make sure volume conservation is not violated
 !     For rewetted elements, tr_el takes the value from last wet step
 
+!$OMP parallel default(shared) private(j,is_land,k,vnor1,vnor2,i,nd,toth)
 !     Compute (pre-limited) horizontal fluxes at all faces (vertical
 !     fluxes done in schism_step)
+!$OMP workshare
       flux_adv_hface=-1.d34 !flags
+      iupwind_e=0
+!$OMP end workshare
 
 !     Horizontal fluxes
+!$OMP do 
       do j=1,ns !resident side
         if(idry_s(j)==1) cycle
         is_land=(isdel(2,j)==0.and.isbs(j)<=0)
@@ -137,13 +144,8 @@
           if(is_land) then !land
             flux_adv_hface(k,j)=0.d0
           else            
-!            if(ics==1) then
             vnor1=su2(k,j)*snx(j)+sv2(k,j)*sny(j)
             vnor2=su2(k-1,j)*snx(j)+sv2(k-1,j)*sny(j)
-!            else !lat/lon
-!              vnor1=su2(k,j)
-!              vnor2=su2(k-1,j)
-!            endif !ics
             flux_adv_hface(k,j)=(zs(k,j)-zs(k-1,j))*distj(j)*(vnor1+vnor2)/2 !normal * area = flux (in local x-direction)
 
 !           Debug
@@ -151,7 +153,9 @@
           endif !is_land
         enddo !k=kbs(i)+1,nvrt
       enddo !j=1,ns
+!$OMP end do
 
+!$OMP master
 !     Exchange flux_adv
 #ifdef INCLUDE_TIMING
       cwtmp=mpi_wtime()
@@ -165,9 +169,11 @@
 #ifdef INCLUDE_TIMING
       cwtmp2=mpi_wtime()
 #endif
+!$OMP end master
+!barrier below 
 
 !     Mark upwind prisms for efficiency
-      iupwind_e=0
+!$OMP do 
       do i=1,nea
         if(itvd_e(i)==0) then
           iupwind_e(i)=1 
@@ -181,14 +187,17 @@
           enddo !j
         endif !itvd_e
       enddo !i=1,nea
+!$OMP end do
+
+!$OMP end parallel
 
       if(itr_met==4) then 
 !-------------------------------------------------------------------------------------
       !WENO in horizontal
 
-#ifdef DEBUG
-      dtbe=dt !min (over all subcycles and all levels) time step allowed at each element
-#endif
+!#ifdef DEBUG
+!      dtbe=dt !min (over all subcycles and all levels) time step allowed at each element
+!#endif
 
       it_sub=0
       time_r=dt !time remaining
@@ -342,28 +351,44 @@
 !-------------------------------------------------------------------------------------
       else if(itr_met==3) then !TVD in horizontal
 !-------------------------------------------------------------------------------------
+
+!#ifdef DEBUG
+!      dtbe=dt !min (over all subcycles and all levels) time step allowed at each element
+!#endif
+
+!$OMP parallel default(shared) private(i,k,iup,ido,psum,psumtr,j,jsj,ie,ind1,ind2,tmp, &
+!$OMP delta_tr,jj,rat,ref_flux,same_sign,vj,bigv,dtb_by_bigv,adv_tr,iel,trel_tmp_outside, &
+!$OMP ibnd,nwild,ll,ndo,lll,dtbl2,ie02,lev02,in_st2)
+
       do i=1,ntr
+!$OMP   workshare
         flux_mod_hface(i,1:nvrt,1:ns)=flux_adv_hface(1:nvrt,1:ns)
+!$OMP   end workshare
       enddo !i
 
-#ifdef DEBUG
-      dtbe=dt !min (over all subcycles and all levels) time step allowed at each element
-#endif
-
+!$OMP single
       it_sub=0
       time_r=dt !time remaining
+!$OMP end single
+
       loop11: do
+!$OMP   single
         it_sub=it_sub+1
+!$OMP   end single
 
 !       Compute flux limiters and modify fluxes
         !Use h_tvd as a flag to bypass this and other parts for efficiency
         if(h_tvd<1.e5) then
+!$OMP     workshare
           up_rat_hface=-1.d34 !flags
+!$OMP     end workshare
 
 !         Horizontal limiters
-#ifdef DEBUG
-          ntot_h=0 !total # of horizontal faces that have large limiters (for 1st tracer)
-#endif
+!#ifdef DEBUG
+!          ntot_h=0 !total # of horizontal faces that have large limiters (for 1st tracer)
+!#endif
+
+!$OMP     do 
           do i=1,ns !residents
             if(idry_s(i)==1) cycle
 
@@ -436,11 +461,12 @@
                 if(abs(tmp)>1.e-20) up_rat_hface(j,k,i)=psumtr(j)/tmp
               enddo !j
 
-#ifdef DEBUG
-              if(flux_lim( up_rat_hface(1,k,i))>0.1) ntot_h=ntot_h+1
-#endif
+!#ifdef DEBUG
+!              if(flux_lim( up_rat_hface(1,k,i))>0.1) ntot_h=ntot_h+1
+!#endif
             enddo !k=kbs(i)+1,nvrt
           enddo !i=1,ns
+!$OMP     end do
 
 !         Debug
 !          if(it==1.and.it_sub==1) then
@@ -462,6 +488,7 @@
 !            endif
 !          enddo !i=1,ne
 
+!$OMP     master
 #ifdef INCLUDE_TIMING
           timer_ns(1)=timer_ns(1)+mpi_wtime()-cwtmp2
 #endif
@@ -478,8 +505,11 @@
 #ifdef INCLUDE_TIMING
           cwtmp2=mpi_wtime()
 #endif
+!$OMP     end master
+!$OMP     barrier
 
 !         Modified horizontal fluxes
+!$OMP     do 
           do i=1,ns
             if(idry_s(i)==1.or.isdel(2,i)==0.or.idry_e(isdel(1,i))==1) cycle
             if(idry_e(isdel(2,i))==1) cycle
@@ -508,7 +538,7 @@
                     endif
 #endif
                     if(abs(rat)>1.e-5) then
-                      tmp=flux_lim(rat)/rat/2.d0
+                      tmp=flux_lim(rat)/(rat*2.d0)
 #ifdef DEBUG
                       if(tmp<0.or.tmp>1) then
                         write(errmsg,*)'Flux limiting failed (7):',tmp,rat,jj
@@ -527,8 +557,9 @@
               enddo !j
             enddo !k=kbs(i)+1,nvrt
           enddo !i=1,ns
+!$OMP     end do
 
-        endif !flux limiter
+        endif !flux limiter; h_tvd
 
 !       Compute sub time step
 !       Strike out \hat{S}^- (including all horizontal and vertical bnds, and where ic3(j,i) is dry)
@@ -537,13 +568,29 @@
 
 !        if(ltvd.or.it_sub==1) then !for upwind, only compute dtb for the first step
         if(h_tvd<1.e5.or.it_sub==1) then !for upwind, only compute dtb for the first step
-          dtbl=time_r
+!$OMP     single
+          dtbl=time_r !init
           ie01=0 !element # where the exteme is attained (local)
           lev01=0 !level #
           in_st=0 !tracer #
+!$OMP     end single
+
+!$OMP     workshare
+          dtb_min3(:)=time_r !init
+!$OMP     end workshare
+
+!!!$OMP     workshare
+!          psum2=-1.e34
+!!!$OMP     end workshare
+
+!$OMP     do 
           do i=1,ne
             if(idry_e(i)==1) cycle
 
+            dtbl2=huge(1.d0) !init local
+            ie02=0 !element # where the exteme is attained (local)
+            lev02=0 !level #
+            in_st2=0
             do k=kbe(i)+1,nvrt !prism
               psumtr(1:ntr)=0.d0 !sum of modified fluxes for all inflow bnds
      
@@ -554,7 +601,7 @@
                 if(k>=kbs(jsj)+1) then
                   ref_flux = flux_mod_hface(1,k,jsj)
                   same_sign = (ssign(j,i)*ref_flux)<0
-!DIR$ IVDEP 
+!!DIR$ IVDEP 
                   if((ie/=0.and.idry_e(max(1,ie))==0.or.ie==0.and.isbs(jsj)>0).and.same_sign) then !flux_mod(:) same sign as flux_adv
                     do jj=1,ntr
 #ifdef DEBUG
@@ -573,6 +620,8 @@
                 endif !k>=kbs
               enddo !j
 
+!              psum2(1:ntr,k,i)=psumtr(1:ntr)
+
               vj=area(i)*(ze(k,i)-ze(k-1,i))
 
 !               Debug
@@ -581,20 +630,47 @@
               do jj=1,ntr
                 if(psumtr(jj)/=0) then
                   tmp=vj/psumtr(jj)*(1-1.e-6) !safety factor included
-                  if(tmp<dtbl) then
-                    dtbl=tmp 
-                    ie01=i; lev01=k; in_st=jj
+!                  if(tmp<dtbl) then
+!                    dtbl=tmp 
+!                    ie01=i; lev01=k; in_st=jj
+!                  endif
+
+                  if(tmp<dtbl2) then
+                    dtbl2=tmp
+                    ie02=i; lev02=k; in_st2=jj
+
+!                    if(dtbl2/vj*psumtr(jj)>1) then
+!                      write(errmsg,*)'WOW9:',ielg(i),k,jj,dtbl2/vj*psumtr(jj)
+!                      call parallel_abort(errmsg)
+!                    endif
                   endif
-#ifdef DEBUG
-                  if(tmp<dtbe(i)) dtbe(i)=tmp
-#endif
-                endif
+!#ifdef DEBUG
+!                  if(tmp<dtbe(i)) dtbe(i)=tmp
+!#endif
+                endif !psumtr
               enddo !jj
 
 !            if(qj/=0) dtb_altl=min(dtb_altl,vj/(1+nplus)/qj*(1-1.e-10)) !safety factor included
             enddo !k=kbe(i)+1,nvrt
-          enddo !i=1,ne
 
+            dtb_min3(i)=dtbl2
+
+!!WARNING: 'critical' has to be outside if; otherwise some threads are
+!modifying while others may be comapring a transient 'dtbl'!!
+!!!$OMP       critical
+!            if(dtbl2<dtbl) then
+!              dtbl=dtbl2
+!              ie01=ie02; lev01=lev02; in_st=in_st2
+!            endif
+!!!$OMP       end critical
+          enddo !i=1,ne
+!$OMP     end do
+
+!$OMP     workshare
+          dtbl=minval(dtb_min3)
+!$OMP     end workshare
+
+!$OMP     master
 #ifdef INCLUDE_TIMING
           cwtmp=mpi_wtime()
           timer_ns(1)=timer_ns(1)+cwtmp-cwtmp2
@@ -615,18 +691,25 @@
 #endif
 
 !         Output time step
-          if(myrank==int(buf2(2,1)).and.ie01>0) &
-     &write(12,'(a20,5(1x,i10),1x,f14.3,1x,e22.10)') &
-     &'TVD-upwind dtb info:',it,it_sub,ielg(ie01),lev01,in_st,dtb,it*dt !,dtb_alt 
+!          if(myrank==int(buf2(2,1)).and.ie01>0) &
+!     &write(12,'(a20,5(1x,i10),1x,f14.3,1x,e22.10)') &
+!     &'TVD-upwind dtb info:',it,it_sub,ielg(ie01),lev01,in_st,dtb,it*dt !,dtb_alt 
+!$OMP     end master
 
         endif !h_tvd.or.it_sub==1; compute dtb
 
+!$OMP   master
         dtb=min(dtb,time_r) !for upwind
         time_r=time_r-dtb
+!$OMP   end master
+!$OMP   barrier
 
 !       Store last step's S,T
+!$OMP   workshare
         trel_tmp(1:ntr,:,1:nea)=tr_el(1:ntr,:,1:nea)
+!$OMP   end workshare
 
+!$OMP   do 
         do i=1,ne
           if(idry_e(i)==1) cycle
 
@@ -696,22 +779,15 @@
                 enddo !jj
               endif !iel
 
-!@         if(ntr>1) then; if(flux_mod_hface(1,k,jsj)*flux_mod_hface(2,k,jsj)<0) then
-!@           write(errmsg,*)'Left out horizontal flux (0):',i,j,k,flux_mod_hface(1:2,k,jsj)
-!@           call parallel_abort(errmsg)
-!@         endif; endif
-!@         do jj=1,ntr
-!@           if(flux_mod_hface(jj,k,jsj)<-1.d33) then
-!@             write(errmsg,*)'Left out horizontal flux:',i,j,k,flux_mod_hface(jj,k,jsj),jj
-!@             call parallel_abort(errmsg)
-!@           endif
-!@         enddo !jj
-
               if(k>=kbs(jsj)+1.and.ssign(j,i)*flux_mod_hface(1,k,jsj)<0) then !inflow
                 do jj=1,ntr
 #ifdef DEBUG
                   if(flux_mod_hface(jj,k,jsj)<-1.d33) then
                     write(errmsg,*)'Left out horizontal flux:',i,j,k,flux_mod_hface(jj,k,jsj),jj
+                    call parallel_abort(errmsg)
+                  endif
+                  if(flux_mod_hface(1,k,jsj)*flux_mod_hface(2,k,jsj)<0) then
+                    write(errmsg,*)'Left out horizontal flux (0):',i,j,k,flux_mod_hface(1:2,k,jsj)
                     call parallel_abort(errmsg)
                   endif
 #endif
@@ -731,8 +807,13 @@
 
 !           Check Courant number
             do jj=1,ntr
+!              if(abs(psumtr(jj)-psum2(jj,k,i))>1.e-12) then
+!                write(errmsg,*)'WOW8:',ielg(i),k,jj,psumtr(jj),psum2(jj,k,i)
+!                call parallel_abort(errmsg)
+!              endif
+
               if(1-dtb_by_bigv*psumtr(jj)<0) then
-                write(errmsg,*)'Courant # condition violated:',i,k,1-dtb_by_bigv*psumtr(jj),jj
+                write(errmsg,*)'Courant # condition violated:',ielg(i),k,1-dtb_by_bigv*psumtr(jj),jj,dtb,bigv
                 call parallel_abort(errmsg)
               endif
             enddo !jj
@@ -753,7 +834,9 @@
             tr_el(1:ntr,k,i)=tr_el(1:ntr,kbe(i)+1,i)
           enddo !k
         enddo !i=1,ne
+!$OMP   end do
 
+!$OMP   master
 !       Update ghosts
 #ifdef INCLUDE_TIMING
         cwtmp=mpi_wtime()
@@ -769,10 +852,14 @@
         cwtmp2=mpi_wtime()
         wtimer(9,2)=wtimer(9,2)+cwtmp2-cwtmp
 #endif      
+!$OMP   end master
+!$OMP   barrier
 
         if(time_r<1.e-8) exit loop11
 
       end do loop11
+
+!$OMP end parallel
 
       if(myrank==0) write(17,*)it,it_sub
 !-------------------------------------------------------------------------------------
@@ -780,7 +867,7 @@
       
 !     Debug output of time steps allowed at each element
 #ifdef DEBUG
-      call schism_output_custom(istat,5,1,205,'dtbe',1,ne,dtbe)
+      call schism_output_custom(istat,5,1,205,'dtbe',1,ne,dtb_min3)
 
 !     Output tr_el before implicit vertical solver next
       call schism_output_custom(istat,9,1,221,'trel',nvrt,nea,tr_el(1,:,:))
@@ -788,11 +875,22 @@
 #endif
 
 !'    Save the final array from horizontal part as trel_tmp
+!$OMP parallel default(shared) private(i,k,bigv_m,r_s,r_s0,m,iterK,rrat,phi,kup,kdo,psumtr, &
+!$OMP tmp,flux_mod_v1,flux_mod_v2,psum,l,srat,psi1,kin,ndim,alow,bdia,cupp,dt_by_bigv,denom, &
+!$OMP rrhs,soln,gam,term1,term6,strat1,strat2,bigv,av_df,av_dz,j,jsj,iel,nd1,nd2,hdif_tmp,av_h,difnum)
+
+!$OMP workshare
       trel_tmp(1:ntr,:,1:nea)=tr_el(1:ntr,:,1:nea)
+!$OMP end workshare
 
 !...  2nd step, vertical advection: Fei's addition
-      iterK_MAX=0 !over all tracers and elem.
-      it_sum1=0 !sum of iterations (to compute average # of iterations per elem. and tracer)
+!!!$OMP single
+!!      iterK_MAX=0 !max over all tracers and elem.
+!      it_sum1=0 !sum of iterations (to compute average # of iterations per elem. and tracer)
+!!!$OMP end single
+
+!!!!$OMP do reduction(+: it_sum1) 
+!$OMP do 
       do i=1,nea 
         if(idry_e(i)==1) cycle
 
@@ -1046,7 +1144,7 @@
             !write(12,*)'bdia:',bdia
             !write(12,*)'cupp:',cupp
 
-            call tridag(nvrt,ntr,ndim,1,alow,bdia,cupp,rrhs,soln,gam)
+            call tridag(nvrt,1,ndim,1,alow,bdia,cupp,rrhs,soln,gam)
 
             !check convergence, based on increment
             term1=sqrt(sum((soln(1,1:ndim)-tr_el(m,kbe(i)+1:nvrt,i))**2))
@@ -1077,11 +1175,11 @@
             endif   
           enddo !iteration
 
-          if(iterK>=iterK_MAX) then
-            iterK_MAX=iterK
-            iele_max=ielg(i)
-          endif   
-          it_sum1=it_sum1+iterK
+!          if(iterK>=iterK_MAX) then
+!            iterK_MAX=iterK
+!            iele_max=ielg(i)
+!          endif   
+          !it_sum1=it_sum1+iterK
         enddo !m: tracers
 
 !       Extend
@@ -1090,16 +1188,25 @@
         enddo !k
 
       enddo !i=1,nea
+!$OMP end do
 
-      call mpi_reduce(iterK_MAX,jj,1,itype,MPI_MAX,0,comm,ierr)
-      call mpi_reduce(it_sum1,it_sum2,1,itype,MPI_SUM,0,comm,ierr)
-      if(myrank==0) write(20,*)it,real(it_sum2)/ne_global/ntr,jj
+!!!$OMP master
+!!      call mpi_reduce(iterK_MAX,jj,1,itype,MPI_MAX,0,comm,ierr)
+!      call mpi_reduce(it_sum1,it_sum2,1,itype,MPI_SUM,0,comm,ierr)
+!      if(myrank==0) write(20,*)it,real(it_sum2)/ne_global/ntr !,jj
+!!!$OMP end master
 
 !     3rd step: non-advection terms 
 !     Save the final array from previous step as trel_tmp
+!$OMP workshare
       trel_tmp(1:ntr,:,1:nea)=tr_el(1:ntr,:,1:nea)
+!$OMP end workshare
 
+!$OMP single
       difnum_max_l=0 !max. diffusion number reached by this process (check stability)
+!$OMP end single
+
+!$OMP do reduction(max: difnum_max_l) 
       do i=1,ne
         if(idry_e(i)==1) cycle
 
@@ -1115,14 +1222,28 @@
   
             !Diffusivity
             if(k<nvrt) then
-              av_df=sum(dfh(k,elnode(1:i34(i),i)))/i34(i) !diffusivity
+!Tsinghua group-----------------------------
+              if(itur==5.and.m>=irange_tr(1,5).and.m<=irange_tr(1,5)) then !1018:itur==5
+!                av_df=Dpxyz_m(1,k,m,i)*beta_m(k,m,i) !1018:close
+                av_df=sum(dfhm(k,m-irange_tr(1,5)+1,elnode(1:i34(i),i)))/i34(i) !1007
+              else
+                av_df=sum(dfh(k,elnode(1:i34(i),i)))/i34(i) !diffusivity
+              endif              
+!Tsinghua group-----------------------------
               av_dz=(ze(k+1,i)-ze(k-1,i))/2.d0
               tmp=area(i)*dt_by_bigv*av_df/av_dz
               cupp(kin)=cupp(kin)-tmp
               bdia(kin)=bdia(kin)+tmp
             endif !k<nvrt
             if(k>kbe(i)+1) then
-              av_df=sum(dfh(k-1,elnode(1:i34(i),i)))/i34(i)
+!Tsinghua group-----------------------------
+              if(itur==5.and.m>=irange_tr(1,5).and.m<=irange_tr(1,5)) then !1018:itur==5
+!                av_df=Dpxyz_m(1,k-1,m,i)*beta_m(k-1,m,i) !1018:close
+                av_df=sum(dfhm(k-1,m-irange_tr(1,5)+1,elnode(1:i34(i),i)))/i34(i) !1007
+              else
+                av_df=sum(dfh(k-1,elnode(1:i34(i),i)))/i34(i)
+              endif
+!Tsinghua group-----------------------------
               av_dz=(ze(k,i)-ze(k-2,i))/2.d0
               tmp=area(i)*dt_by_bigv*av_df/av_dz
               alow(kin)=alow(kin)-tmp
@@ -1134,8 +1255,17 @@
             !b.c.
             if(k==nvrt) then
               rrhs(1,kin)=rrhs(1,kin)+area(i)*dt_by_bigv*flx_sf(m,i)
-              bdia(kin)=bdia(kin)+area(i)*dt_by_bigv*wsett(m)
+!Tsinghua group-----------------------------
+              if(itur==5.and.m>=irange_tr(1,5).and.m<=irange_tr(1,5)) then !1018:itur==5
+!                bdia(kin)=bdia(kin)+area(i)*dt_by_bigv*wsett(m)*phai_m(k,m,i) !1018:close
+                bdia(kin)=bdia(kin)+area(i)*dt_by_bigv*wsett(m)* &
+            &sum(Phai(k,m-irange_tr(1,5)+1,elnode(1:i34(i),i)))/i34(i) !1007            
+              else
+                bdia(kin)=bdia(kin)+area(i)*dt_by_bigv*wsett(m)
+              endif
+!Tsinghua group-----------------------------
             endif !k==nvrt
+
             if(k==kbe(i)+1) then
               !NOTE: with settling vel., flx_bt=D-E-w_s*T_{kbe+1}, since
               !in well-formulated b.c., D \pprox -w_s*T_{kbe+1}. D&E are
@@ -1163,14 +1293,15 @@
                   if(av_h<=0) call parallel_abort('TRAN_IMP: av_h<=0')
                   !Check diffusion number; write warning message
                   difnum=dt_by_bigv*hdif_tmp/delj(jsj)*av_h*distj(jsj)
-                  if(difnum>difnum_max_l) difnum_max_l=difnum
+!                  if(difnum>difnum_max_l) difnum_max_l=difnum
+                  difnum_max_l=max(difnum_max_l,difnum)
                   rrhs(1,kin)=rrhs(1,kin)+difnum*(trel_tmp(m,k,iel)-trel_tmp(m,k,i))
                 endif !k>=
               enddo !j
             endif !ihdif/=0
           enddo !k=kbe(i)+1,nvrt
 
-          call tridag(nvrt,ntr,ndim,1,alow,bdia,cupp,rrhs,soln,gam)
+          call tridag(nvrt,1,ndim,1,alow,bdia,cupp,rrhs,soln,gam)
 
           do k=kbe(i)+1,nvrt
             kin=k-kbe(i)
@@ -1200,6 +1331,9 @@
         enddo !k
 
       enddo !i=1,ne
+!$OMP end do
+
+!$OMP end parallel
 
 !     Update ghosts
 #ifdef INCLUDE_TIMING
@@ -1222,5 +1356,6 @@
 
 !     Deallocate temp. arrays
       deallocate(trel_tmp,flux_adv_hface,flux_mod_hface,up_rat_hface)
+!      deallocate(psum2)
 
       end subroutine do_transport_tvd_imp

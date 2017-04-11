@@ -23,39 +23,50 @@
 !===============================================================================
 !===============================================================================
 
-subroutine solve_jcg(itime,moitn,mxitn,rtol,s,x,b,bc,lbc)
+subroutine solve_jcg(mnei_p1,np1,npa1,itime,moitn,mxitn,rtol,s,x,b,bc,lbc)
 !-------------------------------------------------------------------------------
 ! Jacobi Preconditioned Conjugate Gradient for elevation-like variables.
 !-------------------------------------------------------------------------------
 !#ifdef USE_MPIMODULE
 !  use mpi
 !#endif
-  use schism_glbl, only : rkind,np,npa,wtimer,iplg,ipgl,mnei_p,nnp,indnd,errmsg
+  use schism_glbl, only : rkind,np,npa,wtimer,iplg,ipgl,nnp,indnd,errmsg
   use schism_msgp
   implicit none
 !#ifndef USE_MPIMODULE
   include 'mpif.h'
 !#endif
-  integer,intent(in) :: itime !for outputting only
+  integer,intent(in) :: mnei_p1,np1,npa1 !for dimensioning only
+  integer,intent(in) :: itime !for outputting/debug only
   integer,intent(in) :: moitn,mxitn    !output interval and max iterations
   real(rkind),intent(in) :: rtol       !relative tolerance
-  real(rkind),intent(in) :: s(0:mnei_p,np)  !sparse matrix
-  real(rkind),intent(inout) :: x(npa)  !eta2 -- with initial guess
-  real(rkind),intent(in) :: b(np)      !qel
-  real(rkind),intent(in) :: bc(npa)    !b.c. (elbc)
-  logical,intent(in) :: lbc(npa)       !b.c. flag
-  integer :: itn,ip,jp,j
+  real(rkind),intent(in) :: s(0:mnei_p1,np1)  !sparse matrix
+  real(rkind),intent(inout) :: x(npa1)  !eta2 -- with initial guess
+  real(rkind),intent(in) :: b(np1)      !qel
+  real(rkind),intent(in) :: bc(npa1)    !b.c. (elbc)
+  logical,intent(in) :: lbc(npa1)       !b.c. flag
+
+  integer :: itn,ip,jp,j,omp_get_num_threads,omp_get_thread_num
   real(rkind) :: rdotrl,rdotr,rdotzl,rdotz,old_rdotz,beta,alphal,alpha,cwtmp
   real(rkind) :: rtol2,rdotr0
-  real(rkind) :: z(np),r(np),p(npa),sp(np)
-  integer :: inz(mnei_p,np),nnz(np)
-  real(rkind) :: snz(0:mnei_p,np),bb(np)
+  real(rkind) :: z(np1),r(np1),p(npa1),sp(np1)
+  integer :: inz(mnei_p1,np1),nnz(np1),icolor_intf_node(np1)
+  real(rkind) :: snz(0:mnei_p1,np1),bb(np1)
 !-------------------------------------------------------------------------------
+
+  itn=0
+!$OMP parallel default(shared) private(ip,j,jp)
 
 ! Load local storage for non-zeros of sparse matrix and include essential BCs
 ! Since the calcualtion is done for resident nodes only, entire row of
 ! the global matrix will be contained in the local row of the matrix.
+!$OMP workshare
   nnz=0 !# of non-zero entries for each node
+  !1: not interface node btw MPI processes; 0: interface node
+  icolor_intf_node=0
+!$OMP end workshare
+
+!$OMP do
   do ip=1,np
     if(lbc(ip)) then !nnz(ip)=0: no non-zero entries besides diagonal
       if(bc(ip)<-9998) call parallel_abort('JCG: wrong b.c.')
@@ -78,6 +89,7 @@ subroutine solve_jcg(itime,moitn,mxitn,rtol,s,x,b,bc,lbc)
       enddo
     endif
   enddo !i=1,np
+!$OMP end do
 
 ! Initialization -- assume x is initial guess
 !#ifdef INCLUDE_TIMING
@@ -89,21 +101,30 @@ subroutine solve_jcg(itime,moitn,mxitn,rtol,s,x,b,bc,lbc)
 !#endif
 
 ! Residual
-  itn=0
+!$OMP single
   rdotrl=0
+!$OMP end single
+!$OMP do 
   do ip=1,np
     if(snz(0,ip)==0) call parallel_abort('JCG: zero diagonal')
-    sp(ip)=snz(0,ip)*x(ip)
-    do j=1,nnz(ip) 
-      sp(ip)=sp(ip)+snz(j,ip)*x(inz(j,ip))
-    enddo
+    sp(ip)=snz(0,ip)*x(ip)+sum(snz(1:nnz(ip),ip)*x(inz(1:nnz(ip),ip)))
+!    do j=1,nnz(ip) 
+!      sp(ip)=sp(ip)+snz(j,ip)*x(inz(j,ip))
+!    enddo
     r(ip)=bb(ip)-sp(ip) !residual
     if(associated(ipgl(iplg(ip))%next)) then !interface node
       if(ipgl(iplg(ip))%next%rank<myrank) cycle !already in the sum so skip
     endif
-    rdotrl=rdotrl+r(ip)*r(ip)
+    icolor_intf_node(ip)=1
+!    rdotrl=rdotrl+r(ip)*r(ip)
   enddo !ip
+!$OMP end do
 
+!$OMP workshare
+  rdotrl=sum(r(:)*r(:)*icolor_intf_node(:))
+!$OMP end workshare
+
+!$OMP master
 #ifdef INCLUDE_TIMING
   cwtmp=mpi_wtime()
 #endif
@@ -119,29 +140,44 @@ subroutine solve_jcg(itime,moitn,mxitn,rtol,s,x,b,bc,lbc)
     write(errmsg,*)'JCG: 0 initial error:',rdotr0
     call parallel_abort(errmsg)
   endif
-  if(rdotr0==0) return
+!$OMP end master
+!$OMP barrier
 
+!  if(rdotr0==0) return
+!  Illegal to branch in/out of parallel region
+  if(rdotr0/=0) then
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+!$OMP master
   if(myrank==0) then
     write(33,'(//a,i8)') '********CG Solve at timestep ',itime
     write(33,'(a,i6,2e14.6)') &
     'Itn, 2Norm, Rnorm: ',itn,sqrt(rdotr),sqrt(rdotr/rdotr0)
   endif
+!$OMP end master
 
 ! CG Iteration
   do
+    !Need to be checked by all threads to ensure synchronization
     if(rdotr<=rtol2*rdotr0) then
+!$OMP master
       if(myrank==0) write(33,*)'JCG converged in ',itn,' iterations'
+!$OMP end master
       exit
     endif
     if(itn>=mxitn) then
+!$OMP master
       if(myrank==0) write(33,*)'JCG did not converge in ',mxitn,' iterations' 
+!$OMP end master
       exit
     endif
 
+!$OMP do
     do ip=1,np 
       !snz(0,ip)/=0 checked
       z(ip)=r(ip)/snz(0,ip) !jacobi
     enddo
+!$OMP end do
 !#ifdef INCLUDE_TIMING
 !    cwtmp=mpi_wtime()
 !#endif
@@ -150,13 +186,24 @@ subroutine solve_jcg(itime,moitn,mxitn,rtol,s,x,b,bc,lbc)
 !    wtimer(7,2)=wtimer(7,2)+mpi_wtime()-cwtmp
 !#endif
 
+!$OMP single
     rdotzl=0
-    do ip=1,np
-      if(associated(ipgl(iplg(ip))%next)) then !interface node
-        if(ipgl(iplg(ip))%next%rank<myrank) cycle !already in the sum so skip
-      endif
-      rdotzl=rdotzl+r(ip)*z(ip)
-    enddo
+!$OMP end single
+
+!!!$OMP do reduction(+: rdotzl)
+!    do ip=1,np
+!      if(associated(ipgl(iplg(ip))%next)) then !interface node
+!        if(ipgl(iplg(ip))%next%rank<myrank) cycle !already in the sum so skip
+!      endif
+!      rdotzl=rdotzl+r(ip)*z(ip)
+!    enddo
+!!!$OMP end do
+
+!$OMP workshare
+    rdotzl=sum(r(:)*z(:)*icolor_intf_node(:))
+!$OMP end workshare
+
+!$OMP master
 #ifdef INCLUDE_TIMING
     cwtmp=mpi_wtime()
 #endif
@@ -165,14 +212,25 @@ subroutine solve_jcg(itime,moitn,mxitn,rtol,s,x,b,bc,lbc)
     wtimer(7,2)=wtimer(7,2)+mpi_wtime()-cwtmp
 #endif
     itn=itn+1
+!$OMP end master
+!$OMP barrier
+
     if(itn==1) then 
+!$OMP workshare
       p(1:np)=z(1:np)
+!$OMP end workshare
     else
+!$OMP single
       if(old_rdotz==0) call parallel_abort('JCG: old_rdotz=0')
       beta=rdotz/old_rdotz 
+!$OMP end single
+
+!$OMP workshare
       p(1:np)=z(1:np)+beta*p(1:np)
+!$OMP end workshare
     endif
 
+!$OMP master
 #ifdef INCLUDE_TIMING
     cwtmp=mpi_wtime()
 #endif
@@ -182,17 +240,27 @@ subroutine solve_jcg(itime,moitn,mxitn,rtol,s,x,b,bc,lbc)
 #endif
 
     alphal=0 !temporarily used for the denominator
-    do ip=1,np
-      sp(ip)=snz(0,ip)*p(ip)
-      do j=1,nnz(ip) 
-        sp(ip)=sp(ip)+snz(j,ip)*p(inz(j,ip)) 
-      enddo
-      if(associated(ipgl(iplg(ip))%next)) then !interface node
-        if(ipgl(iplg(ip))%next%rank<myrank) cycle !already in the sum so skip
-      endif
-      alphal=alphal+p(ip)*sp(ip)
-    enddo !ip
+!$OMP end master
+!$OMP barrier
 
+!$OMP do 
+    do ip=1,np
+      sp(ip)=snz(0,ip)*p(ip)+sum(snz(1:nnz(ip),ip)*p(inz(1:nnz(ip),ip)))
+!      do j=1,nnz(ip) 
+!        sp(ip)=sp(ip)+snz(j,ip)*p(inz(j,ip)) 
+!      enddo
+!      if(associated(ipgl(iplg(ip))%next)) then !interface node
+!        if(ipgl(iplg(ip))%next%rank<myrank) cycle !already in the sum so skip
+!      endif
+!      alphal=alphal+p(ip)*sp(ip)
+    enddo !ip
+!$OMP end do
+
+!$OMP workshare
+    alphal=sum(p(1:np)*sp(:)*icolor_intf_node(:))
+!$OMP end workshare
+
+!$OMP master
 #ifdef INCLUDE_TIMING
     cwtmp=mpi_wtime()
 #endif
@@ -204,17 +272,30 @@ subroutine solve_jcg(itime,moitn,mxitn,rtol,s,x,b,bc,lbc)
 
     if(alpha==0) call parallel_abort('JCG: division by zero')
     alpha=rdotz/alpha
-
-    x=x+alpha*p !augmented update
-    r=r-alpha*sp !non-augmented update
     old_rdotz=rdotz 
     rdotrl=0
-    do ip=1,np 
-      if(associated(ipgl(iplg(ip))%next)) then !interface node
-        if(ipgl(iplg(ip))%next%rank<myrank) cycle !already in the sum so skip
-      endif
-      rdotrl=rdotrl+r(ip)*r(ip)
-    enddo
+!$OMP end master
+!$OMP barrier
+
+!$OMP workshare
+    x=x+alpha*p !augmented update
+    r=r-alpha*sp !non-augmented update
+!$OMP end workshare
+
+!!$OMP do reduction(+: rdotrl)
+!    do ip=1,np 
+!      if(associated(ipgl(iplg(ip))%next)) then !interface node
+!        if(ipgl(iplg(ip))%next%rank<myrank) cycle !already in the sum so skip
+!      endif
+!      rdotrl=rdotrl+r(ip)*r(ip)
+!    enddo
+!!$OMP end do
+
+!$OMP workshare
+    rdotrl=sum(r(:)*r(:)*icolor_intf_node(:))
+!$OMP end workshare
+
+!$OMP master
 #ifdef INCLUDE_TIMING
     cwtmp=mpi_wtime()
 #endif
@@ -224,7 +305,13 @@ subroutine solve_jcg(itime,moitn,mxitn,rtol,s,x,b,bc,lbc)
 #endif
     if(mod(itn,moitn)==0.and.myrank==0) write(33,'(a,i6,2e14.6)') &
     'Itn, 2Norm, Rnorm: ',itn,sqrt(rdotr),sqrt(rdotr/rdotr0)
+!$OMP end master
+!$OMP barrier
   enddo !CG Iteration
+
+!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  endif !rdotr0/=0
+!$OMP end parallel
 
 end subroutine solve_jcg
 

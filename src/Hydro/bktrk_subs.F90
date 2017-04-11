@@ -356,6 +356,8 @@ subroutine inter_btrack(itime,nbt,btlist)
 
   ! Perform local backtracking for received trajectories
   ! Process several neighbors at a time as soon as the info is received from them
+!$OMP parallel if(ncmplt>nthreads) default(shared) private(ii,inbr,j,i,ie,lexit)
+!$OMP do
   do ii=1,ncmplt
     inbr=icmplt(ii)
     do j=1,nbtrecv(inbr)
@@ -373,20 +375,26 @@ subroutine inter_btrack(itime,nbt,btlist)
 !      write(12,*)'btrack #',ii,btrecvq(i) !ielg(ie),btrecvq(i)%jvrt,btrecvq(i)%rank
 
       if(lexit) then !backtracking exits augmented subdomain
+!$OMP   critical
         !Move point to "temporary" send queue
         nbts=nbts+1
         btrecvq(i)%iegb=ielg(ie)
         if(nbts>mnbt) call parallel_abort('bktrk_subs: overflow (5)')
         bttmp(nbts)=btrecvq(i)
+!$OMP   end critical
       else !backtracking completed within augmented subdomain
+!$OMP   critical
         !Move point to done list
         nbtd=nbtd+1
         btrecvq(i)%iegb=ielg(ie)
         if(nbtd>mnbt) call parallel_abort('bktrk_subs: overflow (4)')
         btdone(nbtd)=btrecvq(i)
+!$OMP   end critical
       endif
     enddo !j
-  enddo !ii
+  enddo !ii=1,ncmplt
+!$OMP end do
+!$OMP end parallel
 
   ! Decrement nnbrq according to number of recvs processed
   nnbrq=nnbrq-ncmplt
@@ -626,7 +634,7 @@ subroutine inter_btrack(itime,nbt,btlist)
     endif
   enddo !ii
 
-  ! Check if the total # fo recv's is nbt
+  ! Check if the total # of recv's is nbt
   if(i/=nbt) call parallel_abort('bktrk_subs: mismatch (1)')
 
   ! Free MPI bt send datatypes
@@ -772,7 +780,10 @@ end subroutine inter_btrack
         else !normal
           dtb=min(dtbk,time_rm)
         endif
-        if(dtb<=0) call parallel_abort('BTRACK: dtb<=0')
+        if(dtb<=0) then
+          write(errmsg,*)'BTRACK: dtb<=0,',dtb,dtbk,time_rm,time_rm2,lrk,iadvf
+          call parallel_abort(errmsg)
+        endif
         xt=x0-dtb*uuint
         yt=y0-dtb*vvint
         zt=z0-dtb*wwint
@@ -1318,10 +1329,10 @@ end subroutine inter_btrack
 
 !     Exit loop if death trap is reached
       if(it>1000) then
-        if(ifort12(3)==0) then
-          ifort12(3)=1
-          write(12,*)'QUICKSEARCH: Death trap reached'
-        endif
+!        if(ifort12(3)==0) then
+!          ifort12(3)=1
+        write(12,*)'QUICKSEARCH: Death trap reached'
+!        endif
         nfl=1
         xt=xin
         yt=yin
@@ -1574,27 +1585,6 @@ end subroutine inter_btrack
         call quad_shape(1,6,nnel,xn2,yn2,inside2,arco)
       endif !i34
 
-!      do j=1,3 !nodes
-!        nd=elnode(j,nnel)
-!        if(ics==1) then
-!          wild(j,1)=xnd(nd)
-!          wild(j,2)=ynd(nd)
-!        else !lat/lon
-!          call project_pt('g2l',xnd(nd),ynd(nd),znd(nd),gcor0,frame0,wild(j,1),wild(j,2),tmp)
-!        endif !ics
-!      enddo !j 
-!      arco(1)=signa(xt,wild(2,1),wild(3,1),yt,wild(2,2),wild(3,2))/area(nnel)
-!      arco(2)=signa(wild(1,1),xt,wild(3,1),wild(1,2),yt,wild(3,2))/area(nnel)
-!      arco(1)=max(0._rkind,min(1._rkind,arco(1)))
-!      arco(2)=max(0._rkind,min(1._rkind,arco(2)))
-!      if(arco(1)+arco(2)>1) then
-!        arco(3)=0
-!        arco(1)=min(1._rkind,max(0._rkind,arco(1)))
-!        arco(2)=1-arco(1)
-!      else
-!        arco(3)=1-arco(1)-arco(2)
-!      endif
-
 !     Local z-coord.
       do j=1,i34(nnel) !nodes
         nd=elnode(j,nnel)
@@ -1609,58 +1599,7 @@ end subroutine inter_btrack
         enddo !k
       enddo !j
 
-!      n1=elnode(1,nnel)
-!      n2=elnode(2,nnel)
-!      n3=elnode(3,nnel)
-!      etal=eta2(n1)*arco(1)+eta2(n2)*arco(2)+eta2(n3)*arco(3)
-!      dep=dp(n1)*arco(1)+dp(n2)*arco(2)+dp(n3)*arco(3)
-      !todo: assert
-      !if(etal+dep<=h0) then
-      !  write(errmsg,*)'QUICKSEARCH: Weird wet element in quicksearch:',ielg(nnel),eta2(n1),eta2(n2),eta2(n3)
-      !  call parallel_abort(errmsg)
-      !endif
-
-!     Compute z-coordinates
-!      do k=kz,nvrt
-!        kin=k-kz+1
-!        hmod2=min(dep,h_s)
-!        if(hmod2<=h_c) then
-!          ztmp(k)=sigma(kin)*(hmod2+etal)+etal
-!        !todo: assert
-!        !else if(etal<=-h_c-(dep-h_c)*theta_f/s_con1) then
-!        !  write(errmsg,*)'QUICKSEARCH: Pls choose a larger h_c (2):',etal,h_c
-!        !  call parallel_abort(errmsg)
-!        else
-!          ztmp(k)=etal*(1+sigma(kin))+h_c*sigma(kin)+(hmod2-h_c)*cs(kin)
-!        endif
-!
-!!       Following to prevent underflow 
-!        if(k==kz) ztmp(k)=-hmod2
-!        if(k==nvrt) ztmp(k)=etal
-!      enddo !k
-!
-!      if(dep<=h_s) then
-!        kbpl=kz
-!      else !z levels
-!!       Find bottom index
-!        kbpl=0
-!        do k=1,kz-1
-!          if(-dep>=ztot(k).and.-dep<ztot(k+1)) then
-!            kbpl=k
-!            exit
-!          endif
-!        enddo !k
-!        !todo: assert
-!        !if(kbpl==0) then
-!        !  write(errmsg,*)'QUICKSEARCH: Cannot find a bottom level at foot:',dep
-!        !  call parallel_abort(errmsg)
-!        !endif
-!        ztmp(kbpl)=-dep
-!        do k=kbpl+1,kz-1
-!          ztmp(k)=ztot(k)
-!        enddo !k
-!      endif !dep<=h_s
-
+#ifdef DEBUG
       do k=kbpl+1,nvrt
         !todo: assert
         !Warning: can be 0 for degenerate case
@@ -1672,6 +1611,7 @@ end subroutine inter_btrack
           call parallel_abort(errmsg)
         endif
       enddo !k
+#endif
 
       if(zt<=ztmp(kbpl)) then
         zt=ztmp(kbpl)

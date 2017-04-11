@@ -6,6 +6,7 @@ add_library(core ${local_extra_code}
                  schism_glbl.F90
                  schism_msgp.F90
                  schism_assert.F90
+		 misc_modules.F90
            )
 list( APPEND locallibs core)
 set(schismmodlibs ${locallibs} ${schismmodlibs} PARENT_SCOPE)

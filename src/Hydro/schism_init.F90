@@ -26,6 +26,7 @@
 !#endif
       use schism_glbl
       use schism_msgp
+      use misc_modules
 
 #ifdef USE_GOTM
       use turbulence, only: init_turbulence, cde, tke1d => tke, eps1d => eps, L1d => L, num1d => num, nuh1d => nuh
@@ -39,7 +40,7 @@
 #endif
 
 #ifdef USE_ICM
-      use icm_mod, only : iSun,wqc,rIa,rIavg
+      use icm_mod, only : iSun,wqc,rIa,rIavg,iPh
       use icm_sed_mod, only: SED_BENDO,CTEMP,BBM,CPOS,PO4T2TM1S,NH4T2TM1S,NO3T2TM1S, &
                            & HST2TM1S,CH4T2TM1S,CH41TM1S,SO4T2TM1S,SIT2TM1S,BENSTR1S,CPOP,CPON,CPOC,  &
                            & NH41TM1S,NO31TM1S,HS1TM1S,SI1TM1S,PO41TM1S,PON1TM1S,PON2TM1S,PON3TM1S,POC1TM1S,POC2TM1S,&
@@ -51,7 +52,8 @@
 #endif
 
 #ifdef USE_SED
-       USE sed_mod, only : Srho,Nbed,MBEDP,bed,bed_frac
+       USE sed_mod, only : Srho,Nbed,MBEDP,bed,bed_frac,Wsed,Sd50 
+       !0917+Wsed,ntr_l,Sd50
 #endif
 
 #ifdef USE_FIB
@@ -65,8 +67,15 @@
       USE harm
 #endif
 
+#ifdef USE_PETSC
+      USE petsc_schism
+#endif
+
       USE hydraulic_structures
+#ifdef USE_SIMPLE_WIND
       USE CF_VARIABLES, only : INIT_NETCDF_CF_ALLVAR, READ_NETCDF_CF_ALLVAR
+#endif
+
 #ifdef SINGLE_NETCDF_OUTPUT
       USE single_netcdf, only : INIT_NETCDF_SINGLE_OUTPUT
 #endif
@@ -78,7 +87,7 @@
       integer, intent(out) :: iths,ntime
 
 !     Functions
-      integer :: lindex_s
+      integer :: lindex_s,omp_get_num_threads,omp_get_thread_num
       real(rkind) :: covar,signa,eqstate
 
 !     Output handles
@@ -108,13 +117,13 @@
       character(len=48) :: inputfile
 
       integer :: i,j,k,l,m,mm,im2d,itmp,itmp1,itmp2,izonal5,nadv,ncor, &
-                &iwindoff,istat,icount,indx2,ic_elev, &
+                &istat,icount,indx2,ic_elev, &
                 &ipgb,isgb,iegb,irr0,nn,ifl,nd,nd1,nd2,ii,nope1, &
                 &ntmp,nrecl_et,nrecl_fl,nrecl_te,nrecl_sa,nrecl_tr2(natrm),nd_gb, &
                 &jblock,jface,isd,n1,n2,n3,ndgb,ndgb1,ndgb2,irank, &
                 &iabort,ie,ie2,l0,id,id1,id2,iabort_gb,j1,j2, &
                 &ne_kr,nei_kr,npp,info,num,nz_r2,ip,IHABEG,il, &
-                &ninv,it,kl,noutput_ns,iside,ntrmod
+                &ninv,it,kl,noutput_ns,iside,ntrmod,ntr_l
 
       real(rkind) :: cwtmp2,wtmp1,tmp,slam0,sfea0,coricoef,dfv0,dfh0, &
                     &edge_min,edge_max,tmpmin,tmpmax,tmp1,tmp2,tmp3, &
@@ -126,9 +135,9 @@
                     &et,qq,tr,ft1,dep,sim_year,sim_month,sim_day,sim_hour, &
                     &sim_minute,sim_second,wtratio,shapiro0
 
-#ifdef USE_ICM
-      real(rkind) :: yday
-#endif
+!#ifdef USE_ICM
+!      real(rkind) :: yday
+!#endif
 
 #ifdef USE_FIB
       real(rkind), allocatable :: sink0(:), fraction0(:), kk10(:), kk20(:)
@@ -178,22 +187,28 @@
 !      write(fdb(lfdb-3:lfdb),'(i4.4)') myrank
 !      open(38,file='outputs/'//fdb,status='replace')
 
-!...  Rank 0 writes global & local volume, energy etc data
+!     Echo date and time
+      call date_and_time(date,timestamp)
+
+!...  Rank 0 writes mirror.out, global & local volume, energy etc data
       if(myrank==0) then
+        open(16,file='mirror.out',status='replace')
         open(25,file='total_TR.dat',status='replace')
         open(9,file='flux.dat',status='replace')
         open(13,file='total.dat',status='replace')
-!        write(13,*)ntime
+
+        write(16,'(4a)')'Run begins at ',date,', ',timestamp
         write(13,'(a200)')'Time (hours), volume, mass, potential E, kinetic E, total E, friction loss (Joule), energy leak (Joule)'
 !'
       endif
 
-!     Rank 0 open mirror file
-      if(myrank==0) open(16,file='mirror.out',status='replace')
-
-!     Echo date and time
-      call date_and_time(date,timestamp)
-      if(myrank==0) write(16,'(4a)')'Run begins at ',date,', ',timestamp
+!     Get # of threads for openMP
+!$OMP parallel default(shared)
+!$OMP master
+!$    nthreads=omp_get_num_threads()
+!$OMP end master
+!$OMP end parallel
+!$    if(myrank==0) write(16,*)'hybrid openMP-MPI run with # of threads=',nthreads
 
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
@@ -257,6 +272,8 @@
         call parallel_abort(errmsg)
       endif
       if(imm==2.and.ics==2) call parallel_abort('imm=ics=2')
+
+      ibdef=1 !init # of time steps for deformation (deformation rate=0 when it>ibdef)
       if(imm==1) then !read in deformation at all nodes
         call get_param('param.in','ibdef',1,ibdef,tmp,stringvalue)
       endif
@@ -269,6 +286,8 @@
       endif
 
       call get_param('param.in','ihydraulics',1,ihydraulics,tmp,stringvalue)
+!     inflow_mth: 0- uniform velocity in vertical profile. 1 - exponential distribution (by Tsinghua group)
+!      call get_param('param.in','inflow_mth',1,inflow_mth,tmp,stringvalue) !1120:close
 
 !...  Option for Williamson test #5 (zonal flow over an isolated mount)
       call get_param('param.in','izonal5',1,izonal5,tmp,stringvalue)
@@ -447,7 +466,7 @@
 
 !...  Turbulence closure options
       call get_param('param.in','itur',1,itur,tmp,stringvalue)
-      if(itur<-2.or.itur>4) then
+      if(itur<-2.or.itur>5) then !Tsinghua group:0822 itur>4->itur>5
         write(errmsg,*)'Unknown turbulence closure model',itur
         call parallel_abort(errmsg)
       endif
@@ -472,7 +491,7 @@
           write(errmsg,*)'Wrong limits in P&P:',vdmax_pp1,vdmin_pp1,vdmax_pp2,vdmin_pp2
           call parallel_abort(errmsg)
         endif
-      else if(itur==3) then
+      else if(itur==3.or.itur==5) then !Tsinghua group:0822+itur==5
 !       Closure name and stability function
         call get_param('param.in','turb_met',0,itmp,tmp,mid)
         call get_param('param.in','turb_stab',0,itmp,tmp,stab)
@@ -525,7 +544,9 @@
 #endif
 
 #ifdef USE_ICM
+      call get_param('icm.in','iPh',1,iPh,tmp,stringvalue)
       ntrs(7)=21
+      if(iPh==1) ntrs(7)=25
       tr_mname(7)='ICM'
 #endif
 
@@ -748,7 +769,8 @@
 #ifdef USE_SED
       indx_out(3,1)=noutput+1
       ! depth, d50, taub, z0, qbdl(), bedfrac()
-      noutput=noutput+4+3*ntrs(5) !ntracers
+      noutput=noutput+4+3*ntrs(5) !ntracers Tsinghua group:close !1120:recover
+!      noutput=noutput+6+7*ntrs(5) !ntracers Tsinghua group
       indx_out(3,2)=noutput
       do i=1,ntrs(5)
         write(ifile_char,'(i03)')i
@@ -795,6 +817,57 @@
       outfile(indx_out(3,1)+3*ntrs(5)+3)='SED_brough.61'
       variable_nm(indx_out(3,1)+3*ntrs(5)+3)='bottom roughness lenght z0 (m)'
       variable_dim(indx_out(3,1)+3*ntrs(5)+3)='2D scalar'
+
+!Tsinghua group------------------------------------ 1120:close
+!      outfile(indx_out(3,1)+3*ntrs(5)+4)='SED_whvel.64'  !tsinghua-lxn
+!      variable_nm(indx_out(3,1)+3*ntrs(5)+4)='water velocity in horizontal'
+!      variable_dim(indx_out(3,1)+3*ntrs(5)+4)='3D scalar'
+!
+!      outfile(indx_out(3,1)+3*ntrs(5)+5)='SED_wvert.63'
+!      variable_nm(indx_out(3,1)+3*ntrs(5)+5)='water velocity in z direction'
+!      variable_dim(indx_out(3,1)+3*ntrs(5)+5)='3D scalar'
+!
+!      do i=1,ntrs(5)        !tsinghua-lxn
+!        write(ifile_char,'(i03)')i
+!        ifile_char=adjustl(ifile_char)  !place blanks at end
+!        ifile_len=len_trim(ifile_char)  !length without trailing blanks
+!        itmp=indx_out(3,1)+3*ntrs(5)+6+i-1
+!        outfile(itmp)='SED_dhvel_'//ifile_char(1:ifile_len)//'.64'
+!        variable_nm(itmp)='SED horizontal drift velocity #'//trim(ifile_char)
+!        variable_dim(itmp)='3D scalar'
+!      enddo !i
+!
+!      do i=1,ntrs(5)
+!        write(ifile_char,'(i03)')i
+!        ifile_char=adjustl(ifile_char)  !place blanks at end
+!        ifile_len=len_trim(ifile_char)  !length without trailing blanks
+!        itmp=indx_out(3,1)+4*ntrs(5)+6+i-1
+!        outfile(itmp)='SED_dvert_'//ifile_char(1:ifile_len)//'.63'
+!        variable_nm(itmp)='SED z-drift velocity #'//trim(ifile_char)
+!        variable_dim(itmp)='3D scalar'
+!      enddo !i
+!
+!      do i=1,ntrs(5)
+!        write(ifile_char,'(i03)')i
+!        ifile_char=adjustl(ifile_char)  !place blanks at end
+!        ifile_len=len_trim(ifile_char)  !length without trailing blanks
+!        itmp=indx_out(3,1)+5*ntrs(5)+6+i-1
+!        outfile(itmp)='SED_shvel_'//ifile_char(1:ifile_len)//'.64'
+!        variable_nm(itmp)='SED horizontal velocity #'//trim(ifile_char)
+!        variable_dim(itmp)='3D scalar'
+!      enddo !i
+!
+!      do i=1,ntrs(5)
+!        write(ifile_char,'(i03)')i
+!        ifile_char=adjustl(ifile_char)  !place blanks at end
+!        ifile_len=len_trim(ifile_char)  !length without trailing blanks
+!        itmp=indx_out(3,1)+6*ntrs(5)+6+i-1
+!        outfile(itmp)='SED_svert_'//ifile_char(1:ifile_len)//'.63'
+!        variable_nm(itmp)='SED z velocity #'//trim(ifile_char)
+!        variable_dim(itmp)='3D scalar'
+!      enddo !i
+!Tsinghua group------------------------------------
+
 #endif /*USE_SED*/
 
 #ifdef USE_ECO
@@ -825,6 +898,14 @@
         variable_nm(itmp)='ICM tracer #'//trim(ifile_char)
         variable_dim(itmp)='3D scalar'
       enddo !i
+
+      if(iPh==1) then
+        noutput=noutput+1
+        indx_out(5,2)=noutput
+        outfile(indx_out(5,2))='PH.63'
+        variable_nm(indx_out(5,2))='ICM variable PH'
+        variable_dim(indx_out(5,2))='3D scalar'
+      endif
 #endif
 
 #ifdef USE_SED2D
@@ -845,8 +926,8 @@
       variable_nm(itmp+2)='Courant number in sed2d'
       variable_dim(itmp+2)='2D scalar'
 
-      outfile(itmp+3)='SED2D_d50moy.61'
-      variable_nm(itmp+3)='surface layer mean d50'
+      outfile(itmp+3)='SED2D_d50.61'
+      variable_nm(itmp+3)='top layer d50'
       variable_dim(itmp+3)='2D scalar'
 
       outfile(itmp+4)='SED2D_qtot.62'
@@ -1106,12 +1187,11 @@
 !      endif
 
 !...  Drag formulation
-      call get_param('param.in','idrag',1,idrag,tmp,stringvalue)
-      if(idrag/=1.and.idrag/=2) call parallel_abort('Unknown idrag')
-      if(idrag==1.and.itur>0) call parallel_abort('Linear drag requires itur<=0')
-!'
-      if(idrag==1.and.nchi/=0) call parallel_abort('Linear drag requires nchi=0')
-!'
+!      call get_param('param.in','idrag',1,idrag,tmp,stringvalue)
+!      if(idrag/=1.and.idrag/=2) call parallel_abort('Unknown idrag')
+!      if(idrag==1.and.itur>0) call parallel_abort('Linear drag requires itur<=0')
+!!'
+!      if(idrag==1.and.nchi/=0) call parallel_abort('Linear drag requires nchi=0')
 
 !...  Option to limit \hat{H} to enhance stability for large friction in shallow
 !area
@@ -1335,6 +1415,47 @@
       slr_rate=slr_rate*1.e-3/365/86400 !m/s
 #endif
 
+      call get_param('param.in','rho0',2,itmp,rho0,stringvalue)
+      call get_param('param.in','shw',2,itmp,shw,stringvalue)
+
+!     SAV
+      call get_param('param.in','isav',1,isav,tmp,stringvalue)
+      if(isav==1) then
+        call get_param('param.in','sav_cd',2,itmp,sav_cd,stringvalue)
+        if(sav_cd<0) call parallel_abort('INIT: sav_cd<0')
+      endif
+
+!...  TWO-PHASE-MIXTURE TSINGHUA GROUP------------------
+!      Two_phase_mix=0 !1120:close
+!#ifdef USE_SED
+!      call get_param('param.in','Two_phase_mix',1,Two_phase_mix,tmp,stringvalue)
+!      if(Two_phase_mix==1) then
+!        call get_param('param.in','diffmin_m',2,itmp,diffmin_m,stringvalue)
+!        call get_param('param.in','diffmax_m',2,itmp,diffmax_m,stringvalue)
+!      endif
+!      call get_param('param.in','im_pick_up',1,im_pick_up,tmp,stringvalue)
+!      call get_param('param.in','alphd',2,itmp,alphd,stringvalue)
+!      call get_param('param.in','refht',2,itmp,refht,stringvalue)
+!      call get_param('param.in','Tbp',2,itmp,Tbp,stringvalue)
+!#endif
+
+!      if(Two_phase_mix==1) then !1120:close
+!#ifndef USE_SED
+!        call parallel_abort('Two_phase_mix needs USE_SED')
+!#endif
+!      endif
+
+!      if(Two_phase_mix==0.and.itur==5) then !Tsinghua group:0825 1018:close
+!        call parallel_abort('2_phase_mix Turb needs Two_phase_mix=1')
+!      endif
+
+      if(itur==5) then !1018
+#ifndef USE_SED
+        call parallel_abort('Two_phase_mix needs USE_SED')
+#endif
+      endif      
+!...  TWO-PHASE-MIXTURE TSINGHUA GROUP------------------
+
 !...  Check parameter read in from param.in
       if(myrank==0) write(16,*)'done reading param.in; s2_mxnbt in param.in =',s2_mxnbt
 !'
@@ -1489,7 +1610,7 @@
 !'
 
 !     Allocate boundary forcings 
-      allocate(iettype(max(1,nope_global)),ifltype(max(1,nope_global)), &
+      allocate(lelbc(npa),iettype(max(1,nope_global)),ifltype(max(1,nope_global)), &
 !          & itetype(max(1,nope_global)),isatype(max(1,nope_global)), &
           & itrtype(natrm,max(1,nope_global)),trobc(natrm,nope_global), & !tobc(nope_global),sobc(nope_global) 
           & vobc1(nope_global),vobc2(nope_global), &
@@ -1509,7 +1630,7 @@
          &  windx1(npa),windy1(npa),windx2(npa),windy2(npa),windx(npa),windy(npa), &
          &  tau(2,npa),iadv(npa),windfactor(npa),pr1(npa),airt1(npa),shum1(npa), &
          &  pr2(npa),airt2(npa),shum2(npa),pr(npa),sflux(npa),srad(npa),tauxz(npa),tauyz(npa), &
-         &  fluxsu(npa),fluxlu(npa),hradu(npa),hradd(npa),chi(nsa),cori(nsa),Cd(nsa), &
+         &  fluxsu(npa),fluxlu(npa),hradu(npa),hradd(npa),cori(nsa),Cd(nsa), &
          &  Cdp(npa),rmanning(npa),rough_p(npa),dfv(nvrt,npa),elev_nudge(npa),uv_nudge(npa), &
          &  hdif(nvrt,npa),shapiro(nsa),d2uv(2,nvrt,nsa),fluxprc(npa),fluxevp(npa), & 
          &  bcc(2,nvrt,nsa),sparsem(0:mnei_p,np), & !sparsem for non-ghosts only
@@ -1521,7 +1642,8 @@
          &  nwild(nea+12+natrm),nwild2(ne_global),swild(nsa+nvrt+12+ntracers),swild2(nvrt,12),swild10(max(3,nvrt),12), &
          &  swild3(50+ntracers),swild4(nvrt,1+ntracers),swild8(nvrt,2),&
          &  iwater_type(npa),rho_mean(nvrt,nea),erho(nvrt,nea),& 
-         &  surf_t1(npa),surf_t2(npa),surf_t(npa),etaic(npa),stat=istat)
+         & surf_t1(npa),surf_t2(npa),surf_t(npa),etaic(npa),sav_alpha(npa), &
+         & sav_h(npa),sav_nv(npa),stat=istat)
       if(istat/=0) call parallel_abort('MAIN: other allocation failure')
 
 !     Tracers
@@ -1534,7 +1656,7 @@
 !      endif
 
 #ifdef USE_ECO
-      if(ntracers>62) call parallel_abort('main: ntracer>62 in ecosim')
+      if(ntrs(6)>62) call parallel_abort('main: ntracer>62 in ecosim')
       allocate(pair(nea), tair(nea), hair(nea), uwind(nea), vwind(nea), cloud(nea), &
               &specir(nea,nbands),avcos(nea,nbands),stat=istat)
       if(istat/=0) call parallel_abort('main: ecosim allocation failure')
@@ -1573,6 +1695,35 @@
            &s2_sum(nvrt,nea),dd_sum(nvrt,nea),zz1_sum(nvrt,nea),zz2_sum(nvrt,nea),srao_step(nvrt,nea),stat=istat)
       if(istat/=0) call parallel_abort('MAIN: COSINE allocation failure')
 #endif
+
+!Tsinghua group
+#ifdef USE_SED 
+!      if(Two_phase_mix==1) then !1120:close
+!        allocate(phai_m(nvrt,ntracers,nea),beta_m(nvrt,ntracers,nea),Tpxyz_m(3,nvrt,ntracers,nea), &
+!           &Dpxyz_m(2,nvrt, ntracers,nea),Vpxyz_m(nvrt,ntracers,nea),drfv_m(2,4,nvrt,ntracers,nea), &
+!           &volv_m(2,3,nvrt, ntracers,nea),vwater_m(3,nvrt,nea),vsed_m(3,nvrt, ntracers,nea), &
+!           &drfvx_nd(ntracers,nvrt,npa),drfvy_nd(ntracers,nvrt,npa),drfvz_nd(ntracers,nvrt,npa),&
+!           &vwaterx_nd(nvrt,npa),vwatery_nd(nvrt,npa),vwaterz_nd(nvrt,npa), &
+!           &vsedx_nd(ntracers,nvrt,npa),vsedy_nd(ntracers,nvrt,npa),vsedz_nd(ntracers,nvrt,npa), &
+!           &dis_m(4,nea),ratiodis_m(4,nea),stat=istat) 
+!        if(istat/=0) call parallel_abort('MAIN: TWO-PHASE-MIX allocation failure')
+!      endif !Two_phase_mix==1
+
+      if(itur==5) then ! 0821 1018
+        allocate(Vpx(nvrt,nsa),Vpy(nvrt,nsa),Vpx2(nvrt,npa),Vpy2(nvrt,npa),Dpxz(nvrt,npa),Dpyz(nvrt,npa), & 
+            &taufp_t(nvrt,npa),ws(nvrt,npa),epsf(nvrt,npa),miuft(nvrt,npa),trndtot(nvrt,npa), &
+            &miup(nvrt,npa),miup_t(nvrt,npa),miup_c(nvrt,npa),q2fp(nvrt,npa),q2p(nvrt,npa),q2f(nvrt,npa), &
+            &taup(nvrt,npa),g0(nvrt,npa),taup_c(nvrt,npa),SDav(nvrt,npa),Srhoav(nvrt,npa),kesit(nvrt,npa), &
+            &Kp_tc(nvrt,npa),Kp_t(nvrt,npa),Kp_c(nvrt,npa),Kft(nvrt,npa),miuepsf(nvrt,npa),kppian(nvrt,npa), &
+            &Dpzz(nvrt,npa),Tpzz(nvrt,npa),TDxz(nvrt,nsa),TDyz(nvrt,nsa),Vpz2(nvrt,npa),Phai(nvrt,ntrs(5),npa), &
+            &dfhm(nvrt,ntrs(5),npa),stat=istat) 
+            ! 0821+Vpx,Vpy,Dpxz,Dpyz,taufp_t,ws,epsf,miuft,miup,miup_t,miup_c,kfp_m,taup,q2p,g0,taup_c,SDav
+            ! 0821+Srhoav,kesit,Kp_tc,Kp_t,Kp_c,Kft,miuepsf,q2f,kppian,Dpzz,Tpzz
+            ! 0927.1+Vpx2,Vpy2 !1006+TDxz,TDyz,Vpz2,Phai !1007+dfhm
+        if(istat/=0) call parallel_abort('MAIN: TWO-PHASE-MIX TURB allocation failure')
+      endif !itur==5 0821
+
+#endif /*USE_SED*/
 
 #ifdef USE_FIB
      allocate(kk_fib(nea,2),sink_fib(nea),fraction_fib(nea))
@@ -1633,6 +1784,32 @@
       timer_ns=0
       wsett=0 !settling vel.
 
+!Tsinghua group
+#ifdef USE_SED 
+!      if(Two_phase_mix==1) then !1120:close
+!        phai_m=1; beta_m=1
+!        Tpxyz_m=0; Dpxyz_m=diffmin_m; Vpxyz_m=diffmin_m
+!        drfv_m=0; volv_m=0; vwater_m=0; vsed_m=0
+!        drfvx_nd=-99; drfvy_nd=-99; drfvz_nd=-99
+!        vwaterx_nd=-99; vwatery_nd=-99; vwaterz_nd=-99
+!        vsedx_nd=-99; vsedy_nd=-99; vsedz_nd=-99
+!        dis_m=0; ratiodis_m=0
+!      endif !Two_phase_mix==1
+!0821   
+      if(itur==5) then !1018
+        Vpx=0; Vpy=0; Dpxz=0; Dpyz=0; taufp_t=0
+        miuft=0; miup=0; miup_t=0; epsf=0;
+        miup_c=0; q2fp=0; q2p=0; q2f=0; g0=1; taup_c=1.e10;
+        kesit=0; Kp_tc=0; Kp_t=0; Kp_c=0;
+        Kft=0; miuepsf=0; kppian=0; Dpzz=0; Tpzz=0;
+        trndtot=0; Vpx2=0; Vpy2=0; TDxz=0; TDyz=0; Vpz2=0; Phai=1
+        dfhm=0;
+        !0917 +trndtot,miuft
+        !0927.1+Vpx2,Vpy2 !1006+TDxz,TDyz,Vpz2,Phai !1007+dfhm
+      endif !itur==5
+!0821
+#endif /*Tsinghua group*/
+
 !     for output
       airt1=0; shum1=0;  airt2=0; shum2=0; srad=0; fluxsu=0; fluxlu=0
       hradu=0; hradd=0; sflux=0; windx=0; windy=0
@@ -1640,7 +1817,7 @@
       dfq1=0; dfq2=0 !for hotstart
       fluxevp=0; fluxprc=0
 !     Fort.12 flags
-      ifort12=0
+!      ifort12=0
 
 !...  Test node, sidecenter and centroid lat/lon conversions
 !      if(ics==2) then
@@ -1696,78 +1873,11 @@
 !      endif !ics
 
 !...  Finish off some remaining geometric calcualtions
-!     Output side length distribution 
-      edge_max=-1 !max. side length
-      edge_min=1.e25
-      do i=1,ns
-        if(distj(i)>edge_max) edge_max=distj(i)
-        if(distj(i)<edge_min) edge_min=distj(i)
-      enddo !i
-      call mpi_reduce(edge_min,tmpmin,1,rtype,MPI_MIN,0,comm,ierr)
-      call mpi_reduce(edge_max,tmpmax,1,rtype,MPI_MAX,0,comm,ierr)
-      if(myrank==0) write(16,*)'Max. & min. sidelength= ',tmpmax,tmpmin
+!...  Local  coord. of 4 vertices of a quad
+      ixi_n=(/-1,1,1,-1/)
+      iet_n=(/-1,-1,1,1/)
 
-!...  Compute transformation tensor for node frame pframe(i,j,ip) (in global frame) for ics=2 
-!...  where j is the axis id, i is the component id, ip is the local node id
-!...  pframe is along local ll direction: 2nd index indicates zonal or meridional or outward radial
-!...  directions. Note that the vectors are strictly undefined at 2 poles, but can be calculated 
-!...  as all we need is just a frame there.
-!...  For ics=1 pframe is not needed
-      pframe=0 !for ics=1
-      if(ics==2) then
-        do i=1,npa
-          pframe(1,1,i)=-sin(xlon(i)) !zonal dir.
-          pframe(2,1,i)=cos(xlon(i))
-          pframe(3,1,i)=0
-          pframe(1,2,i)=-cos(xlon(i))*sin(ylat(i)) !meri. dir.
-          pframe(2,2,i)=-sin(xlon(i))*sin(ylat(i))
-          pframe(3,2,i)=cos(ylat(i))
-          call cross_product(pframe(1,1,i),pframe(2,1,i),pframe(3,1,i), &
-                            &pframe(1,2,i),pframe(2,2,i),pframe(3,2,i), &
-                            &pframe(1,3,i),pframe(2,3,i),pframe(3,3,i))
-        enddo !i=1,npa
-
-        !Check
-        zdev_max=-1 !max. deviation of zp-axis and radial direction
-        do i=1,npa
-          tmp=sqrt(xnd(i)**2+ynd(i)**2+znd(i)**2)
-          if(tmp==0) call parallel_abort('MAIN: node radial wrong')
-          swild(1)=xnd(i)/tmp
-          swild(2)=ynd(i)/tmp
-          swild(3)=znd(i)/tmp
-          dotp2=dot_product(swild(1:3),pframe(1:3,3,i))
-          if(abs(dotp2-1)>zdev_max) zdev_max=abs(dotp2-1)
-          !write(12,*)'pframe:',iplg(i),pframe(:,:,i) !dotp2
-        enddo !i=1,npa
-
-        call mpi_reduce(zdev_max,tmp,1,rtype,MPI_MAX,0,comm,ierr)
-        if(myrank==0) then
-          write(16,*)'Max. pframe dev. from radial= ',real(tmp) !zdev_max
-          !call flush(16) ! flush "mirror.out"
-        endif
-      endif !ics==2
-
-!...  Compute sn[xy] for side normal dir
-      if(ics==1) then
-        snx(:)=sframe(1,1,:)
-        sny(:)=sframe(2,1,:)
-      else !lat/lon; use 1st node's ll frame
-        do i=1,nsa
-          n1=isidenode(1,i)
-          snx(i)=dot_product(sframe(1:3,1,i),pframe(1:3,1,n1))
-          sny(i)=dot_product(sframe(1:3,1,i),pframe(1:3,2,n1))
-        enddo !i
-      endif !ics
-
-!...  Modified depth
-      dpmax=-1.e25 !max. depth
-      do i=1,npa
-        if(ivcor==2) hmod(i)=min(dp(i),h_s)
-        if(dp(i)>dpmax) dpmax=dp(i)
-      enddo !i=1,npa
-!     Save intial depth for bed deformation case
-      dp00=dp
-
+!...  Vgrid
       if(ivcor==2) then; if(ztot(1)>=-dpmax) then
         write(errmsg,*)'1st z-level must be below max. depth:',dpmax
         call parallel_abort(errmsg)
@@ -1788,9 +1898,115 @@
         close(19)
       endif !ivcor==1
 
+!...  Init some vars b4 OMP
+      zdev_max=-1 !max. deviation of zp-axis and radial direction
+      iabort=0 !for checking quads later
+
+!$OMP parallel default(shared) private(i,tmp,swild,n1,j,j1,j2,swild10,ar1,ar2,ar3,ar4, &
+!$OMP x1,x2,y1,y2,xn1,xn2,yn1,yn2,itmp,itmp2)
+ 
+!     Output side length distribution 
+!      edge_max=-1 !max. side length
+!      edge_min=1.e25
+!      do i=1,ns
+!        if(distj(i)>edge_max) edge_max=distj(i)
+!        if(distj(i)<edge_min) edge_min=distj(i)
+!      enddo !i
+!$OMP workshare
+      edge_max=maxval(distj(1:ns))
+      edge_min=minval(distj(1:ns))
+!$OMP end workshare
+
+!$OMP master
+      call mpi_reduce(edge_min,tmpmin,1,rtype,MPI_MIN,0,comm,ierr)
+      call mpi_reduce(edge_max,tmpmax,1,rtype,MPI_MAX,0,comm,ierr)
+      if(myrank==0) write(16,*)'Max. & min. sidelength= ',tmpmax,tmpmin
+!$OMP end master
+
+!...  Compute transformation tensor for node frame pframe(i,j,ip) (in global frame) for ics=2 
+!...  where j is the axis id, i is the component id, ip is the local node id
+!...  pframe is along local ll direction: 2nd index indicates zonal or meridional or outward radial
+!...  directions. Note that the vectors are strictly undefined at 2 poles, but can be calculated 
+!...  as all we need is just a frame there.
+!...  For ics=1 pframe is not needed
+!$OMP workshare
+      pframe=0 !for ics=1
+!$OMP end workshare
+
+      if(ics==2) then
+!$OMP   do
+        do i=1,npa
+          pframe(1,1,i)=-sin(xlon(i)) !zonal dir.
+          pframe(2,1,i)=cos(xlon(i))
+          pframe(3,1,i)=0
+          pframe(1,2,i)=-cos(xlon(i))*sin(ylat(i)) !meri. dir.
+          pframe(2,2,i)=-sin(xlon(i))*sin(ylat(i))
+          pframe(3,2,i)=cos(ylat(i))
+          call cross_product(pframe(1,1,i),pframe(2,1,i),pframe(3,1,i), &
+                            &pframe(1,2,i),pframe(2,2,i),pframe(3,2,i), &
+                            &pframe(1,3,i),pframe(2,3,i),pframe(3,3,i))
+        enddo !i=1,npa
+!$OMP   end do
+
+        !Check dot products
+!$OMP   do reduction(max: zdev_max)
+        do i=1,npa
+          tmp=sqrt(xnd(i)**2+ynd(i)**2+znd(i)**2)
+          if(tmp==0) call parallel_abort('MAIN: node radial wrong')
+          swild(1)=xnd(i)/tmp
+          swild(2)=ynd(i)/tmp
+          swild(3)=znd(i)/tmp
+          dotp2=dot_product(swild(1:3),pframe(1:3,3,i))
+!          if(abs(dotp2-1)>zdev_max) zdev_max=abs(dotp2-1)
+          zdev_max=max(zdev_max,abs(dotp2-1))
+          !write(12,*)'pframe:',iplg(i),pframe(:,:,i) !dotp2
+        enddo !i=1,npa
+!$OMP   end do
+
+!$OMP   master
+        call mpi_reduce(zdev_max,tmp,1,rtype,MPI_MAX,0,comm,ierr)
+        if(myrank==0) then
+          write(16,*)'Max. pframe dev. from radial= ',real(tmp) !zdev_max
+          !call flush(16) ! flush "mirror.out"
+        endif
+!$OMP   end master
+      endif !ics==2
+
+!...  Compute sn[xy] for side normal dir
+      if(ics==1) then
+!$OMP   workshare
+        snx(:)=sframe(1,1,:)
+        sny(:)=sframe(2,1,:)
+!$OMP   end workshare
+      else !lat/lon; use 1st node's ll frame
+!$OMP   do
+        do i=1,nsa
+          n1=isidenode(1,i)
+          snx(i)=dot_product(sframe(1:3,1,i),pframe(1:3,1,n1))
+          sny(i)=dot_product(sframe(1:3,1,i),pframe(1:3,2,n1))
+        enddo !i
+!$OMP   end do
+      endif !ics
+
+!...  Modified depth
+!      dpmax=-1.e25 !max. depth
+!$OMP workshare
+      dpmax=maxval(dp(1:npa))
+!     Save intial depth for bed deformation case
+      dp00=dp
+!$OMP end workshare
+
+!$OMP do
+      do i=1,npa
+        if(ivcor==2) hmod(i)=min(dp(i),h_s)
+!        if(dp(i)>dpmax) dpmax=dp(i)
+      enddo !i=1,npa
+!$OMP end do
+
 !...  Derivatives of shape functions
 !...  For ics=2, this is done inside element/ll frame
 !...  For quads, the derivative is evaluated at centroid
+!$OMP do
       do i=1,nea
         do j=1,i34(i)
           if(i34(i)==3) then
@@ -1802,6 +2018,7 @@
           endif  !i34(i)
         enddo !j
       enddo !i=1,nea
+!$OMP end do
 
 !Debug
 !      tmp1=0 !max. rel. error in x-der
@@ -1822,21 +2039,22 @@
 !      stop      
 
 !...  Compute delj for internal resident sides only (used only in horizontal diffusion)
+!$OMP do
       do i=1,ns !resident only
         if(isdel(2,i)==0) cycle
         delj(i)=sqrt((xctr(isdel(2,i))-xctr(isdel(1,i)))**2+(yctr(isdel(2,i))-yctr(isdel(1,i)))**2+ &
      &(zctr(isdel(2,i))-zctr(isdel(1,i)))**2)    
         if(delj(i)==0) call parallel_abort('MAIN: Element distance =0')
       enddo !i
-
-!...  Local  coord. of 4 vertices of a quad
-      ixi_n=(/-1,1,1,-1/)
-      iet_n=(/-1,-1,1,1/)
+!$OMP end do
 
 !...  For quads, compute the 4 shape functions for the mid-pts of 2
 !     diagnonals inside the quad formed by 4 sidecenters (for indvel<=0)
+!$OMP workshare
       shape_c2=-99 !flags
-      iabort=0
+!$OMP end workshare
+
+!$OMP do
       do i=1,nea
         if(i34(i)==4) then
           !Side coord. (elem/ll frame if ics=2)
@@ -1853,7 +2071,12 @@
           ar3=signa(swild10(1,1),swild10(1,2),swild10(1,4),swild10(2,1),swild10(2,2),swild10(2,4))
           ar4=signa(swild10(1,2),swild10(1,3),swild10(1,4),swild10(2,2),swild10(2,3),swild10(2,4))
           if(min(ar1,ar2,ar3,ar4)<=0) then
+!$OMP       critical
             iabort=1
+!$OMP       end critical
+!           Flush it immediatetly for use below (may not be necessary
+!           due to sync implied at 'end'
+!$OMP       flush(iabort)
             write(12,*)'Concave quad formed by sides:',ielg(i),ar1,ar2,ar3,ar4
           endif
 
@@ -1875,7 +2098,10 @@
             !write(12,*)'Side quad:',ielg(i),xn1,yn1,xn2,yn2,shape_c2(1:4,1:2,i)
           endif !iabort
         endif !i34=4
-      enddo !i
+      enddo !i=1,nea
+!$OMP end do
+
+!$OMP end parallel
 
       call mpi_allreduce(iabort,iabort_gb,1,itype,MPI_SUM,comm,ierr)
       if(iabort_gb>0) then
@@ -2583,6 +2809,7 @@
 !...  Compute neighborhood for internal sides for Shapiro filter
 !...  isidenei2(4,ns): 4 neighboring sides of a _resident_ side
 !...  Info for resident sides only!
+!$OMP parallel do default(shared) private(i,j,ie,l0,nwild)
       do i=1,ns !resident sides only
         if(isdel(2,i)==0) cycle 
 
@@ -2599,6 +2826,7 @@
         enddo !j=1,2
         isidenei2(1:4,i)=nwild(1:4) !local index
       enddo !i=1,ns
+!$OMP end parallel do
 
 !     End of pre-processing
       if(ipre/=0) then !nproc=1
@@ -2614,7 +2842,6 @@
 
 !     Initialize variables used in tsunami model (but bdef[1,2] and ibdef are available for all models)
       bdef=0 !total deformation
-      ibdef=1 !# of time steps for deformation (deformation rate=0 when it>ibdef)
       if(imm==1) then !read in deformation at all nodes
         open(32,file='bdef.gr3',status='old') !connectivity part not used
         read(32,*)
@@ -2795,6 +3022,7 @@
         fc=2*omega_e*sin(sfea0)
         beta=2*omega_e*cos(sfea0)
         if(myrank==0) open(31,file='coriolis.out',status='replace')
+!$OMP parallel do default(shared) private(i,id1,id2,sphi)
         do i=1,nsa
           id1=isidenode(1,i)
           id2=isidenode(2,i)
@@ -2806,6 +3034,7 @@
           endif !ics
           if(myrank==0) write(31,*)i,xlon(id1)/pi*180,ylat(id1)/pi*180,cori(i)
         enddo !i=1,nsa
+!$OMP end parallel do
         if(myrank==0) close(31)
       endif !ncor
 
@@ -2857,10 +3086,13 @@
         allocate(rwild(np_global,3),stat=istat)
         if(istat/=0) call parallel_abort('MAIN: failed to alloc. (71)')
       endif !nws=4
+
+#ifdef USE_SIMPLE_WIND
       if(nws==5.or.nws==6) then
         allocate(rwild(npa,3),stat=istat)
         if(istat/=0) call parallel_abort('MAIN: failed to alloc. (72)')
       endif !nws
+#endif
 
 !     Heat and salt conservation flags
       if(ihconsv/=0) then
@@ -2940,7 +3172,8 @@
         close(10)
         close(32)
       else if(itur==2) then !read in P&P coefficients
-      else if(itur==3.or.itur==4) then !read in const. (cf. Umlauf and Burchard 2003)
+      else if(itur==3.or.itur==4.or.itur==5) then !read in const. (cf. Umlauf and Burchard 2003)
+      !Tsinghua group:0822+itur==5
 !       Common variables for both models
         cmiu0=sqrt(0.3d0)
 !       read in mixing limits
@@ -2969,11 +3202,16 @@
         close(31)
         close(32)
 
-        if(itur==3) then
+        if(itur==3.or.itur==5) then !Tsinghua group:0822+itur==5
 !	  Constants used in GLS; cpsi3 later
           a2_cm03=2/cmiu0**3
           eps_min=1.e-12
-
+!Tsinghua group:0822
+          if(mid.ne.'KE'.and.itur==5) then
+            write(errmsg,*)'2-Phase Mix Turb must use KE:',mid
+            call parallel_abort(errmsg)
+          endif          
+!Tsinghua group:0822
           select case(mid)
             case('MY') 
               rpub=0; rmub=1; rnub=1; cpsi1=0.9; cpsi2=0.5
@@ -3011,6 +3249,32 @@
             call parallel_abort(errmsg)
           endif
 
+!0825...Tsinghua group
+          if(itur==5) then
+            Cbeta=1.8d0 
+            beta0=0.667d0
+            c_miu=0.09d0 
+            Cv_max=0.625d0
+            ecol=0.9d0 !restitution coefficient e
+            ecol1=0.8d0 !restitution coefficient e(Zhong)
+            sigf=1.d0   !in diffusity Kf 
+            sigepsf=1.2d0   !in epsf Eq. diffusity
+            Ceps1=1.44d0   !epsf Eq. constant
+            Ceps2=1.92d0   !epsf Eq. constant
+            Ceps3=1.2d0   !epsf Eq. constant
+            kpz=0.5d0     !Tpzz correction 1013
+            Acol=0.4d0*(1+ecol)*(3*ecol-1);
+            sig_s=(1+ecol)*(3-ecol)/5; !Endwald p49
+            fi_c=3*(1+ecol)**2*(2*ecol-1)/5
+            ksi_c=(1+ecol)*(49-33*ecol)/100
+            epsf=psimin
+            q2f=q2min 
+            q2p=q2min 
+            q2fp=2*q2min 
+          endif !itur
+
+!0825...Tsinghua group
+
 !	  Consts. used in Canuto's ASM (Model A)
           ubl1=0.1070
           ubl2=0.0032
@@ -3035,12 +3299,20 @@
 !  	  print*, 'ubd2=',ubd2,',ubd4=',ubd4,',ubd2/ubd4=',ubd2/ubd4
 
 !         Initialize k and l
+
+!$OMP parallel default(shared) private(i)
+!$OMP     do
           do i=1,npa
             xlmin2(i)=2*q2min*0.1*max(h0,dp(i)) !min. xl for non-surface layers
             q2(:,i)=q2min
             xl(:,i)=xlmin2(i)
           enddo !i
+!$OMP     end do
+
+!$OMP     workshare
           dfv=0; dfh=0; dfq1=0; dfq2=0 !initialize for closure eqs.
+!$OMP     end workshare
+!$OMP end parallel
 
 !         Read in xlsc0
 !          open(32,file='xlsc.gr3',status='old')
@@ -3222,6 +3494,48 @@
 !'
         endif !inu_tr(k)/=0
       enddo !k
+
+!     SAV inputs: sav_*.gr3
+      sav_alpha=0 !=D*Nv*Cdv/2; init
+      sav_h=0 !not used at 2D sides
+      sav_nv=0 !# of stems per m^2
+      if(isav==1) then
+        !\lambda=D*Nv [1/m]
+        open(10,file='sav_D.gr3',status='old')
+        open(31,file='sav_N.gr3',status='old')
+        !SAV height [m]
+        open(32,file='sav_h.gr3',status='old')
+        read(10,*)
+        read(10,*) itmp1,itmp2
+        read(31,*); read(31,*)k,m
+        read(32,*); read(32,*)i,j
+        if(itmp1/=ne_global.or.itmp2/=np_global.or.i/=ne_global.or.j/=np_global.or. &
+     &k/=ne_global.or.m/=np_global) call parallel_abort('INIT: Check sav_.gr3')
+!'
+        do i=1,np_global
+          read(10,*)j,xtmp,ytmp,tmp
+          read(31,*)j,xtmp,ytmp,tmp1
+          read(32,*)j,xtmp,ytmp,tmp2
+          if(tmp<0.or.tmp1<0.or.tmp2<0) then
+            write(errmsg,*)'INIT: illegal sav_:',i,tmp,tmp1,tmp2
+            call parallel_abort(errmsg)
+          endif
+          !Make D, Nv and h consistent at no SAV places
+          if(tmp*tmp1*tmp2==0) then
+            tmp=0; tmp1=0; tmp2=0
+          endif
+         
+          if(ipgl(i)%rank==myrank) then
+            nd=ipgl(i)%id
+            sav_alpha(nd)=tmp*tmp1*sav_cd/2
+            sav_nv(nd)=tmp1
+            sav_h(nd)=tmp2
+          endif
+        enddo
+        close(10)
+        close(31)
+        close(32)
+      endif !isav
 
 !...  Surface min. mixing length for f.s. and max. for all; inactive 
 !      read(15,*) !xlmax00
@@ -3456,8 +3770,9 @@
         endif
       enddo !i
 
-!     Compute mnei_kr (max. # of Kriging pts) for dimensioning
       mnei_kr=3
+!$OMP parallel do default(shared) private(i,nei_kr,nwild,j,nd,m,nd2,l) reduction(max: mnei_kr)
+!     Compute mnei_kr (max. # of Kriging pts) for dimensioning
       do i=1,ne !resident
         if(krvel(i)/=1) cycle
   
@@ -3479,9 +3794,12 @@
             nei_kr=nei_kr+1
             nwild(nei_kr)=nd2
           enddo loop14 !m=1,nnp(nd)
-        enddo !j nodes
-        if(nei_kr>mnei_kr) mnei_kr=nei_kr
+        enddo !j
+!        if(nei_kr>mnei_kr) mnei_kr=nei_kr
+        mnei_kr=max(mnei_kr,nei_kr)
       enddo !i=1,ne
+!$OMP end parallel do
+
       write(12,*)'Max. # of Kriging points = ',mnei_kr
 
 !     Allocate arrays
@@ -3489,11 +3807,16 @@
               &akr(mnei_kr+3,mnei_kr+3),akrp((mnei_kr+3)*(mnei_kr+4)/2), &
               &xy_kr(2,mnei_kr),ipiv(mnei_kr+3),work4(mnei_kr+3))
 
+      err_max=0 !max. error in computing the inverse matices
+!$OMP parallel default(shared) private(i,nei_kr,j,nd,m,nd2,l,ie,k,npp,n1,n2, &
+!$OMP xy_kr,tmp,rr,xn2,yn2,akr,akrp,ipiv,info,work4,suma)
+
 !     Compute Kriging neighborhood
+!$OMP do
       do i=1,ne !resident
         if(krvel(i)/=1) cycle
  
-        ie=ie_kr(i) !point to ie_th elem.
+        ie=ie_kr(i) !point to ie_th kriging elem.
         nei_kr=i34(i) !# of Kriging nodes for i
         itier_nd(1:i34(i),ie)=elnode(1:i34(i),i) !temporarily save Kriging nodes
         do j=1,i34(i) !resident nodes
@@ -3508,16 +3831,20 @@
             nei_kr=nei_kr+1
             itier_nd(nei_kr,ie)=nd2
           enddo loop15 !m=1,nnp(nd)
-        enddo !j=1, nodes
+        enddo !j
         itier_nd(0,ie)=nei_kr
 
 !       Debug
 !        if(myrank==3) write(99,*)ielg(i),itier_nd(0,ie),iplg(itier_nd(1:nei_kr,ie))
       enddo !i=1,ne
+!$OMP end do
       
 !...  Invert Kriging matrices
+!$OMP workshare
       akrmat_nd=-1.e34 !initialization for debugging
-      err_max=0 !max. error in computing the inverse matices
+!$OMP end workshare
+
+!$OMP do reduction(max: err_max)
       do k=1,ne !resident
         if(ie_kr(k)==0) cycle
 
@@ -3628,17 +3955,20 @@
 !              write(96,*)i,j,akrmat_nd(i,j,ie),akr(i,j),suma
 !            endif
 
-!            if(abs(suma)>1.e-8) write(98,*)k,i,j,suma
-            if(abs(suma)>err_max) err_max=abs(suma)
+!            if(abs(suma)>err_max) err_max=abs(suma)
+            err_max=max(err_max,abs(suma))
           enddo !j
         enddo !i
 
         akrmat_nd(1:(npp+3),1:(npp+3),ie)=akr(1:(npp+3),1:(npp+3))
       enddo !k=1,ne
+!$OMP end do
+
+!$OMP end parallel
 
       write(12,*)'Max. error in inverting Kriging maxtrice= ',err_max
-
       deallocate(ipiv,akr,akrp,work4,xy_kr)
+
 !...  End Kriging preparation
 
       if(myrank==0) then
@@ -3679,6 +4009,7 @@
 
 !...  Bottom roughness length (m) for nchi==0
       if(nchi==0) then
+!$OMP parallel do default(shared) private(j)
         do j=1,npa
           if(idry(j)==1.or.Cdp(j)==0) then
             rough_p(j)=0
@@ -3686,6 +4017,7 @@
             rough_p(j)=(znl(kbp(j)+1,j)-znl(kbp(j),j))*exp(-0.4/sqrt(Cdp(j)))
           endif
         enddo !j
+!$OMP end parallel do
       endif !nchi
 
 !...  kbp00 will be used for output only
@@ -3724,7 +4056,10 @@
         call cubic_spline(nz_r,z_r,sal1,0._rkind,0._rkind,swild,swild2(1:nz_r,1))
         cspline_ypp(1:nz_r,2)=swild(1:nz_r)
 
+!$OMP parallel default(shared) private(i,k,swild)
+
 !       T,S @ nodes
+!$OMP   do
         do i=1,npa
           if(idry(i)==1) then
             !tem0(:,i)=tem1(nz_r)
@@ -3739,24 +4074,16 @@
             call parallel_abort('MAIN: node depth too big for ts.ic')
           endif 
           call eval_cubic_spline(nz_r,z_r,tem1,cspline_ypp(1:nz_r,1),nvrt-kbp(i)+1,znl(kbp(i):nvrt,i), &
-     !&0,z_r(1),z_r(nz_r),tem0(kbp(i):nvrt,i))
      &0,z_r(1),z_r(nz_r),tr_nd0(1,kbp(i):nvrt,i))
           call eval_cubic_spline(nz_r,z_r,sal1,cspline_ypp(1:nz_r,2),nvrt-kbp(i)+1,znl(kbp(i):nvrt,i), &
      &0,z_r(1),z_r(nz_r),tr_nd0(2,kbp(i):nvrt,i))
 
-!         Impose no slip b.c. to be consistent with ELM transport
-!          if(Cdp(i)/=0.or.rough_p(i)/=0) then
-!            tr_nd0(1:2,kbp(i),i)=tr_nd0(1:2,kbp(i)+1,i)
-!            !sal0(kbp(i),i)=sal0(kbp(i)+1,i)
-!          endif
-
 !         Extend
           do k=1,kbp(i)-1
-!            tem0(k,i)=tem0(kbp(i),i)
-!            sal0(k,i)=sal0(kbp(i),i)
             tr_nd0(1:2,k,i)=tr_nd0(1:2,kbp(i),i)
           enddo !k
         enddo !i=1,npa
+!$OMP   end do
 
 !       T,S @ sides 
 !        do i=1,nsa
@@ -3782,6 +4109,7 @@
 !        enddo !i=1,nsa
 
 !       T,S @ elements
+!$OMP   do
         do i=1,nea
           if(idry_e(i)==1) then
             tr_el(1,:,i)=tem1(nz_r)
@@ -3806,6 +4134,8 @@
             tr_el(1:2,k,i)=tr_el(1:2,kbe(i)+1,i)
           enddo !k
         enddo !i=1,nea
+!$OMP   end do
+!$OMP end parallel 
       endif !ibcc_mean==1.or.ihot==0.and.flag_ic(1)==2
 
 !								   
@@ -3857,15 +4187,16 @@
           close(32)
 
 !         T,S @ elements
+!$OMP parallel do default(shared) private(i,k)
           do i=1,nea
             do k=2,nvrt
-              !tr_el(1,k,i)=sum(tem0(k,elnode(1:i34(i),i))+tem0(k-1,elnode(1:i34(i),i)))/2/i34(i)
               tr_el(1,k,i)=sum(tr_nd0(1,k,elnode(1:i34(i),i))+tr_nd0(1,k-1,elnode(1:i34(i),i)))/2/i34(i)
               tr_el(2,k,i)=sum(tr_nd0(2,k,elnode(1:i34(i),i))+tr_nd0(2,k-1,elnode(1:i34(i),i)))/2/i34(i)
             enddo !k
             tr_el(1,1,i)=tr_el(1,2,i) !mainly for hotstart format
             tr_el(2,1,i)=tr_el(2,2,i)
           enddo !i
+!$OMP end parallel do
 
         else !flag_ic(1)=2 
 !         Already initialized
@@ -3945,10 +4276,12 @@
         wtime2=wtiminc
       endif !nws=4
 
+#ifdef USE_SIMPLE_WIND
       if(nws==5.or.nws==6) then
         CALL INIT_NETCDF_CF_ALLVAR(nws,sim_year,sim_month,sim_day,sim_hour,sim_minute,sim_second)
         CALL READ_NETCDF_CF_ALLVAR(time, windx, windy, pr)
       endif !5|6
+#endif
 
 !	CORIE mode
       if(nws>=2.and.nws<=3) then
@@ -3980,78 +4313,15 @@
         endif !nws==3
       endif !nws>=2
 
-!     VIMS Point source loading added by YC
+!    read ICM parameters 
 #ifdef USE_ICM 
-!      if(myrank==0) write(16,*)'start reading ICM point source...'
-!      call WQCO1(dt,rnday,NDTWQ)
-       call read_icm_param
-!      if(iWQPS==2) then
-!        PSQ(:)=0.
-!        PSK(:)=0
-!        WWPRPOC(:) = 0.
-!        WWPLPOC(:) = 0.
-!        WWPDOCA(:) = 0.
-!        WWPRPON(:) = 0.
-!        WWPLPON(:) = 0.
-!        WWPDON(:)  = 0.
-!        WWPNH4(:)  = 0.
-!        WWPNO3(:)  = 0.
-!        WWPRPOP(:) = 0.
-!        WWPLPOP(:) = 0.
-!        WWPDOP(:)  = 0.
-!        WWPPO4t(:) = 0.
-!        WWPSU(:)   = 0.
-!        WWPSAt(:)  = 0.
-!        WWPCOD(:)  = 0.
-!        WWPDO(:)   = 0.
-!
-!        x1 = 1.0E3 !conversion from kg to g
-!        open(61,file='ps.in',status='old')
-!        read(61,*)
-!        read(61,*)
-!        do i=1,nps
-!          read(61,*) iegb,xPSK,xPSQ,PRPOC,PLPOC,PDOCA,PRPON,PLPON,PDON, &
-!          &             PNH4,PNO3,PRPOP,PLPOP,PDOP,PPO4t,PSU,PSAt,PCOD,PDO
-!          if(iegl(iegb)%rank==myrank) then
-!            PSQ(iegl(iegb)%id)     = xPSQ !m^3/s - usually negative
-!            PSK(iegl(iegb)%id)     = xPSK !vertical layer where the source is applied
-!            WWPRPOC(iegl(iegb)%id) = PRPOC * x1  ! kg/d * 10^3 = g per day
-!            WWPLPOC(iegl(iegb)%id) = PLPOC * x1
-!            WWPDOCA(iegl(iegb)%id) = PDOCA * x1
-!            WWPRPON(iegl(iegb)%id) = PRPON * x1
-!            WWPLPON(iegl(iegb)%id) = PLPON * x1
-!            WWPDON(iegl(iegb)%id)  = PDON  * x1
-!            WWPNH4(iegl(iegb)%id)  = PNH4  * x1
-!            WWPNO3(iegl(iegb)%id)  = PNO3  * x1
-!            WWPRPOP(iegl(iegb)%id) = PRPOP * x1
-!            WWPLPOP(iegl(iegb)%id) = PLPOP * x1
-!            WWPDOP(iegl(iegb)%id)  = PDOP  * x1
-!            WWPPO4t(iegl(iegb)%id) = PPO4t * x1
-!            WWPSU(iegl(iegb)%id)   = PSU  * x1
-!            WWPSAt(iegl(iegb)%id)  = PSAt * x1
-!            WWPCOD(iegl(iegb)%id)  = PCOD * x1
-!            WWPDO(iegl(iegb)%id)   = PDO  * x1
-!          endif
-!        enddo
-!        npstime=0
-!        npstiminc=86400.  !added by YC, users can change by themselves
-!org yc        npstime1=0
-!org yc        npstime2=npstiminc 
-!        if(myrank==0) write(16,*)'end reading ICM point source...'
-!      endif ! iWQPS=2
+      if(myrank==0) write(16,*)'Reading ICM parameters'
+      call read_icm_param  ! ICM parameter 
+      call read_icm_param2 ! spatially varying parameter
+      call WQinput(0.d0)   ! time varying input
 
-!...  Reads model inputs
-        if(myrank==0) write(16,*)'Reading ICM parameters inputs'
-        !allocate(WSRP(nea),WSLP(nea),WSPB1(nea),WSPB2(nea),WSPB3(nea),turb(nea),WRea(nea),stat=istat)  !added by YC
-        !if(istat/=0) call parallel_abort('Failed to allocate (11)')
-        !call WQCO2(WSRP,WSLP,WSPB1,WSPB2,WSPB3,turb,WRea) !added by YC
-        call read_icm_param2
-        call WQinput(0.d0) !(time) !added by YC, still need debuging
-        !call wqm_out
-        if(myrank==0) write(16,*)'done reading ICM parameters'
-
-!     VIMS surface temperature mode added by YC
-!     May want to use heat exchange instead
+      !VIMS surface temperature mode added by YC
+      !May want to use heat exchange instead
       if(iSun==2) then
         if(myrank==0) write(16,*)'start reading ICM surface T...'
         open(62,file='surface_t.th',status='old')
@@ -4230,8 +4500,8 @@
         open(31, file='ecosim.out', status='replace')
         write(31,*) 'Ecological model output'
         write(31,*) 'Output identifiers'
-        write(31,*) 'itemp', itemp
-        write(31,*) 'isalt', isalt
+!        write(31,*) 'itemp', itemp
+!        write(31,*) 'isalt', isalt
         write(31,*) 'Nutrients and DIC'
         write(31,*) '  iDIC_', iDIC_
         if(IRON==1) write(31,*) '  iFeO_', iFeO_
@@ -4291,6 +4561,9 @@
         write(31,*)'  iDO_', iDO_
         write(31,*)'  iCOD_', iCOD_
         close(31)
+        if(iCOD_/=ntrs(6)) then
+           call parallel_abort('Check ECO Ntracers:eco_class/=ecosim.out(bio_param)')
+        endif   
       endif !myrank==0
 
 !     Reads ecological model inputs (ecosim.in file)
@@ -4325,46 +4598,35 @@
       call read_napzd_input
 #endif /*USE_NAPZD*/
 
-#ifdef USE_ICM
-      if(myrank==0) write(16,*) 'ICM model invoked'
-!     Initialize tracers indices and some scalars
-      if(sim_month==1)then
-        yday = sim_day
-      else if(sim_month==2)then
-        yday = sim_day + 31
-      else if(sim_month==3)then
-        yday = sim_day + 59
-      else if(sim_month==4)then
-        yday = sim_day + 90
-      else if(sim_month==5)then
-        yday = sim_day + 120
-      else if(sim_month==6)then
-        yday = sim_day + 151
-      else if(sim_month==7)then
-        yday = sim_day + 181
-      else if(sim_month==8)then
-        yday = sim_day + 212
-      else if(sim_month==9)then
-        yday = sim_day + 243
-      else if(sim_month==10)then
-        yday = sim_day + 273
-      else if(sim_month==11)then
-        yday = sim_day + 304
-      else
-        yday = sim_day + 334
-      endif
-
-!...  Reads model inputs 
-!      if(myrank==0) write(16,*)'Reading ICM parameters inputs'
-
-!!YC02062013  call WQCO1(dt,rnday,NDTWQ)
-!      allocate(WSRP(nea),WSLP(nea),WSPB1(nea),WSPB2(nea),WSPB3(nea),turb(nea),WRea(nea),stat=istat)  !added by YC
-!      if(istat/=0) call parallel_abort('Failed to allocate (11)')
-!      call WQCO2(WSRP,WSLP,WSPB1,WSPB2,WSPB3,turb,WRea) !added by YC
-!      call WQinput !(time) !added by YC, still need debuging
-!      call wqm_out 
-!      if(myrank==0) write(16,*)'done reading ICM parameters'
-#endif /*USE_ICM*/
+!#ifdef USE_ICM
+!      if(myrank==0) write(16,*) 'ICM model invoked'
+!!     Initialize tracers indices and some scalars
+!      if(sim_month==1)then
+!        yday = sim_day
+!      else if(sim_month==2)then
+!        yday = sim_day + 31
+!      else if(sim_month==3)then
+!        yday = sim_day + 59
+!      else if(sim_month==4)then
+!        yday = sim_day + 90
+!      else if(sim_month==5)then
+!        yday = sim_day + 120
+!      else if(sim_month==6)then
+!        yday = sim_day + 151
+!      else if(sim_month==7)then
+!        yday = sim_day + 181
+!      else if(sim_month==8)then
+!        yday = sim_day + 212
+!      else if(sim_month==9)then
+!        yday = sim_day + 243
+!      else if(sim_month==10)then
+!        yday = sim_day + 273
+!      else if(sim_month==11)then
+!        yday = sim_day + 304
+!      else
+!        yday = sim_day + 334
+!      endif
+!#endif /*USE_ICM*/
 
 
 #ifdef USE_TIMOR
@@ -4432,7 +4694,7 @@
             kk_fib(i,2)=sum(kk20(elnode(1:i34(i),i)))/i34(i)
           enddo !i
       endif !flag_fib=1
-#endif
+#endif /*USE_FIB*/
 
 !     Tracer i.c. @ nodes and prisms (T,S already done)
       do mm=3,natrm
@@ -4517,7 +4779,6 @@
             !Model sets own i.c.
 #ifdef USE_ECO
             call bio_init !init. tr_nd
-#elif USE_ICM
 #else
             write(errmsg,*)'INIT: type 0 i.c.:',mm
             call parallel_abort(errmsg)
@@ -4556,6 +4817,19 @@
         !tr_el(irange_tr(1,mm):irange_tr(2,mm),:,1:nea)=trel0(irange_tr(1,mm):irange_tr(2,mm),:,1:nea)
       enddo !mm=3,natrm
 
+#ifdef USE_ICM
+      !initial ICM variable wqc
+!$OMP parallel do default(shared) private(i,k,j)
+      do i=1,nea
+        do k=1,nvrt
+          do j=1,ntrs(7)
+            wqc(j,k,i)=tr_el(j-1+irange_tr(1,7),k,i)
+          enddo !j
+        enddo !k
+      enddo !i
+!$OMP end parallel do
+#endif
+
 !     Store i.c. 
       tr_nd0(3:ntracers,:,:)=tr_nd(3:ntracers,:,:)
 
@@ -4563,6 +4837,44 @@
 !     end user-defined tracer part
 !     At this point, these arrays have been init'ed: tr_nd(3:end,:,:), tr_nd0(3:end,:,:), tr_el(3:end,:,:)
 !     for ihot=0 or ihot/=0. If ihot/=0, all of these will be over-written
+
+! 1129 tsinghua group------------
+#ifdef USE_SED 
+!     Init arrays used in 2-phase flow for ihot=0 or ihot/=0. 
+!     If ihot/=0, all of these will be over-written 
+      if(itur==5) then
+        ntr_l=ntrs(5)
+        tmp=sum(Srho(1:ntr_l))/ntr_l
+        taup=tmp/(tmp-rho0)*sum(Wsed(1:ntr_l))/ntr_l/grav
+        ws=sum(Wsed(1:ntr_l))/ntr_l
+        SDav=sum(Sd50(1:ntr_l))/ntr_l
+        Srhoav=sum(Srho(1:ntr_l))/ntr_l
+        do i=1,npa
+          do k=kbp(i),nvrt 
+            trndtot(k,i)=sum(tr_nd(irange_tr(1,5):irange_tr(2,5),k,i)/Srho(1:ntr_l))
+          enddo !k=kbp(i),nvrt
+
+          do k=kbp(i),nvrt 
+            g0(k,i)=(1+2.5*trndtot(k,i)+4.5904*trndtot(k,i)**2+4.515439*trndtot(k,i)**3)/ &
+       &(1-(trndtot(k,i)/Cv_max)**3)**0.678021
+            if(trndtot(k,i)>1.e-10) then !0918
+              ws(k,i)=sum(tr_nd(irange_tr(1,5):irange_tr(2,5),k,i)*Wsed(1:ntr_l))/ &
+         &sum(tr_nd(irange_tr(1,5):irange_tr(2,5),k,i))
+              SDav(k,i)=sum(tr_nd(irange_tr(1,5):irange_tr(2,5),k,i)*Sd50(1:ntr_l))/ &
+         &sum(tr_nd(irange_tr(1,5):irange_tr(2,5),k,i))
+              Srhoav(k,i)=sum(tr_nd(irange_tr(1,5):irange_tr(2,5),k,i)*Srho(1:ntr_l))/ &
+         &sum(tr_nd(irange_tr(1,5):irange_tr(2,5),k,i))
+              taup_c(k,i)=SDav(k,i)/(24*g0(k,i)*trndtot(k,i))*(3*pi/(2*q2p(k,i)))**0.5d0
+              taup(k,i)=Srhoav(k,i)/(Srhoav(k,i)-rho0)*ws(k,i)/grav*(1-trndtot(k,i))**1.7d0
+            endif
+!... kesi_tau
+            tmp=trndtot(k,i)*Srhoav(k,i)/(1-trndtot(k,i))/rho0
+            kesit(k,i)=(2/taup(k,i)*(1-tmp)+(1-ecol**2)/(3*taup_c(k,i)))*taup(k,i)/(2*(1+tmp))
+          enddo !k=kbp(i),nvrt
+        enddo
+      endif !itur==5
+#endif
+! 1129 tsinghua group------------           
 
 !...  Initialize GOTM for both cold and hot starts (for cde etc).
 !...  For real hot start, q2, xl, dfv and dfh will use the values in hotstart.in;
@@ -4609,13 +4921,6 @@
             do j=1,ntracers
               tr_el(j,:,ie)=swild4(:,j+1)
             enddo !j
-!            tr_el(2,:,ie)=swild4(:,3)
-!            do l=3,ntracers
-!#ifndef USE_NAPZD
-!              !trel0(l,:,ie)=swild4(:,2*l-2)
-!              tr_el(l,:,ie)=swild4(:,2*l-1)
-!#endif
-!            enddo !l
           endif
         enddo !i=1,ne_global
 
@@ -4635,18 +4940,15 @@
           endif
         enddo !i=1,ns_global
 
-        ! Node data (include non-hydrostatic pressure even for hydrostatic model for convenience)
+        ! Node data 
         deallocate(swild4)
         allocate(swild4(nvrt,2*ntracers+7))
         do i=1,np_global
-          !read(36) ipgb,double1,itmp,((swild4(j,l),l=1,11),j=1,nvrt)
           read(36) ipgb,double1,itmp,((swild4(j,l),l=1,2*ntracers+7),j=1,nvrt)
           if(ipgl(ipgb)%rank==myrank) then
             ip=ipgl(ipgb)%id
             eta2(ip)=double1
             idry(ip)=itmp
-            !tnd(:,ip)=swild4(1:nvrt,1)
-            !snd(:,ip)=swild4(1:nvrt,2)
             do j=1,ntracers
               tr_nd(j,:,ip)=swild4(1:nvrt,j)
             enddo !j
@@ -4654,8 +4956,6 @@
               tr_nd0(j,:,ip)=swild4(1:nvrt,j+ntracers)
             enddo !j
 
-            !tem0(:,ip)=swild4(:,3)
-            !sal0(:,ip)=swild4(:,4)
             q2(:,ip)=swild4(:,2*ntracers+1)
             xl(:,ip)=swild4(:,2*ntracers+2)
             dfv(:,ip)=swild4(:,2*ntracers+3)
@@ -4748,7 +5048,7 @@
         enddo !i
 
         deallocate(swild4)
-        allocate(swild4(Nbed,ntracers),swild99(Nbed,MBEDP),stat=istat)
+        allocate(swild4(Nbed,ntrs(5)),swild99(Nbed,MBEDP),stat=istat)
         if(istat/=0) call parallel_abort('MAIN: alloc failure (55)')
         do i=1,ne_global
           read(36) iegb,swild4,swild99
@@ -4856,14 +5156,95 @@
         ! Close hotstart file
         close(36)
 
-        if(itur==3) then
+        if(itur==3.or.itur==5) then !Tsinghua group:0822+itur==5
+!$OMP parallel do default(shared) private(i,j)
           do i=1,npa
             do j=1,nvrt
               q2(j,i)=max(q2min,q2(j,i))
               xl(j,i)=max(xlmin2(i),xl(j,i))
             enddo
           enddo
+!$OMP end parallel do
+          
+#ifdef USE_SED 
+          if(itur==5) then
+            do i=1,npa
+              do j=1,nvrt
+                epsf(j,i)=max(cmiu0**3*q2(j,i)**1.5*xl(j,i)**(-1),psimin) !0918 1012
+                q2f(j,i)=q2(j,i) 
+                q2p(j,i)=q2(j,i) 
+                q2fp(j,i)=2*q2(j,i) 
+                dfhm(j,:,i)=dfh(j,i) !1007
+              enddo
+            enddo
+          endif !itur==5 0825 Tsinghua group
+#endif
         endif
+
+! 0917 tsinghua group------------
+#ifdef USE_SED 
+!       Init arrays used in 2-phase flow
+        if(itur==5) then
+          ntr_l=ntrs(5)
+          tmp=sum(Srho(1:ntr_l))/ntr_l
+          taup=tmp/(tmp-rho0)*sum(Wsed(1:ntr_l))/ntr_l/grav
+          ws=sum(Wsed(1:ntr_l))/ntr_l
+          SDav=sum(Sd50(1:ntr_l))/ntr_l
+          Srhoav=sum(Srho(1:ntr_l))/ntr_l
+          do i=1,npa
+            do k=kbp(i),nvrt 
+              trndtot(k,i)=sum(tr_nd(irange_tr(1,5):irange_tr(2,5),k,i)/Srho(1:ntr_l))
+            enddo !k=kbp(i),nvrt
+            
+            do k=kbp(i),nvrt 
+              g0(k,i)=(1+2.5*trndtot(k,i)+4.5904*trndtot(k,i)**2+4.515439*trndtot(k,i)**3)/ &
+         &(1-(trndtot(k,i)/Cv_max)**3)**0.678021
+              if(trndtot(k,i)>1.e-10) then !0918
+                ws(k,i)=sum(tr_nd(irange_tr(1,5):irange_tr(2,5),k,i)*Wsed(1:ntr_l))/ &
+           &sum(tr_nd(irange_tr(1,5):irange_tr(2,5),k,i))
+                SDav(k,i)=sum(tr_nd(irange_tr(1,5):irange_tr(2,5),k,i)*Sd50(1:ntr_l))/ &
+           &sum(tr_nd(irange_tr(1,5):irange_tr(2,5),k,i))
+                Srhoav(k,i)=sum(tr_nd(irange_tr(1,5):irange_tr(2,5),k,i)*Srho(1:ntr_l))/ &
+           &sum(tr_nd(irange_tr(1,5):irange_tr(2,5),k,i))
+                taup_c(k,i)=SDav(k,i)/(24*g0(k,i)*trndtot(k,i))*(3*pi/(2*q2p(k,i)))**0.5d0
+                taup(k,i)=Srhoav(k,i)/(Srhoav(k,i)-rho0)*ws(k,i)/grav*(1-trndtot(k,i))**1.7d0
+              endif
+              taufp_t(k,i)=(1+Cbeta*sqrt(3*ws(k,i)**2/(2*q2f(k,i))))**(-0.5d0)* &
+         &(1.5*c_miu*q2f(k,i)/epsf(k,i))
+              if(taup(k,i)>taufp_t(k,i)) taup(k,i)=taufp_t(k,i) !1014              
+              miuft(k,i)=min(diffmax(j),max(diffmin(j),c_miu*q2f(k,i)**2/epsf(k,i))) !0924.2 1011
+
+!... miup
+!              if(taup(k,i)>taufp_t(k,i)) then !1013 1016:close
+!                miup_t(k,i)=(q2fp(k,i)*taufp_t(k,i)/3+taufp_t(k,i)*q2p(k,i)/3*(1+trndtot(k,i)*g0(k,i)*Acol))/ &
+!           &(1+sig_s*taup(k,i)/(2*taup_c(k,i)))
+!                Kp_t(k,i)=(taufp_t(k,i)*q2fp(k,i)/3+10./27.*taufp_t(k,i)*q2p(k,i)*(1+trndtot(k,i)*g0(k,i)*fi_c))/ &
+!           &(1+5./9.*taup(k,i)*ksi_c/taup_c(k,i)) !1011
+!              else
+              miup_t(k,i)=(q2fp(k,i)*taufp_t(k,i)/3+taup(k,i)*q2p(k,i)/3*(1+trndtot(k,i)*g0(k,i)*Acol))/ &
+         &(1+sig_s*taup(k,i)/(2*taup_c(k,i)))
+!                Kp_t(k,i)=(taufp_t(k,i)*q2fp(k,i)/3+10./27.*taup(k,i)*q2p(k,i)*(1+trndtot(k,i)*g0(k,i)*fi_c))/ &
+!           &(1+5./9.*taup(k,i)*ksi_c/taup_c(k,i)) !1011
+!              endif
+              miup_c(k,i)=0.8d0*trndtot(k,i)*g0(k,i)*(1+ecol)*(miup_t(k,i)+SDav(k,i)*sqrt(2*q2p(k,i)/(3*pi)))
+              miup(k,i)=min(diffmax(j),max(diffmin(j),miup_t(k,i)+miup_c(k,i))) !0924.2
+!... kesi_tau
+              tmp=trndtot(k,i)*Srhoav(k,i)/(1-trndtot(k,i))/rho0
+              kesit(k,i)=(2/taup(k,i)*(1-tmp)+(1-ecol**2)/(3*taup_c(k,i)))*taup(k,i)/(2*(1+tmp))
+!... Kp_tc, Kp_t, Kp_c
+              Kp_t(k,i)=(taufp_t(k,i)*q2fp(k,i)/3+10./27.*taup(k,i)*q2p(k,i)*(1+trndtot(k,i)*g0(k,i)*fi_c))/ &
+         &(1+5./9.*taup(k,i)*ksi_c/taup_c(k,i)) !1011 1013:close 1016:open
+              Kp_c(k,i)=trndtot(k,i)*g0(k,i)*(1+ecol)*(6*Kp_t(k,i)/5+4./3.*SDav(k,i)*sqrt(2*q2p(k,i)/(3*pi))) !1011
+              Kp_tc(k,i)=min(diffmax(j),max(diffmin(j),Kp_t(k,i)+Kp_c(k,i))) !0924.2 
+!... Kft
+              Kft(k,i)=min(diffmax(j),max(diffmin(j),1.d-6+miuft(k,i)/sigf)) !0924.2  
+!... miuepsf
+              miuepsf(k,i)=min(diffmax(j),max(diffmin(j),1.d-6+miuft(k,i)/sigepsf)) !0924.2   
+            enddo !k=kbp(i),nvrt
+          enddo
+        endif !itur==5
+#endif
+! 0917 tsinghua group------------
 
 !...    change time and iteration for forecast mode
 !...    Causion: this affects all t.h. files (fort.5[0-3]) and wind files
@@ -4921,11 +5302,13 @@
           enddo !i
         endif !nws=4
 
+#ifdef USE_SIMPLE_WIND
 !IVICA
         if(nws==5.or.nws==6) then
           CALL INIT_NETCDF_CF_ALLVAR(nws,sim_year,sim_month,sim_day,sim_hour,sim_minute,sim_second)
           CALL READ_NETCDF_CF_ALLVAR(time, windx, windy, pr)
         endif !5|6
+#endif
 
         if(nws>=2.and.nws<=3) then
           ninv=time/wtiminc
@@ -4955,87 +5338,15 @@
           endif !nws==3
         endif !nws
 
-!       VIMS Point source loading added by YC
+!       read ICM parameters 
 #ifdef USE_ICM 
-        if(myrank==0) write(16,*)'hotstart ICM point source..'
-        !call WQCO1(dt,rnday,NDTWQ)                                         !added by YC
-        !allocate(WSRP(nea),WSLP(nea),WSPB1(nea),WSPB2(nea),WSPB3(nea),turb(nea),WRea(nea),stat=istat)  !added by YC
-        !call WQCO2(WSRP,WSLP,WSPB1,WSPB2,WSPB3,turb,WRea)                  !added by YC
+        if(myrank==0) write(16,*)'Reading ICM parameters'
         call read_icm_param
         call read_icm_param2
-!        if(iWQPS==2) then
-!          PSQ(:)=0.
-!          PSK(:)=0
-!          WWPRPOC(:) = 0.
-!          WWPLPOC(:) = 0.
-!          WWPDOCA(:) = 0.
-!          WWPRPON(:) = 0.
-!          WWPLPON(:) = 0.
-!          WWPDON(:)  = 0.
-!          WWPNH4(:)  = 0.
-!          WWPNO3(:)  = 0.
-!          WWPRPOP(:) = 0.
-!          WWPLPOP(:) = 0.
-!          WWPDOP(:)  = 0.
-!          WWPPO4t(:) = 0.
-!          WWPSU(:)   = 0.
-!          WWPSAt(:)  = 0.
-!          WWPCOD(:)  = 0.
-!          WWPDO(:)   = 0.
-!!
-!          x1 = 1.0E3 !from kg to g
-!          npstiminc=86400.
-!          open(61,file='ps.in',status='old')
-!          rewind(61)
-!          ninv=time/npstiminc
-!          npstime=ninv*npstiminc
-!!org yc        npstime1=ninv*npstiminc
-!!org yc        npstime2=(ninv+1)*npstiminc
-!          read(61,*)      !title
-!          do it=0,ninv
-!            read(61,*)    !time
-!            do i=1,nps
-!              read(61,*) iegb,xPSK,xPSQ,PRPOC,PLPOC,PDOCA,PRPON,PLPON,PDON, &
-!            &             PNH4,PNO3,PRPOP,PLPOP,PDOP,PPO4t,PSU,PSAt,PCOD,PDO
-!              if(iegl(iegb)%rank==myrank) then
-!                PSQ(iegl(iegb)%id)     = xPSQ
-!                PSK(iegl(iegb)%id)     = xPSK
-!                WWPRPOC(iegl(iegb)%id) = PRPOC * x1  ! kg/d * 10^3  = g per day
-!                WWPLPOC(iegl(iegb)%id) = PLPOC * x1
-!                WWPDOCA(iegl(iegb)%id) = PDOCA * x1
-!                WWPRPON(iegl(iegb)%id) = PRPON * x1
-!                WWPLPON(iegl(iegb)%id) = PLPON * x1
-!                WWPDON(iegl(iegb)%id)  = PDON  * x1
-!                WWPNH4(iegl(iegb)%id)  = PNH4  * x1
-!                WWPNO3(iegl(iegb)%id)  = PNO3  * x1
-!                WWPRPOP(iegl(iegb)%id) = PRPOP * x1
-!                WWPLPOP(iegl(iegb)%id) = PLPOP * x1
-!                WWPDOP(iegl(iegb)%id)  = PDOP  * x1
-!                WWPPO4t(iegl(iegb)%id) = PPO4t * x1
-!                WWPSU(iegl(iegb)%id)   = PSU  * x1
-!                WWPSAt(iegl(iegb)%id)  = PSAt * x1
-!                 WWPCOD(iegl(iegb)%id)  = PCOD * x1
-!                WWPDO(iegl(iegb)%id)   = PDO  * x1
-!              endif
-!              if(myrank==0)write(16,*)'ICM: xPSK= ',xPSK
-!            enddo !i
-!          enddo !ninv
-!        endif ! iWQPS=2
-!
-!        npstiminc=86400.
-!        ninv=time/npstiminc
-!        npstime=ninv*npstiminc
- 
         call WQinput(time)
         rIavg=rIa !temporary fix, should be written into hotstart.in
-        !do it=0,ninv
-        !  call WQinput !(time)
-        !enddo
-        !call wqm_out
-
-        if(myrank==0) write(16,*)'end hotstart ICM point source..'
         
-!       VIMS surface temperature mode added by YC02062013
+        !VIMS surface temperature mode added by YC02062013
         if(iSun==2) then
           if(myrank==0) write(16,*)'doing ICM hotstart surface T..'
           open(62,file='surface_t.th',status='old')
@@ -5067,7 +5378,6 @@
         if(myrank==0) write(16,*)'done ICM hotstart surface T..'
 
 #endif /*USE_ICM*/
-!End of VIMS Point source loading added by YC
 
 !...    Nudging 
         !Shared variables for inu_tr=2
@@ -5348,6 +5658,9 @@
 
       if(ihot==0) iths=0
 !...  Compute initial bed deformation and update depths info
+!$OMP parallel default(shared) private(i,dep,swild,n1,n2)
+
+!$OMP do
       do i=1,npa
         bdef1(i)=bdef(i)/ibdef*min0(iths,ibdef)
         if(imm==1) then
@@ -5359,14 +5672,22 @@
         endif
         if(ivcor==2) hmod(i)=min(dp(i),h_s)
       enddo !i
+!$OMP end do
+
+!$OMP do
       do i=1,nsa
         n1=isidenode(1,i)
         n2=isidenode(2,i)
         dps(i)=(dp(n1)+dp(n2))/2
       enddo !i
+!$OMP end do
+
+!$OMP do
       do i=1,nea
-        dpe(i)=minval(dp(elnode(1:i34(i),i))) !1.e10
+        dpe(i)=minval(dp(elnode(1:i34(i),i)))
       enddo !i=1,ne
+!$OMP end do
+!$OMP end parallel
 
 !...  Compute initial vgrid
       if(inunfl==0) then
@@ -5381,8 +5702,15 @@
       call nodalvel
       if(myrank==0) write(16,*)'done computing initial nodal vel...'
 
+!$OMP parallel default(shared) private(i,k,kl)
+
 !...  Compute initial density at nodes or elements
+!$OMP workshare
       prho=-99
+      erho=-99
+!$OMP end workshare
+
+!$OMP do
       do i=1,npa
         if(idry(i)==1) cycle
         do k=1,nvrt
@@ -5397,8 +5725,9 @@
      &                      )
         enddo !k
       enddo !i
+!$OMP end do
 
-      erho=-99
+!$OMP do
       do i=1,nea
         if(idry_e(i)==1) cycle
 
@@ -5421,6 +5750,8 @@
      &                       )
         enddo !k
       enddo !i
+!$OMP end do
+!$OMP end parallel
 
 !...  Compute mean density profile at nodes or elements (using current z-coord.)
       if(ibcc_mean==1.or.ihot==0.and.flag_ic(1)==2) then
@@ -5446,9 +5777,11 @@
 !       hradd: downwelling infrared (longwave) radiative fluxes at surface (W/m^2)
 !       srad: solar radiation (W/m^2)
 !       tauxz,tauyz: wind stress (in true E-N direction if ics=2)
+!$OMP parallel do default(shared) private(i)
         do i=1,npa
           sflux(i)=-fluxsu(i)-fluxlu(i)-(hradu(i)-hradd(i))
         enddo
+!$OMP end parallel do
         if(myrank==0) write(16,*)'heat budge model completes...'
       endif !nws>=2
 
@@ -5463,14 +5796,35 @@
 !          enddo !i
 !          stop
 
+!$OMP parallel do default(shared) private(j)
           do j=1,npa
             q2(:,j) = tke1d(0:(nvrt-1))
             xl(:,j) = L1d(0:(nvrt-1))
             dfv(:,j) = min(diffmax(j),max(diffmin(j),num1d(0:(nvrt-1))))
             dfh(:,j) = min(diffmax(j),max(diffmin(j),nuh1d(0:(nvrt-1))))
           enddo !j
+!$OMP end parallel do
 #endif
       endif !itur==4 etc
+
+!     Set essential b.c. flags (needed by PetSc)
+      lelbc=.false.
+      do i=1,nope_global
+        if(iettype(i)==0) cycle
+
+        do j=1,nond_global(i)
+          nd=iond_global(i,j)
+          if(ipgl(nd)%rank==myrank) then
+            ip=ipgl(nd)%id
+            lelbc(ip)=.true.
+          endif
+        enddo !j
+      enddo !i
+
+!     Optional PetSc solver in lieu of JCG
+#ifdef USE_PETSC
+      call init_petsc
+#endif 
 
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
