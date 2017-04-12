@@ -746,7 +746,7 @@
      &      EXPORT_WALV_DELTC
 
          NAMELIST /ENGS/ ISOURCE, MESNL, MESIN, IFRIC, MESBF, FRICC,    &
-     &      MESBR, ICRIT, IBREAK, ALPBJ, BRHD,                          &
+     &      MESBR, MEVEG, ICRIT, IBREAK, ALPBJ, BRHD,                   &
      &      LMAXETOT, MESDS, MESTR, TRICO, TRIRA, TRIURS
 
          NAMELIST /NUMS/ ICOMP, AMETHOD, SMETHOD, DMETHOD,              &

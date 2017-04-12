@@ -523,6 +523,7 @@
       USE W3SRC4MD
 #endif
       IMPLICIT NONE
+      INTEGER        :: I, J
       REAL(rkind)    :: TIME1, TIME2
 
 #ifdef TIMINGS

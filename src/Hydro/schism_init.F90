@@ -218,8 +218,8 @@
       version='description' !not really used
 
 !     Some param. from WWM for schism_msgp
-      call get_param('param.in','msc2',1,msc2,tmp,stringvalue)
-      call get_param('param.in','mdc2',1,mdc2,tmp,stringvalue)
+      call get_param('param.in','numsig2',1,numsig2,tmp,stringvalue)
+      call get_param('param.in','numdir2',1,numdir2,tmp,stringvalue)
 
       call get_param('param.in','ipre',1,ipre,tmp,stringvalue)
       if(nproc>1.and.ipre/=0) call parallel_abort('ipre/=0 is not enabled for nproc>1')
