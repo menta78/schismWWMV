@@ -648,16 +648,16 @@
         if(sum1/=sum1.or.sum2/=sum2.or.sum3/=sum3) then
           if(sum1/=sum1) then
             do i=1,9
-              write(12,*)'sum1:',i,sum(out_wwm_windpar(:,i))
+              !write(*,*)'sum1:',i,sum(out_wwm_windpar(:,i))
             end do
           endif
           if(sum3/=sum3) then
             do i=1,31 
               sum4=sum(out_wwm(:,i))
-              write(12,*)'sum4:',i,sum4
+              !write(*,*)'sum4:',i,sum4
               if(sum4/=sum4) then
                 do j=1,npa
-                  write(12,*)i,j,out_wwm(j,i)
+                  !write(*,*)i,j,out_wwm(j,i)
                 enddo !j
               endif
             enddo !i
