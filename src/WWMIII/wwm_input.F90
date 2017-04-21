@@ -785,13 +785,13 @@
 #ifdef SCHISM
          IF (LSPHE) THEN
            IF (ics /= 2) THEN
-             WRITE(DBG%FHNDL) LSPHE, ICS
+             WRITE(DBG%FHNDL,*) LSPHE, ICS
              FLUSH(DBG%FHNDL)
              CALL WWM_ABORT('You set LSPHE=T but then you need ics=2')
            END IF
          ELSE
            IF (ics /= 1) THEN
-             WRITE(DBG%FHNDL) LSPHE, ICS
+             WRITE(DBG%FHNDL,*) LSPHE, ICS
              FLUSH(DBG%FHNDL)
              CALL WWM_ABORT('You set LSPHE=F but then you need ics=1')
            END IF
