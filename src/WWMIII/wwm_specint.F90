@@ -347,3 +347,35 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+         SUBROUTINE BREAK_LIMIT_ALL
+         USE DATAPOOL
+         IMPLICIT NONE
+
+         INTEGER              :: IP
+         REAL(rkind)          :: HS
+         REAL(rkind)          :: EMAX, RATIO, ETOT
+         REAL(rkind)          :: DINTSPEC
+         REAL(rkind)          :: ACLOC(NUMSIG, NUMDIR)
+!      Print *, 'Passing BREAK_LIMIT_ALL'
+         DO IP = 1, MNP
+           ACLOC = AC2(:,:,IP)
+           IF (ISHALLOW(IP) .EQ. 0) CYCLE
+           ETOT = DINTSPEC(IP,ACLOC)
+           HS = 4.*SQRT(ETOT)
+           EMAX = 1./16. * (HMAX(IP))**2
+!        WRITE(300,*) 'IP=', IP, ' HMAX=', HMAX(IP), ' DEP=', DEP(IP)
+!        WRITE(300,*) '   ', IP, ' EMAX=', EMAX, ' ETOT=', ETOT
+!        WRITE(300,*) '   ', IP, ' HS=', HS, ' BRHD=', BRHD
+
+           IF (ETOT .GT. EMAX) THEN
+             if(myrank==0) WRITE(300,*) '   break XP=', XP(IP)
+             RATIO = EMAX/ETOT
+             AC2(:,:,IP) = RATIO * ACLOC(:,:)
+             AC1(:,:,IP) = RATIO * ACLOC(:,:)
+           END IF
+         END DO
+         END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+

@@ -180,6 +180,8 @@
 #endif
         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL
 
+        IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche
+
 #ifdef TIMINGS
         CALL WAV_MY_WTIME(TIME6)
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----IMPLICIT SPLITTING SCHEME-----'
@@ -277,8 +279,7 @@
           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 5')
         ENDIF
 
-!AR: this routine was somehow deleted must check why ... 
-!        IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche
+        IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche
 
         IF (LNANINFCHK) THEN
           WRITE(DBG%FHNDL,*) 'AFTER BREAK_LIMIT_ALL',  SUM(AC2)
