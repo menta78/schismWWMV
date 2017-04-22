@@ -7,40 +7,34 @@
 !  \__/\  /    \__/\  /\____|__  /___|___|___|
 !       \/          \/         \/             
 !
-! WWM-III (Wind Wave Model) source code 
+! WWM-III (Wind Wave Model Three) source code 
 ! 
-! The source code is entirely rewritten with respect to WWM (Hsu et al., 2005). The numerics have been completely revised (Roland, 2008)
+! The source code is rewritten with respect to WWM (Liau, 2002, Hsu et al., 2005). The numerics and phyiscs have been 
+! completely revised (Roland, 2008) and coded from scratch. The I/O has been entirely coded from scratch and the model has been coupled and parallelized. 
 ! The code included various source term packages (see Manual) and can be coupled to various ocean models on structured and unstructured grids
 ! Parallelization is done using OpenMP or MPI. For coupling to certain models we are using either Pipes (Roland et al. 2009), 
 ! coupling libraries (PGMCL, Dutour-Sikiric et al. 2013) or tightly coupled with SCHISM (Roland et al. 2012). In this version we have combined 
 ! some recent source term formulation following the work of Peter Janssen and Jean Bidlot from the ECMWF. The so called ECWAM model was 
-! continuesly updated and improved. We still have the WW3 3.14 version of the source terms of Fabrice but we have now from ECWAM (METEO FRANCE) 
-! the formulation of Fabrice coded by Lotfi Aouf from Meteo France. This source terms formulation can be used with the IPHYS switch. We 
-! will do in the futre now some code consolidation with respect to the source terms part. All external codes are courtesy to ECWMF or others as 
-! indicated in the source code. If something is not cited right please correct or let me know a.roland@bgsite.de or aaronroland@gmx.de
+! continuesly updated and improved. We have the the source term formulation of Ardhuin et al. 2009,2011 and we have the ECMWF ECWAM
+! formulation of Peter Janssen and Jean Bidlot (ECMWF). 
 ! 
 ! Developers:
 ! Lead:
+!
 !   Aron Roland (IT&E, Frankfurt, Z&P, Hannover),
 !   Yinglong Joseph Zhang (VIMS),
 !   Mathieu Dutour Sikiric (IRB, Zagreb),
-!   Ulrich Zanke (Z&P, Hannover) 
 !
 ! Contributors:
+!
 !   Christian Ferrarin (ISMAR-CNR),
 !   Fabrice Ardhuin (IFREMER),
-!   Yaron Toledo (Tel-Aviv University),
-!   Thomas Huxhorn (TUD),
-!   Will Perrie (Fisheries, Canada),
-!   Bash Toulany (Fisheries, Canada),
-!   Harry Wang (VIMS),
+!   Thomas Huxhorn (BGS IT&E),
 !   Andrea Fortunato (LNEC),
 !   Guillaume Dodet (LNEC),
 !   Kai Li (LNEC)
-!   Andreas Wurpts (Forschungsstelle Küste, Norderney),
-!   Michael Glozman (Cameri, Technion)
 !				
-! Copyright: 2008 - 2014 Z&P (Aron Roland, IT&E, Frankfurt, Zanke&Partner, Hannover, Germany)
+! Copyright: 2008 - 2014 (Aron Roland)
 ! All Rights Reserved                                     
 !
 ! http://www.apache.org/licenses/LICENSE-2.0
