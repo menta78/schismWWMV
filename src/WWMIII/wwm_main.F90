@@ -8,9 +8,13 @@
 !       \/          \/         \/             
 !
 ! WWM-III (Wind Wave Model Three) source code 
-! 
-! The source code is rewritten with respect to WWM (Liau, 2002, Hsu et al., 2005). The numerics and phyiscs have been 
-! completely revised (Roland, 2008) and coded from scratch. The I/O has been entirely coded from scratch and the model has been coupled and parallelized. 
+!
+! The WWM Model (Liau, 2002, Hsu et al., 2005), was provided as a basis for my PhD thesis in the year 2004. Based on the original source code two successive
+! versions have been developed. Where in the 1st one, my thesis work, the schemes numerical schemes of Hsu et al. 2005, have been replaced based on the 
+! numerical schemes of Roland, 2008 and the source terms have been replaces by the work done by Peters Janssen & Ardhuin et al. 2009,2011 and
+! Roland & Ardhuin 2014. The numerics and the physics have been coded from scratch. The original authors and developer of the subroutines are given in the 
+! headers. The source code was completely rewritten and restructured in contrast to the original code WWM (Liau, 2002, Hsu et al., 2005). 
+! The I/O has been entirely coded from scratch and the model has been coupled and parallelized. 
 ! The code included various source term packages (see Manual) and can be coupled to various ocean models on structured and unstructured grids
 ! Parallelization is done using OpenMP or MPI. For coupling to certain models we are using either Pipes (Roland et al. 2009), 
 ! coupling libraries (PGMCL, Dutour-Sikiric et al. 2013) or tightly coupled with SCHISM (Roland et al. 2012). In this version we have combined 
