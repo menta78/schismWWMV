@@ -102,18 +102,8 @@
         CALL CONVERT_VS_VD_WWM(IP, VSDS, VDDS, SSDS, DSSDS)
       ENDIF
 !
-      IF (ICOMP .GE. 2) THEN
-        IF (SMETHOD .eq. 1) then
-          PHI    = SSINL + SSINE  + SSNL4  + SSDS
-          DPHIDN =         DSSINE + DSSNL4 + DSSDS
-        ELSEIF (SMETHOD .eq. 2) then
-          PHI    = SSINL + SSINE  + SSNL4
-          DPHIDN =                - DSSNL4 - DSSDS
-        ENDIF
-      ELSE 
-        PHI    = SSINL + SSINE  + SSNL4  + SSDS
-        DPHIDN =         DSSINE + DSSNL4 + DSSDS
-      ENDIF
+      PHI    = SSINL + SSINE  + SSNL4  + SSDS
+      DPHIDN =       - DSSINE - DSSNL4 - DSSDS
 !
       END SUBROUTINE
 !**********************************************************************

@@ -304,7 +304,7 @@
      &        + SWG7 * ( DA1M(I-ISM ,J+IDM1) + DA2M(I-ISM ,J-IDM1) )  &
      &        + SWG8 * ( DA1M(I-ISM ,J+IDM ) + DA2M(I-ISM ,J-IDM ) )
               SFNL(I,J)   =     SFNL(I,J) / SIGPI
-              DSNL(I,J)   =   - DSNL(I,J) / PI3
+              DSNL(I,J)   =     DSNL(I,J) / PI3
            END DO
          END DO
 

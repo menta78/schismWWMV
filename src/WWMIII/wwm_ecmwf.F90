@@ -39,18 +39,8 @@
          DO ID = 1, NUMDIR
            DO IS = 1, NUMSIG 
              JAC = ONE/PI2/SPSIG(IS)
-             IF (ICOMP .GE. 2) THEN
-               IF (SMETHOD .eq. 1) THEN 
-                 PHI(IS,ID)    = SL(ID,IS)*JAC
-                 DPHIDN(IS,ID) = FL(ID,IS)
-               ELSE IF (SMETHOD .eq. 2) THEN ! Patankar except SSNL4
-                 PHI(IS,ID)    =  (SSINE(IS,ID) + SSNL4(IS,ID)) * JAC
-                 DPHIDN(IS,ID) = - DSSDS(IS,ID)
-               ENDIF
-             ELSE
-               PHI(IS,ID)    = SL(ID,IS)*JAC
-               DPHIDN(IS,ID) = FL(ID,IS)
-             ENDIF
+             PHI(IS,ID)    = SL(ID,IS)*JAC
+             DPHIDN(IS,ID) = -FL(ID,IS)
            ENDDO
          ENDDO
 

@@ -39,18 +39,8 @@
          IF (MESDS .GT. 0) CALL SDS_CYCLE3_NEW ( IP, KMWAM, SME10, ETOT, WALOC, SSDS, DSSDS )
          IF (MESNL .GT. 0) CALL DIASNL4WW3(IP, KMWAM, WALOC, SSNL4, DSSNL4)
 
-         IF (ICOMP .GE. 2) THEN
-           IF (SMETHOD .eq. 1) THEN
-             PHI    = SSINL + SSINE +  SSDS +  SSNL4
-             DPHIDN =        DSSINE + DSSDS + DSSNL4
-           ELSE IF (SMETHOD .eq. 2) THEN
-             PHI    = SSINL + SSINE +  SSNL4
-             DPHIDN = ZERO!      - DSSDS - DSSNL4
-           ENDIF
-         ELSE
-           PHI    = SSINL + SSINE +  SSDS +  SSNL4
-           DPHIDN =        DSSINE + DSSDS + DSSNL4
-         ENDIF
+         PHI    = SSINL + SSINE +   SSDS +  SSNL4
+         DPHIDN =       - DSSINE - DSSDS - DSSNL4
 
       END SUBROUTINE
 !**********************************************************************

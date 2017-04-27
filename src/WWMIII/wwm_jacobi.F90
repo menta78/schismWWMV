@@ -839,15 +839,9 @@
 
       CALL GET_BLOCAL(IP, ACin1, BLOC)
 !
-      IF (SMETHOD .eq. 1) THEN
-        BSIDE =    eVal * (PHI - MIN(ZERO,DPHIDN) * Acin2(:,:,IP))
-        DIAG  =  - eVal * MIN(ZERO,DPHIDN)
-      ELSE IF (SMETHOD .eq. 2) THEN ! Patankar
-        BSIDE = eVal * PHI
-        DIAG  = eVal * DPHIDN
-      END IF
+      BSIDE =   eVal * (PHI - MIN(ZERO,DPHIDN) * Acin2(:,:,IP))
+      DIAG  =   eVal * MIN(ZERO,DPHIDN)
 !
-
 #ifdef DEBUG_SOURCE_TERM
       WRITE(*,'(I10,10G20.10,A40)') IP, SUM(ACin1), SUM(ACin2), SUM(PHI), SUM(DPHIDN), SUM(BSIDE), SUM(DIAG), SUM(BLOC), eval, 'GET_BSIDE_DIAG'
 #endif
