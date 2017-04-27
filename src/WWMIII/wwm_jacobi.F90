@@ -674,6 +674,9 @@
               is_converged(1) = is_converged(1) + 1
             END IF
           END IF!test
+!
+!          CALL POST_INTEGRATION(IP, WALOC)
+! 
         END DO!IP
 #ifdef DEBUG
         WRITE(STAT%FHNDL,*) 'sumESUM=', sumESUM
@@ -796,18 +799,20 @@
       REAL(rkind)              :: DAM(NUMSIG), MAXDAC, eDAM
       REAL(rkind)              :: DELFL(NUMSIG), eFric, USFM
       INTEGER IS, ID
+
       PHI=ZERO
       DPHIDN=ZERO
+
       IF (LNONL) THEN
          CALL SOURCES_IMPLICIT 
       ELSE
         DPHIDN = DPHIDNA(:,:,IP)
         PHI    = PHIA(:,:,IP)
       END IF
+
       IF (LLIMT .and. WW3_STYLE_LIMIT_SRC_TERM) THEN
          DELFL  = COFRM4*DT4S
          DO IS=1,NUMSIG
-!            LIMFAK = 0.1
             MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
             IF ((ISOURCE .EQ. 1).or.(ISOURCE .EQ. 2)) THEN
                IF (ISOURCE .EQ. 1) THEN

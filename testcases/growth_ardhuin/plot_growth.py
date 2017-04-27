@@ -39,7 +39,7 @@ while i < nobs-1:
 xmin = xobs.min()
 xmax = xobs.max()
 ymin = 0#err.min() 
-ymax = 20#err.max() 
+ymax = 30#err.max() 
 
 #fig = plt.subplot(121) 
 plt.plot(xobs , obs1, color='green', linestyle='solid', linewidth=2, label='120s FBI Philim')
