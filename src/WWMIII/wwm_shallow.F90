@@ -45,10 +45,10 @@
          ENDIF
 
          IF (ICOMP .GE. 2) THEN
-           IF (SMETHOD .EQ. 1) THEN
+           IF (SMETHOD .EQ. 2) THEN
              DPHIDN = DPHIDN + DSSBR  + MAX(ZERO,-DSSNL3) + DSSBF
              PHI    =    PHI +  SSBR  + MAX(ZERO,SSNL3)   
-           ELSE IF (SMETHOD .EQ. 2) THEN 
+           ELSE IF (SMETHOD .EQ. 1) THEN 
              DPHIDN = DPHIDN + DSSBR + DSSNL3 + DSSBF
              PHI    = PHI    +  SSBR  + SSNL3  + SSBF
            ENDIF

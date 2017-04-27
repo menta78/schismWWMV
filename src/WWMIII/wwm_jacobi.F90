@@ -837,9 +837,9 @@
       IF (SMETHOD .eq. 1) THEN
         BSIDE = eVal * PHI
         DIAG  = eVal * DPHIDN
-      ELSE IF (SMETHOD .eq. 2) THEN
+      ELSE IF (SMETHOD .eq. 2) THEN ! Patankar
         BSIDE =  eVal * (PHI - MIN(ZERO,DPHIDN) * Acin2(:,:,IP))
-        DIAG  = -eVal * MIN(ZERO,DPHIDN)
+        DIAG  =  eVal * MIN(ZERO,DPHIDN)
       END IF
 !
 

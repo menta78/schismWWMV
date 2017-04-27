@@ -40,10 +40,10 @@
          IF (MESNL .GT. 0) CALL DIASNL4WW3(IP, KMWAM, WALOC, SSNL4, DSSNL4)
 
          IF (ICOMP .GE. 2) THEN
-           IF (SMETHOD .eq. 1) THEN
+           IF (SMETHOD .eq. 2) THEN
              PHI    = SSINL + SSINE +  SSNL4 
-             DPHIDN =       - DSSDS + DSSNL4 
-           ELSE IF (SMETHOD .eq. 2) THEN
+             DPHIDN =       - DSSDS - DSSNL4 
+           ELSE IF (SMETHOD .eq. 1) THEN
              PHI    = SSINL + SSINE +  SSDS +  SSNL4
              DPHIDN =        DSSINE + DSSDS + DSSNL4
            ENDIF
@@ -62,9 +62,6 @@
              ENDDO
            ENDDO
          ENDIF
-
-         !WRITE(*,*) 'wind, th, fpm and sum sources'
-         !WRITE(*,*) WIND10, WINDTH, FPM, SUM(PHI), SUM(DPHIDN)
 
       END SUBROUTINE
 !**********************************************************************

@@ -1112,6 +1112,7 @@
          wwm_print_namelist(NUMS)
          FLUSH(CHK%FHNDL)
          CALL READ_HISTORY_STATION_NAMELIST()
+!AR: There is no reason for this switches ... 
          IF (ICOMP .eq. 3) THEN
            IF (DMETHOD .GT. 0) THEN
              REFRACTION_IMPL=.TRUE.

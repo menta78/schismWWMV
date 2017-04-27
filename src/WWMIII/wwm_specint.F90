@@ -13,22 +13,21 @@
       REAL(rkind)   :: PHI(NUMSIG,NUMDIR), DPHIDN(NUMSIG,NUMDIR), ACOLD(NUMSIG,NUMDIR)
 
       ACOLD = WALOC
-      CALL INT_PATANKAR(IP,WALOC,PHI,DPHIDN)
+      CALL COMPUTE_PHI_DPHI(IP,WALOC,PHI,DPHIDN)
       DO IS = 1, NUMSIG
         DO ID = 1, NUMDIR
           NEWDAC = PHI(IS,ID) * DT / (ONE-DT*MIN(ZERO,DPHIDN(IS,ID)))
-!          write(*,*) NEWDAC / ( PHI(IS,ID) * DT )
           WALOC(IS,ID) = MAX( ZERO, ACOLD(IS,ID) + NEWDAC )
         END DO
       END DO
-      !CALL POST_INTEGRATION(IP,WALOC)
+      CALL POST_INTEGRATION(IP,WALOC)
       IF (LLIMT) CALL LIMITER(IP,ACOLD,WALOC)
       IF (LMAXETOT) CALL BREAK_LIMIT(IP,WALOC,SSBR)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INT_PATANKAR(IP,WALOC,PHI,DPHIDN)
+      SUBROUTINE COMPUTE_PHI_DPHI(IP,WALOC,PHI,DPHIDN)
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(IN)      :: IP
@@ -203,10 +202,8 @@
 
          DO IP = 1, MNP
            WALOC = AC2(:,:,IP)
-           IF (SMETHOD == 1) THEN
-             CALL INT_PATANKAR(IP,WALOC,PHI,DPHIDN)
-           ENDIF
-           PHIA(:,:,IP) = PHI
+           CALL COMPUTE_PHI_DPHI(IP,WALOC,PHI,DPHIDN)
+           PHIA(:,:,IP)    = PHI
            DPHIDNA(:,:,IP) = DPHIDN
          ENDDO
 

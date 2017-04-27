@@ -79,7 +79,6 @@
 !
 ! 2.b. Iterate to obtain actual breaking fraction
 !
-
       IF(IQB == 1) THEN
         IF ( BETA .LT. 0.2_rkind ) THEN
           QB     = ZERO
@@ -114,12 +113,12 @@
           QB = ONE - 10.E-10
         ENDIF
       ENDIF
- 
+! 
       QBLOCAL(IP) = QB
-
+!
       IF (IBREAK == 1) THEN ! Battjes & Janssen
         IF (ICOMP .GE. 2) THEN ! linearized source terms ...
-          IF (SMETHOD .eq. 1) THEN
+          IF (SMETHOD .eq. 2) THEN
             IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
               IF ( BETA2 .LT. ONE - 10.E-10) THEN
                 WS   = (ALPBJ / PI) *  QB * SME / BETA2
@@ -134,7 +133,7 @@
               SURFA0 = ZERO 
               SURFA1 = ZERO 
             END IF
-          ELSE IF (SMETHOD .eq. 2) THEN
+          ELSE IF (SMETHOD .eq. 1) THEN
             IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
               IF ( BETA2 .LT. ONE - 10.E-10) THEN
                 SURFA0  = - ( ALPBJ / PI) *  QB * SME / BETA2

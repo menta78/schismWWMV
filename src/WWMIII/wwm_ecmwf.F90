@@ -30,8 +30,8 @@
          END DO
 
          THWOLD(IP) = THWNEW(IP)
-         U10NEW(IP) = MAX(TWO,SQRT(WINDXY(IP,1)**2+WINDXY(IP,2)**2))*WINDFAC
-         Z0NEW(IP) = Z0OLD(IP)
+         U10NEW(IP) = MAX(TWO,SQRT(WINDXY(IP,1)**2+WINDXY(IP,2)**2))*WINDFAC ! The two is not really what it should be ...
+         Z0NEW(IP)  = Z0OLD(IP)
          THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
 
          CALL WAM_PRE (IP, FL3, FL, SL, SSDS, DSSDS, SSNL4, DSSNL4, SSINE, DSSINE)
@@ -40,12 +40,12 @@
            DO IS = 1, NUMSIG 
              JAC = ONE/PI2/SPSIG(IS)
              IF (ICOMP .GE. 2) THEN
-               IF (SMETHOD .eq. 1) THEN
-                 PHI(IS,ID)    = (SSINE(IS,ID) + SSNL4(IS,ID)) * JAC
-                 DPHIDN(IS,ID) = - DSSDS(IS,ID) 
-               ELSE IF (SMETHOD .eq. 2) THEN
+               IF (SMETHOD .eq. 1) THEN 
                  PHI(IS,ID)    = SL(ID,IS)*JAC
                  DPHIDN(IS,ID) = FL(ID,IS)
+               ELSE IF (SMETHOD .eq. 2) THEN ! Patankar except SSNL4
+                 PHI(IS,ID)    =  (SSINE(IS,ID) + SSNL4(IS,ID)) * JAC
+                 DPHIDN(IS,ID) = - DSSDS(IS,ID)
                ENDIF
              ELSE
                PHI(IS,ID) = SL(ID,IS)*JAC
