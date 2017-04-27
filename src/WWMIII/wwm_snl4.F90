@@ -11,6 +11,16 @@
          REAL(rkind)  :: DELTH3, DELTH4
          REAL(rkind)  :: CIDP, WIDP, WIDP1, CIDM, WIDM, WIDM1
          REAL(rkind)  :: WISP, WISP1, WISM, WISM1
+
+         LAMBDANL4 = 0.25_rkind
+         IF (ISOURCE .EQ. 1) THEN
+           SNL4C1   =2.78E7_rkind/G9**4._rkind 
+         ELSE
+           SNL4C1   =2.5E7_rkind/G9**4._rkind
+         ENDIF
+         SNL4CS1  = 5.5_rkind 
+         SNL4CS2  = 6._rkind/7._rkind 
+         SNL4CS3  = -1.25_rkind 
 !
 !     *** set values for the nonlinear four-wave interactions ***
 !
@@ -103,7 +113,6 @@
        ALLOCATE( AF11(NUMSIG4MI:NUMSIG4MA), stat=istat)
        IF (istat/=0) CALL WWM_ABORT('wwm_snl42, allocate error 1')
 
-
        DO IS = 1, NUMSIG
          AF11(IS) = (SPSIG(IS)/PI2)**11
        END DO
@@ -124,17 +133,17 @@
        DAL2 = ONE / (ONE - LAMBDANL4)**4
        DAL3 = TWO * DAL1 * DAL2
 
-       SNLC1  = ONE / (G9**4)
+       SNL4C1  = ONE / (G9**4)
 
        IF (ISOURCE .EQ. 1) THEN
-         SNLC2 = 2.5E7
+         SNL4C2 = 2.5E7
        ELSE
-         SNLC2 = 2.78E7
+         SNL4C2 = 2.78E7
        END IF
 
-       SNLCS1 = 5.5_rkind
-       SNLCS2 = 6._rkind/7._rkind
-       SNLCS3 = -1.25_rkind
+       SNL4CS1 = 5.5_rkind
+       SNL4CS2 = 6._rkind/7._rkind
+       SNL4CS3 = -1.25_rkind
 
       END SUBROUTINE
 !**********************************************************************
@@ -152,7 +161,7 @@
          INTEGER                    :: I, J, IS, ID, ID0, IDDUM
          REAL(rkind)                :: X, X2, E00, EP1, EM1, EP2, EM2
          REAL(rkind)                :: CONS, FACTOR
-         REAL(rkind)                :: JACOBI, SIGPI, PI3, FACHFR, PWTAIL
+         REAL(rkind)                :: JACOBI, SIGPI, FACHFR, PWTAIL
          REAL(rkind)                :: SA1A, SA1B, SA2A, SA2B
 
          REAL(rkind)                :: UE(NUMSIG4MI:NUMSIG4MA, NUMDIR4MI:NUMDIR4MA)
@@ -183,8 +192,8 @@
 ! 1.  Calculate prop. constant --------------------------------------- *
 !
          X    = MAX(DEP(IP)*KMESPC,1.3_rkind)
-         X2   = MAX ( -1.E15_rkind, SNLCS3*X)
-         CONS   = SNLC1 * ( 1. + SNLCS1/X * (1.-SNLCS2*X) * EXP(X2))
+         X2   = MAX ( -1.E15_rkind, SNL4CS3*X)
+         CONS   = SNL4C1 * ( 1. + SNL4CS1/X * (1.-SNL4CS2*X) * EXP(X2))
 !
 !        High frequency factor:
 !
@@ -231,22 +240,22 @@
      &               AWG7 * UE(IS+ISM ,ID+IDM1) +       &
      &               AWG8 * UE(IS+ISM ,ID+IDM )
 !
-               SA1A   = E00 * ( EP1*DAL1 + EM1*DAL2 ) * SNLC2 
-               SA1B   = SA1A - EP1*EM1*DAL3 * SNLC2 
-               SA2A   = E00 * ( EP2*DAL1 + EM2*DAL2 ) * SNLC2
-               SA2B   = SA2A - EP2*EM2*DAL3 * SNLC2
+               SA1A   = E00 * ( EP1*DAL1 + EM1*DAL2 ) * SNL4C2 
+               SA1B   = SA1A - EP1*EM1*DAL3 * SNL4C2 
+               SA2A   = E00 * ( EP2*DAL1 + EM2*DAL2 ) * SNL4C2
+               SA2B   = SA2A - EP2*EM2*DAL3 * SNL4C2
                FACTOR = CONS * AF11(IS) * E00
 
                SA1(IS,ID) = FACTOR*SA1B
                SA2(IS,ID) = FACTOR*SA2B
 
                DA1C(IS,ID) = CONS * AF11(IS) * ( SA1A + SA1B )
-               DA1P(IS,ID) = FACTOR * ( DAL1*E00 - DAL3*EM1 ) * SNLC2
-               DA1M(IS,ID) = FACTOR * ( DAL2*E00 - DAL3*EP1 ) * SNLC2
+               DA1P(IS,ID) = FACTOR * ( DAL1*E00 - DAL3*EM1 ) * SNL4C2
+               DA1M(IS,ID) = FACTOR * ( DAL2*E00 - DAL3*EP1 ) * SNL4C2
 
                DA2C(IS,ID) = CONS * AF11(IS) * ( SA2A + SA2B )
-               DA2P(IS,ID) = FACTOR * ( DAL1*E00 - DAL3*EM2 ) * SNLC2
-               DA2M(IS,ID) = FACTOR * ( DAL2*E00 - DAL3*EP2 ) * SNLC2
+               DA2P(IS,ID) = FACTOR * ( DAL1*E00 - DAL3*EM2 ) * SNL4C2
+               DA2M(IS,ID) = FACTOR * ( DAL2*E00 - DAL3*EP2 ) * SNL4C2
 
             END DO
          END DO
@@ -273,7 +282,6 @@
            END DO
         END DO
 
-        PI3 = ( PI2 )**3.0
         DO I = 1, NUMSIG
            SIGPI = SPSIG(I) * JACOBI
            DO J = 1, NUMDIR
@@ -295,8 +303,8 @@
      &        + SWG6 * ( DA1M(I-ISM1,J+IDM ) + DA2M(I-ISM1,J-IDM ) )  &
      &        + SWG7 * ( DA1M(I-ISM ,J+IDM1) + DA2M(I-ISM ,J-IDM1) )  &
      &        + SWG8 * ( DA1M(I-ISM ,J+IDM ) + DA2M(I-ISM ,J-IDM ) )
-              SFNL(I,J)   =   SFNL(I,J) / SIGPI
-              DSNL(I,J)   = - DSNL(I,J) / PI3
+              SFNL(I,J)   =     SFNL(I,J) / SIGPI
+              DSNL(I,J)   =   - DSNL(I,J) / PI3
            END DO
          END DO
 

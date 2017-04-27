@@ -33,17 +33,6 @@
          IF (MESBR .GT. 0) CALL SDS_SWB(IP, SME01, KMWAM, ETOT, HS, WALOC, SSBR, DSSBR)
          IF (MESBF .GT. 0) CALL SDS_BOTF(IP,WALOC,SSBF,DSSBF)
 
-         IF (LSOURCESLIM) THEN
-           DO IS = 1, NUMSIG
-             MAXDAC = 0.00081_rkind/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
-             DO ID = 1, NUMDIR
-               NEWDAC = SSNL3(IS,ID)*DT4A/(1.0-DT4A*MIN(ZERO,DSSNL3(IS,ID)))
-               LIMDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)),NEWDAC)
-               SSNL3(IS,ID) = LIMDAC/DT4A
-             ENDDO
-           ENDDO
-         ENDIF
-
          IF (ICOMP .GE. 2) THEN
            IF (SMETHOD .EQ. 2) THEN
              DPHIDN = DPHIDN + DSSBR  + MAX(ZERO,-DSSNL3) + DSSBF

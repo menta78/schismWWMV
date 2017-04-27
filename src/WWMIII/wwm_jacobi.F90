@@ -802,7 +802,7 @@
          CALL SOURCES_IMPLICIT 
       ELSE
         DPHIDN = DPHIDNA(:,:,IP)
-        PHI = PHIA(:,:,IP)
+        PHI    = PHIA(:,:,IP)
       END IF
       IF (LLIMT .and. WW3_STYLE_LIMIT_SRC_TERM) THEN
          DELFL  = COFRM4*DT4S
@@ -835,11 +835,11 @@
       CALL GET_BLOCAL(IP, ACin1, BLOC)
 !
       IF (SMETHOD .eq. 1) THEN
+        BSIDE =    eVal * (PHI - MIN(ZERO,DPHIDN) * Acin2(:,:,IP))
+        DIAG  =  - eVal * MIN(ZERO,DPHIDN)
+      ELSE IF (SMETHOD .eq. 2) THEN ! Patankar
         BSIDE = eVal * PHI
         DIAG  = eVal * DPHIDN
-      ELSE IF (SMETHOD .eq. 2) THEN ! Patankar
-        BSIDE =  eVal * (PHI - MIN(ZERO,DPHIDN) * Acin2(:,:,IP))
-        DIAG  =  eVal * MIN(ZERO,DPHIDN)
       END IF
 !
 

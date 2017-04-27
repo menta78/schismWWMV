@@ -48,7 +48,7 @@
                  DPHIDN(IS,ID) = - DSSDS(IS,ID)
                ENDIF
              ELSE
-               PHI(IS,ID) = SL(ID,IS)*JAC
+               PHI(IS,ID)    = SL(ID,IS)*JAC
                DPHIDN(IS,ID) = FL(ID,IS)
              ENDIF
            ENDDO
