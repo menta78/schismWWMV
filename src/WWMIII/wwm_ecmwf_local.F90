@@ -1730,7 +1730,7 @@
       ENDDO
 
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
-      CALL WSIGSTAR_LOCAL (IPP, IPP, USNEW, Z0NEW, WSTAR, SIG_N)
+      CALL WSIGSTAR_LOCAL (IPP, USNEW, Z0NEW, WSTAR, SIG_N)
 
 ! ----------------------------------------------------------------------
 ! computation of Uorb and Aorb

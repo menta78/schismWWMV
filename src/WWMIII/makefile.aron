@@ -80,7 +80,7 @@ F90OPTI = -O1 -axSSE3 -traceback -g
 OBJSELFE = elfe_glbl.o elfe_msgp.o solver_subs.o io_subs.o grid_subs.o misc_subs.o
 OBJWWM = wwm_datapl.o wwm_petscpool.o wwm_petsc_seriell.o wwm_petsc_parallel.o \
          wwm_petsc_block.o wwm_petsc_controller.o wwm_aux.o wwm_aux_parall.o wwm_mjdv2.o wwm_blasaux.o wwm_sparskit.o \
-         wwm_wind.o wwm_ardhuin_new.o wwm_breaking.o wwm_friction.o wwm_cycle3.o wwm_dislin.o wwm_diclass.o \
+         wwm_wind.o wwm_breaking.o wwm_friction.o wwm_cycle3.o wwm_ardhuin.o\
          wwm_gridcf.o wwm_hotfile.o wwm_parall_solver.o wwm_m_constants.o \
          wwm_m_fileio.o wwm_serv_xnl4v5.o wwm_mod_xnl4v5.o wwm_snl4_wrt.o \
          wwm_wave_setup.o wwm_ecmwf_local.o wwm_initio.o wwm_netcdf.o wwm_input.o wwm_grid.o\
