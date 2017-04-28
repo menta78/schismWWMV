@@ -40,7 +40,7 @@
            DO IS = 1, NUMSIG 
              JAC = ONE/PI2/SPSIG(IS)
              PHI(IS,ID)    = SL(ID,IS)*JAC
-             DPHIDN(IS,ID) = -FL(ID,IS)
+             DPHIDN(IS,ID) = FL(ID,IS)
            ENDDO
          ENDDO
 

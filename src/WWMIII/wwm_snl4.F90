@@ -260,6 +260,8 @@
             END DO
          END DO
 !
+!AR: Replace this part by WW3
+!
         DO ID = 1, IDHGH - NUMDIR
            ID0 = 1 - ID
            DO IS = ISCLW, ISCHG

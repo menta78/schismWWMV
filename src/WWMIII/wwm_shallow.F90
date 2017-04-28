@@ -33,18 +33,8 @@
          IF (MESBR .GT. 0) CALL SDS_SWB(IP, SME01, KMWAM, ETOT, HS, WALOC, SSBR, DSSBR)
          IF (MESBF .GT. 0) CALL SDS_BOTF(IP,WALOC,SSBF,DSSBF)
 
-         IF (ICOMP .GE. 2) THEN
-           IF (SMETHOD .EQ. 2) THEN
-             DPHIDN = DPHIDN + DSSBR  + MAX(ZERO,-DSSNL3) + DSSBF
-             PHI    =    PHI +  SSBR  + MAX(ZERO,SSNL3)   
-           ELSE IF (SMETHOD .EQ. 1) THEN 
-             DPHIDN = DPHIDN + DSSBR + DSSNL3 + DSSBF
-             PHI    = PHI    +  SSBR  + SSNL3  + SSBF
-           ENDIF
-         ELSE 
-           DPHIDN = DPHIDN + DSSBR + DSSNL3 + DSSBF
-           PHI    = PHI    +  SSBR  + SSNL3  + SSBF
-         ENDIF
+         PHI    = PHI    +  SSBR  + SSNL3  + SSBF
+         DPHIDN = DPHIDN + DSSBR + DSSNL3 + DSSBF
 
       END SUBROUTINE
 !**********************************************************************

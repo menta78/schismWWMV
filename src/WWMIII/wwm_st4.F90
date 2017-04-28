@@ -103,7 +103,7 @@
       ENDIF
 !
       PHI    = SSINL + SSINE  + SSNL4  + SSDS
-      DPHIDN =       - DSSINE - DSSNL4 - DSSDS
+      DPHIDN =         DSSINE + DSSNL4 + DSSDS
 !
       END SUBROUTINE
 !**********************************************************************
@@ -130,6 +130,7 @@
         REAL(rkind)                :: ETOT, FAVG, FMEAN1, WNMEAN, AS, FAVGWS
         REAL(rkind)                :: TAUWAX, TAUWAY, AMAX, WIND10, WINDTH
         REAL(rkind)                :: WHITECAP(1:4), SUMWALOC, FPM
+
         DO IS = 1, NUMSIG
           DO ID = 1, NUMDIR
             AWW3(ID + (IS-1) * NUMDIR) = WALOC(IS,ID) * CG(IS,IP)

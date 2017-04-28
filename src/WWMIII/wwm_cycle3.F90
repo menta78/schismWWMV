@@ -40,7 +40,7 @@
          IF (MESNL .GT. 0) CALL DIASNL4WW3(IP, KMWAM, WALOC, SSNL4, DSSNL4)
 
          PHI    = SSINL + SSINE +   SSDS +  SSNL4
-         DPHIDN =       - DSSINE - DSSDS - DSSNL4
+         DPHIDN =         DSSINE + DSSDS + DSSNL4
 
       END SUBROUTINE
 !**********************************************************************
