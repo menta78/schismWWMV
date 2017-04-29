@@ -7,7 +7,6 @@
 !  \__/\  /    \__/\  /\____|__  /___|___|___|
 !       \/          \/         \/             
 !
-<<<<<<< HEAD
 ! WWM-III (Wind Wave Model) source code 
 ! 
 ! The 1st version of the WWM code was written by Jian-Ming Liau in his thesis supervised by Tai-Wen Hsu (Liau et al. 2002). 
@@ -16,23 +15,6 @@
 ! The source term package of Ardhuin et al. 2009, 2010 and from ECMWF (courtesy Jean-Bidlot) was implemented in the WWM-III. 
 ! The I/O was completely rewritten in NETCDF and various common wind fields can be read such as CFRS, ECMWF, NCEP or others.  
 ! Parallelization is done using the PDLIB decomposition library developed by BGS IT&E GmbH. 
-! 
-=======
-! WWM-III (Wind Wave Model Three) source code 
-!
-! The WWM Model (Liau, 2002, Hsu et al., 2005), was provided as a basis for my PhD thesis in the year 2004. Based on the original source code two successive
-! versions have been developed. Where in the 1st one, my thesis work, the schemes numerical schemes of Hsu et al. 2005, have been replaced based on the 
-! numerical schemes of Roland, 2008 and the source terms have been replaces by the work done by Peters Janssen & Ardhuin et al. 2009,2011 and
-! Roland & Ardhuin 2014. The numerics and the physics have been coded from scratch. The original authors and developer of the subroutines are given in the 
-! headers. The source code was completely rewritten and restructured in contrast to the original code WWM (Liau, 2002, Hsu et al., 2005). 
-! The I/O has been entirely coded from scratch and the model has been coupled and parallelized. 
-! The code included various source term packages (see Manual) and can be coupled to various ocean models on structured and unstructured grids
-! Parallelization is done using OpenMP or MPI. For coupling to certain models we are using either Pipes (Roland et al. 2009), 
-! coupling libraries (PGMCL, Dutour-Sikiric et al. 2013) or tightly coupled with SCHISM (Roland et al. 2012). In this version we have combined 
-! some recent source term formulation following the work of Peter Janssen and Jean Bidlot from the ECMWF. The so called ECWAM model was 
-! continuesly updated and improved. We have the the source term formulation of Ardhuin et al. 2009,2011 and we have the ECMWF ECWAM
-! formulation of Peter Janssen and Jean Bidlot (ECMWF). 
->>>>>>> 99d16664316bc518d66587e72d26a2ae55963296
 ! 
 ! Developers:
 ! Lead:
@@ -45,22 +27,12 @@
 !
 !   Christian Ferrarin (ISMAR-CNR),
 !   Fabrice Ardhuin (IFREMER),
-<<<<<<< HEAD
-!   Thomas Huxhorn (TUD),
-=======
 !   Thomas Huxhorn (BGS IT&E),
->>>>>>> 99d16664316bc518d66587e72d26a2ae55963296
 !   Andrea Fortunato (LNEC),
 !   Guillaume Dodet (IFREMER),
 !   Kai Li (LNEC)
-<<<<<<< HEAD
-!   Andreas Wurpts (Forschungsstelle Küste, Norderney),
-!				
-! Copyright: 2008 - 2014 Roland & Partner (Aron Roland, Roland & Partner, Darmstadt, Germany)
-=======
 !				
 ! Copyright: 2008 - 2014 (Aron Roland)
->>>>>>> 99d16664316bc518d66587e72d26a2ae55963296
 ! All Rights Reserved                                     
 !
 ! http://www.apache.org/licenses/LICENSE-2.0
