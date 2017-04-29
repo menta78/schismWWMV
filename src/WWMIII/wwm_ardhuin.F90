@@ -2679,7 +2679,6 @@
             END DO
           END DO
         END IF
-
 !
 !  COMPUTES WHITECAP PARAMETERS
 !

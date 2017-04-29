@@ -456,7 +456,7 @@ module schism_glbl
   real(rkind),save,allocatable :: wwave_force(:,:,:),stokes_vel(:,:,:),jpress(:),sbr(:,:),sbf(:,:)
   real,save,allocatable :: out_wwm(:,:),out_wwm_windpar(:,:)
 !#endif
-  integer,save :: msc2,mdc2
+  integer,save :: numsig2,numdir2
 
 ! TIMOR
 !#ifdef USE_TIMOR

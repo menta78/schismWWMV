@@ -824,36 +824,32 @@
             SPPARM = 0.
             IF (IBOUNDFORMAT == 1) THEN  ! WWM
               CALL READWAVEPARWWM
-            ELSE IF (IBOUNDFORMAT == 2) THEN ! FVCOM ... THIS WILL BE REPLACED BY SWAN TYPE BOUNDARY!
-              CALL READWAVEPARFVCOM
-            ELSE IF (IBOUNDFORMAT == 3) THEN ! WW3
+            ELSE IF (IBOUNDFORMAT == 2) THEN ! WW3
 #ifdef NCDF
               CALL READ_NETCDF_WW3_PARAM
 #else
-              CALL WWM_ABORT('compile with netcdf for IBOUNDFORMAT=3')
+              CALL WWM_ABORT('compile with netcdf for IBOUNDFORMAT=2')
 #endif
               CALL INTER_STRUCT_BOUNDARY(NDX_BND,NDY_BND,DX_BND,DY_BND,OFFSET_X_BND,OFFSET_Y_BND,SPPARM)
               IF (LWW3GLOBALOUT) CALL INTER_STRUCT_DOMAIN(NDX_BND,NDY_BND,DX_BND,DY_BND,OFFSET_X_BND,OFFSET_Y_BND,WW3GLOBAL)
-            ELSE IF (IBOUNDFORMAT == 4) THEN ! WWM SPPARM netcdf file
+            ELSE IF (IBOUNDFORMAT == 3) THEN ! WWM SPPARM netcdf file
 #ifdef NCDF
               CALL READ_NETCDF_BOUNDARY_SPPARM
 #else
-              CALL WWM_ABORT('compile with netcdf for IBOUNDFORMAT=4')
+              CALL WWM_ABORT('compile with netcdf for IBOUNDFORMAT=3')
 #endif
-            ELSE IF (IBOUNDFORMAT == 5) THEN ! WAM format of waves
-               CALL WWM_ABORT('No possibility of using parametric boundary for IBOUNDFORMAT=5')
+            ELSE IF (IBOUNDFORMAT == 4) THEN ! WAM format of waves
+               CALL WWM_ABORT('No possibility of using parametric boundary for IBOUNDFORMAT=4')
             END IF
           ELSE  ! Steady ...
             SPPARM = 0.
             IF (IBOUNDFORMAT == 1) THEN
               CALL READWAVEPARWWM
             ELSE IF (IBOUNDFORMAT == 2) THEN
-              CALL READWAVEPARFVCOM
-            ELSE IF (IBOUNDFORMAT == 3) THEN
 #ifdef NCDF
               CALL READ_NETCDF_WW3_PARAM
 #else
-              CALL WWM_ABORT('compile with netcdf for IBOUNDFORMAT=3')
+              CALL WWM_ABORT('compile with netcdf for IBOUNDFORMAT=2')
 #endif
               CALL INTER_STRUCT_BOUNDARY(NDX_BND,NDY_BND,DX_BND,DY_BND,OFFSET_X_BND,OFFSET_Y_BND,SPPARM)
             END IF
@@ -866,10 +862,24 @@
             IF (LBCSE) THEN ! Unsteady in time
               IF (IBOUNDFORMAT == 1) THEN
                 CALL READWAVEPARWWM
-              ELSE IF (IBOUNDFORMAT == 2) THEN
-                CALL READWAVEPARFVCOM
+              ELSE IF (IBOUNDFORMAT == 2) THEN 
+#ifdef NCDF
+                CALL READ_NETCDF_WW3_PARAM
+#else
+                CALL WWM_ABORT('compile with netcdf for IBOUNDFORMAT=2')
+#endif
+                CALL INTER_STRUCT_BOUNDARY(NDX_BND,NDY_BND,DX_BND,DY_BND,OFFSET_X_BND,OFFSET_Y_BND,SPPARM)
+                IF (LWW3GLOBALOUT) CALL INTER_STRUCT_DOMAIN(NDX_BND,NDY_BND,DX_BND,DY_BND,OFFSET_X_BND,OFFSET_Y_BND,WW3GLOBAL)
+                CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1), .FALSE.,'CALL FROM WB 3', USE_OPTI_SPEC_SHAPE_BOUC)
+              ELSE IF (IBOUNDFORMAT == 3) THEN
+#ifdef NCDF
+                CALL READ_NETCDF_BOUNDARY_SPPARM
+#else
+                CALL WWM_ABORT('compile with netcdf for IBOUNDFORMAT=3')
+#endif
+              ELSE IF (IBOUNDFORMAT == 4) THEN
+               CALL WWM_ABORT('No possibility of using parametric boundary for IBOUNDFORMAT=4')
               END IF
-              CALL SPECTRAL_SHAPE(SPPARM(:,1),WBACOUT(:,:,1), .FALSE.,'CALL FROM WB 3', USE_OPTI_SPEC_SHAPE_BOUC)
             ELSE ! Steady in time ...
               SPPARM = 0.
               IF (LMONO_IN) THEN
@@ -1621,79 +1631,6 @@
         READ (WAV%FHNDL, *) SPPARM(:,1)
       END IF
 #endif
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-!AR: check this for wave boundary nodes ....
-      SUBROUTINE READWAVEPARFVCOM
-      USE DATAPOOL
-
-      IMPLICIT NONE
- 
-      INTEGER         :: IP
-# ifdef MPI_PARALL_GRID
-      REAL(rkind)     :: RTMP
-      INTEGER         :: IPP
-# endif
-      logical :: LOPEN2
-!     SPPARM(1): Hs, sign. wave height
-!     SPPARM(2): Wave period given by user (either peak or mean)
-!     SPPARM(3): average direction
-!     SPPARM(4): directional spread
-!     SPPARM(5): spectral shape (1-4),
-!                (1 - Pierson-Moskowitz,
-!                 2 - JONSWAP,
-!                 3 - BIN,
-!                 4 - Gauss)
-!                     negative peak (+) 
-!                     or mean frequency (-)
-!     SPPARM(6): directional spreading in degree (1) or exponent (2)
-!     SPPARM(7): gaussian width for the gauss spectrum 0.1
-!     SPPARM(8): peak enhancement factor for the JONSWAP spectra 3.3
-
-      SPPARM(4,:) = 20.
-      SPPARM(5,:) = 2.
-      SPPARM(6,:) = 2.
-      SPPARM(7,:) = 0.1
-      SPPARM(8,:) = 3.3
-
-      IF (LINHOM) THEN
-         inquire(WAV%FHNDL,opened=LOPEN2)
-         if(.not.LOPEN2) open(WAV%FHNDL,file=WAV%FNAME,status='old')
-         !write(12,*)'WWM:',WAV%FHNDL,WAV%FNAME
-         READ(WAV%FHNDL,*)
-      END IF
-
-# ifdef MPI_PARALL_GRID
-      IPP = 0
-      IF (LINHOM) THEN
-        DO IP = 1, IWBMNPGL
-          IF(ipgl(IWBNDGL(IP))%rank == myrank) THEN ! IF boundary nodes belong to local domain read values into boundary array
-            IPP = IPP + 1
-            READ (WAV%FHNDL, *) SPPARM(1,IPP), SPPARM(2,IPP), SPPARM(3,IPP)
-          ELSE
-            READ (WAV%FHNDL, *) RTMP, RTMP, RTMP ! ELSE ... throw them away ...
-          ENDIF
-        END DO
-      ELSE
-        READ (WAV%FHNDL, *) SPPARM(1,1), SPPARM(2,1), SPPARM(3,1)
-        DO IP = 1, IWBMNPGL
-          SPPARM(1:3,IP) = SPPARM(1:3,1)
-        END DO
-      END IF
-# else
-      IF (LINHOM) THEN
-        DO IP = 1, IWBMNP
-          READ (WAV%FHNDL, *) SPPARM(1,IP), SPPARM(2,IP), SPPARM(3,IP)
-        END DO
-      ELSE
-        READ (WAV%FHNDL, *) SPPARM(1,1), SPPARM(2,1), SPPARM(3,1)
-        DO IP = 1, IWBMNP
-          SPPARM(1:3,IP) = SPPARM(1:3,1)
-        END DO
-      END IF
-# endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

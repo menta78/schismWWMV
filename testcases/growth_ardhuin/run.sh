@@ -1,3 +1,2 @@
-wwmadv
-cp ST4TSA.site 120s_phillim_dia.site
+wwm
 python plot_growth.py

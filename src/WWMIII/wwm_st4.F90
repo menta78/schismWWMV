@@ -56,7 +56,7 @@
       IF (MESIN .GT. 0) THEN
 
         CALL SET_WIND( IP, WIND10, WINDTH )
-!        CALL SET_FRICTION( IP, WALOC, WIND10, WINDTH, FPM )
+        CALL SET_FRICTION( IP, WALOC, WIND10, WINDTH, FPM )
         LLWS=.TRUE.
 #ifdef DEBUGSRC
         WRITE(740+myrank,*) '1: input value USTAR=', UFRIC(IP), ' USTDIR=', USTDIR(IP)
@@ -102,18 +102,8 @@
         CALL CONVERT_VS_VD_WWM(IP, VSDS, VDDS, SSDS, DSSDS)
       ENDIF
 !
-      IF (ICOMP .GE. 2) THEN
-        IF (SMETHOD .eq. 1) then
-          PHI = SSINL + SSINE  + SSNL4  + SSDS
-          DPHIDN =                - DSSNL4 - DSSDS 
-        ELSEIF (SMETHOD .eq. 2) then
-          PHI = SSINL + SSINE  + SSNL4  + SSDS
-          DPHIDN =         DSSINE + DSSNL4 + DSSDS
-        ENDIF
-      ELSE 
-        PHI = SSINL + SSINE  + SSNL4  + SSDS
-        DPHIDN =         DSSINE + DSSNL4 + DSSDS
-      ENDIF
+      PHI    = SSINL + SSINE  + SSNL4  + SSDS
+      DPHIDN =         DSSINE + DSSNL4 + DSSDS
 !
       END SUBROUTINE
 !**********************************************************************
@@ -140,6 +130,7 @@
         REAL(rkind)                :: ETOT, FAVG, FMEAN1, WNMEAN, AS, FAVGWS
         REAL(rkind)                :: TAUWAX, TAUWAY, AMAX, WIND10, WINDTH
         REAL(rkind)                :: WHITECAP(1:4), SUMWALOC, FPM
+
         DO IS = 1, NUMSIG
           DO ID = 1, NUMDIR
             AWW3(ID + (IS-1) * NUMDIR) = WALOC(IS,ID) * CG(IS,IP)
@@ -171,12 +162,10 @@
 ! dissipation 
 !
         CALL W3SDS4(AWW3,WK(:,IP),CG(:,IP),UFRIC(IP),USTDIR(IP),DEP(IP),PHI1D,DPHIDN1D,BRLAMBDA,WHITECAP)
-        CALL CONVERT_VS_VD_WWM(IP, PHI1D, DPHIDN1D, SSDS, DSSDS)
-        PHI = PHI + SSDS
-        DPHIDN = DPHIDN + DSSDS
-
+        CALL CONVERT_VS_VD_WWM(IP,PHI1D,DPHIDN1D,SSDS,DSSDS)
+!
 ! missing high freq. tail contribution -> 2do
-
+!
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

@@ -125,6 +125,7 @@
          REAL(rkind), PARAMETER             :: PI        = 3.141592653589793_rkind
          REAL(rkind), PARAMETER             :: PIHALF    = PI*ONEHALF
          REAL(rkind), PARAMETER             :: PI2       = TWO*PI
+         REAL(rkind), PARAMETER             :: PI3       = PI**3
          REAL(rkind), PARAMETER             :: INVPI     = ONE/PI
          REAL(rkind), PARAMETER             :: INVPI2    = ONE/PI2
          REAL(rkind), PARAMETER             :: TPI       = PI2
@@ -267,7 +268,6 @@
          LOGICAL    :: LQSTEA      = .FALSE.
          LOGICAL    :: LCONV       = .FALSE.
          LOGICAL    :: LLIMT       = .TRUE.
-         LOGICAL    :: LSOURCESLIM = .TRUE.
          LOGICAL    :: LCFL        = .TRUE.
          LOGICAL    :: LCFL_CASD   = .FALSE.
          LOGICAL    :: LWCAP       = .TRUE.
@@ -925,6 +925,7 @@
          INTEGER                :: MESNL   = 1
          INTEGER                :: MESBF   = 1
          INTEGER                :: MESTR   = 0 
+         INTEGER                :: MEVEG   = 0
          INTEGER                :: ICRIT   = 1
          INTEGER                :: IBREAK  = 1
          INTEGER                :: IFRIC   = 1
@@ -964,7 +965,7 @@
          INTEGER                       :: ISHGH, ISCLW, ISCHG, IDLOW, IDHGH
          REAL(rkind)                   :: AWG1, AWG2, AWG3, AWG4, AWG5, AWG6, AWG7, AWG8
          REAL(rkind)                   :: SWG1, SWG2, SWG3, SWG4, SWG5, SWG6, SWG7, SWG8
-         REAL(rkind)                   :: SNLC1, SNLC2,SNLCS1, SNLCS2, SNLCS3, LAMBDANL4
+         REAL(rkind)                   :: SNL4C1, SNL4C2,SNL4CS1, SNL4CS2, SNL4CS3, LAMBDANL4
          REAL(rkind), ALLOCATABLE      :: AF11(:)
 !
 ! ... output parameter ... wwmDoutput.mod

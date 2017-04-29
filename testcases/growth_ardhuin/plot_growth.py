@@ -6,11 +6,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from StringIO import StringIO
 
-obs   = np.loadtxt('120s_phillim_dia.site',skiprows=1)
-test1 = np.loadtxt('120s_phillim_dia.site',skiprows=1)
+obs   = np.loadtxt('ST4.site',skiprows=1)
+test1 = np.loadtxt('ST4.site',skiprows=1)
 #test2 = np.loadtxt('strang600nolim.site',skiprows=1)   
 #test3 = np.loadtxt('nostrang600nolim.site',skiprows=1)
-test4 = np.loadtxt('120s_phillim_dia.site',skiprows=1)
+test4 = np.loadtxt('ST4.site',skiprows=1)
 
 nobs = len(obs[:,1])
 print nobs
@@ -39,7 +39,7 @@ while i < nobs-1:
 xmin = xobs.min()
 xmax = xobs.max()
 ymin = 0#err.min() 
-ymax = 10#err.max() 
+ymax = 30#err.max() 
 
 #fig = plt.subplot(121) 
 plt.plot(xobs , obs1, color='green', linestyle='solid', linewidth=2, label='120s FBI Philim')

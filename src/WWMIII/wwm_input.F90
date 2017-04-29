@@ -746,7 +746,7 @@
      &      EXPORT_WALV_DELTC
 
          NAMELIST /ENGS/ ISOURCE, MESNL, MESIN, IFRIC, MESBF, FRICC,    &
-     &      MESBR, ICRIT, IBREAK, ALPBJ, BRHD,                          &
+     &      MESBR, MEVEG, ICRIT, IBREAK, ALPBJ, BRHD,                   &
      &      LMAXETOT, MESDS, MESTR, TRICO, TRIRA, TRIURS
 
          NAMELIST /NUMS/ ICOMP, AMETHOD, SMETHOD, DMETHOD,              &
@@ -785,13 +785,13 @@
 #ifdef SCHISM
          IF (LSPHE) THEN
            IF (ics /= 2) THEN
-             WRITE(DBG%FHNDL) LSPHE, ICS
+             WRITE(DBG%FHNDL,*) LSPHE, ICS
              FLUSH(DBG%FHNDL)
              CALL WWM_ABORT('You set LSPHE=T but then you need ics=2')
            END IF
          ELSE
            IF (ics /= 1) THEN
-             WRITE(DBG%FHNDL) LSPHE, ICS
+             WRITE(DBG%FHNDL,*) LSPHE, ICS
              FLUSH(DBG%FHNDL)
              CALL WWM_ABORT('You set LSPHE=F but then you need ics=1')
            END IF
@@ -1112,6 +1112,7 @@
          wwm_print_namelist(NUMS)
          FLUSH(CHK%FHNDL)
          CALL READ_HISTORY_STATION_NAMELIST()
+!AR: There is no reason for this switches ... 
          IF (ICOMP .eq. 3) THEN
            IF (DMETHOD .GT. 0) THEN
              REFRACTION_IMPL=.TRUE.

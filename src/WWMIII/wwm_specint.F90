@@ -13,22 +13,21 @@
       REAL(rkind)   :: PHI(NUMSIG,NUMDIR), DPHIDN(NUMSIG,NUMDIR), ACOLD(NUMSIG,NUMDIR)
 
       ACOLD = WALOC
-      CALL INT_PATANKAR(IP,WALOC,PHI,DPHIDN)
+      CALL COMPUTE_PHI_DPHI(IP,WALOC,PHI,DPHIDN)
       DO IS = 1, NUMSIG
         DO ID = 1, NUMDIR
           NEWDAC = PHI(IS,ID) * DT / (ONE-DT*MIN(ZERO,DPHIDN(IS,ID)))
-!          write(*,*) NEWDAC / ( PHI(IS,ID) * DT )
           WALOC(IS,ID) = MAX( ZERO, ACOLD(IS,ID) + NEWDAC )
         END DO
       END DO
-      !CALL POST_INTEGRATION(IP,WALOC)
+      CALL POST_INTEGRATION(IP,WALOC)
       IF (LLIMT) CALL LIMITER(IP,ACOLD,WALOC)
       IF (LMAXETOT) CALL BREAK_LIMIT(IP,WALOC,SSBR)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE INT_PATANKAR(IP,WALOC,PHI,DPHIDN)
+      SUBROUTINE COMPUTE_PHI_DPHI(IP,WALOC,PHI,DPHIDN)
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(IN)      :: IP
@@ -49,21 +48,22 @@
       REAL(rkind)   :: SSNL4_WW3(NUMSIG,NUMDIR), SSBF_WW3(NUMSIG,NUMDIR)
       REAL(rkind)   :: SSBR_WW3(NUMSIG,NUMDIR)
 #endif
-      DPHIDN = ZERO; PHI = ZERO
+
+      DPHIDN = ZERO; PHI    = ZERO
+      SSINE  = ZERO; DSSINE = ZERO
+      SSDS   = ZERO; DSSDS  = ZERO
+      SSNL3  = ZERO; DSSNL3 = ZERO
+      SSNL4  = ZERO; DSSNL4 = ZERO
+      SSBR   = ZERO; DSSBR  = ZERO
+      SSBF   = ZERO; DSSBF  = ZERO
+      SSBRL  = ZERO
+      SSINL  = ZERO
 
       IF (IOBP(IP) .NE. 0 .AND. .NOT. LSOUBOUND) THEN
         RETURN
       ELSE IF (LSOUBOUND .AND. IOBP(IP) .EQ. 2) THEN
         RETURN
       ENDIF
-      SSINL = ZERO
-      SSINE = ZERO; DSSINE = ZERO
-      SSDS  = ZERO; DSSDS  = ZERO
-      SSNL3 = ZERO; DSSNL3 = ZERO
-      SSNL4 = ZERO; DSSNL4 = ZERO
-      SSBR  = ZERO; DSSBR  = ZERO
-      SSBF  = ZERO; DSSBF  = ZERO
-      SSBRL = ZERO
 
 #ifdef DEBUG
       IF (IP .eq. TESTNODE) THEN
@@ -122,7 +122,6 @@
          WRITE(740+myrank,*) 'TOTAL SRC(DPHIDN)=', SUM(DPHIDN), MINVAL(DPHIDN), MAXVAL(DPHIDN)
       END IF
 #endif
-
 
 #ifdef DEBUG_SOURCE_TERM
       WRITE(*,'(A20,6E20.10)') 'WAVE ACTION', SUM(WALOC), MINVAL(WALOC), MAXVAL(WALOC)
@@ -203,10 +202,8 @@
 
          DO IP = 1, MNP
            WALOC = AC2(:,:,IP)
-           IF (SMETHOD == 1) THEN
-             CALL INT_PATANKAR(IP,WALOC,PHI,DPHIDN)
-           ENDIF
-           PHIA(:,:,IP) = PHI
+           CALL COMPUTE_PHI_DPHI(IP,WALOC,PHI,DPHIDN)
+           PHIA(:,:,IP)    = PHI
            DPHIDNA(:,:,IP) = DPHIDN
          ENDDO
 
@@ -347,3 +344,35 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+         SUBROUTINE BREAK_LIMIT_ALL
+         USE DATAPOOL
+         IMPLICIT NONE
+
+         INTEGER              :: IP
+         REAL(rkind)          :: HS
+         REAL(rkind)          :: EMAX, RATIO, ETOT
+         REAL(rkind)          :: DINTSPEC
+         REAL(rkind)          :: ACLOC(NUMSIG, NUMDIR)
+!      Print *, 'Passing BREAK_LIMIT_ALL'
+         DO IP = 1, MNP
+           ACLOC = AC2(:,:,IP)
+           IF (ISHALLOW(IP) .EQ. 0) CYCLE
+           ETOT = DINTSPEC(IP,ACLOC)
+           HS = 4.*SQRT(ETOT)
+           EMAX = 1./16. * (HMAX(IP))**2
+!        WRITE(300,*) 'IP=', IP, ' HMAX=', HMAX(IP), ' DEP=', DEP(IP)
+!        WRITE(300,*) '   ', IP, ' EMAX=', EMAX, ' ETOT=', ETOT
+!        WRITE(300,*) '   ', IP, ' HS=', HS, ' BRHD=', BRHD
+
+           IF (ETOT .GT. EMAX) THEN
+             if(myrank==0) WRITE(300,*) '   break XP=', XP(IP)
+             RATIO = EMAX/ETOT
+             AC2(:,:,IP) = RATIO * ACLOC(:,:)
+             AC1(:,:,IP) = RATIO * ACLOC(:,:)
+           END IF
+         END DO
+         END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+

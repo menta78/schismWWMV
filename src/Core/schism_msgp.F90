@@ -37,7 +37,7 @@ module schism_msgp
                        &ne_global,ne,neg,nea,ielg,iegl,iegrpv,elnode,elside, &
                        &np_global,np,npg,npa,iplg,ipgl,nne,indel,dp, &
                        &ns_global,ns,nsg,nsa,islg,isgl,isdel,isidenode, &
-                       &errmsg,fdb,lfdb,ntracers,msc2,mdc2,i34,nea2, &
+                       &errmsg,fdb,lfdb,ntracers,numsig2,numdir2,i34,nea2, &
                        &ielg2,iegl2
   implicit none
 !#ifndef USE_MPIMODULE
@@ -252,7 +252,7 @@ module schism_msgp
   integer,save,allocatable :: p3d_tr_recv_rqst(:)   
   integer,save,allocatable :: p3d_tr_recv_stat(:,:) 
 
-  integer,save,allocatable :: p4d_wwm_send_type(:)   ! (msc2,mdc2,npa) node send MPI datatype for tracers
+  integer,save,allocatable :: p4d_wwm_send_type(:)   ! (numsig2,numdir2,npa) node send MPI datatype for tracers
   integer,save,allocatable :: p4d_wwm_send_rqst(:)   
   integer,save,allocatable :: p4d_wwm_send_stat(:,:) 
   integer,save,allocatable :: p4d_wwm_recv_type(:)   
@@ -321,8 +321,8 @@ module schism_msgp
   public :: exchange_p3d_4          ! 3Dx4 ghost node exchange of type (4,nvrt,nm) where nm>=npa
   public :: exchange_p3d_tr         ! 3D x ntracers ghost node exchange of type (ntracers,nvrt,nm) where nm>=npa
 #ifdef USE_WWM
-  public :: exchange_p4d_wwm        ! ghost node exchange of type (msc2,mdc2,nm) where nm>=npa
-  public :: exchange_p3d_wwm        ! ghost node exchange of type (mdc2,nm) where nm>=npa
+  public :: exchange_p4d_wwm        ! ghost node exchange of type (numsig2,numdir2,nm) where nm>=npa
+  public :: exchange_p3d_wwm        ! ghost node exchange of type (numdir2,nm) where nm>=npa
 #endif
   public :: exchange_s2d            ! 2D ghost side exchange
   public :: exchange_s2d_9          ! 2Dx9 ghost side exchange of type (9,nm) where nm>=nsa
@@ -2346,10 +2346,10 @@ endif !ntracers>0
   endif !ntracers>0
 
   !-----------------------------------------------------------------------------
-  ! Setup Node Message-Passing for WWM of type (msc2,mdc2,nm) (nm>=npa)
+  ! Setup Node Message-Passing for WWM of type (numsig2,numdir2,nm) (nm>=npa)
   !-----------------------------------------------------------------------------
 #ifdef USE_WWM
-  if(msc2*mdc2<1) call parallel_abort('msgp_init: msc2*mdc2<1')
+  if(numsig2*numdir2<1) call parallel_abort('msgp_init: numsig2*numdir2<1')
   ! 3D-whole-level node comm request and status handles
   allocate(p4d_wwm_send_rqst(nnbr_p),stat=stat)
   if(stat/=0) call parallel_abort('msgp_init: p4d_wwm_send_rqst allocation failure')
@@ -2368,12 +2368,12 @@ endif !ntracers>0
   do i=1,nnbr_p
     if(npsend(i)/=0) then
       !Send
-      blen_send(:)=msc2*mdc2
-      dspl_send(1:mnpsend)=(ipsend(:,i)-1)*msc2*mdc2
+      blen_send(:)=numsig2*numdir2
+      dspl_send(1:mnpsend)=(ipsend(:,i)-1)*numsig2*numdir2
 #if MPIVERSION==1
       call mpi_type_indexed(npsend(i),blen_send,dspl_send,rtype,p4d_wwm_send_type(i),ierr)
 #elif MPIVERSION==2
-      call mpi_type_create_indexed_block(npsend(i),msc2*mdc2,dspl_send,rtype,p4d_wwm_send_type(i),ierr)
+      call mpi_type_create_indexed_block(npsend(i),numsig2*numdir2,dspl_send,rtype,p4d_wwm_send_type(i),ierr)
 #endif
       if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_init: create p4d_wwm_send_type',ierr)
       call mpi_type_commit(p4d_wwm_send_type(i),ierr)
@@ -2382,12 +2382,12 @@ endif !ntracers>0
 
     if(nprecv(i)/=0) then
       !Recv
-      blen_recv(:)=msc2*mdc2
-      dspl_recv(1:mnprecv)=(iprecv(:,i)-1)*msc2*mdc2
+      blen_recv(:)=numsig2*numdir2
+      dspl_recv(1:mnprecv)=(iprecv(:,i)-1)*numsig2*numdir2
 #if MPIVERSION==1
       call mpi_type_indexed(nprecv(i),blen_recv,dspl_recv,rtype,p4d_wwm_recv_type(i),ierr)
 #elif MPIVERSION==2
-      call mpi_type_create_indexed_block(nprecv(i),msc2*mdc2,dspl_recv,rtype,p4d_wwm_recv_type(i),ierr)
+      call mpi_type_create_indexed_block(nprecv(i),numsig2*numdir2,dspl_recv,rtype,p4d_wwm_recv_type(i),ierr)
 #endif
       if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_init: create p4d_wwm_recv_type',ierr)
       call mpi_type_commit(p4d_wwm_recv_type(i),ierr)
@@ -2396,7 +2396,7 @@ endif !ntracers>0
   enddo !i
 
   !-----------------------------------------------------------------------------
-  ! Setup Directional Spectra Message-Passing; order of indices must be (1:mdc2,nm) (nm>=npa)
+  ! Setup Directional Spectra Message-Passing; order of indices must be (1:numdir2,nm) (nm>=npa)
   !-----------------------------------------------------------------------------
 
   ! 3D-whole-level node comm request and status handles
@@ -2417,12 +2417,12 @@ endif !ntracers>0
   do i=1,nnbr_p
     if(npsend(i)/=0) then
       !Send
-      blen_send(:)= mdc2
-      dspl_send(1:mnpsend)=(ipsend(:,i)-1)*mdc2
+      blen_send(:)= numdir2
+      dspl_send(1:mnpsend)=(ipsend(:,i)-1)*numdir2
 #if MPIVERSION==1
       call mpi_type_indexed(npsend(i),blen_send,dspl_send,rtype,p3d_wwm_send_type(i),ierr)
 #elif MPIVERSION==2
-      call mpi_type_create_indexed_block(npsend(i),mdc2,dspl_send,rtype,p3d_wwm_send_type(i),ierr)
+      call mpi_type_create_indexed_block(npsend(i),numdir2,dspl_send,rtype,p3d_wwm_send_type(i),ierr)
 #endif
       if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_init: create p3d_wwm_send_type',ierr)
       call mpi_type_commit(p3d_wwm_send_type(i),ierr)
@@ -2431,12 +2431,12 @@ endif !ntracers>0
 
     if(nprecv(i)/=0) then
       !Recv
-      blen_recv(:)= mdc2
-      dspl_recv(1:mnprecv)=(iprecv(:,i)-1)*mdc2
+      blen_recv(:)= numdir2
+      dspl_recv(1:mnprecv)=(iprecv(:,i)-1)*numdir2
 #if MPIVERSION==1
       call mpi_type_indexed(nprecv(i),blen_recv,dspl_recv,rtype,p3d_wwm_recv_type(i),ierr)
 #elif MPIVERSION==2
-      call mpi_type_create_indexed_block(nprecv(i),mdc2,dspl_recv,rtype,p3d_wwm_recv_type(i),ierr)
+      call mpi_type_create_indexed_block(nprecv(i),numdir2,dspl_recv,rtype,p3d_wwm_recv_type(i),ierr)
 #endif
       if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_init: create p3d_wwm_recv_type',ierr)
       call mpi_type_commit(p3d_wwm_recv_type(i),ierr)
@@ -3436,7 +3436,7 @@ subroutine exchange_p4d_wwm(p4d_wwm_data)
 ! Node Exchange for WWM
 !-------------------------------------------------------------------------------
   implicit none
-  real(rkind),intent(inout) :: p4d_wwm_data(:,:,:) !indices must be (msc2,mdc2,nm) where nm>=npa
+  real(rkind),intent(inout) :: p4d_wwm_data(:,:,:) !indices must be (numsig2,numdir2,nm) where nm>=npa
   integer :: i
 !-------------------------------------------------------------------------------
 
@@ -3474,7 +3474,7 @@ end subroutine exchange_p4d_wwm
 
 subroutine exchange_p3d_wwm(p3d_wwm_data)
 !-------------------------------------------------------------------------------
-! 3D-Whole-Level Node Exchange; order of indices must be (mdc2,nm) (nm>=npa)
+! 3D-Whole-Level Node Exchange; order of indices must be (numdir2,nm) (nm>=npa)
 !-------------------------------------------------------------------------------
   implicit none
   real(rkind),intent(inout) :: p3d_wwm_data(:,:)

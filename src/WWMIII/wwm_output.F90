@@ -137,7 +137,7 @@
           CASE (0)
             ! Do nothing ...
           CASE (1)
-            CALL OUTPUT_STE(CTIME)
+            CALL OUTPUT_STATION_ASCII(CTIME)
           CASE (2)
 #ifdef NCDF
             CALL OUTPUT_STATION_NC
@@ -435,7 +435,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE OUTPUT_STE(CTIME)
+      SUBROUTINE OUTPUT_STATION_ASCII(CTIME)
       USE DATAPOOL
       IMPLICIT NONE
 
