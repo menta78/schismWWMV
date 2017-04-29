@@ -117,7 +117,7 @@
       REAL(rkind)                    :: FWTABLE(0:SIZEFWTABLE)
       REAL(rkind)                    :: ZZWND, AALPHA, BBETA, ZZALP
       REAL(rkind)                    :: DTH, FACHF, SXFR, XFR, FACHFE
-      REAL(rkind)                    :: WNMEANP, WNMEANTAIL_ARR
+      REAL(rkind)                    :: WNMEANP, WNMEANPTAIL
       REAL(rkind)                    :: FTE, FTF
       REAL(rkind)                    :: SSTXFTF, SSTXFTWN, SSTXFTFTAIL
       REAL(rkind)                    :: SSWELLF(7) ,SSWELLFPAR
@@ -143,16 +143,16 @@
 
         IMPLICIT  NONE
 
-        INTEGER :: IK, IS, ITH, ITH0
+        INTEGER :: IK, ISP, ITH, ITH0
         REAL(rkind)    :: SIGMA, FR1, RTH0
 
-        NK    = NUMSIG
+        NK    = MSC
         MK    = NK  ! ?
-        NTH   = NUMDIR
+        NTH   = MDC
         MTH   = NTH ! ?
         MSPEC = NSPEC
 
-        ALLOCATE(SIG(0:NUMSIG+1), SIG2(NSPEC), DSIP(0:NUMSIG+1), TH(NUMDIR), stat=istat)
+        ALLOCATE(SIG(0:MSC+1), SIG2(NSPEC), DSIP(0:MSC+1), TH(MDC), stat=istat)
         write(*,*) istat
         IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 1')
         SIG = ZERO
@@ -168,7 +168,7 @@
         IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 3')
         ES2 = ZERO
         ESC = ZERO
-        ALLOCATE(DSII(NUMSIG), DDEN(NUMSIG), DDEN2(NSPEC), stat=istat)
+        ALLOCATE(DSII(MSC), DDEN(MSC), DDEN2(NSPEC), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 4')
         DSII = ZERO
         DDEN = ZERO
@@ -216,7 +216,7 @@
         END DO
 
         WNMEANP = 0.5_rkind
-        WNMEANTAIL_ARR = -0.5_rkind
+        WNMEANPTAIL = -0.5_rkind
 
         XFR = SFAC ! Check with Fabrice ... should be 1.1
 
@@ -241,10 +241,10 @@
         END DO
 !        WRITE(740+myrank,*) 'DTH=', DTH
 
-        DO IS=1, NSPEC
-          IK         = 1 + (IS-1)/NTH
-          SIG2 (IS) = SIG (IK)
-          DDEN2(IS) = DDEN(IK)
+        DO ISP=1, NSPEC
+          IK         = 1 + (ISP-1)/NTH
+          SIG2 (ISP) = SIG (IK)
+          DDEN2(ISP) = DDEN(IK)
         END DO
 
         FTE = 0.25_rkind * SIG(NK) * DTH * SIG(NK)
@@ -253,7 +253,7 @@
         FACHF  = 5.
         FACHFE = XFR**(-FACHF)
 
-        SSTXFTFTAIL  = 1/(FACHF-1.-WNMEANTAIL_ARR*2) * SIG(NK)**(2+WNMEANTAIL_ARR*2) * DTH
+        SSTXFTFTAIL  = 1/(FACHF-1.-WNMEANPTAIL*2) * SIG(NK)**(2+WNMEANPTAIL*2) * DTH
         SSTXFTWN = 1/(FACHF-1.-WNMEANP*2) * SIG(NK)**(2) * (SIG(NK)/SQRT(G9))**(WNMEANP*2) * DTH
              
         SSWELLF(1) = SWELLF
@@ -381,13 +381,13 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE READ_INSIN4
-      USE DATAPOOL, ONLY : LPRECOMP_EXIST, DBG, NUMSIG, NUMDIR
+      USE DATAPOOL, ONLY : LPRECOMP_EXIST, DBG, MSC, MDC
       IMPLICIT NONE
-      INTEGER :: NUMSIG_TEST, NUMDIR_TEST, ISTAT
+      INTEGER :: MSC_TEST, MDC_TEST, ISTAT
 
       IF (LPRECOMP_EXIST) THEN
           READ (5002, IOSTAT=ISTAT)                        &
-        & FWTABLE, NUMSIG_TEST, NUMDIR_TEST, & 
+        & FWTABLE, MSC_TEST, MDC_TEST, & 
         & ZZWND, AALPHA, ZZ0MAX, BBETA, SSINTHP, ZZALP,    &
         & TTAUWSHELTER, SSWELLFPAR, SSWELLF,               &
         & ZZ0RAT, SSDSC1, SSDSC2, SSDSC4, SSDSC5,          &
@@ -402,10 +402,10 @@
         & DIKCUMUL, CUMULW, QBI
         IF (ISTAT /= 0) CALL WWM_ABORT('Remove fort.5002 Error while trying to read precomputed array')
         
-        IF (NUMSIG_TEST .NE. NUMSIG .OR. NUMDIR_TEST .NE. NUMDIR) THEN
-          WRITE(DBG%FHNDL,*) 'NUMSIG AND NUMDIR READ FROM FILE AND SET IN WWMINPUT.NML ARE NOT EQUAL -STOP-'
-          WRITE(DBG%FHNDL,*) NUMSIG_TEST, NUMSIG
-          WRITE(DBG%FHNDL,*) NUMDIR_TEST, NUMDIR 
+        IF (MSC_TEST .NE. MSC .OR. MDC_TEST .NE. MDC) THEN
+          WRITE(DBG%FHNDL,*) 'MSC AND MDC READ FROM FILE AND SET IN WWMINPUT.NML ARE NOT EQUAL -STOP-'
+          WRITE(DBG%FHNDL,*) MSC_TEST, MSC
+          WRITE(DBG%FHNDL,*) MDC_TEST, MDC 
           CALL WWM_ABORT('THE fort.5002 file does not match your specifications. Remove and rerun')
         ENDIF
           
@@ -861,10 +861,10 @@
         EB2(IK)   = EB2(IK) * DDEN(IK) / CG(IK)
         EMEAN    = EMEAN  + EB(IK)
         FMEAN    = FMEAN  + EB(IK) /SIG(IK)
-        FMEAN1   = FMEAN1 + EB(IK) *(SIG(IK)**(2.*WNMEANTAIL_ARR))
+        FMEAN1   = FMEAN1 + EB(IK) *(SIG(IK)**(2.*WNMEANPTAIL))
         WNMEAN   = WNMEAN + EB(IK) *(WN(IK)**WNMEANP)
         EMEANWS  = EMEANWS+ EB2(IK)
-        FMEANWS  = FMEANWS+ EB2(IK)*(SIG(IK)**(2.*WNMEANTAIL_ARR))
+        FMEANWS  = FMEANWS+ EB2(IK)*(SIG(IK)**(2.*WNMEANPTAIL))
       END DO
 !
 ! 3.  Add tail beyond discrete spectrum and get mean pars ------------ *
@@ -889,7 +889,7 @@
         FMEAN1=INVPI2 * SIG(NK)
       ELSE
         FMEAN1  = INVPI2 *( MAX ( 1.E-7_rkind , FMEAN1 )                &
-     &            / MAX ( 1.E-7_rkind , EMEAN ))**(1.d0/(2.*WNMEANTAIL_ARR))
+     &            / MAX ( 1.E-7_rkind , EMEAN ))**(1.d0/(2.*WNMEANPTAIL))
       ENDIF
       WNMEAN = ( MAX ( 1.E-7_rkind , WNMEAN )                           &
      &           / MAX ( 1.E-7_rkind , EMEAN ) )**(1.d0/WNMEANP)
@@ -897,7 +897,7 @@
         FMEANWS=INVPI2 * SIG(NK)
       ELSE
         FMEANWS  = INVPI2 *( MAX ( 1.E-7_rkind , FMEANWS )              &
-     &         / MAX ( 1.E-7_rkind , EMEANWS ))**(1/(2.*WNMEANTAIL_ARR))
+     &         / MAX ( 1.E-7_rkind , EMEANWS ))**(1/(2.*WNMEANPTAIL))
       END IF
 !
 ! 5.  Cd and z0 ----------------------------------------------- *
@@ -1421,7 +1421,7 @@
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
-      USE DATAPOOL, ONLY: G9, INVPI2, RADDEG, RKIND, LPRECOMP_EXIST, NUMSIG, NUMDIR
+      USE DATAPOOL, ONLY: G9, INVPI2, RADDEG, RKIND, LPRECOMP_EXIST, MSC, MDC
       USE DATAPOOL, ONLY: ZERO, ONE, TWO, STAT, TH
       USE DATAPOOL, ONLY: myrank
       IMPLICIT NONE
@@ -1623,7 +1623,7 @@
 
    IF (.NOT. LPRECOMP_EXIST) THEN
      WRITE (5002)                                                       &
-     & FWTABLE, NUMSIG,NUMDIR,                                                &
+     & FWTABLE, MSC,MDC,                                                &
      & ZZWND, AALPHA, ZZ0MAX, BBETA, SSINTHP, ZZALP,                    &
      & TTAUWSHELTER, SSWELLFPAR, SSWELLF,                               &
      & ZZ0RAT, SSDSC1, SSDSC2, SSDSC4, SSDSC5,                          &
@@ -1827,7 +1827,7 @@
 !/ ------------------------------------------------------------------- /
 !/T      USE W3ODATMD, ONLY: NDST
 !
-      USE DATAPOOL, ONLY : G9, PI2, RKIND, ZERO, ONE, SPSIG, NUMSIG
+      USE DATAPOOL, ONLY : G9, PI2, RKIND, ZERO, ONE, SPSIG, MSC
       IMPLICIT NONE
 !/
 !/ ------------------------------------------------------------------- /
@@ -1861,7 +1861,7 @@
       DELUST = USTARM/MyREAL(IUSTAR)
       DELALP = ALPHAM/MyREAL(IALPHA)
       CONST1 = BBETA/KAPPA**2
-      OMEGAC = SPSIG(NUMSIG) 
+      OMEGAC = SPSIG(MSC) 
 !   
       TAUHFT(0:IUSTAR,0:IALPHA)=0. !table initialization
 !
@@ -1961,7 +1961,7 @@
 !/ ------------------------------------------------------------------- /
 !/T      USE W3ODATMD, ONLY: NDST
 !
-      USE DATAPOOL, ONLY : G9, PI2, RKIND, ZERO, ONE, SPSIG, NUMSIG, STAT 
+      USE DATAPOOL, ONLY : G9, PI2, RKIND, ZERO, ONE, SPSIG, MSC, STAT 
 
       IMPLICIT NONE
 !/
@@ -2007,7 +2007,7 @@
         READ(993,IOSTAT=IERR) IDTST, VERTST, INSIGMAX, INAALPHA, INBBETA, INIUSTAR,  &
                               INIALPHA, INILEVTAIL, INZZALP, INKAPPA, INGRAV
         IF (VERTST.EQ.VERGRD.AND.IDTST.EQ.IDSTR.AND.IERR.EQ.0             &
-            .AND.INSIGMAX.EQ.SPSIG(NUMSIG).AND.INAALPHA.EQ.AALPHA.AND.INBBETA.EQ.BBETA) THEN 
+            .AND.INSIGMAX.EQ.SPSIG(MSC).AND.INAALPHA.EQ.AALPHA.AND.INBBETA.EQ.BBETA) THEN 
           IF (INIUSTAR.EQ.IUSTAR.AND.INIALPHA.EQ.IALPHA.AND.INILEVTAIL.EQ.ILEVTAIL.AND. &
               INZZALP.EQ.ZZALP.AND.INGRAV.EQ.G9.AND.INKAPPA.EQ.KAPPA) THEN 
             NOFILE=.FALSE.
@@ -2022,11 +2022,11 @@
       DELALP  = ALPHAM/REAL(IALPHA)
       DELTAIL = ALPHAM/REAL(ILEVTAIL)
       CONST1  = BBETA/KAPPA**2
-      OMEGAC  = SPSIG(NUMSIG) 
+      OMEGAC  = SPSIG(MSC) 
 800   CONTINUE
       IF ( NOFILE ) THEN      
         WRITE(STAT%FHNDL,*) 'Filling 3D look-up table for SIN4. please wait'
-        WRITE(STAT%FHNDL,*)  IDSTR, VERGRD, SPSIG(NUMSIG), AALPHA, BBETA, IUSTAR, IALPHA,  &
+        WRITE(STAT%FHNDL,*)  IDSTR, VERGRD, SPSIG(MSC), AALPHA, BBETA, IUSTAR, IALPHA,  &
                        ILEVTAIL, ZZALP, KAPPA, G9 
 !   
         TAUHFT(0:IUSTAR,0:IALPHA)=0.  !table initialization
@@ -2084,7 +2084,7 @@
           END DO
         DEALLOCATE(W)
         OPEN (993,FILE=FNAMETAB,FORM='UNFORMATTED',IOSTAT=IERR)
-        WRITE(993) IDSTR, VERGRD, SPSIG(NUMSIG), AALPHA, BBETA, IUSTAR, IALPHA, ILEVTAIL, ZZALP, KAPPA, G9
+        WRITE(993) IDSTR, VERGRD, SPSIG(MSC), AALPHA, BBETA, IUSTAR, IALPHA, ILEVTAIL, ZZALP, KAPPA, G9
         WRITE(993) TAUHFT(0:IUSTAR,0:IALPHA)
         WRITE(993) TAUHFT2
         CLOSE(993)
@@ -2679,6 +2679,7 @@
             END DO
           END DO
         END IF
+
 !
 !  COMPUTES WHITECAP PARAMETERS
 !
