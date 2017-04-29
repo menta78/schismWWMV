@@ -9,15 +9,13 @@
 !
 ! WWM-III (Wind Wave Model) source code 
 ! 
-! The source code is entirely rewritten with respect to WWM (Hsu et al., 2005). The numerics have been completely revised (Roland, 2008)
-! The code included various source term packages (see Manual) and can be coupled to various ocean models on structured and unstructured grids
-! Parallelization is done using OpenMP or MPI. For coupling to certain models we are using either Pipes (Roland et al. 2009), 
-! coupling libraries (PGMCL, Dutour-Sikiric et al. 2013) or tightly coupled with SCHISM (Roland et al. 2012). In this version we have combined 
-! some recent source term formulation following the work of Peter Janssen and Jean Bidlot from the ECMWF. The so called ECWAM model was 
-! continuesly updated and improved. We still have the WW3 3.14 version of the source terms of Fabrice but we have now from ECWAM (METEO FRANCE) 
-! the formulation of Fabrice coded by Lotfi Aouf from Meteo France. This source terms formulation can be used with the IPHYS switch. We 
-! will do in the futre now some code consolidation with respect to the source terms part. All external codes are courtesy to ECWMF or others as 
-! indicated in the source code. If something is not cited right please correct or let me know a.roland@bgsite.de or aaronroland@gmx.de
+! The 1st version of the WWM code was written by Jian-Ming Liau in his thesis supervised by Tai-Wen Hsu (Liau et al. 2002). 
+! The code has served as a basis for a 10 year development. In this time the source code was significantly rewritten and 
+! enhanced with various capabilities. The numerics have been completely revised (Roland, 2008) 
+! The source term package of Ardhuin et al. 2009, 2010 and from ECMWF (courtesy Jean-Bidlot) was implemented in the WWM-III. 
+! The I/O was completely rewritten in NETCDF and various common wind fields can be read such as CFRS, ECMWF, NCEP or others.  
+! Parallelization is done using the PDLIB decomposition library developed by BGS IT&E GmbH. 
+! 
 ! 
 ! Developers:
 ! Lead:
@@ -29,18 +27,13 @@
 ! Contributors:
 !   Christian Ferrarin (ISMAR-CNR),
 !   Fabrice Ardhuin (IFREMER),
-!   Yaron Toledo (Tel-Aviv University),
 !   Thomas Huxhorn (TUD),
-!   Will Perrie (Fisheries, Canada),
-!   Bash Toulany (Fisheries, Canada),
-!   Harry Wang (VIMS),
 !   Andrea Fortunato (LNEC),
-!   Guillaume Dodet (LNEC),
+!   Guillaume Dodet (IFREMER),
 !   Kai Li (LNEC)
 !   Andreas Wurpts (Forschungsstelle Küste, Norderney),
-!   Michael Glozman (Cameri, Technion)
 !				
-! Copyright: 2008 - 2014 Z&P (Aron Roland, IT&E, Frankfurt, Zanke&Partner, Hannover, Germany)
+! Copyright: 2008 - 2014 Roland & Partner (Aron Roland, Roland & Partner, Darmstadt, Germany)
 ! All Rights Reserved                                     
 !
 ! http://www.apache.org/licenses/LICENSE-2.0
