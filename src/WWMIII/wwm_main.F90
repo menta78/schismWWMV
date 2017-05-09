@@ -11,17 +11,20 @@
 ! 
 ! The 1st version of the WWM code was written by Jian-Ming Liau in his thesis supervised by Tai-Wen Hsu (Liau et al. 2002). 
 ! The code has served as a basis for a 10 year development. In this time the source code was significantly rewritten and 
-! enhanced with various capabilities. The numerics have been completely revised (Roland, 2008) 
-! The source term package of Ardhuin et al. 2009, 2010 and from ECMWF (courtesy Jean-Bidlot) was implemented in the WWM-III. 
+! enhanced with various capabilities. The numerics have been completely revised (Roland, 2008), which lead to the version of WWM-II. 
+! In WWM-III the model was fully parallelized using Domain Decomposition and coupled to SCHISM. Moreover,
+! the source term package of Ardhuin et al. 2009, 2010 and from ECMWF (courtesy Jean-Bidlot) was implemented in the WWM-III. 
 ! The I/O was completely rewritten in NETCDF and various common wind fields can be read such as CFRS, ECMWF, NCEP or others.  
 ! Parallelization is done using the PDLIB decomposition library developed by BGS IT&E GmbH. 
 ! 
 ! Developers:
 ! Lead:
 !
-!   Aron Roland (IT&E, Frankfurt, Z&P, Hannover),
-!   Yinglong Joseph Zhang (VIMS),
+!   Aron Roland (IT&E, Frankfurt, BGS IT&E, Hannover),
+!   Tai-Wen Hsu (NTOU, Taiwan) 
+!   Jian-Ming Liau (XXXX, Taiwan)
 !   Mathieu Dutour Sikiric (IRB, Zagreb),
+!   Yinglong Joseph Zhang (VIMS),
 !
 ! Contributors:
 !
