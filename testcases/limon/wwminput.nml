@@ -116,8 +116,8 @@
  UNITC   = SEC                 ,
  ENDTC   = 19980901.010000     ,
  LINTERWD        = T,
- WDIR    =  0.000000000000000E+000,
- WVEL    =  0.000000000000000E+000,
+ WDIR    =  90.,
+ WVEL    =  30.0,
  CWINDX  =  0.000000000000000E+000,
  CWINDY  =  0.000000000000000E+000,
  FILEWIND        = wind.dat                                                                                                          
@@ -163,6 +163,8 @@
  LSTWL   = F,
  LCWLV   = F,
  CWATLV  =  0.000000000000000E+000,
+ FILEWATL        =                                                                                                                   
+                           ,
  LERGINP = F,
  WALVFAC =   1.00000000000000     ,
  IWATLVFORMAT    =           1,
@@ -171,20 +173,21 @@
  EXPORT_WALV_DELTC       =  0.000000000000000E+000
  /
  &ENGS
- ISOURCE =           3,
+ ISOURCE =           2,
  MESNL   =           1,
  MESIN   =           1,
  IFRIC   =           1,
  MESBF   =           1,
  FRICC   =  6.700000000000000E-002,
- MESBR   =           1,
+ MESBR   =           0,
+ MEVEG   =           0,
  ICRIT   =           1,
  IBREAK  =           1,
  ALPBJ   =   1.00000000000000     ,
  BRHD    =  0.730000000000000     ,
- LMAXETOT        = T, 
- MESDS   =        1,
- MESTR   =        1,
+ LMAXETOT        = F,
+ MESDS   =           1,
+ MESTR   =           1,
  TRICO   =   1.00000000000000     ,
  TRIRA   =   2.50000000000000     ,
  TRIURS  =  0.100000000000000     
@@ -260,8 +263,8 @@
  MAXCFLSIG       =   1.00000000000000     ,
  LSIGBOUND       = F,
  LLIMT   = T,
- LIMFAK  =  0.100000001490116     ,
- WW3_STYLE_LIMIT_SRC_TERM        = F,
+ LIMFAK  =  0.1,
+ WW3_STYLE_LIMIT_SRC_TERM        = T,
  LDIFR   = F,
  IDIFFR  =           1,
  LADVTEST        = F,
@@ -289,14 +292,14 @@
  NDYNITER_SNL3   =          10,
  NDYNITER_SBF    =          10,
  NB_BLOCK        =           3,
- MAXITER =      100,
+ MAXITER =         100,
  LNANINFCHK      = F,
  PMIN    =   1.00000000000000     ,
  BLOCK_GAUSS_SEIDEL      = T,
  LNONL   = F,
  L_SOLVER_NORM   = F,
  WAE_SOLVERTHR   =  1.000000000000000E-010,
- ASPAR_LOCAL_LEVEL = 1,
+ ASPAR_LOCAL_LEVEL       =           1,
  WAE_JGS_CFL_LIM = F,
  JGS_CHKCONV     = T,
  JGS_DIFF_SOLVERTHR      =  9.999999747378752E-006,
@@ -416,11 +419,23 @@
  LOUTITER        = F,
  IOUTS   =           1,
  NOUTS   = P-1                                                                                                                       
+                                                                                                                                     
+                                                                                                                                     
+                                                                                                                                     
+                                                                                   ,
+ XOUTS   = 30*0.000000000000000E+000  ,
+ YOUTS   = 30*0.000000000000000E+000  ,
+ CUTOFF  = 30*0.000000000000000E+000  ,
  LSIGMAX = T,
  LSP1D   = F,
  LSP2D   = F,
  LLOUTS  = F,
  ILOUTS  =           1,
+ NLOUTS  =                                                                                                                           
+                                                                                                                                     
+                                                                                                                                     
+                                                                                                                                     
+                                                                                   ,
  AC      = F,
  WK      = F,
  ACOUT_1D        = F,
@@ -508,6 +523,24 @@
  /
  &NESTING
  L_NESTING       = F,
+ NB_GRID_NEST    =           0,
+ LISTBEGTC       =                                                             ,
+ LISTDELTC       = 3*0.000000000000000E+000  ,
+ LISTUNITC       =                                                             ,
+ LISTENDTC       =                                                             ,
+ LISTIGRIDTYPE   = 3*0,
+ LISTFILEGRID    =                                                                                                                   
+                                                                                                                                     
+                                                                                                                                     
+                                           ,
+ LISTFILEBOUND   =                                                                                                                   
+                                                                                                                                     
+                                                                                                                                     
+                                           ,
+ LISTPREFIX      =                                                                                                                   
+                                                                                                                                     
+                                                                                                                                     
+                                           ,
  L_HOTFILE       = F,
  L_BOUC_PARAM    = F,
  L_BOUC_SPEC     = F

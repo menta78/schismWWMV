@@ -10,11 +10,13 @@
 ! WWM-III (Wind Wave Model) source code 
 ! 
 ! The 1st version of the WWM code was written by Jian-Ming Liau in his thesis supervised by Tai-Wen Hsu (Liau et al. 2002). 
-! The code has served as a basis for a 10 year development. In this time the source code was significantly rewritten and 
-! enhanced with various capabilities. The numerics have been completely revised (Roland, 2008) 
+! The source code served as the basis for my thesis that was as well supervised by Tai-Wen Hsu and Ulrich Zanke. In my thesis work
+! new numerics and source terms have beend developed (Roland, 2008) and resulted in the WWM-II version of the code. Following this
+! the code has served from than as a basis for a 10 year development. In this time the source code was significantly rewritten and 
+! enhanced with various capabilities. The numerics have been completely revised (Roland, 2008) and parallelized.
 ! The source term package of Ardhuin et al. 2009, 2010 and from ECMWF (courtesy Jean-Bidlot) was implemented in the WWM-III. 
 ! The I/O was completely rewritten in NETCDF and various common wind fields can be read such as CFRS, ECMWF, NCEP or others.  
-! Parallelization is done using the PDLIB decomposition library developed by BGS IT&E GmbH. 
+! Parallelization is done using the PDLIB decomposition library developed by BGS IT&E GmbH and based on domain decmoposition. 
 ! 
 ! Developers:
 ! Lead:
