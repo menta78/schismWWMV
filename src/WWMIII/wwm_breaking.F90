@@ -129,31 +129,31 @@
         IF ( BETA .LT. 0.2_rkind ) THEN
           QB     = ZERO
         ELSE IF ( BETA .LT. ONE ) THEN
-          ARG    = EXP  (( QQ - 1. ) / BETA2 )
+          ARG    = EXP  (( QQ - ONE ) / BETA2 )
           QB     = QQ - BETA2 * ( QQ - ARG ) / ( BETA2 - ARG )
           DO IS = 1, 3
-            QB     = EXP((QB-1.)/BETA2)
+            QB     = EXP((QB-ONE)/BETA2)
           END DO
         ELSE
           QB = ONE - 10.E-10
         END IF
       ELSE IF (IQB == 2) THEN
-       IF (BETA .LT. 0.2D0) THEN
-          QB = 0.0D0
+        IF (BETA .LT. 0.2_rkind) THEN
+          QB = ZERO
         ELSE IF (BETA .LT. 1.0D0) THEN
-          AUX   = EXP((QQ-1.0d0)/BETA2)
+          AUX   = EXP((QQ-ONE)/BETA2)
           QB    = QQ-BETA2*(QQ-AUX)/(BETA2-AUX)
         ELSE
-          QB = 1.0D0
+          QB = ONE
         END IF
       ELSE IF (IQB == 3) THEN
         IF ( BETA .LT. 0.2_rkind ) THEN
           QB     = ZERO
         ELSE IF ( BETA .LT. ONE ) THEN
-          ARG    = EXP  (( QQ - 1. ) / BETA2 )
+          ARG    = EXP  (( QQ - ONE ) / BETA2 )
           QB     = QQ - BETA2 * ( QQ - ARG ) / ( BETA2 - ARG )
           DO IS = 1, 3
-            QB     = EXP((QB-1.)/BETA2)
+            QB     = EXP((QB-ONE)/BETA2)
           END DO
         ELSE
           QB = ONE - 10.E-10
@@ -260,16 +260,12 @@
 #ifdef SCHISM
       DO IS=1,NUMSIG
         DO ID=1,NUMDIR
-          COST = COSTH(ID)!COS(SPDIR(ID))
-          SINT = SINTH(ID)!SIN(SPDIR(ID))
-!          SBR_X(IP)=SBR_X(IP)+COST*G9*RHOW*(WK(IP,IS)/SPSIG(IS))*SSBR_TMP_DUMON(IP,IS,ID)*DS_INCR(IS)*DDIR
-!          SBR_Y(IP)=SBR_Y(IP)+SINT*G9*RHOW*(WK(IP,IS)/SPSIG(IS))*SSBR_TMP_DUMON(IP,IS,ID)*DS_INCR(IS)*DDIR
+          COST = COSTH(ID)
+          SINT = SINTH(ID)
           SBR(1,IP)=SBR(1,IP)+SINT*(WK(IS,IP)/SPSIG(IS))*SSBR(IS,ID)*DS_INCR(IS)*DDIR
           SBR(2,IP)=SBR(2,IP)+COST*(WK(IS,IP)/SPSIG(IS))*SSBR(IS,ID)*DS_INCR(IS)*DDIR
         ENDDO
       ENDDO
-      !TMP_X=TMP_X+SQRT(SBR_X(IP)*SBR_X(IP))/real(MNP)
-      !TMP_Y=TMP_Y+SQRT(SBR_Y(IP)*SBR_Y(IP))/real(MNP)
 #endif
 #ifdef DEBUG
       WRITE(DBG%FHNDL,*) 'THE NORMS OF SBR', TMP_X, TMP_Y
