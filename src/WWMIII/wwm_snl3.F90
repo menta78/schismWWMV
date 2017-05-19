@@ -440,7 +440,10 @@
       IF (TRIURS .GT. 0.) PTRIAD(5) = TRIURS
       ssnl3 = 0
       CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL)
-      IF (URSELL .le. PTRIAD(5)) RETURN
+      IF (URSELL .le. PTRIAD(5)) THEN
+         ssnl3 = ZERO
+         RETURN
+      END IF
       BB   = ONE/15._rkind
       AA   = TWO/FIVE
       DEP1 = DEP(IP)
