@@ -1012,7 +1012,7 @@
 
          INTEGER                       :: IS, ID, IDIRM, ISIGMP
          REAL(rkind)                   :: HQUOT, HQUOTP, ETOTF3, ETOTF4, ETOTC4, ETOTS4, PEAKFF,WKDEPD,WNPD
-         REAL(rkind)                   :: DEG, VEC2DEG, MAXAC, E1, E2, DS, EAD, ETOTT, WKDEPP, CPWN
+         REAL(rkind)                   :: DEG, VEC2DEG, MAXAC, E1, E2, DS, EAD, ETOTT, CPWN
 !
 ! Peak period continues version... Taken from Thesis Henriques Alves ... correct citation is given there ... :)
 !
@@ -1052,13 +1052,11 @@
            FPP = ZERO
            KPP = 10.0_rkind
            CGPP = ZERO 
-           WKDEPP = ZERO
            WNPP = ZERO
            CPP = ZERO
            TPP = ZERO
            LPP = ZERO
            PEAKDM = ZERO
-           PEAKFF = ZERO
            PEAKDSPR = ZERO 
 
          END IF
@@ -1090,13 +1088,11 @@
          FPP = ZERO
          KPP = 10.0_rkind
          CGPP = ZERO
-         WKDEPP = ZERO
          WNPP = ZERO
          CPP = ZERO
          TPP = ZERO
          LPP = ZERO
          PEAKDM = ZERO
-         PEAKFF = ZERO
          PEAKDSPR = ZERO
          DPEAK = ZERO
 
@@ -1142,7 +1138,7 @@
          REAL(rkind)  , INTENT(OUT)    :: KPP,CPP,WNPP,CGPP,TPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD,FPP
 
          INTEGER                :: IS, ID, IDIRM, ISIGMP
-         REAL(rkind)            :: HQUOT, HQUOTP, ETOTF3, ETOTF4, ETOTC4, ETOTS4, PEAKFF, WKDEPP
+         REAL(rkind)            :: HQUOT, HQUOTP, ETOTF3, ETOTF4, ETOTC4, ETOTS4, PEAKFF
          REAL(rkind)            :: DEG, VEC2DEG, MAXAC, E1, E2, DS, EAD, ETOTT,WKDEPD,WNPD
 !
 ! Peak period continues version... Taken from Thesis Henriques Alves ... correct citation is given there ... :)
@@ -1166,7 +1162,6 @@
          IF(ETOTF4 .GT. VERYSMALL .AND. ETOTF4 .GT. VERYSMALL) THEN
            FPP    = ETOTF3/ETOTF4*PI2
            CALL WAVEKCG(DEPLOC, FPP, WNPP, CPP, KPP, CGPP)
-           !CALL ALL_FROM_TABLE(FPP,DEPLOC,KPP,CGPP,WKDEPP,WNPP,CPP) 
            PEAKDM = VEC2DEG (ETOTC4, ETOTS4)
            TPP    = PI2/FPP
            LPP    = PI2/KPP
@@ -1178,13 +1173,11 @@
            FPP = ZERO
            KPP = 10.0_rkind
            CGPP = ZERO
-           WKDEPP = ZERO
            WNPP = ZERO
            CPP = ZERO
            TPP = ZERO
            LPP = ZERO
            PEAKDM = ZERO
-           PEAKFF = ZERO
            PEAKDSPR = ZERO
          END IF
          DPEAK = 1
@@ -1214,13 +1207,11 @@
          FPP = ZERO
          KPP = 10.0_rkind
          CGPP = ZERO
-         WKDEPP = ZERO
          WNPP = ZERO
          CPP = ZERO
          TPP = ZERO
          LPP = ZERO
          PEAKDM = ZERO
-         PEAKFF = ZERO
          PEAKDSPR = ZERO
          DPEAK = ZERO
        END IF

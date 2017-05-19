@@ -2,6 +2,52 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+!AR: This can remain ...
+      SUBROUTINE PEAK_PARAMETER_BREAK(IP,WALOC,LPP)
+         USE DATAPOOL
+         IMPLICIT NONE
+         INTEGER, INTENT(IN)           :: IP
+         REAL(rkind), INTENT(IN)       :: WALOC(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(OUT)      :: LPP
+         REAL(rkind)                   :: KPP, FPP, CPP, WNPP, CGPP, TPP
+
+         INTEGER                       :: IS, ID, ISIGMP
+         REAL(rkind)                   :: HQUOT, HQUOTP, ETOTF3, ETOTF4, WKDEPD, WNPD
+         REAL(rkind)                   :: DEG, VEC2DEG, MAXAC, E1, E2, DS, EAD, CPWN
+!
+! Peak period continues version... Taken from Thesis Henriques Alves ... correct citation is given there ... :)
+!
+       MAXAC = MAXVAL(WALOC)
+
+       IF (MAXAC .gt. VERYSMALL .AND.  DEP(IP) .GT. DMIN) THEN
+
+         ETOTF3 = ZERO
+         ETOTF4 = ZERO
+         DO IS = 1, NUMSIG
+           DO ID = 1, NUMDIR
+             HQUOT  = WALOC(IS,ID)/MAXAC
+             HQUOTP = HQUOT**4
+             ETOTF3 = ETOTF3 + SPSIG(IS) * HQUOTP * DS_BAND(IS)
+             ETOTF4 = ETOTF4 +             HQUOTP * DS_BAND(IS)
+           END DO
+         END DO
+
+         IF(ETOTF4 .GT. VERYSMALL .AND. ETOTF4 .GT. VERYSMALL) THEN
+           FPP    = ETOTF3/ETOTF4*PI2
+           CALL WAVEKCG(DEP(IP), FPP, WNPP, CPP, KPP, CGPP)
+           TPP    = PI2/FPP
+           LPP    = PI2/KPP
+
+         ELSE 
+           LPP = ZERO
+         END IF
+       ELSE
+         LPP = ZERO
+       END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE SDS_SWB(IP, SME, KME, ETOT, HS, WALOC, SSBR, DSSBR)
       USE DATAPOOL
       IMPLICIT NONE
@@ -11,7 +57,7 @@
       REAL(rkind), INTENT(IN)   :: WALOC(NUMSIG,NUMDIR), SME, KME, ETOT, HS
 
       REAL(rkind), INTENT(INOUT)     :: SSBR(NUMSIG,NUMDIR), DSSBR(NUMSIG,NUMDIR)
-      REAL(rkind)   :: FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD
+      REAL(rkind)   :: FPP,TPP,CPP,WNPP,CGPP,KPP,LPP
 
       REAL(rkind) :: BETA, QQ, QB, BETA2, ARG
       REAL(rkind) :: S0, TMP_X, TMP_Y
@@ -49,7 +95,7 @@
            HMAX(IP)  = BRHD * DEP(IP)
          END IF
        CASE(3) ! D. based on peak steepness 
-         CALL PEAK_PARAMETER(IP,WALOC,NUMSIG,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
+         CALL PEAK_PARAMETER_BREAK(IP,WALOC,LPP)
          IF (LPP .GT. VERYSMALL) THEN
            S0    = HS/LPP
            GAMMA_WB =  0.5_rkind + 0.4_rkind * MyTANH(33._rkind * S0)
@@ -124,7 +170,7 @@
                 WS   = (ALPBJ / PI) *  QB * SME / BETA2
                 SbrD =   WS * (ONE - QB) / (BETA2 - QB)
               ELSE
-                WS   = (ALPBJ/PI)*SME !
+                WS   = (ALPBJ/PI)*SME
                 SbrD = ZERO 
               END IF
               SURFA0 = SbrD
@@ -156,10 +202,10 @@
           END IF
         END IF
       ELSEIF (IBREAK == 2) THEN
+        COEFF_A = 0.42_rkind
+        COEFF_B = 4.0_rkind
         IF (ICOMP .GE. 2) THEN
           IF ( BETA2 .GT.0D0 ) THEN
-            COEFF_A = 0.42_rkind
-            COEFF_B = 4.0_rkind
             IF ( BETA2 .LT.1D0 ) THEN
               WS   = 75D-2*COEFF_A*ALPBJ**3*SME*BETA2**(0.5*(COEFF_B+1.0_rkind))/MyREAL(SQRT(PI))
               SbrD = 5D-1*MyREAL(3.+COEFF_B)*WS
@@ -175,8 +221,6 @@
           ENDIF 
         ELSE
           IF ( BETA2 .GT.0D0 ) THEN
-            COEFF_A = 0.42_rkind
-            COEFF_B = 4.0_rkind
             IF ( BETA2 .LT.1D0 ) THEN
               SURFA0   = -75D-2*COEFF_A*ALPBJ**3*SME*BETA2**(0.5*(COEFF_B+1.0_rkind))/MyREAL(SQRT(PI))
             ELSE
