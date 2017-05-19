@@ -1403,7 +1403,7 @@
 
        USE DATAPOOL, ONLY : FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, EMEAN, &
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, LCFLX, &
-     &                      IUSTAR, IALPHA, USTARM, TAUT, STAT, IU06, ICOMP, &
+     &                      IUSTAR, IALPHA, USTARM, TAUT, STAT, IU06, &
      &                      DELUST, DELALP, LBIWBK, DEP, LBIWBK, ITEST, FRATIO, &
      &                      DELTH => DDIR, LOUTWAM, TESTNODE, &
      &                      G => G9, &
@@ -1991,7 +1991,7 @@
       !USE YOWSTAT  , ONLY : ISHALLO  ,IDAMPING
       !USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
       USE DATAPOOL, ONLY : FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, RKIND, &
-     &                DFIM, DFIMOFR, DFFR, DFFR2, WK, ZALP, TH, ICOMP, &
+     &                DFIM, DFIMOFR, DFFR, DFFR2, WK, ZALP, TH, &
      &                IUSTAR, IALPHA, USTARM, TAUT, ONETHIRD, RKIND, &
      &                DELUST, DELALP, BETAMAX, XKAPPA, IDAMPING, &
      &                ROWATER => RHOW, TESTNODE, LOUTWAM, &
@@ -2234,7 +2234,7 @@
      &                      DFIM, DFIMOFR, WK, RKIND, TH, ENH, DEP, AF11, &
      &                      IKP, IKP1, IKM, IKM1, K1W, K2W, K11W, K21W, FKLAP, FKLAP1, FKLAM, FKLAM1, FRH, &
      &                      CL11, CL21, DAL1, DAL2, MLSTHG, MFRSTLW, KFRH, RNLCOEF, INLCOEF, &
-     &                      DELTH => DDIR, LOUTWAM, ICOMP, ZERO, &
+     &                      DELTH => DDIR, LOUTWAM, ZERO, &
      &                      G => G9, &
      &                      ZPI => PI2, &
      &                      EPSMIN => SMALL, &
