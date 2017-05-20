@@ -72,7 +72,6 @@
       REAL(rkind) :: SBRD, WS, SURFA0, SURFA1, COEFF_B, SURFSEL
 
       REAL(rkind), PARAMETER :: GAM_D = 0.14_rkind
-      INTEGER, PARAMETER     :: IQB = 3
 
       INTEGER :: IS, ID
 
@@ -125,39 +124,16 @@
 !
 ! 2.b. Iterate to obtain actual breaking fraction
 !
-      IF(IQB == 1) THEN
-        IF ( BETA .LT. 0.2_rkind ) THEN
-          QB     = ZERO
-        ELSE IF ( BETA .LT. ONE ) THEN
-          ARG    = EXP  (( QQ - ONE ) / BETA2 )
-          QB     = QQ - BETA2 * ( QQ - ARG ) / ( BETA2 - ARG )
-          DO IS = 1, 3
-            QB     = EXP((QB-ONE)/BETA2)
-          END DO
-        ELSE
-          QB = ONE - 10.E-10
-        END IF
-      ELSE IF (IQB == 2) THEN
-        IF (BETA .LT. 0.2_rkind) THEN
-          QB = ZERO
-        ELSE IF (BETA .LT. 1.0D0) THEN
-          AUX   = EXP((QQ-ONE)/BETA2)
-          QB    = QQ-BETA2*(QQ-AUX)/(BETA2-AUX)
-        ELSE
-          QB = ONE
-        END IF
-      ELSE IF (IQB == 3) THEN
-        IF ( BETA .LT. 0.2_rkind ) THEN
-          QB     = ZERO
-        ELSE IF ( BETA .LT. ONE ) THEN
-          ARG    = EXP  (( QQ - ONE ) / BETA2 )
-          QB     = QQ - BETA2 * ( QQ - ARG ) / ( BETA2 - ARG )
-          DO IS = 1, 3
-            QB     = EXP((QB-ONE)/BETA2)
-          END DO
-        ELSE
-          QB = ONE - 10.E-10
-        ENDIF
+      IF ( BETA .LT. 0.2_rkind ) THEN
+        QB     = ZERO
+      ELSE IF ( BETA .LT. ONE ) THEN
+        ARG    = EXP  (( QQ - ONE ) / BETA2 )
+        QB     = QQ - BETA2 * ( QQ - ARG ) / ( BETA2 - ARG )
+        DO IS = 1, 3
+          QB     = EXP((QB-ONE)/BETA2)
+        END DO
+      ELSE
+        QB = ONE - 10.E-10
       ENDIF
 ! 
       QBLOCAL(IP) = QB
@@ -170,7 +146,7 @@
                 WS   = (ALPBJ / PI) *  QB * SME / BETA2
                 SbrD =   WS * (ONE - QB) / (BETA2 - QB)
               ELSE
-                WS   = (ALPBJ/PI)*SME
+                WS   = (ALPBJ/PI) * SME
                 SbrD = ZERO 
               END IF
               SURFA0 = SbrD
@@ -184,10 +160,10 @@
               IF ( BETA2 .LT. ONE - 10.E-10) THEN
                 SURFA0  = - ( ALPBJ / PI) *  QB * SME / BETA2
               ELSE
-                SURFA0  = - (ALPBJ/PI)*SME
+                SURFA0  = - (ALPBJ/PI) * SME
               END IF
             ELSE
-              SURFA0 = 0.
+              SURFA0 = ZERO
             END IF
           ENDIF
         ELSE ! not linearized ... 
@@ -198,30 +174,30 @@
               SURFA0  = - (ALPBJ/PI)*SME 
             END IF
           ELSE
-            SURFA0 = 0.
+            SURFA0 = ZERO
           END IF
         END IF
       ELSEIF (IBREAK == 2) THEN
         COEFF_A = 0.42_rkind
         COEFF_B = 4.0_rkind
         IF (ICOMP .GE. 2) THEN
-          IF ( BETA2 .GT.0D0 ) THEN
-            IF ( BETA2 .LT.1D0 ) THEN
-              WS   = 75D-2*COEFF_A*ALPBJ**3*SME*BETA2**(0.5*(COEFF_B+1.0_rkind))/MyREAL(SQRT(PI))
-              SbrD = 5D-1*MyREAL(3.+COEFF_B)*WS
+          IF ( BETA2 .GT. ZERO ) THEN
+            IF ( BETA2 .LT. ONE ) THEN
+              WS   = 75.0_rkind-2*COEFF_A*ALPBJ**3*SME*BETA2**(0.5*(COEFF_B + ONE))/MyREAL(SQRT(PI))
+              SbrD = 5.0_rkind-1*MyREAL(3.0_rkind+COEFF_B)*WS
             ELSE
-              WS   = 75D-2*COEFF_A*ALPBJ**3*SME/MyREAL(SQRT(PI))
+              WS   = 75.0_rkind-2*COEFF_A*ALPBJ**3*SME/MyREAL(SQRT(PI))
               SbrD = WS
             ENDIF
             SURFA0 = SbrD - WS
             SURFA1 = SbrD
           ELSE
-            SURFA0 = 0D0
-            SURFA1 = 0D0
+            SURFA0 = ZERO
+            SURFA1 = ZERO
           ENDIF 
         ELSE
-          IF ( BETA2 .GT.0D0 ) THEN
-            IF ( BETA2 .LT.1D0 ) THEN
+          IF ( BETA2 .GT. ZERO ) THEN
+            IF ( BETA2 .LT. ONE ) THEN
               SURFA0   = -75D-2*COEFF_A*ALPBJ**3*SME*BETA2**(0.5*(COEFF_B+1.0_rkind))/MyREAL(SQRT(PI))
             ELSE
               SURFA0   = -75D-2*COEFF_A*ALPBJ**3*SME/MyREAL(SQRT(PI))
