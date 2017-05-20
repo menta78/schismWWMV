@@ -57,10 +57,10 @@
       REAL(rkind), INTENT(IN)   :: WALOC(NUMSIG,NUMDIR), SME, KME, ETOT, HS
 
       REAL(rkind), INTENT(INOUT)     :: SSBR(NUMSIG,NUMDIR), DSSBR(NUMSIG,NUMDIR)
-      REAL(rkind)   :: FPP,TPP,CPP,WNPP,CGPP,KPP,LPP
+      REAL(rkind)   :: LPP
 
       REAL(rkind) :: BETA, QQ, QB, BETA2, ARG
-      REAL(rkind) :: S0, TMP_X, TMP_Y
+      REAL(rkind) :: S0
 #ifdef DEBUG
       integer, save :: idxcall = 0
 #endif
@@ -71,14 +71,11 @@
       REAL(rkind) :: GAMMA_WB, COEFF_A 
       REAL(rkind) :: SBRD, WS, SURFA0, SURFA1, COEFF_B, SURFSEL
 
-      REAL(rkind), PARAMETER :: GAM_D = 0.14_rkind
-
       INTEGER :: IS, ID
 
 #ifdef SCHISM
       SBR(:,IP) = ZERO
 #endif
-      TMP_X     = ZERO; TMP_Y = ZERO
 !
 !     *** depth-induced wave breaking term by Battjes and Janssen (1978)
 !
@@ -201,9 +198,6 @@
           SBR(2,IP)=SBR(2,IP)+COST*(WK(IS,IP)/SPSIG(IS))*SSBR(IS,ID)*DS_INCR(IS)*DDIR
         ENDDO
       ENDDO
-#endif
-#ifdef DEBUG
-      WRITE(DBG%FHNDL,*) 'THE NORMS OF SBR', TMP_X, TMP_Y
 #endif
       END SUBROUTINE 
 !**********************************************************************
