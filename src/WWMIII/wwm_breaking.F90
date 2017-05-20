@@ -72,10 +72,7 @@
       REAL(rkind) :: SBRD, WS, SURFA0, SURFA1, COEFF_B, SURFSEL
 
       INTEGER :: IS, ID
-
-#ifdef SCHISM
-      SBR(:,IP) = ZERO
-#endif
+      REAL(rkind) :: BJALFA, SDBC1, CBJ, TM01, TM02, FMEANloc
 !
 !     *** depth-induced wave breaking term by Battjes and Janssen (1978)
 !
@@ -167,6 +164,21 @@
           SURFA0 = ZERO
           SURFA1 = ZERO
         ENDIF
+      ELSEIF (IBREAK == 3) THEN ! WW3 SDBC1 formulation adapting Battjes & Janssen
+        SDBC1 = 0.25_rkind * BJALFA
+        CALL MEAN_PARAMETER_BDCONS(WALOC,HS,TM01,TM02)
+        FMEANloc = TWO * PI / TM01
+        IF (( BETA2 .GT. THR) .AND. ( ABS( BETA2 - QB ) .GT. THR) ) THEN
+           IF ( BETA2 .LT. ONE) THEN
+              CBJ = SDBC1 * QB * FMEANloc / BETA2
+           ELSE
+              CBJ = SDBC1 * FMEANloc
+           END IF
+        ELSE
+           CBJ = ZERO
+        ENDIF
+        SURFA1 = CBJ
+        SURFA0 = CBJ
       ENDIF
 !
 #ifdef DEBUG
@@ -190,6 +202,7 @@
       END DO 
 
 #ifdef SCHISM
+      SBR(:,IP) = ZERO
       DO IS=1,NUMSIG
         DO ID=1,NUMDIR
           COST = COSTH(ID)
