@@ -139,72 +139,36 @@
       QBLOCAL(IP) = QB
 !
       IF (IBREAK == 1) THEN ! Battjes & Janssen
-        IF (ICOMP .GE. 2) THEN ! linearized source terms ...
-          IF (SMETHOD .eq. 2) THEN
-            IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
-              IF ( BETA2 .LT. ONE - 10.E-10) THEN
-                WS   = (ALPBJ / PI) *  QB * SME / BETA2
-                SbrD =   WS * (ONE - QB) / (BETA2 - QB)
-              ELSE
-                WS   = (ALPBJ/PI) * SME
-                SbrD = ZERO 
-              END IF
-              SURFA0 = SbrD
-              SURFA1 = WS + SbrD
-            ELSE
-              SURFA0 = ZERO 
-              SURFA1 = ZERO 
-            END IF
-          ELSE IF (SMETHOD .eq. 1) THEN
-            IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
-              IF ( BETA2 .LT. ONE - 10.E-10) THEN
-                SURFA0  = - ( ALPBJ / PI) *  QB * SME / BETA2
-              ELSE
-                SURFA0  = - (ALPBJ/PI) * SME
-              END IF
-            ELSE
-              SURFA0 = ZERO
-            END IF
-          ENDIF
-        ELSE ! not linearized ... 
-          IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
-            IF ( BETA2 .LT. ONE - 10.E-10) THEN
-              SURFA0  = - ( ALPBJ / PI) *  QB * SME / BETA2 
-            ELSE
-              SURFA0  = - (ALPBJ/PI)*SME 
-            END IF
+        IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
+          IF ( BETA2 .LT. ONE - 10.E-10) THEN
+            WS   = (ALPBJ / PI) *  QB * SME / BETA2
+            SbrD = WS * (ONE - QB) / (BETA2 - QB)
           ELSE
-            SURFA0 = ZERO
+            WS   = (ALPBJ/PI) * SME
+            SbrD = ZERO 
           END IF
+          SURFA0 = SbrD
+          SURFA1 = WS + SbrD
+        ELSE
+          SURFA0 = ZERO 
+          SURFA1 = ZERO 
         END IF
-      ELSEIF (IBREAK == 2) THEN
+      ELSEIF (IBREAK == 2) THEN ! Thornton & Guza 1983
         COEFF_A = 0.42_rkind
         COEFF_B = 4.0_rkind
-        IF (ICOMP .GE. 2) THEN
-          IF ( BETA2 .GT. ZERO ) THEN
-            IF ( BETA2 .LT. ONE ) THEN
-              WS   = 75.0_rkind-2*COEFF_A*ALPBJ**3*SME*BETA2**(0.5*(COEFF_B + ONE))/MyREAL(SQRT(PI))
-              SbrD = 5.0_rkind-1*MyREAL(3.0_rkind+COEFF_B)*WS
-            ELSE
-              WS   = 75.0_rkind-2*COEFF_A*ALPBJ**3*SME/MyREAL(SQRT(PI))
-              SbrD = WS
-            ENDIF
-            SURFA0 = SbrD - WS
-            SURFA1 = SbrD
+        IF ( BETA2 .GT. ZERO ) THEN
+          IF ( BETA2 .LT. ONE ) THEN
+            WS   = 75.0_rkind-2*COEFF_A*(ALPBJ**3)*SME*BETA2**(0.5*(COEFF_B + ONE))/MyREAL(SQRT(PI))
+            SbrD = 5.0_rkind - MyREAL(3.0_rkind+COEFF_B)*WS
           ELSE
-            SURFA0 = ZERO
-            SURFA1 = ZERO
-          ENDIF 
-        ELSE
-          IF ( BETA2 .GT. ZERO ) THEN
-            IF ( BETA2 .LT. ONE ) THEN
-              SURFA0   = -75D-2*COEFF_A*ALPBJ**3*SME*BETA2**(0.5*(COEFF_B+1.0_rkind))/MyREAL(SQRT(PI))
-            ELSE
-              SURFA0   = -75D-2*COEFF_A*ALPBJ**3*SME/MyREAL(SQRT(PI))
-            ENDIF
-          ELSE
-            SURFA0 = 0D0
+            WS   = 75.0_rkind-2*COEFF_A*ALPBJ**3*SME/MyREAL(SQRT(PI))
+            SbrD = WS
           ENDIF
+          SURFA0 = SbrD - WS
+          SURFA1 = SbrD
+        ELSE
+          SURFA0 = ZERO
+          SURFA1 = ZERO
         ENDIF
       ENDIF
 !
@@ -223,13 +187,8 @@
 !
       DO IS = 1, NUMSIG
         DO ID = 1, NUMDIR
-          IF (ICOMP .GE. 2) THEN
-            DSSBR(IS,ID)  = SURFA1
-            SSBR(IS,ID)   = SURFA0 * WALOC(IS,ID)
-          ELSE IF (ICOMP .LT. 2) THEN
-            DSSBR(IS,ID)  = SURFA0
-            SSBR(IS,ID)   = SURFA0 * WALOC(IS,ID)
-          END IF
+          DSSBR(IS,ID)  = - SURFA1
+          SSBR(IS,ID)   = SURFA0 * WALOC(IS,ID)
         END DO
       END DO 
 
