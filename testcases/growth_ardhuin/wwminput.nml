@@ -9,7 +9,7 @@
  LMONO_OUT       = F,
  LMONO_IN        = F,
  BEGTC   = 20030920.000000     ,
- DELTC   = 600.000000000000     ,
+ DELTC   = 600.     ,
  UNITC   = SEC                 ,
  ENDTC   = 20030930.000000    ,
  DMIN    = 0.100000000000000     ,
