@@ -821,36 +821,6 @@
       FLUSH(STAT%FHNDL)
       AC1 = AC2
       CALL Print_SumAC2("Leaving INITIALIZE_WWM")
-      IF (LIMIT_SRC_TERM) CALL INIT_LIMITER
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE INIT_LIMITER
-      USE DATAPOOL
-      IMPLICIT NONE
-!     Limiter based on WAMDI group. 1988 same coeff like WW3 
-      INTEGER IS
-      REAL(rkind) FR1, SIGMA
-      LIM_XP     = 0.15
-      LIM_XP     = MAX ( 1.E-6_rkind , LIM_XP )
-      LIM_FACP   = LIM_XP / PI * 0.62E-3 * PI2**4 / G9**2
-#ifdef DEBUG
-      WRITE(DBG%FHNDL,*) 'WW3_FACP=', LIM_FACP
-#endif
-      allocate(LIM_SIG(0:NUMSIG+1), stat=istat)
-      FR1   = SPSIG(1)/PI2
-      SIGMA   = FR1 * TPI / SFAC**2
-      DO IS=0, NUMSIG+1
-         SIGMA    = SIGMA * SFAC
-         LIM_SIG (IS) = SIGMA
-#ifdef DEBUG
-         WRITE(DBG%FHNDL,*) 'IS=', IS, LIM_SIG(IS)
-#endif
-      END DO
-#ifdef DEBUG
-      FLUSH(DBG%FHNDL)
-#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
