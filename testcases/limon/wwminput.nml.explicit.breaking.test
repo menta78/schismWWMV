@@ -247,10 +247,10 @@
  FXDSCUT =  0.000000000000000E+000
  /
  &NUMS
- ICOMP   =           3,
- AMETHOD =           7,
+ ICOMP   =           0,
+ AMETHOD =           1,
  SMETHOD =           1,
- DMETHOD =           1,
+ DMETHOD =           2,
  IMPL_GEOADVECT  = T,
  LITERSPLIT      = F,
  LFILTERTH       = F,
@@ -302,7 +302,7 @@
  ASPAR_LOCAL_LEVEL       =           1,
  WAE_JGS_CFL_LIM = F,
  JGS_CHKCONV     = T,
- JGS_DIFF_SOLVERTHR      =  1.E-6,
+ JGS_DIFF_SOLVERTHR      =  9.999999747378752E-006,
  LCONV   = F,
  LCHKCONV        = T,
  NQSITER =           1,

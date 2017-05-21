@@ -302,7 +302,7 @@
  ASPAR_LOCAL_LEVEL       =           1,
  WAE_JGS_CFL_LIM = F,
  JGS_CHKCONV     = T,
- JGS_DIFF_SOLVERTHR      =  1.E-6,
+ JGS_DIFF_SOLVERTHR      =  9.999999747378752E-006,
  LCONV   = F,
  LCHKCONV        = T,
  NQSITER =           1,
