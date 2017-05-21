@@ -54,7 +54,6 @@
       SSNL4  = ZERO; DSSNL4 = ZERO
       SSBR   = ZERO; DSSBR  = ZERO
       SSBF   = ZERO; DSSBF  = ZERO
-      SSBRL  = ZERO
       SSINL  = ZERO
 
       IF (IOBP(IP) .NE. 0 .AND. .NOT. LSOUBOUND) THEN
@@ -80,7 +79,7 @@
       END IF
 #endif
 !
-      IF (ISHALLOW(IP) .EQ. 1) CALL SHALLOW_WATER(IP, WALOC, PHI, DPHIDN, SSBR, DSSBR, SSBF, DSSBF, SSBRL, SSNL3, DSSNL3)
+      IF (ISHALLOW(IP) .EQ. 1) CALL SHALLOW_WATER(IP, WALOC, PHI, DPHIDN, SSBR, DSSBR, SSBF, DSSBF, SSNL3, DSSNL3)
 !
 #ifdef DEBUG
       IF (IP .eq. TESTNODE) THEN
@@ -92,8 +91,6 @@
          WRITE(740+myrank,*) 'WW3 : LINEAR INPUT =', SUM(SSINL_WW3), MINVAL(SSINL_WW3), MAXVAL(SSINL_WW3)
          CALL CONVERT_VS_WWM_TO_WW3(IP, SSINE, SSINE_WW3)
          WRITE(740+myrank,*) 'WW3 : EXP. INPUT   =', SUM(SSINE_WW3), MINVAL(SSINE_WW3), MAXVAL(SSINE_WW3)
-         CALL CONVERT_VS_WWM_TO_WW3(IP, SSBRL, SSBRL_WW3)
-         WRITE(740+myrank,*) 'WW3 : BREAK LIMIT  =', SUM(SSBRL_WW3), MINVAL(SSBRL_WW3), MAXVAL(SSBRL_WW3)
          CALL CONVERT_VS_WWM_TO_WW3(IP, SSDS, SSDS_WW3)
          WRITE(740+myrank,*) 'WW3 : WHITECAP     =', SUM(SSDS_WW3), MINVAL(SSDS_WW3), MAXVAL(SSDS_WW3)
          CALL CONVERT_VS_WWM_TO_WW3(IP, SSNL4, SSNL4_WW3)
@@ -253,23 +250,24 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-         SUBROUTINE LIMITER(IP,MAXDAC,ACOLD,ACNEW)
+         SUBROUTINE LIMITER(IP,MAXDAC,ACOLD,ACNEW,SSLIM)
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)        :: IP
          INTEGER                    :: IS, ID
-         REAL(rkind), INTENT(OUT)   :: ACNEW(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(OUT)   :: ACNEW(NUMSIG,NUMDIR), SSLIM(NUMSIG,NUMDIR)
          REAL(rkind), INTENT(IN)    :: ACOLD(NUMSIG,NUMDIR), MAXDAC(NUMSIG)
-         REAL(rkind)                :: NEWDAC, OLDAC, NEWAC
+         REAL(rkind)                :: NEWDAC, OLDAC, NEWAC, NEWDACL
 
          DO IS = 1, NUMSIG
            DO ID = 1, NUMDIR
-             NEWAC  = ACNEW(IS,ID)
-             OLDAC  = ACOLD(IS,ID)
-             NEWDAC = NEWAC - OLDAC
-             NEWDAC = SIGN(MIN(MAXDAC(IS),ABS(NEWDAC)), NEWDAC)
-             ACNEW(IS,ID) = MAX( ZERO, OLDAC + NEWDAC )
+             NEWAC   = ACNEW(IS,ID)
+             OLDAC   = ACOLD(IS,ID)
+             NEWDAC  = NEWAC - OLDAC
+             NEWDACL = SIGN(MIN(MAXDAC(IS),ABS(NEWDAC)), NEWDAC)
+             SSLIM(IS,ID) = NEWDAC - NEWDACL
+             ACNEW(IS,ID) = MAX( ZERO, OLDAC + NEWDACL )
            END DO
          END DO
 

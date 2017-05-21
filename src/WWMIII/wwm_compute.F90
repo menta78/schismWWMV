@@ -7,7 +7,7 @@
         IMPLICIT NONE
 
         REAL(rkind)       :: VEC2RAD
-
+        REAL(rkind)       :: SSBRL(NUMSIG,NUMDIR), SSLIM(NUMSIG,NUMDIR)
 #ifdef TIMINGS
         REAL(rkind)       :: TIME1, TIME2, TIME3, TIME4, TIME5
         REAL(rkind)       :: TIME6, TIME7, TIME8
@@ -104,7 +104,7 @@
 #ifdef DEBUG
          CALL Print_SumAC2(" After COMPUTE_SOURCES")
 #endif
-         CALL COMPUTE_LIMITER(AC1,AC2)
+         CALL COMPUTE_LIMITER(AC1,AC2,SSBRL,SSLIM)
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER SOURCES ',  SUM(AC2)
@@ -134,7 +134,8 @@
         USE DATAPOOL
         IMPLICIT NONE
 
-        REAL(rkind), SAVE       :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7, TIME8, GTEMP1, GTEMP2
+        REAL(rkind), SAVE  :: TIME1, TIME2, TIME3, TIME4, TIME5, TIME6, TIME7, TIME8, GTEMP1, GTEMP2
+        REAL(rkind)        :: SSBRL(NUMSIG,NUMDIR), SSLIM(NUMSIG,NUMDIR)
 
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE COMPUTE_SEMI_IMPLICIT'
@@ -180,7 +181,7 @@
 #endif
         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL
 
-        CALL COMPUTE_LIMITER(AC1,AC2)
+        CALL COMPUTE_LIMITER(AC1,AC2,SSBRL,SSLIM)
 
 #ifdef TIMINGS
         CALL WAV_MY_WTIME(TIME6)
@@ -209,6 +210,7 @@
         REAL(rkind)       :: TIME1, TIME2, TIME3, TIME4, TIME5
         REAL(rkind)       :: TIME6, TIME7, TIME8
 #endif
+        REAL(rkind)       :: SSBRL(NUMSIG,NUMDIR), SSLIM(NUMSIG,NUMDIR)
 
        IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
          DT4A = MAIN%DELT
@@ -273,7 +275,7 @@
 #ifdef TIMINGS
         CALL WAV_MY_WTIME(TIME5)
 #endif
-        CALL COMPUTE_LIMITER(AC1,AC2)
+        CALL COMPUTE_LIMITER(AC1,AC2,SSBRL,SSLIM)
 
         IF (LNANINFCHK) THEN
           WRITE(DBG%FHNDL,*) 'AFTER LIMITER',  SUM(AC2)
@@ -346,15 +348,15 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_LIMITER(ACOLD,ACNEW)
+      SUBROUTINE COMPUTE_LIMITER(ACOLD,ACNEW,SSBRL,SSLIM)
         USE DATAPOOL
         IMPLICIT NONE
         REAL(rkind), INTENT(IN)  :: ACOLD(NUMSIG,NUMDIR,MNP)
         REAL(rkind), INTENT(OUT) :: ACNEW(NUMSIG,NUMDIR,MNP)
+        REAL(rkind), INTENT(OUT) :: SSBRL(NUMSIG,NUMDIR),SSLIM(NUMSIG,NUMDIR)
 
         REAL(rkind)              :: MAXDAC(NUMSIG)
         REAL(rkind)              :: ACNEWLOC(NUMSIG,NUMDIR),ACOLDLOC(NUMSIG,NUMDIR)
-        REAL(rkind)              :: SSBR(NUMSIG,NUMDIR)
         INTEGER                  :: IP
        
         DO IP = 1, MNP
@@ -362,9 +364,9 @@
           ACNEWLOC = ACNEW(:,:,IP)
           IF (MELIM .EQ. 1) THEN
             CALL GET_MAXDAC(IP,MAXDAC)
-            CALL LIMITER(IP,MAXDAC,ACOLDLOC,ACNEWLOC)
+            CALL LIMITER(IP,MAXDAC,ACOLDLOC,ACNEWLOC,SSLIM)
           ENDIF 
-          IF (LMAXETOT) CALL BREAK_LIMIT(IP,ACNEWLOC,SSBR)
+          IF (LMAXETOT) CALL BREAK_LIMIT(IP,ACNEWLOC,SSBRL)
           ACNEW(:,:,IP) = ACNEWLOC
         ENDDO
 
