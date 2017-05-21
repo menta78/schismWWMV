@@ -173,7 +173,7 @@
  EXPORT_WALV_DELTC       =  0.000000000000000E+000
  /
  &ENGS
- ISOURCE =           1,
+ ISOURCE =           2,
  MESNL   =           1,
  MESIN   =           1,
  IFRIC   =           1,
@@ -264,7 +264,7 @@
  LSIGBOUND       = F,
  LLIMT   = T,
  LIMFAK  =  0.1,
- WW3_STYLE_LIMIT_SRC_TERM = F,
+ LIMIT_SRC_TERM = F,
  LDIFR   = F,
  IDIFFR  = 1,
  LADVTEST        = F,
