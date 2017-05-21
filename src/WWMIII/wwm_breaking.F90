@@ -157,8 +157,8 @@
             WS   = (ALPBJ/PI) * SME
             SbrD = ZERO 
           END IF
-          SURFA0 = SbrD ! positive right hand side 
-          SURFA1 = WS + SbrD ! positive left hand side ... the diagonal is underrelaxed by SbrD
+          SURFA0 = SbrD ! right hand side is positive to balance left hand side underelax by SbrD ! explicit schemes cannot works since this term is positive!!!
+          SURFA1 = - WS + SbrD ! will be inverted in the implicit integration ... 
         ELSE
           SURFA0 = ZERO 
           SURFA1 = ZERO 
