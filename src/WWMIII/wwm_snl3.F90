@@ -22,8 +22,8 @@
       CALL URSELL_NUMBER(HS,SMESPC,DEP(IP),URSELL) 
       IF ( URSELL .le. TRI_ARR(5) ) RETURN
 
-      E  = 0.
-      SA = 0.
+      E  = ZERO
+      SA = ZERO
       ISMAX = TRI_ISP1
 
       DO IS = TRI_ISP1, NUMSIG
@@ -50,7 +50,7 @@
           AUX2 = WN0 * ( c1 + c2 * WN0**2 - c3 * W0**2) ! (m/s² * m + m/s² * m³*1/m² - 1/s² * m²)
           RINT = AUX1 / AUX2
           FT = TRI_ARR(1) * C0 * CG(IS,IP) * RINT**2 * SINBPH
-          SA(IS,ID) = MAX(ZERO, FT*(EM*(EM - 2*E(IS))))
+          SA(IS,ID) = MAX(ZERO, FT*(EM*(EM - 2*E(IS)))) ! Here the max opeartor allows only shift to higher harmonics so it is non-conservative ?!?! Total crap ... must be deleted ...
         END DO
       END DO
 
