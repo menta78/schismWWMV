@@ -746,16 +746,7 @@
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME4)
 #endif
-!
-      IF ((.NOT. WW3_STYLE_LIMIT_SRC_TERM) .and. LLIMT) THEN
-        DO IP = 1, MNP
-          IF (DEP(IP) .GT. DMIN) CALL LIMITER(IP,AC1(:,:,IP),AC2(:,:,IP)) 
-        END DO
-      ELSE
-        DO IP = 1, MNP
-           AC2(:,:,IP) = MAX(ZERO, AC2(:,:,IP))
-        END DO
-      END IF
+      AC2 = MAX(ZERO, AC2) ! Make sure there is no negative energy left ... 
 #ifdef DEBUG
       CALL LOCAL_NODE_PRINT(20506, "After limiter")
 #endif
@@ -810,37 +801,12 @@
         PHI    = PHIA(:,:,IP)
       END IF
 
-      IF (LLIMT .and. WW3_STYLE_LIMIT_SRC_TERM) THEN
-         DELFL  = COFRM4*DT4S
-         DO IS=1,NUMSIG
-            MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
-            IF ((ISOURCE .EQ. 1).or.(ISOURCE .EQ. 2)) THEN
-               IF (ISOURCE .EQ. 1) THEN
-                  eFric=UFRIC(IP)
-               ELSE
-                  eFric=USNEW(IP)
-               END IF
-               IF (eFric .GT. SMALL) THEN
-                  USFM   = eFric*MAX(FMEANWS(IP),FMEAN(IP))
-                  MAXDAC = USFM*DELFL(IS)/PI2/SPSIG(IS)
-               END IF
-            END IF
-            DO ID=1,NUMDIR
-               TheFactor = DT4A / MAX(ONE, ONE - DT4A * DPHIDN(IS,ID))
-               DVS1 = PHI(IS,ID) * TheFactor
-               DVS2 = SIGN(MIN(MAXDAC, ABS(DVS1)), DVS1)
-               ePHI = DVS2 / TheFactor
-               PHI(IS,ID)  = ePHI
-            END DO
-         END DO
-      END IF
-      
       eVal = SI(IP) * DT4A
 
       CALL GET_BLOCAL(IP, ACin1, BLOC)
 !
       BSIDE =     eVal * (PHI - MIN(ZERO,DPHIDN) * Acin2(:,:,IP))
-      DIAG  =   - eVal * MIN(ZERO,DPHIDN)
+      DIAG  =   - eVal * MIN(ZERO,DPHIDN) ! AR: The minus put the DHPIDN on the left side of the equation as diagonal contributions with the right sign ... it inverts the sign ... however this is wrong now for IBREAK = 2 the SWAN stuff 
 !
 #ifdef DEBUG_SOURCE_TERM
       WRITE(*,'(I10,10G20.10,A40)') IP, SUM(ACin1), SUM(ACin2), SUM(PHI), SUM(DPHIDN), SUM(BSIDE), SUM(DIAG), SUM(BLOC), eval, 'GET_BSIDE_DIAG'

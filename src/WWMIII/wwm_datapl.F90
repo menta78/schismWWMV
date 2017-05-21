@@ -172,10 +172,10 @@
 !
 ! WW3 diagonalization 
 !
-         REAL(rkind)                        :: WW3_XP
-         REAL(rkind)                        :: WW3_FACP
-         REAL(rkind), allocatable           :: WW3_SIG(:)
-         LOGICAL                            :: WW3_STYLE_LIMIT_SRC_TERM = .FALSE.
+         REAL(rkind)                        :: LIM_XP
+         REAL(rkind)                        :: LIM_FACP
+         REAL(rkind), allocatable           :: LIM_SIG(:)
+         LOGICAL                            :: LIMIT_SRC_TERM = .FALSE.
 !
 ! Fundamental data types 
 !
@@ -267,7 +267,6 @@
          LOGICAL    :: LSTEA       = .FALSE.
          LOGICAL    :: LQSTEA      = .FALSE.
          LOGICAL    :: LCONV       = .FALSE.
-         LOGICAL    :: LLIMT       = .TRUE.
          LOGICAL    :: LCFL        = .TRUE.
          LOGICAL    :: LCFL_CASD   = .FALSE.
          LOGICAL    :: LWCAP       = .TRUE.
@@ -926,6 +925,7 @@
          INTEGER                :: MESBF   = 1
          INTEGER                :: MESTR   = 0 
          INTEGER                :: MEVEG   = 0
+         INTEGER                :: MELIM   = 1
          INTEGER                :: ICRIT   = 1
          INTEGER                :: IBREAK  = 1
          INTEGER                :: IFRIC   = 1

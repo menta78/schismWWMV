@@ -821,38 +821,6 @@
       FLUSH(STAT%FHNDL)
       AC1 = AC2
       CALL Print_SumAC2("Leaving INITIALIZE_WWM")
-      IF (WW3_STYLE_LIMIT_SRC_TERM) THEN
-        CALL INIT_WAVEWATCHIII_LIMITER
-      END IF
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE INIT_WAVEWATCHIII_LIMITER
-      USE DATAPOOL
-      IMPLICIT NONE
-      ! adapted from the ww3_grid.ftn source code
-      INTEGER IS
-      REAL(rkind) FR1, SIGMA
-      WW3_XP     = 0.15
-      WW3_XP     = MAX ( 1.E-6_rkind , WW3_XP )
-      WW3_FACP   = WW3_XP / PI * 0.62E-3 * PI2**4 / G9**2
-#ifdef DEBUG
-      WRITE(DBG%FHNDL,*) 'WW3_FACP=', WW3_FACP
-#endif
-      allocate(WW3_SIG(0:NUMSIG+1), stat=istat)
-      FR1   = SPSIG(1)/PI2
-      SIGMA   = FR1 * TPI / SFAC**2
-      DO IS=0, NUMSIG+1
-         SIGMA    = SIGMA * SFAC
-         WW3_SIG (IS) = SIGMA
-#ifdef DEBUG
-         WRITE(DBG%FHNDL,*) 'IS=', IS, WW3_SIG(IS)
-#endif
-      END DO
-#ifdef DEBUG
-      FLUSH(DBG%FHNDL)
-#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

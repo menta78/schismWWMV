@@ -2956,15 +2956,13 @@
           DO ID=1,NUMDIR
             WRITE(STAT%FHNDL,*) 'ID=', ID, ' IOBPD=', IOBPD(ID,IP)
           END DO
-          IF (ICOMP .GE. 2) THEN
-            WRITE(STAT%FHNDL,*) 'min/max(PHIA)=', minval(PHIA(:,:,IP)), maxval(PHIA(:,:,IP))
-            WRITE(STAT%FHNDL,*) 'min/max(DPHIDNA)=', minval(DPHIDNA(:,:,IP)), maxval(DPHIDNA(:,:,IP))
-            DO IS=1,NUMSIG
-              DO ID=1,NUMDIR
+          WRITE(STAT%FHNDL,*) 'min/max(PHIA)=', minval(PHIA(:,:,IP)), maxval(PHIA(:,:,IP))
+          WRITE(STAT%FHNDL,*) 'min/max(DPHIDNA)=', minval(DPHIDNA(:,:,IP)), maxval(DPHIDNA(:,:,IP))
+          DO IS=1,NUMSIG
+             DO ID=1,NUMDIR
                 WRITE(STAT%FHNDL,*) 'ID/IS=', ID, IS, ' TR/TD=', PHIA(IS,ID,IP), DPHIDNA(IS,ID,IP)
-              END DO
-            END DO
-          END IF
+             END DO
+          END DO
           WRITE(STAT%FHNDL,*) 'UFRIC=', UFRIC(IP), ' ALPHA_CH=', ALPHA_CH(IP)
           WRITE(STAT%FHNDL,*) 'Z0=', Z0(IP), ' CD=', CD(IP)
           WRITE(STAT%FHNDL,*) 'USTDIR=', USTDIR(IP), ' TAUHF=', TAUHF(IP)
