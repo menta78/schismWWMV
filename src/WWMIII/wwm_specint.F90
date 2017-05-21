@@ -2,27 +2,25 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SEMI_IMPLICIT_INTEGRATION(IP,DT,WALOC)
+      SUBROUTINE SEMI_IMPLICIT_INTEGRATION(IP,DT,ACIN,ACOUT)
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: IP
       REAL(rkind), INTENT(IN) :: DT
-      REAL(rkind), INTENT(INOUT) :: WALOC(NUMSIG,NUMDIR)
+      REAL(rkind), INTENT(IN) :: ACIN(NUMSIG,NUMDIR)
+      REAL(rkind), INTENT(OUT) :: ACOUT(NUMSIG,NUMDIR)
       INTEGER       :: IS, ID
-      REAL(rkind)   :: NEWDAC, SSBR(NUMSIG,NUMDIR)
+      REAL(rkind)   :: NEWDAC, SSBR(NUMSIG,NUMDIR), MAXDAC(NUMSIG)
       REAL(rkind)   :: PHI(NUMSIG,NUMDIR), DPHIDN(NUMSIG,NUMDIR), ACOLD(NUMSIG,NUMDIR)
 
-      ACOLD = WALOC
-      CALL COMPUTE_PHI_DPHI(IP,WALOC,PHI,DPHIDN)
+      CALL COMPUTE_PHI_DPHI(IP,ACIN,PHI,DPHIDN)
       DO IS = 1, NUMSIG
         DO ID = 1, NUMDIR
           NEWDAC = PHI(IS,ID) * DT / (ONE-DT*MIN(ZERO,DPHIDN(IS,ID)))
-          WALOC(IS,ID) = MAX( ZERO, ACOLD(IS,ID) + NEWDAC )
+          ACOUT(IS,ID) = MAX( ZERO, ACIN(IS,ID) + NEWDAC )
         END DO
       END DO
-      CALL POST_INTEGRATION(IP,WALOC)
-      IF (LLIMT) CALL LIMITER(IP,ACOLD,WALOC)
-      IF (LMAXETOT) CALL BREAK_LIMIT(IP,WALOC,SSBR)
+      CALL POST_INTEGRATION(IP,ACOUT)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -182,17 +180,15 @@
 
          IF (SMETHOD .gt. 0) THEN
            DO IP = 1, MNP
+             WALOC = AC2(:,:,IP)
              IF (IOBDP(IP) .GT. 0) THEN ! H .gt. DMIN
                IF (LSOUBOUND .AND. IOBP(IP) .NE. 2) THEN ! CALL ALWAYS 
-                 WALOC = AC2(:,:,IP)
-                 CALL SEMI_IMPLICIT_INTEGRATION(IP,DT4S,WALOC)
-                 AC2(:,:,IP) = WALOC
+                 CALL SEMI_IMPLICIT_INTEGRATION(IP,DT4S,WALOC,WALOC)
                ELSE IF (IOBP(IP) .EQ. 0 .AND. .NOT. LSOUBOUND) THEN ! CALL ONLY FOR NON BOUNDARY POINTS 
-                 WALOC = AC2(:,:,IP)
-                 CALL SEMI_IMPLICIT_INTEGRATION(IP,DT4S,WALOC)
-                 AC2(:,:,IP) = WALOC
+                 CALL SEMI_IMPLICIT_INTEGRATION(IP,DT4S,WALOC,WALOC)
                ENDIF
              ENDIF
+             AC2(:,:,IP) = WALOC
            ENDDO
          ENDIF
       END SUBROUTINE
@@ -208,16 +204,15 @@
          DO IP = 1, MNP
            PHI = ZERO
            DPHIDN = ZERO
+           WALOC = AC2(:,:,IP)
            IF (IOBDP(IP) .GT. 0) THEN ! H .gt. DMIN
              IF (LSOUBOUND  .AND. IOBP(IP) .NE. 2) THEN ! CALL ALWAYS
-               WALOC = AC2(:,:,IP)
                CALL COMPUTE_PHI_DPHI(IP,WALOC,PHI,DPHIDN)
              ELSE IF (IOBP(IP) .EQ. 0 .AND. .NOT. LSOUBOUND) THEN ! CALL ONLY FOR NON BOUNDARY POINTS
-               WALOC = AC2(:,:,IP)
                CALL COMPUTE_PHI_DPHI(IP,WALOC,PHI,DPHIDN)
              ENDIF
            ENDIF 
-           PHIA(:,:,IP)    = PHI
+           PHIA(:,:,IP)    = PHI    ! STORE ...
            DPHIDNA(:,:,IP) = DPHIDN
          ENDDO
 
@@ -228,40 +223,51 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-         SUBROUTINE LIMITER(IP,ACOLD,WALOC)
+         SUBROUTINE GET_MAXDAC(IP,MAXDAC)
+         USE DATAPOOL
+         IMPLICIT NONE
+
+         INTEGER, INTENT(IN)        :: IP
+         INTEGER                    :: IS, ID
+         REAL(rkind), INTENT(OUT)   :: MAXDAC(NUMSIG) 
+         REAL(rkind)                :: DELFL(NUMSIG)
+         REAL(rkind)                :: USFM, PHILMAXDAC
+
+         DELFL  = COFRM4*DT4S
+
+         DO IS = 1, NUMSIG
+           PHILMAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP)) ! Phillips limiter following Komen et al. 
+           IF (ISOURCE .EQ. 1) THEN 
+              USFM   = UFRIC(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+              MAXDAC(IS) = MAX(PHILMAXDAC,USFM*DELFL(IS)/PI2/SPSIG(IS))
+           ELSE IF (ISOURCE .EQ. 2) THEN
+              USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+              MAXDAC(IS) = MAX(PHILMAXDAC,USFM*DELFL(IS)/PI2/SPSIG(IS))
+           ELSE IF (ISOURCE .EQ. 3) THEN
+              MAXDAC(IS) = PHILMAXDAC
+           END IF
+         END DO
+
+         END SUBROUTINE GET_MAXDAC 
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+         SUBROUTINE LIMITER(IP,MAXDAC,ACOLD,WALOC)
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)        :: IP
          INTEGER                    :: IS, ID
          REAL(rkind), INTENT(INOUT) :: WALOC(NUMSIG,NUMDIR)
-         REAL(rkind), INTENT(IN)    :: ACOLD(NUMSIG,NUMDIR)
-         REAL(rkind)                :: NEWDAC, OLDAC, NEWAC, DELT, XIMP, DELFL(NUMSIG)
-         REAL(rkind)                :: MAXDAC, CONST, SND, DELT5, USFM, eFric, PHILMAXDAC
+         REAL(rkind), INTENT(IN)    :: ACOLD(NUMSIG,NUMDIR), MAXDAC(NUMSIG)
+         REAL(rkind)                :: NEWDAC, OLDAC, NEWAC
 
-!         CONST  = PI2**2*3.0*1.0E-7*DT4S*SPSIG(NUMSIG)
-!         SND    = PI2*5.6*1.0E-3
-         DELT   = DT4S
-!         XIMP   = 1._rkind
-!         DELT5  = XIMP*DELT
-         DELFL  = COFRM4*DELT
- 
          DO IS = 1, NUMSIG
-           PHILMAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
-           IF (ISOURCE .EQ. 1) THEN
-              USFM   = UFRIC(IP)*MAX(FMEANWS(IP),FMEAN(IP))
-              MAXDAC = MAX(PHILMAXDAC,USFM*DELFL(IS)/PI2/SPSIG(IS))
-           ELSE IF (ISOURCE .EQ. 2) THEN
-              USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
-              MAXDAC = MAX(PHILMAXDAC,USFM*DELFL(IS)/PI2/SPSIG(IS))
-           ELSE IF (ISOURCE .EQ. 3) THEN
-              MAXDAC = PHILMAXDAC
-           END IF
            DO ID = 1, NUMDIR
              NEWAC  = WALOC(IS,ID)
              OLDAC  = ACOLD(IS,ID)
              NEWDAC = NEWAC - OLDAC
-             NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)), NEWDAC)
+             NEWDAC = SIGN(MIN(MAXDAC(IS),ABS(NEWDAC)), NEWDAC)
              WALOC(IS,ID) = MAX( ZERO, OLDAC + NEWDAC )
            END DO
          END DO
@@ -352,37 +358,6 @@
              ISHALLOW(IP) = 1
            ELSE
              ISHALLOW(IP) = 0
-           END IF
-         END DO
-         END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-         SUBROUTINE BREAK_LIMIT_ALL
-         USE DATAPOOL
-         IMPLICIT NONE
-
-         INTEGER              :: IP
-         REAL(rkind)          :: HS
-         REAL(rkind)          :: EMAX, RATIO, ETOT
-         REAL(rkind)          :: DINTSPEC
-         REAL(rkind)          :: ACLOC(NUMSIG, NUMDIR)
-!      Print *, 'Passing BREAK_LIMIT_ALL'
-         DO IP = 1, MNP
-           ACLOC = AC2(:,:,IP)
-           IF (ISHALLOW(IP) .EQ. 0) CYCLE
-           ETOT = DINTSPEC(IP,ACLOC)
-           HS = 4.*SQRT(ETOT)
-           EMAX = 1./16. * (HMAX(IP))**2
-!        WRITE(300,*) 'IP=', IP, ' HMAX=', HMAX(IP), ' DEP=', DEP(IP)
-!        WRITE(300,*) '   ', IP, ' EMAX=', EMAX, ' ETOT=', ETOT
-!        WRITE(300,*) '   ', IP, ' HS=', HS, ' BRHD=', BRHD
-
-           IF (ETOT .GT. EMAX) THEN
-             if(myrank==0) WRITE(300,*) '   break XP=', XP(IP)
-             RATIO = EMAX/ETOT
-             AC2(:,:,IP) = RATIO * ACLOC(:,:)
-             AC1(:,:,IP) = RATIO * ACLOC(:,:)
            END IF
          END DO
          END SUBROUTINE

@@ -267,7 +267,6 @@
          LOGICAL    :: LSTEA       = .FALSE.
          LOGICAL    :: LQSTEA      = .FALSE.
          LOGICAL    :: LCONV       = .FALSE.
-         LOGICAL    :: LLIMT       = .TRUE.
          LOGICAL    :: LCFL        = .TRUE.
          LOGICAL    :: LCFL_CASD   = .FALSE.
          LOGICAL    :: LWCAP       = .TRUE.

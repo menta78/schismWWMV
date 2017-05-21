@@ -105,6 +105,7 @@
 #ifdef DEBUG
          CALL Print_SumAC2(" After COMPUTE_SOURCES")
 #endif
+         CALL COMPUTE_LIMITER
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER SOURCES ',  SUM(AC2)
@@ -173,14 +174,14 @@
         CALL WAV_MY_WTIME(TIME3)
 #endif
 
-        CALL COMPUTE_SOURCES 
+        IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES 
 
 #ifdef TIMINGS
         CALL WAV_MY_WTIME(TIME5)
 #endif
         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL
 
-        IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche
+        CALL COMPUTE_LIMITER
 
 #ifdef TIMINGS
         CALL WAV_MY_WTIME(TIME6)
@@ -210,19 +211,19 @@
         REAL(rkind)       :: TIME6, TIME7, TIME8
 #endif
 
-        IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
-          DT4A = MAIN%DELT
-          DT4S = DT4A
-          DT4D = DT4A
-          DT4F = DT4A
-        ELSE IF (LQSTEA) THEN
-          DT4A = DT_ITER
-          DT4S = DT4A
-          DT4D = DT4A
-          DT4F = DT4A
-        END IF
+       IF (.NOT. LSTEA .AND. .NOT. LQSTEA) THEN
+         DT4A = MAIN%DELT
+         DT4S = DT4A
+         DT4D = DT4A
+         DT4F = DT4A
+       ELSE IF (LQSTEA) THEN
+         DT4A = DT_ITER
+         DT4S = DT4A
+         DT4D = DT4A
+         DT4F = DT4A
+       END IF
 
-        AC1 = AC2
+       AC1 = AC2
 
        IF (LNANINFCHK) THEN
          WRITE(DBG%FHNDL,*) ' AFTER ENTERING COMPUTE ',  SUM(AC2)
@@ -273,16 +274,10 @@
 #ifdef TIMINGS
         CALL WAV_MY_WTIME(TIME5)
 #endif
+        CALL COMPUTE_LIMITER
 
         IF (LNANINFCHK) THEN
           WRITE(DBG%FHNDL,*) 'AFTER LIMITER',  SUM(AC2)
-          IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 5')
-        ENDIF
-
-        IF (LMAXETOT) CALL BREAK_LIMIT_ALL ! Enforce Miche
-
-        IF (LNANINFCHK) THEN
-          WRITE(DBG%FHNDL,*) 'AFTER BREAK_LIMIT_ALL',  SUM(AC2)
           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 6')
         ENDIF
 
@@ -349,6 +344,27 @@
         FLUSH(STAT%FHNDL)
 
       END SUBROUTINE COMPUTE_SOURCES
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE COMPUTE_LIMITER
+        USE DATAPOOL
+        IMPLICIT NONE
+        INTEGER         :: IP
+        REAL(rkind)     :: MAXDAC(NUMSIG)
+        REAL(rkind)     :: WALOC(NUMSIG,NUMDIR), SSBR(NUMSIG,NUMDIR)
+       
+        DO IP = 1, MNP
+          WALOC = AC2(:,:,IP)
+          IF (MELIM .EQ. 1) THEN
+            CALL GET_MAXDAC(IP,MAXDAC)
+            CALL LIMITER(IP,MAXDAC,WALOC,WALOC)
+          ENDIF
+          IF (LMAXETOT) CALL BREAK_LIMIT(IP,WALOC,SSBR)
+          AC2(:,:,IP) = WALOC
+        ENDDO
+
+      END SUBROUTINE COMPUTE_LIMITER
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************

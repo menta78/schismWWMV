@@ -574,7 +574,7 @@
       FRM5 = ZERO 
       COFRM4 = ZERO
 
-      IF (ISOURCE == 2) THEN
+      IF (ISOURCE == 2) THEN ! AR: I think this is obsolete must check ...
         ALLOCATE(TH(NUMDIR), stat=istat)
         th = zero
         DELTH = PI2/REAL(NUMDIR)
