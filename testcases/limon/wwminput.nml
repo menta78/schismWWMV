@@ -179,7 +179,7 @@
  IFRIC   =           1,
  MESBF   =           0,
  FRICC   =  6.700000000000000E-002,
- MESBR   =           0,
+ MESBR   =           1,
  MEVEG   =           0,
  ICRIT   =           1,
  IBREAK  =           1,
@@ -187,7 +187,7 @@
  BRHD    =  0.730000000000000     ,
  LMAXETOT        = F,
  MESDS   =           0,
- MESTR   =           1,
+ MESTR   =           0,
  TRICO   =   1.00000000000000     ,
  TRIRA   =   2.50000000000000     ,
  TRIURS  =  0.100000000000000     
