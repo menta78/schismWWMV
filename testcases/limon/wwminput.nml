@@ -9,7 +9,7 @@
  LMONO_OUT       = F,
  LMONO_IN        = F,
  BEGTC   = 19980901.000000     ,
- DELTC   =   10.0000000000000     ,
+ DELTC   = 10.0000000000000     ,
  UNITC   = SEC                 ,
  ENDTC   = 19980901.010000     ,
  DMIN    =  1.000000000000000E-004,
@@ -179,7 +179,7 @@
  IFRIC   =           1,
  MESBF   =           1,
  FRICC   =  6.700000000000000E-002,
- MESBR   =           0,
+ MESBR   =           1,
  MEVEG   =           0,
  ICRIT   =           1,
  IBREAK  =           1,
@@ -247,8 +247,8 @@
  FXDSCUT =  0.000000000000000E+000
  /
  &NUMS
- ICOMP   =           3,
- AMETHOD =           7,
+ ICOMP   =           0,
+ AMETHOD =           1,
  SMETHOD =           1,
  DMETHOD =           1,
  IMPL_GEOADVECT  = T,
@@ -263,7 +263,6 @@
  MAXCFLSIG       =   1.00000000000000     ,
  LSIGBOUND       = F,
  LLIMT   = T,
- LIMFAK  =  0.1,
  WW3_STYLE_LIMIT_SRC_TERM        = T,
  LDIFR   = F,
  IDIFFR  =           1,

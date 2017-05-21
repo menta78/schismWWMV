@@ -953,7 +953,6 @@
          REAL(rkind), ALLOCATABLE      :: DISSIPATION(:)
          REAL(rkind), ALLOCATABLE      :: AIRMOMENTUM(:)
 
-         INTEGER                :: MELIM   = 1
          INTEGER                :: IDIFFR  = 1
 !
 !  nonlinear interactions ...

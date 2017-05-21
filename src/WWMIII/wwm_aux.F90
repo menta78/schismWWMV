@@ -1,6 +1,4 @@
 #include "wwm_functions.h"
-#define DEBUG
-#undef DEBUG
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -652,8 +650,6 @@
       SUBROUTINE CHECK_STEADY(TIME, CONV1, CONV2, CONV3, CONV4, CONV5)
         USE DATAPOOL
         IMPLICIT NONE
-!
-!AR: Joseph please check this code ...
 !
         REAL(rkind), INTENT(IN)  :: TIME
         REAL(rkind), INTENT(OUT) :: CONV1, CONV2, CONV3, CONV4, CONV5

@@ -1231,7 +1231,7 @@
                ELSE
                  WALOC = 1.E-8
                END IF
-             ELSE IF (INITSTYLE == 2 .AND. IBOUNDFORMAT == 3) THEN
+             ELSE IF (INITSTYLE == 2 .AND. IBOUNDFORMAT == 2) THEN
                TMPPAR(5,IP) = 2.
                TMPPAR(6,IP) = 1.
                TMPPAR(7,IP) = 0.1
