@@ -74,12 +74,12 @@
       INTEGER :: IS, ID
       REAL(rkind) :: BJALFA, SDBC1, CBJ, TM01, TM02, FMEANloc
 !
-!     *** depth-induced wave breaking term by Battjes and Janssen (1978)
+!     Compute breaking fraction 
 !
       SELECT CASE(ICRIT)
-       CASE(1)
+       CASE(1) ! simple breaking coefficient
          HMAX(IP) = BRHD * DEP(IP)
-       CASE(2) ! Vorschlag Dingemans
+       CASE(2) ! Suggestion of Dingemans 
          IF (KME .GT. VERYSMALL) THEN
            S0    = HS / (PI2/KME) 
            GAMMA_WB  = 0.5_rkind + 0.4_rkind * MyTANH(33._rkind * S0)
@@ -99,9 +99,14 @@
        CASE DEFAULT
          CALL WWM_ABORT('ICRIT HAS A WRONG VALUE')
       END SELECT
-
+!
+!     Transform to monochromatic waves 
+!
       IF (LMONO_IN) HMAX(IP) = HMAX(IP) * SQRT(TWO)
- 
+
+!
+!     Compute beta ratio 
+! 
       IF ( (HMAX(IP) .GT. VERYSMALL) .AND. (ETOT .GT. VERYSMALL) ) THEN
         BETA = SQRT(8. * ETOT / (HMAX(IP)**2) )
         BETA2 = BETA**2
@@ -116,7 +121,7 @@
         QQ = (TWO*BETA-ONE)**2
       END IF
 !
-! 2.b. Iterate to obtain actual breaking fraction
+!     Compute breaking fraction based on the idea of Henrique Alves 
 !
       IF ( BETA .LT. 0.2_rkind ) THEN
         QB     = ZERO
@@ -127,27 +132,38 @@
           QB     = EXP((QB-ONE)/BETA2)
         END DO
       ELSE
-        QB = ONE - 10.E-10
+        QB = ONE - SMALL
       ENDIF
 ! 
       QBLOCAL(IP) = QB
 !
       IF (IBREAK == 1) THEN ! Battjes & Janssen
-        IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
-          IF ( BETA2 .LT. ONE - 10.E-10) THEN
+        IF ( BETA2 .GT. SMALL  .AND. MyABS(BETA2 - QB) .GT. SMALL ) THEN
+          IF ( BETA2 .LT. ONE - SMALL) THEN
+            SURFA0  = - ( ALPBJ / PI) *  QB * SME / BETA2
+          ELSE
+            SURFA0  = - (ALPBJ/PI) * SME
+          END IF
+        ELSE
+          SURFA0 = ZERO
+        END IF
+        SURFA1 = SURFA0 
+      ELSEIF (IBREAK == 2) THEN ! Battjes & Janssen SWAN code works only for implicit since it is linearized and both terms are positive the explanation is given in the SWAN code  
+        IF ( BETA2 .GT. SMALL  .AND. MyABS(BETA2 - QB) .GT. SMALL ) THEN
+          IF ( BETA2 .LT. ONE - SMALL) THEN
             WS   = (ALPBJ / PI) *  QB * SME / BETA2
             SbrD = WS * (ONE - QB) / (BETA2 - QB)
           ELSE
             WS   = (ALPBJ/PI) * SME
             SbrD = ZERO 
           END IF
-          SURFA0 = SbrD
-          SURFA1 = WS + SbrD
+          SURFA0 = SbrD ! positive right hand side 
+          SURFA1 = WS + SbrD ! positive left hand side ... the diagonal is underrelaxed by SbrD
         ELSE
           SURFA0 = ZERO 
           SURFA1 = ZERO 
         END IF
-      ELSEIF (IBREAK == 2) THEN ! Thornton & Guza 1983
+      ELSEIF (IBREAK == 3) THEN ! Thornton & Guza 1983
         COEFF_A = 0.42_rkind
         COEFF_B = 4.0_rkind
         IF ( BETA2 .GT. ZERO ) THEN
@@ -164,7 +180,7 @@
           SURFA0 = ZERO
           SURFA1 = ZERO
         ENDIF
-      ELSEIF (IBREAK == 3) THEN ! WW3 SDBC1 formulation adapting Battjes & Janssen
+      ELSEIF (IBREAK == 4) THEN ! WW3 SDBC1 formulation adapting Battjes & Janssen ! AR: What is this? 
         SDBC1 = 0.25_rkind * BJALFA
         CALL MEAN_PARAMETER_BDCONS(WALOC,HS,TM01,TM02)
         FMEANloc = TWO * PI / TM01
@@ -194,9 +210,11 @@
       END IF
 #endif
 !
+!     Copy Right hand side and diagonal term 
+!
       DO IS = 1, NUMSIG
         DO ID = 1, NUMDIR
-          DSSBR(IS,ID)  = - SURFA1
+          DSSBR(IS,ID)  = SURFA1
           SSBR(IS,ID)   = SURFA0 * WALOC(IS,ID)
         END DO
       END DO 
