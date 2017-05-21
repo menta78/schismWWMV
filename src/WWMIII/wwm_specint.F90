@@ -2,25 +2,25 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SEMI_IMPLICIT_INTEGRATION(IP,DT,ACIN,ACOUT)
+      SUBROUTINE SEMI_IMPLICIT_INTEGRATION(IP,DT,ACOLD,ACNEW)
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: IP
       REAL(rkind), INTENT(IN) :: DT
-      REAL(rkind), INTENT(IN) :: ACIN(NUMSIG,NUMDIR)
-      REAL(rkind), INTENT(OUT) :: ACOUT(NUMSIG,NUMDIR)
+      REAL(rkind), INTENT(IN)  :: ACOLD(NUMSIG,NUMDIR)
+      REAL(rkind), INTENT(OUT) :: ACNEW(NUMSIG,NUMDIR)
       INTEGER       :: IS, ID
       REAL(rkind)   :: NEWDAC, SSBR(NUMSIG,NUMDIR), MAXDAC(NUMSIG)
-      REAL(rkind)   :: PHI(NUMSIG,NUMDIR), DPHIDN(NUMSIG,NUMDIR), ACOLD(NUMSIG,NUMDIR)
+      REAL(rkind)   :: PHI(NUMSIG,NUMDIR), DPHIDN(NUMSIG,NUMDIR)
 
-      CALL COMPUTE_PHI_DPHI(IP,ACIN,PHI,DPHIDN)
+      CALL COMPUTE_PHI_DPHI(IP,ACOLD,PHI,DPHIDN)
       DO IS = 1, NUMSIG
         DO ID = 1, NUMDIR
           NEWDAC = PHI(IS,ID) * DT / (ONE-DT*MIN(ZERO,DPHIDN(IS,ID)))
-          ACOUT(IS,ID) = MAX( ZERO, ACIN(IS,ID) + NEWDAC )
+          ACNEW(IS,ID) = MAX( ZERO, ACOLD(IS,ID) + NEWDAC )
         END DO
       END DO
-      CALL POST_INTEGRATION(IP,ACOUT)
+      CALL POST_INTEGRATION(IP,ACNEW)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -176,21 +176,22 @@
          USE DATAPOOL
          IMPLICIT NONE
          INTEGER :: IP
-         REAL(rkind) :: WALOC(NUMSIG,NUMDIR)
+         REAL(rkind) :: ACOLDLOC(NUMSIG,NUMDIR), ACNEWLOC(NUMSIG,NUMDIR)
 
-         IF (SMETHOD .gt. 0) THEN
-           DO IP = 1, MNP
-             WALOC = AC2(:,:,IP)
-             IF (IOBDP(IP) .GT. 0) THEN ! H .gt. DMIN
-               IF (LSOUBOUND .AND. IOBP(IP) .NE. 2) THEN ! CALL ALWAYS 
-                 CALL SEMI_IMPLICIT_INTEGRATION(IP,DT4S,WALOC,WALOC)
-               ELSE IF (IOBP(IP) .EQ. 0 .AND. .NOT. LSOUBOUND) THEN ! CALL ONLY FOR NON BOUNDARY POINTS 
-                 CALL SEMI_IMPLICIT_INTEGRATION(IP,DT4S,WALOC,WALOC)
-               ENDIF
-             ENDIF
-             AC2(:,:,IP) = WALOC
-           ENDDO
-         ENDIF
+         DO IP = 1, MNP
+           ACOLDLOC = AC2(:,:,IP); ACNEWLOC = ZERO
+           IF (IOBDP(IP) .GT. 0) THEN ! H .gt. DMIN
+             IF (LSOUBOUND .AND. IOBP(IP) .NE. 2) THEN ! CALL ALWAYS 
+               CALL SEMI_IMPLICIT_INTEGRATION(IP,DT4S,ACOLDLOC,ACNEWLOC)
+             ELSE IF (IOBP(IP) .EQ. 0 .AND. .NOT. LSOUBOUND) THEN ! CALL ONLY FOR NON BOUNDARY POINTS 
+               CALL SEMI_IMPLICIT_INTEGRATION(IP,DT4S,ACOLDLOC,ACNEWLOC)
+             ELSE
+               ACNEWLOC = ACOLDLOC
+             ENDIF 
+           ENDIF 
+           AC2(:,:,IP) = ACNEWLOC
+         ENDDO
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -238,8 +239,8 @@
          DO IS = 1, NUMSIG
            PHILMAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP)) ! Phillips limiter following Komen et al. 
            IF (ISOURCE .EQ. 1) THEN 
-              USFM   = UFRIC(IP)*MAX(FMEANWS(IP),FMEAN(IP))
-              MAXDAC(IS) = MAX(PHILMAXDAC,USFM*DELFL(IS)/PI2/SPSIG(IS))
+              USFM   = UFRIC(IP)*MAX(FMEANWS(IP),FMEAN(IP)) ! Limiter from Hersbach & Janssen 
+              MAXDAC(IS) = MAX(PHILMAXDAC,USFM*DELFL(IS)/PI2/SPSIG(IS)) 
            ELSE IF (ISOURCE .EQ. 2) THEN
               USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
               MAXDAC(IS) = MAX(PHILMAXDAC,USFM*DELFL(IS)/PI2/SPSIG(IS))
@@ -252,23 +253,23 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-         SUBROUTINE LIMITER(IP,MAXDAC,ACOLD,WALOC)
+         SUBROUTINE LIMITER(IP,MAXDAC,ACOLD,ACNEW)
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)        :: IP
          INTEGER                    :: IS, ID
-         REAL(rkind), INTENT(INOUT) :: WALOC(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(OUT)   :: ACNEW(NUMSIG,NUMDIR)
          REAL(rkind), INTENT(IN)    :: ACOLD(NUMSIG,NUMDIR), MAXDAC(NUMSIG)
          REAL(rkind)                :: NEWDAC, OLDAC, NEWAC
 
          DO IS = 1, NUMSIG
            DO ID = 1, NUMDIR
-             NEWAC  = WALOC(IS,ID)
+             NEWAC  = ACNEW(IS,ID)
              OLDAC  = ACOLD(IS,ID)
              NEWDAC = NEWAC - OLDAC
              NEWDAC = SIGN(MIN(MAXDAC(IS),ABS(NEWDAC)), NEWDAC)
-             WALOC(IS,ID) = MAX( ZERO, OLDAC + NEWDAC )
+             ACNEW(IS,ID) = MAX( ZERO, OLDAC + NEWDAC )
            END DO
          END DO
 

@@ -99,11 +99,12 @@
 #ifdef DEBUG
          CALL Print_SumAC2("Before COMPUTE_SOURCES")
 #endif
+         AC1 = AC2
          IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES
 #ifdef DEBUG
          CALL Print_SumAC2(" After COMPUTE_SOURCES")
 #endif
-         CALL COMPUTE_LIMITER(AC2,AC2)
+         CALL COMPUTE_LIMITER(AC1,AC2)
 
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER SOURCES ',  SUM(AC2)
@@ -345,25 +346,26 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_LIMITER(ACIN,ACOUT)
+      SUBROUTINE COMPUTE_LIMITER(ACOLD,ACNEW)
         USE DATAPOOL
         IMPLICIT NONE
-        REAL(rkind), INTENT(IN)  :: ACIN(NUMSIG,NUMDIR,MNP)
-        REAL(rkind), INTENT(OUT) :: ACOUT(NUMSIG,NUMDIR,MNP)
+        REAL(rkind), INTENT(IN)  :: ACOLD(NUMSIG,NUMDIR,MNP)
+        REAL(rkind), INTENT(OUT) :: ACNEW(NUMSIG,NUMDIR,MNP)
 
         REAL(rkind)              :: MAXDAC(NUMSIG)
-        REAL(rkind)              :: ALOCIN(NUMSIG,NUMDIR),ALOCOUT(NUMSIG,NUMDIR)
+        REAL(rkind)              :: ACNEWLOC(NUMSIG,NUMDIR),ACOLDLOC(NUMSIG,NUMDIR)
         REAL(rkind)              :: SSBR(NUMSIG,NUMDIR)
         INTEGER                  :: IP
        
         DO IP = 1, MNP
-          ALOCIN = ACIN(:,:,IP)
+          ACOLDLOC = ACOLD(:,:,IP)
+          ACNEWLOC = ACNEW(:,:,IP)
           IF (MELIM .EQ. 1) THEN
             CALL GET_MAXDAC(IP,MAXDAC)
-            CALL LIMITER(IP,MAXDAC,ALOCIN,ALOCOUT)
-          ENDIF
-          IF (LMAXETOT) CALL BREAK_LIMIT(IP,ALOCOUT,SSBR)
-          ACOUT(:,:,IP) = ALOCOUT
+            CALL LIMITER(IP,MAXDAC,ACOLDLOC,ACNEWLOC)
+          ENDIF 
+          IF (LMAXETOT) CALL BREAK_LIMIT(IP,ACNEWLOC,SSBR)
+          ACNEW(:,:,IP) = ACNEWLOC
         ENDDO
 
       END SUBROUTINE COMPUTE_LIMITER
