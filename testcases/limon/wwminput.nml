@@ -262,9 +262,8 @@
  LFILTERSIG      = F,
  MAXCFLSIG       =   1.00000000000000     ,
  LSIGBOUND       = F,
- LLIMT   = T,
+ MELIM   = 1
  LIMFAK  =  0.1,
- LIMIT_SRC_TERM = F,
  LDIFR   = F,
  IDIFFR  = 1,
  LADVTEST        = F,
