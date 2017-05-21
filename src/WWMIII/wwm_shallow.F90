@@ -32,7 +32,9 @@
          IF (MESTR .GT. 0) CALL TRIAD_ELDEBERKY(IP, HS, SME01, WALOC, SSNL3, DSSNL3)
          IF (MESBR .GT. 0) CALL SDS_SWB(IP, SME01, KMWAM, ETOT, HS, WALOC, SSBR, DSSBR)
          IF (MESBF .GT. 0) CALL SDS_BOTF(IP,WALOC,SSBF,DSSBF)
-
+!
+!        All terms are entering the solution with their real signs ... 
+!
          PHI    = PHI    +  SSBR  + SSNL3  + SSBF
          DPHIDN = DPHIDN + DSSBR + DSSNL3 + DSSBF
 
