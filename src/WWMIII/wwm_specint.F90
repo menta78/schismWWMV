@@ -182,14 +182,19 @@
 
          IF (SMETHOD .gt. 0) THEN
            DO IP = 1, MNP
-             IF (IOBDP(IP) .EQ. 1) THEN
-               WALOC = AC2(:,:,IP)
-               CALL SEMI_IMPLICIT_INTEGRATION(IP,DT4S,WALOC)
-               AC2(:,:,IP) = WALOC
+             IF (IOBDP(IP) .GT. 0) THEN ! H .gt. DMIN
+               IF (LSOUBOUND .AND. IOBP(IP) .NE. 2) THEN ! CALL ALWAYS 
+                 WALOC = AC2(:,:,IP)
+                 CALL SEMI_IMPLICIT_INTEGRATION(IP,DT4S,WALOC)
+                 AC2(:,:,IP) = WALOC
+               ELSE IF (IOBP(IP) .EQ. 0 .AND. .NOT. LSOUBOUND) THEN ! CALL ONLY FOR NON BOUNDARY POINTS 
+                 WALOC = AC2(:,:,IP)
+                 CALL SEMI_IMPLICIT_INTEGRATION(IP,DT4S,WALOC)
+                 AC2(:,:,IP) = WALOC
+               ENDIF
              ENDIF
            ENDDO
          ENDIF
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -201,8 +206,17 @@
          REAL(rkind) :: WALOC(NUMSIG,NUMDIR),PHI(NUMSIG,NUMDIR),DPHIDN(NUMSIG,NUMDIR)
 
          DO IP = 1, MNP
-           WALOC = AC2(:,:,IP)
-           CALL COMPUTE_PHI_DPHI(IP,WALOC,PHI,DPHIDN)
+           PHI = ZERO
+           DPHIDN = ZERO
+           IF (IOBDP(IP) .GT. 0) THEN ! H .gt. DMIN
+             IF (LSOUBOUND  .AND. IOBP(IP) .NE. 2) THEN ! CALL ALWAYS
+               WALOC = AC2(:,:,IP)
+               CALL COMPUTE_PHI_DPHI(IP,WALOC,PHI,DPHIDN)
+             ELSE IF (IOBP(IP) .EQ. 0 .AND. .NOT. LSOUBOUND) THEN ! CALL ONLY FOR NON BOUNDARY POINTS
+               WALOC = AC2(:,:,IP)
+               CALL COMPUTE_PHI_DPHI(IP,WALOC,PHI,DPHIDN)
+             ENDIF
+           ENDIF 
            PHIA(:,:,IP)    = PHI
            DPHIDNA(:,:,IP) = DPHIDN
          ENDDO

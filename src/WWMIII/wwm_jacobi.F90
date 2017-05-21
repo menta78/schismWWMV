@@ -747,7 +747,7 @@
       CALL WAV_MY_WTIME(TIME4)
 #endif
 !
-      IF ((.NOT. WW3_STYLE_LIMIT_SRC_TERM) .and. LLIMT) THEN
+      IF ((.NOT. LIMIT_SRC_TERM) .and. LLIMT) THEN
         DO IP = 1, MNP
           IF (DEP(IP) .GT. DMIN) CALL LIMITER(IP,AC1(:,:,IP),AC2(:,:,IP)) 
         END DO
@@ -810,7 +810,7 @@
         PHI    = PHIA(:,:,IP)
       END IF
 
-      IF (LLIMT .and. WW3_STYLE_LIMIT_SRC_TERM) THEN
+      IF (LLIMT .and. LIMIT_SRC_TERM) THEN
          DELFL  = COFRM4*DT4S
          DO IS=1,NUMSIG
             MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))

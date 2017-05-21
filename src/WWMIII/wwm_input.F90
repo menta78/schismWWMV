@@ -753,7 +753,7 @@
      &      IMPL_GEOADVECT,                                             &
      &      LITERSPLIT, LFILTERTH, MAXCFLTH, LTHBOUND, FMETHOD,         &
      &      LFILTERCXY, MAXCFLCXY, LFILTERSIG, MAXCFLSIG, LSIGBOUND,    &
-     &      LLIMT, LIMFAK, WW3_STYLE_LIMIT_SRC_TERM,                    &
+     &      LLIMT, LIMFAK, LIMIT_SRC_TERM,                    &
      &      LDIFR, IDIFFR, LADVTEST, LSOUBOUND, LGSE,                   &
      &      LCFL, LCFL_CASD, RTHETA, LEXPIMP, FREQEXP, LVECTOR,IVECTOR, &
      &      DTMIN_DYN, NDYNITER, DTMIN_SIN, DTMIN_SNL4,                 &

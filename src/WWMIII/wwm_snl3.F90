@@ -39,7 +39,6 @@
       DO ID = 1, NUMDIR
         E = WALOC(:,ID) * PI2 * SPSIG
         DO IS=TRI_ISBEGIN, ISMAX 
-          E0  = E(IS)
           W0  = SPSIG(IS)
           WN0 = WK(IS,IP)
           C0  = W0 / WN0
@@ -51,7 +50,7 @@
           AUX2 = WN0 * ( c1 + c2 * WN0**2 - c3 * W0**2) ! (m/s² * m + m/s² * m³*1/m² - 1/s² * m²)
           RINT = AUX1 / AUX2
           FT = TRI_ARR(1) * C0 * CG(IS,IP) * RINT**2 * SINBPH
-          SA(IS,ID) = MAX(ZERO, FT*(EM*(EM - 2*E0)))
+          SA(IS,ID) = MAX(ZERO, FT*(EM*(EM - 2*E(IS))))
         END DO
       END DO
 

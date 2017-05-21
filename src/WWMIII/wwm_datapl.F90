@@ -172,10 +172,10 @@
 !
 ! WW3 diagonalization 
 !
-         REAL(rkind)                        :: WW3_XP
-         REAL(rkind)                        :: WW3_FACP
-         REAL(rkind), allocatable           :: WW3_SIG(:)
-         LOGICAL                            :: WW3_STYLE_LIMIT_SRC_TERM = .FALSE.
+         REAL(rkind)                        :: LIM_XP
+         REAL(rkind)                        :: LIM_FACP
+         REAL(rkind), allocatable           :: LIM_SIG(:)
+         LOGICAL                            :: LIMIT_SRC_TERM = .FALSE.
 !
 ! Fundamental data types 
 !
