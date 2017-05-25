@@ -456,7 +456,7 @@ module schism_glbl
   real(rkind),save,allocatable :: wwave_force(:,:,:),stokes_vel(:,:,:),jpress(:),sbr(:,:),sbf(:,:)
   real,save,allocatable :: out_wwm(:,:),out_wwm_windpar(:,:)
 !#endif
-  integer,save :: numsig2,numdir2
+  integer,save :: msc2,mdc2
 
 ! TIMOR
 !#ifdef USE_TIMOR
@@ -500,10 +500,6 @@ module schism_glbl
 !...  MFR - Tracer models
       real(rkind),save :: tr_tmp1
 !#endif
-
-  real(rkind),save,allocatable :: s2_daily(:,:,:),dd_daily(:,:,:),zz1_daily(:,:,:),zz2_daily(:,:,:)
-  real(rkind),save,allocatable :: s2_sum(:,:),dd_sum(:,:),zz1_sum(:,:),zz2_sum(:,:)
-  integer,save,allocatable :: srao_step(:,:)
 
 ! IVICA: nws=5,6 option
   real(rkind),save,allocatable     :: cf_a(:),cf_b(:),cf_c(:),cf_d(:),cf_J(:)

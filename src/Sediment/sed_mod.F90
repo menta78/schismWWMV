@@ -144,8 +144,8 @@
        REAL(rkind) :: wet_slope_cr            ! critical slope for wet nods
        REAL(rkind) :: bedmass_threshold       ! threshold for bedmass_filter
        REAL(rkind) :: sed_morph_time          ! active morpology is turned on after sed_morph_time (in days)
-       REAL(rkind) :: depo_scale              !scale for depositional mass in 1 formulation
-       REAL(rkind) :: relath                  !relative height of reference point for calculating the beddeformation    
+!       REAL(rkind) :: depo_scale              !scale for depositional mass in 1 formulation
+!       REAL(rkind) :: relath                  !relative height of reference point for calculating the beddeformation    
 
 !---------------------------------------------Tsinghua group                                           
        REAL(rkind) :: Thero_ustar = 1.d-10    ! used to avoid ustar<0        
