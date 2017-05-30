@@ -15,6 +15,10 @@
 ! the code has served from than as a basis for a 10 year development. In this time the source code was significantly rewritten and 
 ! enhanced with various capabilities. The numerics have been completely revised (Roland, 2008) and parallelized.
 ! The source term package of Ardhuin et al. 2009, 2010 and from ECMWF (courtesy Jean-Bidlot) was implemented in the WWM-III. 
+! The code has served as a basis for a 10 year development. In this time the source code was significantly rewritten and 
+! enhanced with various capabilities. The numerics have been completely revised (Roland, 2008), which lead to the version of WWM-II. 
+! In WWM-III the model was fully parallelized using Domain Decomposition and coupled to SCHISM. Moreover,
+! the source term package of Ardhuin et al. 2009, 2010 and from ECMWF (courtesy Jean-Bidlot) was implemented in the WWM-III. 
 ! The I/O was completely rewritten in NETCDF and various common wind fields can be read such as CFRS, ECMWF, NCEP or others.  
 ! Parallelization is done using the PDLIB decomposition library developed by BGS IT&E GmbH and based on domain decmoposition. 
 ! 
