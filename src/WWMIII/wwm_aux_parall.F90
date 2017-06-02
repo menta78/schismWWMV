@@ -54,6 +54,8 @@
       integer, allocatable :: INDXextent_IE(:)
       integer, allocatable :: IEneighbor_V1(:,:)
       integer, allocatable :: IEmembership(:)
+
+
       allocate(CCON_total(np_total), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('BUILD_TRIANGLE error 1')
       CCON_TOTAL=0

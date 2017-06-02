@@ -218,8 +218,8 @@
       version='description' !not really used
 
 !     Some param. from WWM for schism_msgp
-      call get_param('param.in','numsig2',1,numsig2,tmp,stringvalue)
-      call get_param('param.in','numdir2',1,numdir2,tmp,stringvalue)
+      call get_param('param.in','msc2',1,msc2,tmp,stringvalue)
+      call get_param('param.in','mdc2',1,mdc2,tmp,stringvalue)
 
       call get_param('param.in','ipre',1,ipre,tmp,stringvalue)
       if(nproc>1.and.ipre/=0) call parallel_abort('ipre/=0 is not enabled for nproc>1')
@@ -1689,11 +1689,7 @@
       call icm_init
 #endif 
 #ifdef USE_COSINE
-!ntracers now includes all modules; ntrs(8)=13 is for COSINE
-!      if(ntracers.ne.13) call parallel_abort('main: ntracer not equal to 13 in cosine')
-      allocate(s2_daily(7,nvrt,nea),dd_daily(7,nvrt,nea),zz1_daily(7,nvrt,nea),zz2_daily(7,nvrt,nea), &
-           &s2_sum(nvrt,nea),dd_sum(nvrt,nea),zz1_sum(nvrt,nea),zz2_sum(nvrt,nea),srao_step(nvrt,nea),stat=istat)
-      if(istat/=0) call parallel_abort('MAIN: COSINE allocation failure')
+      call cosine_init
 #endif
 
 !Tsinghua group
@@ -4348,6 +4344,10 @@
       endif ! iSUN=2   !added by YC
 #endif /*USE_ICM*/
 
+#ifdef USE_COSINE
+      call read_cosine_param
+#endif /*USE_COSINE*/
+
 !...  Read initial nudging S,T
 !      if(inu_st==2) then
 !        read(37)floatout
@@ -5378,6 +5378,10 @@
         if(myrank==0) write(16,*)'done ICM hotstart surface T..'
 
 #endif /*USE_ICM*/
+
+#ifdef USE_COSINE
+      call read_cosine_param
+#endif /*USE_COSINE*/
 
 !...    Nudging 
         !Shared variables for inu_tr=2

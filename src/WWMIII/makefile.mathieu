@@ -69,7 +69,7 @@ OBJWWM = wwm_datapl.o wwm_petscpool.o  wwm_petsc_seriell.o wwm_petsc_parallel.o 
        wwm_serv_xnl4v5.o wwm_mod_xnl4v5.o wwm_snl4_wrt.o \
        wwm_wave_setup.o wwm_initio.o wwm_netcdf.o wwm_input.o wwm_grid.o \
        wwm_bdcons_init.o wwm_bdcons.o wwm_bdcons_wam.o wwm_nesting.o wwm_ecmwf_local.o \
-       wwm_specparam.o wwm_windinput.o wwm_dissipation.o wwm_snl3.o wwm_snl4.o wwm_snl4_tsa.o wwm_babanin.o \
+       wwm_specparam.o wwm_windinput.o wwm_snl3.o wwm_snl4.o wwm_snl4_tsa.o \
        wwm_specint.o wwm_nums1d.o wwm_numtheta.o wwm_numsigma.o wwm_fluctsplit.o \
        wwm_ecmwf.o wwm_deep.o wwm_shallow.o wwm_st4.o \
        wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms_pipe.o wwm_coupl_roms_pgmcl.o wwm_jacobi.o wwm_coupl_shyfem.o wwm_coupl_selfe.o wwm_coupl_timor.o wwm_main.o wwm_export_ww3.o

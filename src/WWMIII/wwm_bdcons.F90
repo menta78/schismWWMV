@@ -981,7 +981,7 @@
       LOGICAL                :: DoAllocate
 !      WRITE(STAT%FHNDL, *) 'Begin of INIT_WAVE_BOUNDARY_CONDITION'
 !TODO: Makes sure initial condition work also when no wave boundary is set ...
-      IF (IBOUNDFORMAT == 3) THEN
+      IF (IBOUNDFORMAT == 2) THEN
         IF (LBCSP) THEN ! Spectrum is prescribed
           CALL INIT_BINARY_WW3_SPECTRA
         END IF
@@ -2757,7 +2757,7 @@
       ! next reading the times
       !
       BOUND_NB_TIME=0
-      DO iFile=1,NUMBER_BOUC_NETCDF_FILE
+      DO iFile=1,NUMBER_BOUC_NETCDF_FILE 
         ISTAT = nf90_open(TRIM(BOUC_NETCDF_FILE_NAMES(iFile)), nf90_nowrite, fid)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
 

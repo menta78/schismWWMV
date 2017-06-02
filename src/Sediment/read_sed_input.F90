@@ -73,7 +73,7 @@
 
       !Init. new parameters to make sure they are read in
       ised_bc_bot=-100
-      depo_scale=-100
+      !depo_scale=-100
       ised_dump=-100
       ierosion=-100
 
@@ -189,8 +189,8 @@
           CASE('sed_morph')
             READ(line_str,*) var1, var2, sed_morph
 
-          CASE('depo_scale')
-            READ(line_str,*) var1, var2, depo_scale
+          !CASE('depo_scale')
+          !  READ(line_str,*) var1, var2, depo_scale
 
           CASE('sed_morph_time')
             READ(line_str,*) var1, var2, sed_morph_time !in days
@@ -231,8 +231,8 @@
           CASE('bedmass_threshold')
             READ(line_str,*) var1, var2, bedmass_threshold  
 
-          CASE('relath')
-            READ(line_str,*) var1, var2, relath
+!          CASE('relath')
+!            READ(line_str,*) var1, var2, relath
 
           CASE('ised_dump')
             READ(line_str,*) var1, var2, ised_dump
@@ -270,8 +270,8 @@
 !---------------------
 
 !     Catch unread parameters (for new additions only)
-      if(ised_bc_bot<0.or.depo_scale<0.or.ised_dump<0.or.ierosion<0) then
-        write(errmsg,*)'READ_SED, some pars. not read in:',ised_bc_bot,depo_scale,ised_dump,ierosion
+      if(ised_bc_bot<0.or.ised_dump<0.or.ierosion<0) then
+        write(errmsg,*)'READ_SED, some pars. not read in:',ised_bc_bot,ised_dump,ierosion
         call parallel_abort(errmsg)
       endif 
 

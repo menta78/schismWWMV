@@ -602,14 +602,9 @@
             select case(ised_bc_bot)
               case(1) !Warner
                 !Depositional mass (kg/m/m) in a time step; use
-                !semi-Lagrangian to calculate depo_mss=\int (D-w_s*c) dt
-                !depo_mss=dt*Wsed(ised)*tr_el(indx,kbe(i)+1,i) !>=0; kg/m/m
-
-!                if(itur==5) then !1228
-!                  depo_mss=alphd*dt*Wsed(ised)*tr_el(indx,kbe(i)+1,i)*sum(Phai(kbe(i),ised,elnode(1:i34(i),i)))/i34(i)
-!                else
+                !semi-Lagrangian to calculate depo_mss=\int w_s*c^* dt
                 cff=ze(nvrt,i)-ze(kbe(i),i) !total depth
-                cff1=ze(kbe(i)+1,i)-ze(kbe(i),i) !bottom depth
+                cff1=ze(kbe(i)+1,i)-ze(kbe(i),i) !bottom cell thickness
 
                 if(cff1.LE.0.d0) then
                   WRITE(errmsg,*)'SED, wrong bottom layer0:',cff,ze(kbe(i)+1,i),ze(kbe(i),i)
@@ -617,61 +612,53 @@
                 endif
 
                 !Limit ratio between reference depth and bottom depth
-                ta=min(0.5d0,relath*cff/cff1) !usually the relath is 0.01; for natural river, it should be even smaller
+                !ta=min(0.5d0,relath*cff/cff1) !usually the relath is 0.01; for natural river, it should be even smaller
 
-                aref=ta*we(kbe(i)+1,i) !w-vel. at ref. height                
-                if(aref>=Wsed(ised)) then !no depos.
-                  depo_mss=0
-                else !ta*we(kbe(i)+1,i)<Wsed(ised)
-                  !Estimate the starting pt
-                  cff9=ze(kbe(i),i)+(Wsed(ised)-aref)*dt !>ze(kbe(i),i); foot of char.
-                  Ksed=nvrt+1 !init. for abnormal case
-                  do k=kbe(i)+1,nvrt
-                    if(cff9<=(ze(k,i)+ze(k-1,i))/2) then
-                      Ksed=k
-                      exit
-                    endif
-                  enddo !k
+                !aref=ta*we(kbe(i)+1,i) !w-vel. at ref. height                
+                !Estimate the starting pt
+                cff8=(ze(kbe(i)+1,i)+ze(kbe(i),i))/2 !bottom half cell -starting pt of ELM
+                cff9=cff8+Wsed(ised)*dt !>cff8; foot of char.
+                if(cff9<=cff8) call parallel_abort('SED: (9)')
+                Ksed=nvrt+1 !init. for abnormal case
+                do k=kbe(i)+2,nvrt
+                  if(cff9<=(ze(k,i)+ze(k-1,i))/2) then
+                    Ksed=k
+                    exit
+                  endif
+                enddo !k
 
-                  !Deal with half bottom layer 1st 
-                  cff8=(ze(kbe(i)+1,i)+ze(kbe(i),i))/2
-                  depo_mss=(min(cff9,cff8)-ze(kbe(i),i))*tr_el(indx,kbe(i)+1,i)
-                  do k=kbe(i)+2,min(nvrt,Ksed)
-                    cff7=(ze(k-2,i)+ze(k-1,i))/2
-                    cff8=(ze(k,i)+ze(k-1,i))/2
-                    if(cff9<cff7) then
-                      WRITE(errmsg,*)'SED, wrong cff9:',cff9,cff7,ielg(i),ised,k
+                depo_mss=0 !(min(cff9,cff8)-ze(kbe(i),i))*tr_el(indx,kbe(i)+1,i)
+                do k=kbe(i)+2,min(nvrt,Ksed)
+                  cff7=(ze(k-2,i)+ze(k-1,i))/2
+                  cff8=(ze(k,i)+ze(k-1,i))/2
+                  if(cff9<cff7) then
+                    WRITE(errmsg,*)'SED, wrong cff9:',cff9,cff7,ielg(i),ised,k
+                    CALL parallel_abort(errmsg)
+                  endif
+
+                  if(cff9<cff8) then
+                    cff5=(cff9-cff7)/(cff8-cff7) !ratio
+                    if(cff5<0.or.cff5>1) then
+                      WRITE(errmsg,*)'SED, wrong ratio:',cff5,ielg(i),ised,k 
                       CALL parallel_abort(errmsg)
                     endif
-
-                    if(cff9<cff8) then
-                      cff5=(cff9-cff7)/(cff8-cff7) !ratio
-                      if(cff5<0.or.cff5>1) then
-                        WRITE(errmsg,*)'SED, wrong ratio:',cff5,ielg(i),ised,k 
-                        CALL parallel_abort(errmsg)
-                      endif
-                      cff6=(1-cff5)*tr_el(indx,k-1,i)+cff5*tr_el(indx,k,i)
-                    else
-                      cff6=tr_el(indx,k,i)
-                    endif
-
-                    depo_mss=depo_mss+(cff6+tr_el(indx,k-1,i))/2*(min(cff9,cff8)-cff7) !>=0
-                    !depo_mss=depo_mss+cff6*(min(cff9,cff8)-cff7) !>=0 (lower depos. flux)
-                  enddo !k
-
-                  !Deal with above F.S. case
-                  if(Ksed==nvrt+1) then
-                    cff7=(ze(nvrt,i)+ze(nvrt-1,i))/2
-                    depo_mss=depo_mss+(min(ze(nvrt,i),cff9)-cff7)*tr_el(indx,nvrt,i)
+                    cff6=(1-cff5)*tr_el(indx,k-1,i)+cff5*tr_el(indx,k,i) !conc @upper layer
+                  else
+                    cff6=tr_el(indx,k,i)
                   endif
-                endif !we(kbe(i)+1,i) <> Wsed(ised)
 
-                !Debug
-                !depo_mss=0
+                  depo_mss=depo_mss+(cff6+tr_el(indx,k-1,i))/2*(min(cff9,cff8)-cff7) !>=0
+                  !depo_mss=depo_mss+cff6*(min(cff9,cff8)-cff7) !>=0 (lower depos. flux)
+                enddo !k
+
+                !Deal with above F.S. case
+                if(Ksed==nvrt+1) then
+                  cff7=(ze(nvrt,i)+ze(nvrt-1,i))/2
+                  depo_mss=depo_mss+(min(ze(nvrt,i),cff9)-cff7)*tr_el(indx,nvrt,i)
+                endif
 
                 !Apply a scale to depo_mss
-                depo_mss=depo_mss*depo_scale
-!                endif !itur==5
+                !depo_mss=depo_mss*depo_scale
 
 ! - Compute erosion, eros_mss (kg/m/m) following 
 !  (original erosion flux is in kg/m/m/s; note dt below)
@@ -694,8 +681,17 @@
                   eros_mss=MAX(0.0d0,cff1*dt*eros_mss) !kg/m/m
                 else
                   CALL parallel_abort('SED3D: unknown erosion formula')
-                endif
+                endif !ierosion
                 eros_mss=MIN(eros_mss,MIN(Srho(ised)*cff1*bottom(i,iactv),bed_mass(top,i,nnew,ised))+depo_mss) !>=0
+
+!...            Save erosion and depo. fluxes [kg/m/m/s] for b.c. of transport eq.
+!               This should not be scaled by morph_fac, b/cos both mass
+!               and dt are multiplied by same factor
+                flux_eros=eros_mss/dt !>=0
+                !flux_depo=depo_mss/dt
+
+!...            Update flx_bt for transport solver
+                flx_bt(indx,i)=-flux_eros ![kg/m/m/s]
 
                 IF (sed_morph>=1) THEN
 ! - Apply morphology factor to flux and settling...
@@ -731,13 +727,6 @@
                 ENDDO
                 !bed_mass(top,i,nnew,ised)=MAX(bed_mass(top,i,nnew,ised),0.0d0) 
 
-!...            Save erosion and depo. fluxes [kg/m/m/s] for b.c. of transport eq.
-                flux_eros=eros_mss/dt !>=0
-                !flux_depo=depo_mss/dt
-
-!...            Update flx_bt for transport solver
-                flx_bt(indx,i)=-flux_eros ![kg/m/m/s]
-
               case(2) !Tsinghua Univ. group
                 !Xiaonan's addition here
                 !Calculate flx_bt=D-E-w_s*T_{kbe+1}, and several other variables (e.g. bed_mass)
@@ -754,6 +743,16 @@
                 endif !itur
 !Tsinghua group---------------------------------------------------
                 eros_mss=MIN(eros_mss,MIN(Srho(ised)*cff1*bottom(i,iactv),bed_mass(top,i,nnew,ised))+depo_mss) !>=0
+
+                !Save erosion and depo. fluxes [kg/m/m/s] for b.c. of transport eq.
+                flux_eros= eros_mss/dt !>=0
+                !Update flx_bt for transport solver
+                flx_bt(indx,i)=-flux_eros ![kg/m/m/s]
+
+                if(flx_bt(indx,i)/=flx_bt(indx,i)) then
+                  WRITE(errmsg,*)'flx_bt: has nan; ',indx,ielg(i),eros_mss,depo_mss,sedcaty(i,ised)
+                  CALL parallel_abort(errmsg)
+                endif
 
                 IF (sed_morph>=1) THEN
                   ! - Apply morphology factor to flux and settling...
@@ -788,16 +787,6 @@
                   endif
                 ENDDO
                 !bed_mass(top,i,nnew,ised)=MAX(bed_mass(top,i,nnew,ised),0.0d0) 
-
-                !Save erosion and depo. fluxes [kg/m/m/s] for b.c. of transport eq.
-                flux_eros= eros_mss/dt !>=0
-                !Update flx_bt for transport solver
-                flx_bt(indx,i)=-flux_eros ![kg/m/m/s]
-
-                if(flx_bt(indx,i)/=flx_bt(indx,i)) then
-                  WRITE(errmsg,*)'flx_bt: has nan; ',indx,ielg(i),eros_mss,depo_mss,sedcaty(i,ised)
-                  CALL parallel_abort(errmsg)
-                endif
 
               case default
                 call parallel_abort('SED: unknown ised_bc_bot')

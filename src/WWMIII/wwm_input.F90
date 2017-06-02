@@ -746,14 +746,14 @@
      &      EXPORT_WALV_DELTC
 
          NAMELIST /ENGS/ ISOURCE, MESNL, MESIN, IFRIC, MESBF, FRICC,    &
-     &      MESBR, MEVEG, ICRIT, IBREAK, ALPBJ, BRHD,                   &
+     &      MESBR, MEVEG, ICRIT, IBREAK, ALPBJ, BRHD,            &
      &      LMAXETOT, MESDS, MESTR, TRICO, TRIRA, TRIURS
 
          NAMELIST /NUMS/ ICOMP, AMETHOD, SMETHOD, DMETHOD,              &
      &      IMPL_GEOADVECT,                                             &
      &      LITERSPLIT, LFILTERTH, MAXCFLTH, LTHBOUND, FMETHOD,         &
      &      LFILTERCXY, MAXCFLCXY, LFILTERSIG, MAXCFLSIG, LSIGBOUND,    &
-     &      LLIMT, LIMFAK, WW3_STYLE_LIMIT_SRC_TERM,                    &
+     &      MELIM, LIMFAK, &
      &      LDIFR, IDIFFR, LADVTEST, LSOUBOUND, LGSE,                   &
      &      LCFL, LCFL_CASD, RTHETA, LEXPIMP, FREQEXP, LVECTOR,IVECTOR, &
      &      DTMIN_DYN, NDYNITER, DTMIN_SIN, DTMIN_SNL4,                 &
@@ -1418,8 +1418,8 @@
              call wwm_abort('CHECK NUMS - MESDS OUT OF RANGE')
            END IF
 
-           IF (MESNL .GT. 0 .AND. .NOT. LLIMT ) THEN
-!AR: this will be a warning ...
+           IF (MESNL .GT. 0 .AND. MELIM .EQ. 0 ) THEN
+             WRITE(*,*) 'WARNING:', 'YOU ARE USING SNL WITHOUT LIMITER'
              !call wwm_abort('YOU ARE USING SNL WITHOUT LIMITER CODE WILL STOP NOW')
            END IF
 
@@ -1432,7 +1432,7 @@
            MESTR = 0
            MESBR = 0
            MESBF = 0
-           LLIMT = .FALSE.
+           MELIM = 0
 
          END IF
 
@@ -1480,13 +1480,13 @@
          END IF
 #endif
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SWTICHES FOR THE LIMTER'
-         WRITE(STAT%FHNDL,*) 'LLIMT', LLIMT
          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ACTIVATED SOURCE TERMS'
          WRITE(STAT%FHNDL,*) 'MESIN', MESIN
          WRITE(STAT%FHNDL,*) 'MESNL', MESNL
          WRITE(STAT%FHNDL,*) 'MESBR', MESBR
          WRITE(STAT%FHNDL,*) 'MESDS', MESDS
          WRITE(STAT%FHNDL,*) 'MESTR', MESTR
+         WRITE(STAT%FHNDL,*) 'MELIM', MELIM
 
          IF (LSEWD .AND. LSTWD) THEN
            WRITE(DBG%FHNDL,*) 'YOU MUST USE EITHER UNSTEADY OR STEADY WIND'

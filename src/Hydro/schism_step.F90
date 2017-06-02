@@ -552,12 +552,12 @@
       endif !nws>=2
 
 !...  Re-scale wind
-      if(nws>0.and.iwindoff/=0) then
+      if(nws>0) then; if(iwindoff/=0) then
         do i=1,npa
           windx(i)=windx(i)*windfactor(i)
           windy(i)=windy(i)*windfactor(i)
         enddo !i
-      endif
+      endif; endif
 
 #ifdef USE_ICM
 ! calculating WMS used for reareation,added by wangzg
@@ -648,16 +648,16 @@
         if(sum1/=sum1.or.sum2/=sum2.or.sum3/=sum3) then
           if(sum1/=sum1) then
             do i=1,9
-              !write(*,*)'sum1:',i,sum(out_wwm_windpar(:,i))
+              write(12,*)'sum1:',i,sum(out_wwm_windpar(:,i))
             end do
           endif
           if(sum3/=sum3) then
             do i=1,31 
               sum4=sum(out_wwm(:,i))
-              !write(*,*)'sum4:',i,sum4
+              write(12,*)'sum4:',i,sum4
               if(sum4/=sum4) then
                 do j=1,npa
-                  !write(*,*)i,j,out_wwm(j,i)
+                  write(12,*)i,j,out_wwm(j,i)
                 enddo !j
               endif
             enddo !i
@@ -1773,7 +1773,7 @@
       if(nchi==1) then 
 #ifdef USE_SED
         !Roughness predictor
-        if(bedforms_rough.GE.1) THEN
+        if(bedforms_rough>=1) THEN
           IF(myrank==0) WRITE(16,*)'start sed_roughness'
           CALL sed_roughness
           IF(myrank==0) WRITE(16,*)'done sed_roughness'
@@ -6174,15 +6174,8 @@
 
           !Save flux_adv_vface for transport - not working for bed deformation
           !Add (const) settling vel for each tracer, which does not upset volume balance
-
-!Tsinghua group--------------------------------
-!HH: settling vel cannot be function of z
-!          if(Two_phase_mix==1) then !1120:close
-!            flux_adv_vface(l,1:ntracers,i)=bflux*area_e(l)-phai_m(l,1:ntracers,i)* &
-!       &wsett(1:ntracers)*area(i)
-!          else
           flux_adv_vface(l,1:ntracers,i)=bflux*area_e(l)-wsett(1:ntracers)*area(i)
-!          endif                                   
+
 !Tsinghua group--------------------------------
 !1007
 #ifdef USE_SED
@@ -6195,15 +6188,9 @@
 
           !Add surface value as well
           if(l==nvrt-1) then
-!Tsinghua group-------------------------------
-!            if(Two_phase_mix==1) then !1120:close
-!              flux_adv_vface(l+1,1:ntracers,i)=(ubar1*sne(1,l+1)+vbar1*sne(2,l+1)+ &
-!       &we(l+1,i)*sne(3,l+1))*area_e(l+1)-phai_m(l+1,1:ntracers,i)* &
-!       &wsett(1:ntracers)*area(i)
-!            else
             flux_adv_vface(l+1,1:ntracers,i)=(ubar1*sne(1,l+1)+vbar1*sne(2,l+1)+ &
        &we(l+1,i)*sne(3,l+1))*area_e(l+1)-wsett(1:ntracers)*area(i)
-!            endif
+
 !Tsinghua group-------------------------------
 !1007
 #ifdef USE_SED
@@ -6640,7 +6627,7 @@
 !$OMP end parallel
 
         !updated bdry_frc, flx_bt, flx_sf
-        call cosine(windx,windy,time,itmp1,itmp2)
+        call cosine(it)
         if(myrank==0) write(16,*) 'Done cosine sources and sinks terms (0)'
 !'
 #endif /*USE_COSINE*/

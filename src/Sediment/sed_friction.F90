@@ -587,7 +587,7 @@
         !  CALL parallel_abort(errmsg)
         !ENDIF
         !Limit z0
-        z0=min(z0,dzb_min*1.d-2)
+        z0=min(z0,dzb_min*1.d-1)
 
         bottom(i,izcr)  = z0cr  ! Current ripple roughness length (m)
         bottom(i,izsw)  = z0sw  ! Sand waves roughness length (m)
@@ -598,10 +598,10 @@
 !---------------------------------------------------------------------
 ! ** Applying total roughness length to element for sediment transport
 !---------------------------------------------------------------------
-        IF(bedforms_rough.EQ.1) THEN
+        IF(bedforms_rough==1) THEN
           ! Application of nikuradse roughness length
           Zob(i) = z0s
-        ELSEIF(bedforms_rough.EQ.2)THEN
+        ELSE IF(bedforms_rough==2)THEN
           ! Application of total bedforms roughness length
           Zob(i) = z0
         ENDIF
