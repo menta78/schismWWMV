@@ -1188,7 +1188,7 @@
           ASPAR_DIAG = ASPAR_DIAG + DIAG
           eSum = eSum + BSIDE
         END IF
-        eSum=eSum - NEG_P
+        eSum = eSum - NEG_P
       ELSE IF (ASPAR_LOCAL_LEVEL .eq. 5) THEN
         CALL NEGATIVE_PART_C(JDX, IP, NEG_P, ASPAR_DIAG)
         IF (SOURCE_IMPL) THEN

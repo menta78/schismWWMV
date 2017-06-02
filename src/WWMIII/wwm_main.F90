@@ -21,22 +21,23 @@
 ! Developers:
 ! Lead:
 !
-!   Aron Roland (IT&E, Frankfurt, BGS IT&E, Hannover),
+!   Aron Roland (Roland & Partner, Darmstadt),
 !   Tai-Wen Hsu (NTOU, Taiwan) 
 !   Jian-Ming Liau (XXXX, Taiwan)
 !   Mathieu Dutour Sikiric (IRB, Zagreb),
-!   Yinglong Joseph Zhang (VIMS),
+!   Yinglong Joseph Zhang (VIMS, USA),
 !
 ! Contributors:
 !
-!   Christian Ferrarin (ISMAR-CNR),
-!   Fabrice Ardhuin (IFREMER),
-!   Thomas Huxhorn (BGS IT&E),
-!   Andrea Fortunato (LNEC),
-!   Guillaume Dodet (IFREMER),
-!   Kai Li (LNEC)
+!   Christian Ferrarin (ISMAR-CNR, Venice, Italy),
+!   Fabrice Ardhuin (IFREMER, Brest, France),
+!   Thomas Huxhorn (BGS IT&E, Darmstadt, Germany),
+!   Andrea Fortunato (LNEC, Lissabon, Portugal),
+!   Guillaume Dodet (IFREMER, Brest, France),
+!   Kai Li (XXX), 
+!   Jean Bidlot (ECMWF, Reading, U.K.)
 !				
-! Copyright: 2008 - 2014 (Aron Roland)
+! Copyright: 2008 - 2014 (Aron Roland, Jian-Ming Liau, Tai-Wen Hsu, Ulrich Zanke)
 ! All Rights Reserved                                     
 !
 ! http://www.apache.org/licenses/LICENSE-2.0
