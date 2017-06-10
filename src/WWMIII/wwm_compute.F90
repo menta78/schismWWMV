@@ -267,6 +267,8 @@
           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 4')
         ENDIF
 
+        IF (LMAXETOT) CALL BREAKING_LIMITER_GLOBAL(AC1,AC2)
+
 #ifdef TIMINGS
         CALL WAV_MY_WTIME(TIME5)
 #endif
@@ -358,7 +360,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE BREAKING_LIMITER_GLOBAL(ACOLD,ACNEW,SSBRL)
+      SUBROUTINE BREAKING_LIMITER_GLOBAL(ACOLD,ACNEW)
         USE DATAPOOL
         IMPLICIT NONE
         REAL(rkind), INTENT(IN)  :: ACOLD(NUMSIG,NUMDIR,MNP)

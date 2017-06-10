@@ -626,7 +626,7 @@
             END IF
           END IF
 
-          IF (.true.) THEN
+          IF (test) THEN
 !            WRITE(STAT%FHNDL,*) 'IP=', IP
             NumberIterationSolver(IP) = NumberIterationSolver(IP) + 1
             CALL SINGLE_VERTEX_COMPUTATION(JDX, WALOC, eSum, ASPAR_DIAG)
@@ -634,16 +634,12 @@
             sumESUM = sumESUM + sum(abs(eSum))
 #endif
             eSum=eSum/ASPAR_DIAG
+
             IF (MELIM .EQ. 1) THEN
-              !CALL GET_MAXDAC(IP,MAXDAC)
-              !CALL ACTION_LIMITER_LOCAL(MAXDAC,waloc,eSum,SSLIM)
-               CALL ACTION_LIMITER_LOCAL2(ip,waloc,eSum)
-               IF (IP == 4) THEN
-                 WRITE(*,*) SUM(waloc), SUM(eSum)
-                 PAUSE
-               ENDIF
+              CALL GET_MAXDAC(IP,MAXDAC)
+              CALL ACTION_LIMITER_LOCAL(MAXDAC,AC1(:,:,IP),ESUM,SSLIM,.true.)
             ENDIF
-            !IF (LMAXETOT) CALL BREAKING_LIMITER_LOCAL(ip,eSum,eSum,SSBRL)
+            IF (LMAXETOT) CALL BREAKING_LIMITER_LOCAL(IP,ESUM,ESUM,SSBRL)
 
             IF (BLOCK_GAUSS_SEIDEL) THEN
               AC2(:,:,IP)=eSum
@@ -678,9 +674,6 @@
               is_converged(1) = is_converged(1) + 1
             END IF
           END IF!test
-!
-!          CALL POST_INTEGRATION(IP, WALOC)
-! 
         END DO!IP
 #ifdef DEBUG
         WRITE(STAT%FHNDL,*) 'sumESUM=', sumESUM

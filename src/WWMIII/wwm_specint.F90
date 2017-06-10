@@ -219,6 +219,18 @@
                CALL COMPUTE_PHI_DPHI(IP,WALOC,PHI,DPHIDN)
              ENDIF
            ENDIF 
+           DO IS = 1, NUMSIG
+             DO ID = 1, NUMDIR
+               NEWDAC = PHI(IS,ID) * DT / (ONE-DT*MIN(ZERO,DPHIDN(IS,ID)))
+               ACNEW(IS,ID) = MAX( ZERO, ACOLD(IS,ID) + NEWDAC )
+             END DO
+           END DO
+
+           IF (MELIM .EQ. 2) THEN
+             CALL GET_MAXDAC(IP,MAXDAC)
+             
+           ENDIF
+           IF (LMAXETOT) CALL BREAKING_LIMITER_LOCAL(IP,ACOLDLOC,ACNEWLOC,SSBRL)
            PHIA(:,:,IP)    = PHI    ! STORE ...
            DPHIDNA(:,:,IP) = DPHIDN
          ENDDO
@@ -243,15 +255,15 @@
          DELFL  = COFRM4*DT4S
 
          DO IS = 1, NUMSIG
-           PHILMAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP)) ! Phillips limiter following Komen et al. 
+           PHILMAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)*WK(IS,IP)*WK(IS,IP)*CG(IS,IP)) ! Phillips limiter following Komen et al. 
            IF (ISOURCE .EQ. 1) THEN 
-              !USFM   = UFRIC(IP)*MAX(FMEANWS(IP),FMEAN(IP)) ! Limiter from Hersbach & Janssen 
-              !MAXDAC(IS) = MAX(PHILMAXDAC,USFM*DELFL(IS)/PI2/SPSIG(IS)) 
-             MAXDAC(IS) = PHILMAXDAC
+             USFM   = UFRIC(IP)*MAX(FMEANWS(IP),FMEAN(IP)) ! Limiter from Hersbach & Janssen 
+             MAXDAC(IS) = MAX(PHILMAXDAC,USFM*DELFL(IS)/PI2/SPSIG(IS)) 
+             !MAXDAC(IS) = PHILMAXDAC
            ELSE IF (ISOURCE .EQ. 2) THEN
-              !USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
-              !MAXDAC(IS) = MAX(PHILMAXDAC,USFM*DELFL(IS)/PI2/SPSIG(IS))
-             MAXDAC(IS) = PHILMAXDAC
+             USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+             MAXDAC(IS) = MAX(PHILMAXDAC,USFM*DELFL(IS)/PI2/SPSIG(IS))
+             !MAXDAC(IS) = PHILMAXDAC
            ELSE IF (ISOURCE .EQ. 3) THEN
               MAXDAC(IS) = PHILMAXDAC
            END IF
@@ -266,72 +278,26 @@
          IMPLICIT NONE
 
          INTEGER                    :: IS, ID
-         REAL(rkind), INTENT(OUT)   :: WANEW(NUMSIG,NUMDIR), SSLIM(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(INOUT) :: WANEW(NUMSIG,NUMDIR), SSLIM(NUMSIG,NUMDIR)
          REAL(rkind), INTENT(IN)    :: WAOLD(NUMSIG,NUMDIR), MAXDAC(NUMSIG)
          REAL(rkind)                :: NEWDAC, OLDAC, NEWAC, NEWDACL
 
-         DO IS = 1, NUMSIG
-           DO ID = 1, NUMDIR
-             NEWAC   = WANEW(IS,ID)
-             OLDAC   = WAOLD(IS,ID)
-             NEWDAC  = NEWAC - OLDAC
-             NEWDACL = SIGN(MIN(MAXDAC(IS),ABS(NEWDAC)),NEWDAC)
-             SSLIM(IS,ID) = NEWDAC - NEWDACL
-             WANEW(IS,ID) = MAX( ZERO, OLDAC + NEWDACL )
+!         WRITE(*,*) 'BEFORE', SUM(WAOLD), SUM(WANEW), SUM(WAOLD)-SUM(WANEW)
+
+         DO ID = 1, NUMDIR
+           DO IS = 1, NUMSIG
+             NEWAC  = WANEW(IS,ID)
+             OLDAC  = WAOLD(IS,ID)
+             NEWDAC = NEWAC - OLDAC
+             !IF (OLDAC .GT. 0. .or. NEWAC .gt. 0) WRITE(*,*) IS, ID, OLDAC, NEWAC, NEWDAC, MAXDAC(IS)
+             NEWDAC = SIGN(MIN(MAXDAC(IS),ABS(NEWDAC)),NEWDAC)
+             WANEW(IS,ID) = OLDAC + NEWDAC 
            END DO
          END DO
+
+!         WRITE(*,*) 'AFTER', SUM(WAOLD), SUM(WANEW), SUM(WAOLD)-SUM(WANEW)
 
          END SUBROUTINE ACTION_LIMITER_LOCAL
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-         SUBROUTINE ACTION_LIMITER_LOCAL2(IP,ACLOC,ACOLD)
-         USE DATAPOOL
-         IMPLICIT NONE
-
-         INTEGER, INTENT(IN)        :: IP
-         INTEGER                    :: IS, ID
-         REAL(rkind), INTENT(INOUT) :: ACLOC(NUMSIG,NUMDIR)
-         REAL(rkind), INTENT(IN)    :: ACOLD(NUMSIG,NUMDIR)
-         REAL(rkind)                :: NEWDAC, OLDAC, NEWAC, DELT, XIMP, DELFL(NUMSIG)
-         REAL(rkind)                :: MAXDAC, CONST, SND, UFR_LIM, DELT5, USFM
-         REAL(rkind)                :: MAXDACOLD
-
-         CONST = PI2**2*3.0*1.0E-7*DT4S*SPSIG(NUMSIG)
-         SND   = PI2*5.6*1.0E-3
-
-         DELT = DT4S
-         XIMP = 1._rkind
-         DELT5 = XIMP*DELT
-         DELFL= COFRM4*DELT
-         MAXDAC = ZERO
-
-         DO IS = 1, NUMSIG
-
-           IF (MELIM .EQ. 1) THEN
-             MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
-           ELSE IF (MELIM .EQ. 2) THEN
-             UFR_LIM = MAX(UFRIC(IP),G9*SND/SPSIG(IS))
-             MAXDAC  = LIMFAK*ABS((CONST*UFR_LIM)/(SPSIG(IS)**3*WK(IS,IP)))
-           ELSE IF (MELIM .EQ. 3) THEN
-             IF (USNEW(IP) .GT. SMALL) THEN
-               MAXDAC = COFRM4(IS)*USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))/PI2/SPSIG(IS)*DT4A
-             ELSE
-               MAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)**3*CG(IS,IP))
-             ENDIF
-           END IF
-
-           DO ID = 1, NUMDIR
-             NEWAC  = ACLOC(IS,ID)
-             OLDAC  = ACOLD(IS,ID)
-             NEWDAC = NEWAC - OLDAC
-             NEWDAC = SIGN(MIN(MAXDAC,ABS(NEWDAC)), NEWDAC)
-             ACLOC(IS,ID) = MAX( zero, OLDAC + NEWDAC )
-           END DO
-
-         END DO
-
-         END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
@@ -362,6 +328,7 @@
            SSBRL = WAOLD - RATIO * WAOLD
            WANEW = RATIO * WAOLD
          END IF
+
          END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
