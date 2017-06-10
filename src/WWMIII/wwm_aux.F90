@@ -1955,11 +1955,10 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      function dintspec(ip,WALOC)
+      function dintspec(WALOC)
       use datapool,  only : NUMSIG,NUMDIR,ddir,ds_incr,spsig,rkind, ZERO
 
       implicit none
-      integer, intent(in)        :: ip
       real(rkind), intent(in)    :: WALOC(NUMSIG,NUMDIR)
 
       integer             :: is, id
@@ -1978,8 +1977,6 @@
         end do
       end do
       !dintspec = dintspec * maxvalue
-
-      return
       end function
 !**********************************************************************
 !*                                                                    *

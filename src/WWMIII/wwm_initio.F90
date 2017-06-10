@@ -524,9 +524,9 @@
 #endif
       IMPLICIT NONE
       INTEGER        :: I, J
-      REAL(rkind)    :: TIME1, TIME2
 
 #ifdef TIMINGS
+      REAL(rkind)    :: TIME1, TIME2
       CALL WAV_MY_WTIME(TIME1)
 #endif
      
@@ -1229,7 +1229,7 @@
                  ENDDO
                ENDDO
              END IF ! INITSTYLE
-             IF (LMAXETOT .AND. ISHALLOW(IP) .EQ. 1) CALL BREAK_LIMIT(IP,WALOC,SSBRL) ! Miche for initial cond.
+             IF (LMAXETOT .AND. ISHALLOW(IP) .EQ. 1) CALL BREAKING_LIMITER_LOCAL(IP,WALOC,WALOC,SSBRL) ! Miche for initial cond.
            ELSE
              FDLESS      = 0.
              HS          = 0.

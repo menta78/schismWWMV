@@ -271,7 +271,7 @@ SAND_WSED == 8.06d0 16.92d0 51.43d0 78.19d0 128.65d0
 SAND_ERATE == 1.6d-3 1.6d-3 1.6d-3 1.6d-3 1.6d-3 !ierosion=0
 !SAND_ERATE == 1.d-4 1.d-4 1.d-4 1.d-4 1.d-4 !ierosion=1
 
-!- CRITICAL SHEAR STRESS FOR EROSION AND DEPOSITION (Pa) - [1:Ntracers] -----
+!- CRITICAL SHEAR STRESS FOR EROSION (Pa) - [1:Ntracers] -----
 !  These will be overwritten if comp_tauce=1 and Sedtype(i)=1 (so in that case you can
 ! comment this line out)
 !------------------------------------------------------------------------------

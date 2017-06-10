@@ -308,7 +308,8 @@
 !
 !  Number of biological iterations.
 !
-      integer :: BioIter 
+!MFR,Apr/2017
+!      integer :: BioIter 
 
 ! Marta Rodrigues
 ! Zooplankton flag

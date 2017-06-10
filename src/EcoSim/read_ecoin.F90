@@ -39,8 +39,8 @@ subroutine read_ecoin
 
      filename(1:20)='                    '     
      
-     call read_inputs('BioIter',1,tmp1,tmp2,tmp3)
-     BioIter=tmp1
+!     call read_inputs('BioIter',1,tmp1,tmp2,tmp3)
+!     BioIter=tmp1
      
      filename(1:20)='                    '
 

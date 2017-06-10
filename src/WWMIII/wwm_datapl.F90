@@ -1,4 +1,3 @@
-!2dR ... kill save and save all
 #include "wwm_functions.h"
 ! add line
 !**********************************************************************
@@ -88,9 +87,9 @@
 #ifndef SCHISM
 # ifndef PDLIB
 #  ifdef USE_SINGLE
-         integer,parameter :: rkind = 4
+      serfwe   integer,parameter :: rkind = 4
 #  else
-         integer,parameter :: rkind = 8      ! Default real datatype
+      werwe   integer,parameter :: rkind = 8      ! Default real datatype
 #  endif
 # endif
 #endif

@@ -104,8 +104,6 @@
 #ifdef DEBUG
          CALL Print_SumAC2(" After COMPUTE_SOURCES")
 #endif
-         CALL COMPUTE_LIMITER(AC1,AC2,SSBRL,SSLIM)
-
          IF (LNANINFCHK) THEN
            WRITE(DBG%FHNDL,*) ' AFTER SOURCES ',  SUM(AC2)
            IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 5')
@@ -180,9 +178,7 @@
         CALL WAV_MY_WTIME(TIME5)
 #endif
         IF (AMETHOD .GT. 0) CALL COMPUTE_SPATIAL
-
-        CALL COMPUTE_LIMITER(AC1,AC2,SSBRL,SSLIM)
-
+!
 #ifdef TIMINGS
         CALL WAV_MY_WTIME(TIME6)
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----IMPLICIT SPLITTING SCHEME-----'
@@ -190,7 +186,6 @@
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS ADVEKTION            ', TIME6-TIME5
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS SPECTRAL SPACE       ', TIME3-TIME2
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS SOURCES              ', TIME5-TIME4
-        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'MICHE LIMITER                    ', TIME8-TIME7+TIME4-TIME3
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS TOTAL TIME           ', TIME8-TIME1
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE COMPUTE_SEMI_IMPLICIT'
@@ -275,16 +270,6 @@
 #ifdef TIMINGS
         CALL WAV_MY_WTIME(TIME5)
 #endif
-        CALL COMPUTE_LIMITER(AC1,AC2,SSBRL,SSLIM)
-
-        IF (LNANINFCHK) THEN
-          WRITE(DBG%FHNDL,*) 'AFTER LIMITER',  SUM(AC2)
-          IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 6')
-        ENDIF
-
-#ifdef TIMINGS
-        CALL WAV_MY_WTIME(TIME7)
-#endif
 #ifdef TIMINGS
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----IMPLICIT -----'
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'DIFFRACTION                      ', TIME2-TIME1
@@ -348,12 +333,12 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_LIMITER(ACOLD,ACNEW,SSBRL,SSLIM)
+      SUBROUTINE ACTION_LIMITER_GLOBAL(ACOLD,ACNEW)
         USE DATAPOOL
         IMPLICIT NONE
         REAL(rkind), INTENT(IN)  :: ACOLD(NUMSIG,NUMDIR,MNP)
         REAL(rkind), INTENT(OUT) :: ACNEW(NUMSIG,NUMDIR,MNP)
-        REAL(rkind), INTENT(OUT) :: SSBRL(NUMSIG,NUMDIR),SSLIM(NUMSIG,NUMDIR)
+        REAL(rkind)              :: SSLIM(NUMSIG,NUMDIR)
 
         REAL(rkind)              :: MAXDAC(NUMSIG)
         REAL(rkind)              :: ACNEWLOC(NUMSIG,NUMDIR),ACOLDLOC(NUMSIG,NUMDIR)
@@ -364,13 +349,33 @@
           ACNEWLOC = ACNEW(:,:,IP)
           IF (MELIM .EQ. 1) THEN
             CALL GET_MAXDAC(IP,MAXDAC)
-            CALL LIMITER(IP,MAXDAC,ACOLDLOC,ACNEWLOC,SSLIM)
+            CALL ACTION_LIMITER_LOCAL(MAXDAC,ACOLDLOC,ACNEWLOC,SSLIM)
           ENDIF 
-          IF (LMAXETOT) CALL BREAK_LIMIT(IP,ACNEWLOC,SSBRL)
           ACNEW(:,:,IP) = ACNEWLOC
         ENDDO
 
-      END SUBROUTINE COMPUTE_LIMITER
+      END SUBROUTINE ACTION_LIMITER_GLOBAL
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE BREAKING_LIMITER_GLOBAL(ACOLD,ACNEW,SSBRL)
+        USE DATAPOOL
+        IMPLICIT NONE
+        REAL(rkind), INTENT(IN)  :: ACOLD(NUMSIG,NUMDIR,MNP)
+        REAL(rkind), INTENT(OUT) :: ACNEW(NUMSIG,NUMDIR,MNP)
+        REAL(rkind)              :: SSBRL(NUMSIG,NUMDIR)
+
+        REAL(rkind)              :: MAXDAC(NUMSIG)
+        REAL(rkind)              :: ACNEWLOC(NUMSIG,NUMDIR),ACOLDLOC(NUMSIG,NUMDIR)
+        INTEGER                  :: IP
+
+        DO IP = 1, MNP
+          ACOLDLOC = ACNEW(:,:,IP)
+          IF (LMAXETOT) CALL BREAKING_LIMITER_LOCAL(IP,ACOLDLOC,ACNEWLOC,SSBRL)
+          ACNEW(:,:,IP) = ACNEWLOC
+        ENDDO
+
+      END SUBROUTINE BREAKING_LIMITER_GLOBAL
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************

@@ -617,7 +617,7 @@
          !OUTPAR(8)   = ETOTC    ! Etot energy in x-direction
          !OUTPAR(9)   = DM       ! Mean average energy transport direction
          !OUTPAR(10)  = DSPR     ! Mean directional spreading
-         !OUTPAR(11)  = FPP      ! Discrete peak period (sec)
+         !OUTPAR(11)  = TPPD     ! Discrete peak period (sec)
          !OUTPAR(12)  = TPP      ! Continuous peak period based on higher order moments (sec) 
          !OUTPAR(13)  = CPP      ! Peak phase vel. (m/s)
          !OUTPAR(14)  = WNPP     ! Peak n-factor
@@ -632,12 +632,13 @@
          !OUTPAR(23)  = BOTEXPER ! Bottom excursion period.
          !OUTPAR(24)  = TMBOT    ! Bottom wave period (sec)
          !OUTPAR(25)  = URSELL   ! Uresell number based on peak period ...
-         !OUTPAR(26)  = UFRIC(IP)    ! Friction velocity 
-         !OUTPAR(27)  = Z0(IP)       ! Rougness length
-         !OUTPAR(28)  = ALPHA_CH(IP) ! Charnock coefficient
-         !OUTPAR(29)  = CD(IP)       ! Drag coefficient
-         !OUTPAR(30)  = WINDXY(IP,1) ! windx
-         !OUTPAR(31)  = WINDXY(IP,2) ! windy
+         !OUTPAR(26)  = USTAR    ! Friction velocity 
+         !OUTPAR(27)  = ALPHA_CH(IP) ! Charnock coefficient
+         !OUTPAR(28)  = Z0(IP)       ! Rougness length
+         !OUTPAR(29)  = WINDXY(IP,1) ! windx
+         !OUTPAR(30)  = WINDXY(IP,2) ! windy
+         !OUTPAR(31)  = CD(IP)       ! Drag coefficient
+         !...
 
         if(myrank==0) write(16,*)'WWM-RS part took (sec) ',mpi_wtime()-wtmp1
 

@@ -2,10 +2,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-#define DEBUG
-#undef DEBUG
 #define DEBUG_ITERATION_LOOP
-#undef DEBUG_ITERATION_LOOP
 !AR:todo: code duplication ... and buggy since boundary pointer are not taken into account 
       SUBROUTINE COMPUTE_CFL_N_SCHEME_EXPLICIT(CFLadvgeoOutI)
       USE DATAPOOL
@@ -522,8 +519,9 @@
       REAL(rkind) :: CAD(NUMSIG,NUMDIR), CAS(NUMSIG,NUMDIR)
       REAL(rkind) :: BLOC(NUMSIG,NUMDIR)
       REAL(rkind) :: ASPAR_DIAG(NUMSIG,NUMDIR)
+      REAL(rkind) :: SSLIM(NUMSIG,NUMDIR), SSBRL(NUMSIG,NUMDIR)
       LOGICAL     :: test=.true.
-      REAL(rkind) :: ASPAR_LOC(NUMSIG,NUMDIR,MAX_DEG)
+      REAL(rkind) :: ASPAR_LOC(NUMSIG,NUMDIR,MAX_DEG), MAXDAC(NUMSIG)
 #ifdef DEBUG_ITERATION_LOOP
       integer iIter
       integer, save :: iPass = 0
@@ -601,13 +599,9 @@
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME3)
 #endif
-      !
-      ! Now the Gauss Seidel iterations
-      !
-      !SOLVERTHR=10E-8*AVETL!*TLMIN**2
-      !
       NumberIterationSolver = 0
       nbIter=0
+
       DO
         is_converged(1) = 0
         JDX=0
@@ -632,7 +626,7 @@
             END IF
           END IF
 
-          IF (test) THEN
+          IF (.true.) THEN
 !            WRITE(STAT%FHNDL,*) 'IP=', IP
             NumberIterationSolver(IP) = NumberIterationSolver(IP) + 1
             CALL SINGLE_VERTEX_COMPUTATION(JDX, WALOC, eSum, ASPAR_DIAG)
@@ -640,6 +634,16 @@
             sumESUM = sumESUM + sum(abs(eSum))
 #endif
             eSum=eSum/ASPAR_DIAG
+            IF (MELIM .EQ. 1) THEN
+              !CALL GET_MAXDAC(IP,MAXDAC)
+              !CALL ACTION_LIMITER_LOCAL(MAXDAC,waloc,eSum,SSLIM)
+               CALL ACTION_LIMITER_LOCAL2(ip,waloc,eSum)
+               IF (IP == 4) THEN
+                 WRITE(*,*) SUM(waloc), SUM(eSum)
+                 PAUSE
+               ENDIF
+            ENDIF
+            !IF (LMAXETOT) CALL BREAKING_LIMITER_LOCAL(ip,eSum,eSum,SSBRL)
 
             IF (BLOCK_GAUSS_SEIDEL) THEN
               AC2(:,:,IP)=eSum
@@ -747,9 +751,6 @@
       CALL WAV_MY_WTIME(TIME4)
 #endif
       AC2 = MAX(ZERO, AC2) ! Make sure there is no negative energy left ... 
-#ifdef DEBUG
-      CALL LOCAL_NODE_PRINT(20506, "After limiter")
-#endif
 
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME5)
@@ -809,7 +810,7 @@
       DIAG  =   - eVal * MIN(ZERO,DPHIDN) ! AR: The minus put the DHPIDN on the left side of the equation as diagonal contributions with the right sign ... it inverts the sign ... however this is wrong now for IBREAK = 2 the SWAN stuff 
 !
 #ifdef DEBUG_SOURCE_TERM
-      WRITE(*,'(I10,10G20.10,A40)') IP, SUM(ACin1), SUM(ACin2), SUM(PHI), SUM(DPHIDN), SUM(BSIDE), SUM(DIAG), SUM(BLOC), eval, 'GET_BSIDE_DIAG'
+      WRITE(STAT%FHNDL,'(I10,10G20.10,A40)') IP, SUM(ACin1), SUM(ACin2), SUM(PHI), SUM(DPHIDN), SUM(BSIDE), SUM(DIAG), SUM(BLOC), eval, 'GET_BSIDE_DIAG'
 #endif
 
       END SUBROUTINE

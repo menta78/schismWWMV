@@ -446,9 +446,11 @@
 !  Iterate biology source and sink terms.
 !-----------------------------------------------------------------------
 !
-        dtbio=dt/REAL(BioIter,r8)
+!MFR,Apr/2017
+!        dtbio=dt/REAL(BioIter,r8)
+         dtbio=dt 
 
-        ITER_LOOP : DO Iter=1,BioIter
+!        ITER_LOOP : DO Iter=1,BioIter
  
 !          DO i=1,nea
 !            if(idry_e(i)==1) cycle
@@ -2053,7 +2055,8 @@
 !                  IF (iPigs(iphy,ipig).gt.0) THEN
 !                    itrc=iPigs(iphy,ipig)
 !
-!                    Bio_new(k,itrc)=-WS(iphy)*((Bio(k+1,itrc)- &
+!                    Bio_new(k,itrc)=Bio_new(k,itrc)-- &
+!                                    WS(iphy)*((Bio(k+1,itrc)- &
 !                                    Bio(k-1,itrc))/(ze(k+1,i)-   &
 !                                    ze(k-1,i)))
 !                  END IF
@@ -2714,18 +2717,18 @@
 !-----------------------------------------------------------------------
 !  Update the tendency arrays
 !-----------------------------------------------------------------------
-!
-          DO ibio=1,NBIT
-            itrc=idbio(ibio)
+!MFR,Apr/2017 - Removed BioIter loop
+!          DO ibio=1,NBIT
+!            itrc=idbio(ibio)
 !            DO i=1,nea
 !              if(idry_e(i)==1) cycle
-              DO k=kbe(i)+1,nvrt
+!              DO k=kbe(i)+1,nvrt
 !MFR             Bio(k,i,itrc)=Bio(k,i,itrc)+dtbio*Bio_new(k,i,itrc)
-                Bio_new(k,itrc)=Bio_new(k,itrc)+dtbio*Bio_new(k,itrc)
-              END DO
+!                Bio(k,itrc)=Bio_old(k,itrc)+dtbio*Bio_new(k,itrc)
+!              END DO
 !            END DO
-          END DO
-        END DO ITER_LOOP
+!          END DO
+!        END DO ITER_LOOP
 !
 !-----------------------------------------------------------------------
 !  Update global tracer variables.
@@ -2739,11 +2742,13 @@
             DO k=kbe(i)+1,nvrt
 
 ! MFR ... To check tracer concentration
-               Bio(k,itrc)=Bio_old(k,itrc)+Bio_new(k,itrc)
+!               Bio(k,itrc)=Bio_old(k,itrc)+Bio_new(k,itrc)
+               Bio(k,itrc)=Bio_old(k,itrc)+Bio_new(k,itrc)*dt
                IF(Bio(k,itrc)<MinVal)THEN
                  bdy_frc(itrc+irange_tr(1,6)-1,k,i)=0.d0 !MFR - Check later...
                ELSE 
-                 bdy_frc(itrc+irange_tr(1,6)-1,k,i)=Bio_new(k,itrc)/dt
+!                 bdy_frc(itrc+irange_tr(1,6)-1,k,i)=Bio_new(k,itrc)/dt ! MFR: removed BioIter loop
+                  bdy_frc(itrc+irange_tr(1,6)-1,k,i)=Bio_new(k,itrc)
                  !IF(isnan(bdy_frc(itrc,k,i)))THEN
                  !ZYL: isnan is not recognized on some system
                  IF(bdy_frc(itrc+irange_tr(1,6)-1,k,i)/=bdy_frc(itrc+irange_tr(1,6)-1,k,i))THEN

@@ -64,8 +64,8 @@
 
          IMPLICIT NONE
 
-         INTEGER, INTENT(IN)   :: NSTEP_WWM0, icou_elfe_wwm
-         REAL(rkind), INTENT(IN)    :: DT_SCHISM0
+         INTEGER, INTENT(IN)           :: NSTEP_WWM0, icou_elfe_wwm
+         REAL(rkind), INTENT(IN)       :: DT_SCHISM0
          CHARACTER(LEN=3), INTENT(OUT) :: RADFLAG2
 !         REAL(rkind), INTENT(OUT) :: STOKES_X,STOKES_Y,JPRESS,SBR,SBF
 

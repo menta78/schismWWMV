@@ -57,7 +57,11 @@
 !/
 !/ ------------------------------------------------------------------- /
 !/
+#ifndef SCHISM
       USE DATAPOOL, ONLY : rkind, swellft
+#else
+      USE DATAPOOL, ONLY : swellft, rkind
+#endif
       SAVE
       PUBLIC
 !/

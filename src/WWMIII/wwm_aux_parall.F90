@@ -55,7 +55,7 @@
       integer, allocatable :: IEneighbor_V1(:,:)
       integer, allocatable :: IEmembership(:)
 
-
+#ifndef SCHISM 
       allocate(CCON_total(np_total), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('BUILD_TRIANGLE error 1')
       CCON_TOTAL=0
@@ -414,6 +414,7 @@
         deallocate(dspl_recv)
       END DO
       deallocate(INDX_IE, IE_LocalGlobal, StatusNeed, CCON_total, INDXextent_IE, IEneighbor_V1)
+#endif
 #endif
       END SUBROUTINE
 !**********************************************************************

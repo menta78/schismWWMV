@@ -237,8 +237,8 @@
  FXDSCUT =  0.000000000000000E+000
  /
  &NUMS
- ICOMP   =           0,
- AMETHOD =           1,
+ ICOMP   =           3,
+ AMETHOD =           7,
  SMETHOD =           1, 
  DMETHOD =           0,
  IMPL_GEOADVECT  = T,

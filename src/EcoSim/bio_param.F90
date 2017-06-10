@@ -131,7 +131,8 @@
         integer, parameter, dimension(Nphy) :: PHY = (/ 1 /) !MFR
 
 !  MFR - Iron and CDOC flags (0-no calcultions; 1-calculations)
-!        Note: If CDOC=0, then RtUVR_flag in ecosim.in must be set to F  
+!        Note: If CDOC=0, then RtUVR_flag in ecosim.in must be set to F 
+!              If CDOC=1, Ndom must be 2 
 
      integer, parameter :: IRON=0
      integer, parameter :: CDOC=0  
@@ -436,12 +437,12 @@
         iDOMC(2)=ic+6
         iDOMN(2)=ic+7
         ic=ic+7
-      ELSEIF(CDOC==1.AND.Ndom==1)THEN
-        iCDMC(1)=ic+1
-        iDOMC(1)=ic+2
-        iDOMN(1)=ic+3
-        iDOMP(1)=ic+4
-        ic=ic+4
+!      ELSEIF(CDOC==1.AND.Ndom==1)THEN
+!        iCDMC(1)=ic+1
+!        iDOMC(1)=ic+2
+!        iDOMN(1)=ic+3
+!        iDOMP(1)=ic+4
+!        ic=ic+4
       ELSEIF (CDOC==0.AND.Ndom==2)THEN
         iDOMC(1)=ic+1
         iDOMN(1)=ic+2
