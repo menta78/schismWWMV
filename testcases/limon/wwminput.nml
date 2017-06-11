@@ -11,7 +11,7 @@
  BEGTC          = '19980901.000000', 
  DELTC          = 1.0000000000000,   
  UNITC          = 'SEC',             
- ENDTC          = '19980901.010000', 
+ ENDTC          = '19980901.000010', 
  DMIN           = 1.000000000000000E-004, 
  MULTIPLE_OUT_INFO = .T.,               
  MODEL_OUT_TYPE = 'WW3',             
