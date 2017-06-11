@@ -617,7 +617,7 @@
        
         DO IP=1,NP_RES
 
-          IF (IOBDP(IP) .EQ. 0) THEN
+          IF (IOBDP(IP) .EQ. 0 .OR. LCONVERGED(IP)) THEN
             is_converged(1) = is_converged(1) + 1
             cycle
           END IF
