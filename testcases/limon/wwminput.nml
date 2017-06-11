@@ -301,7 +301,7 @@
  LNONL          = .F.,               
  L_SOLVER_NORM  = .F.,               
  WAE_SOLVERTHR  = 1.000000000000000E-010, 
- ASPAR_LOCAL_LEVEL = 1,                 
+ ASPAR_LOCAL_LEVEL = 0,                 
  WAE_JGS_CFL_LIM = .F.,               
  JGS_CHKCONV    = .T.,               
  JGS_DIFF_SOLVERTHR = 1.E-6,             

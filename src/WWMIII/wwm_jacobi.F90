@@ -643,6 +643,7 @@
               CALL GET_MAXDAC(IP,MAXDAC)
               CALL ACTION_LIMITER_LOCAL(MAXDAC,AC1(:,:,IP),ESUM,SSLIM,.true.)
             ENDIF
+            IF (LMAXETOT) CALL BREAKING_LIMITER_LOCAL(IP,eSum,SSBRL)
 
             IF (BLOCK_GAUSS_SEIDEL) THEN
               AC2(:,:,IP)=eSum

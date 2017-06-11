@@ -331,21 +331,18 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE BREAKING_LIMITER_GLOBAL(ACOLD,ACNEW)
+      SUBROUTINE BREAKING_LIMITER_GLOBAL
         USE DATAPOOL
         IMPLICIT NONE
-        REAL(rkind), INTENT(IN)  :: ACOLD(NUMSIG,NUMDIR,MNP)
-        REAL(rkind), INTENT(OUT) :: ACNEW(NUMSIG,NUMDIR,MNP)
         REAL(rkind)              :: SSBRL(NUMSIG,NUMDIR)
-
         REAL(rkind)              :: MAXDAC(NUMSIG)
-        REAL(rkind)              :: ACNEWLOC(NUMSIG,NUMDIR),ACOLDLOC(NUMSIG,NUMDIR)
+        REAL(rkind)              :: ACNEWLOC(NUMSIG,NUMDIR)
         INTEGER                  :: IP
 
-        DO IP = 1, NP_RES
-          ACOLDLOC = ACNEW(:,:,IP)
+        DO IP = 1, MNP
+          ACNEWLOC = AC2(:,:,IP)
           CALL BREAKING_LIMITER_LOCAL(IP,ACNEWLOC,SSBRL)
-          ACNEW(:,:,IP) = ACNEWLOC
+          AC2(:,:,IP) = ACNEWLOC
         ENDDO
 
       END SUBROUTINE BREAKING_LIMITER_GLOBAL
@@ -367,7 +364,7 @@
 
 !AR: here we can save time to ommit this calculation of the mean value!!!
          ETOT = DINTSPEC(WALOC)
-         HS = 4.*SQRT(ETOT)
+         HS   = 4.*SQRT(ETOT)
          !IF (LMONO_IN) HMAX(IP) = HMAX(IP) * SQRT(2.)
          EMAX = 1./16. * (HMAX(IP))**2
 
