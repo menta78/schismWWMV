@@ -35,6 +35,7 @@
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(IN)      :: IP
+      INTEGER                  :: IS, ID
       REAL(rkind), INTENT(IN)  :: WALOC(NUMSIG,NUMDIR)
       REAL(rkind), INTENT(OUT) :: PHI(NUMSIG,NUMDIR), DPHIDN(NUMSIG,NUMDIR)
       REAL(rkind)   :: SSINL(NUMSIG,NUMDIR)
@@ -46,6 +47,7 @@
       REAL(rkind)   :: SSBRL(NUMSIG,NUMDIR)
       REAL(rkind)   :: SSBF(NUMSIG,NUMDIR),DSSBF(NUMSIG,NUMDIR)
       REAL(rkind)   :: HS,TM01,TM02,TM10,KLM,WLM
+      REAL(rkind)   :: MAXDAC(NUMSIG), NEWDAC, RATIO
 #ifdef DEBUG
       REAL(rkind)   :: SSINL_WW3(NUMSIG,NUMDIR), SSINE_WW3(NUMSIG,NUMDIR)
       REAL(rkind)   :: SSBRL_WW3(NUMSIG,NUMDIR), SSDS_WW3(NUMSIG,NUMDIR)
@@ -81,7 +83,22 @@
 #endif
 !
       IF (ISHALLOW(IP) .EQ. 1) CALL SHALLOW_WATER(IP, WALOC, PHI, DPHIDN, SSBR, DSSBR, SSBF, DSSBF, SSNL3, DSSNL3)
+
+!      WRITE(*,*) 'SUMS', SUM(PHI), SUM(DPHIDN)
 !
+      IF (MELIM .EQ. 2) THEN
+        CALL GET_MAXDAC(IP,MAXDAC)
+        DO ID = 1, NUMDIR
+          DO IS = 1, NUMSIG
+            NEWDAC = PHI(IS,ID) * DT4A / (ONE-DT4A*MIN(ZERO,DPHIDN(IS,ID)))
+            RATIO  = ONE/MAX(ONE,ABS(NEWDAC/MAXDAC(IS)))
+!            WRITE(*,*) IS, ID, RATIO, MAXDAC(IS), NEWDAC, PHI(IS,ID), DPHIDN(IS,ID), SUM(PHI), SUM(DPHIDN)
+            PHI    = RATIO * PHI
+            DPHIDN = RATIO * DPHIDN
+          END DO
+        END DO
+      ENDIF
+
 #ifdef DEBUG
       IF (IP .eq. TESTNODE) THEN
          WRITE(740+myrank,*) 'After integration ISOURCE=', ISOURCE
@@ -220,17 +237,6 @@
                CALL COMPUTE_PHI_DPHI(IP,WAIN,PHI,DPHIDN)
              ELSE IF (IOBP(IP) .EQ. 0 .AND. .NOT. LSOUBOUND) THEN ! CALL ONLY FOR NON BOUNDARY POINTS
                CALL COMPUTE_PHI_DPHI(IP,WAIN,PHI,DPHIDN)
-             ENDIF
-             IF (MELIM .EQ. 2) THEN
-               CALL GET_MAXDAC(IP,MAXDAC)
-               DO IS = 1, NUMSIG
-                 DO ID = 1, NUMDIR
-                   NEWDAC = PHI(IS,ID) * DT4A / (ONE-DT4A*MIN(ZERO,DPHIDN(IS,ID)))
-                   RATIO  = ONE/MIN(ONE,ABS(NEWDAC/MAXDAC(IS)))
-                   PHI    = RATIO * PHI
-                   DPHIDN = RATIO * DPHIDN
-                 END DO
-               END DO
              ENDIF
              PHIA(:,:,IP)    = PHI    ! STORE ...
              DPHIDNA(:,:,IP) = DPHIDN
