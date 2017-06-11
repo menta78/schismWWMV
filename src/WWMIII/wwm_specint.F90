@@ -205,34 +205,37 @@
       SUBROUTINE SOURCES_IMPLICIT
          USE DATAPOOL
          IMPLICIT NONE
-         INTEGER     :: IP
-         REAL(rkind) :: WALOC(NUMSIG,NUMDIR),PHI(NUMSIG,NUMDIR),DPHIDN(NUMSIG,NUMDIR)
+         INTEGER     :: IP, IS, ID
+         REAL(rkind) :: WAIN(NUMSIG,NUMDIR),PHI(NUMSIG,NUMDIR),DPHIDN(NUMSIG,NUMDIR)
+         REAL(rkind) :: WANEW(NUMSIG,NUMDIR), NEWDAC, MAXDAC(NUMSIG), RATIO
 
          DO IP = 1, MNP
-           PHI = ZERO
-           DPHIDN = ZERO
-           WALOC = AC2(:,:,IP)
            IF (IOBDP(IP) .GT. 0) THEN ! H .gt. DMIN
+             PHI = ZERO
+             DPHIDN = ZERO
+             WAIN = AC2(:,:,IP)
              IF (LSOUBOUND  .AND. IOBP(IP) .NE. 2) THEN ! CALL ALWAYS
-               CALL COMPUTE_PHI_DPHI(IP,WALOC,PHI,DPHIDN)
+               CALL COMPUTE_PHI_DPHI(IP,WAIN,PHI,DPHIDN)
              ELSE IF (IOBP(IP) .EQ. 0 .AND. .NOT. LSOUBOUND) THEN ! CALL ONLY FOR NON BOUNDARY POINTS
-               CALL COMPUTE_PHI_DPHI(IP,WALOC,PHI,DPHIDN)
+               CALL COMPUTE_PHI_DPHI(IP,WAIN,PHI,DPHIDN)
              ENDIF
-           ENDIF 
-           DO IS = 1, NUMSIG
-             DO ID = 1, NUMDIR
-               NEWDAC = PHI(IS,ID) * DT / (ONE-DT*MIN(ZERO,DPHIDN(IS,ID)))
-               ACNEW(IS,ID) = MAX( ZERO, ACOLD(IS,ID) + NEWDAC )
-             END DO
-           END DO
-
-           IF (MELIM .EQ. 2) THEN
-             CALL GET_MAXDAC(IP,MAXDAC)
-             
+             IF (MELIM .EQ. 2) THEN
+               CALL GET_MAXDAC(IP,MAXDAC)
+               DO IS = 1, NUMSIG
+                 DO ID = 1, NUMDIR
+                   NEWDAC = PHI(IS,ID) * DT4A / (ONE-DT4A*MIN(ZERO,DPHIDN(IS,ID)))
+                   RATIO  = ONE/MIN(ONE,ABS(NEWDAC/MAXDAC(IS)))
+                   PHI    = RATIO * PHI
+                   DPHIDN = RATIO * DPHIDN
+                 END DO
+               END DO
+             ENDIF
+             PHIA(:,:,IP)    = PHI    ! STORE ...
+             DPHIDNA(:,:,IP) = DPHIDN
+           ELSE
+             PHIA(:,:,IP)    = ZERO
+             DPHIDNA(:,:,IP) = ZERO
            ENDIF
-           IF (LMAXETOT) CALL BREAKING_LIMITER_LOCAL(IP,ACOLDLOC,ACNEWLOC,SSBRL)
-           PHIA(:,:,IP)    = PHI    ! STORE ...
-           DPHIDNA(:,:,IP) = DPHIDN
          ENDDO
 
 #ifdef DEBUG_SOURCE_TERM
