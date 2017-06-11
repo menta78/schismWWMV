@@ -73,7 +73,7 @@ F90OPTI = -O1 -axSSE3 -traceback -g
 
 #GFORTRAN
 #F90OPTI = -pg -O1 -ffree-line-length-0 -fbacktrace -Wall
-#F90OPTI = -g -O1 -ffree-line-length-0 -fbacktrace 
+F90OPTI = -g -O1 -ffree-line-length-0 -fbacktrace 
 #F90OPTI = -g -Wall -Wextra -Warray-temporaries -Wconversion -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overflow -finit-real=nan
 
 

@@ -2,7 +2,6 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-#define DEBUG_ITERATION_LOOP
 !AR:todo: code duplication ... and buggy since boundary pointer are not taken into account 
       SUBROUTINE COMPUTE_CFL_N_SCHEME_EXPLICIT(CFLadvgeoOutI)
       USE DATAPOOL
@@ -616,6 +615,11 @@
        
         DO IP=1,NP_RES
 
+          IF (IOBDP(IP) .EQ. 0) THEN
+            is_converged(1) = is_converged(1) + 1
+            cycle
+          END IF
+
           WALOC = AC2(:,:,IP)
 
           IF (WAE_JGS_CFL_LIM) THEN
@@ -639,7 +643,6 @@
               CALL GET_MAXDAC(IP,MAXDAC)
               CALL ACTION_LIMITER_LOCAL(MAXDAC,AC1(:,:,IP),ESUM,SSLIM,.true.)
             ENDIF
-            IF (LMAXETOT) CALL BREAKING_LIMITER_LOCAL(IP,ESUM,ESUM,SSBRL)
 
             IF (BLOCK_GAUSS_SEIDEL) THEN
               AC2(:,:,IP)=eSum

@@ -25,7 +25,7 @@
         CALL GET_MAXDAC(IP,MAXDAC)
         CALL ACTION_LIMITER_LOCAL(MAXDAC,ACOLD,ACNEW,SSLIM)
       ENDIF
-      IF (LMAXETOT) CALL BREAKING_LIMITER_LOCAL(IP,ACOLD,ACNEW,SSBRL)
+      IF (LMAXETOT) CALL BREAKING_LIMITER_LOCAL(IP,ACNEW,SSBRL)
       CALL POST_INTEGRATION(IP,ACNEW)
       END SUBROUTINE
 !**********************************************************************
@@ -179,8 +179,8 @@
 
 
          DO IP = 1, MNP
-           ACOLDLOC = AC2(:,:,IP); ACNEWLOC = ZERO
            IF (IOBDP(IP) .GT. 0) THEN ! H .gt. DMIN
+             ACOLDLOC = AC2(:,:,IP); ACNEWLOC = ZERO
              IF (LSOUBOUND .AND. IOBP(IP) .NE. 2) THEN ! CALL ALWAYS 
                CALL SEMI_IMPLICIT_INTEGRATION(IP,DT4S,ACOLDLOC,ACNEWLOC)
              ELSE IF (IOBP(IP) .EQ. 0 .AND. .NOT. LSOUBOUND) THEN ! CALL ONLY FOR NON BOUNDARY POINTS 
@@ -188,14 +188,16 @@
              ELSE
                ACNEWLOC = ACOLDLOC
              ENDIF 
-           ENDIF 
-           IF (MELIM .EQ. 1) THEN
-             CALL GET_MAXDAC(IP,MAXDAC)
-             CALL ACTION_LIMITER_LOCAL(MAXDAC,ACOLDLOC,ACNEWLOC,SSLIM)
+             IF (MELIM .EQ. 1) THEN
+               CALL GET_MAXDAC(IP,MAXDAC)
+               CALL ACTION_LIMITER_LOCAL(MAXDAC,ACOLDLOC,ACNEWLOC,SSLIM)
+             ENDIF
+             IF (LMAXETOT) CALL BREAKING_LIMITER_LOCAL(IP,ACNEWLOC,SSBRL)
+             CALL POST_INTEGRATION(IP,ACNEWLOC)
+             AC2(:,:,IP) = ACNEWLOC
+           ELSE
+             AC2(:,:,IP) = ZERO
            ENDIF
-           IF (LMAXETOT) CALL BREAKING_LIMITER_LOCAL(IP,ACOLDLOC,ACNEWLOC,SSBRL)
-           CALL POST_INTEGRATION(IP,ACNEWLOC)
-           AC2(:,:,IP) = ACNEWLOC
          ENDDO
 
       END SUBROUTINE
@@ -304,14 +306,59 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-         SUBROUTINE BREAKING_LIMITER_LOCAL(IP,WAOLD,WANEW,SSBRL)
+      SUBROUTINE ACTION_LIMITER_GLOBAL(ACOLD,ACNEW)
+        USE DATAPOOL
+        IMPLICIT NONE
+        REAL(rkind), INTENT(IN)  :: ACOLD(NUMSIG,NUMDIR,MNP)
+        REAL(rkind), INTENT(OUT) :: ACNEW(NUMSIG,NUMDIR,MNP)
+        REAL(rkind)              :: SSLIM(NUMSIG,NUMDIR)
+
+        REAL(rkind)              :: MAXDAC(NUMSIG)
+        REAL(rkind)              :: ACNEWLOC(NUMSIG,NUMDIR),ACOLDLOC(NUMSIG,NUMDIR)
+        INTEGER                  :: IP
+
+        DO IP = 1, NP_RES
+          ACOLDLOC = ACOLD(:,:,IP)
+          ACNEWLOC = ACNEW(:,:,IP)
+          IF (MELIM .EQ. 1) THEN
+            CALL GET_MAXDAC(IP,MAXDAC)
+            CALL ACTION_LIMITER_LOCAL(MAXDAC,ACOLDLOC,ACNEWLOC,SSLIM)
+          ENDIF
+          ACNEW(:,:,IP) = ACNEWLOC
+        ENDDO
+
+      END SUBROUTINE ACTION_LIMITER_GLOBAL
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE BREAKING_LIMITER_GLOBAL(ACOLD,ACNEW)
+        USE DATAPOOL
+        IMPLICIT NONE
+        REAL(rkind), INTENT(IN)  :: ACOLD(NUMSIG,NUMDIR,MNP)
+        REAL(rkind), INTENT(OUT) :: ACNEW(NUMSIG,NUMDIR,MNP)
+        REAL(rkind)              :: SSBRL(NUMSIG,NUMDIR)
+
+        REAL(rkind)              :: MAXDAC(NUMSIG)
+        REAL(rkind)              :: ACNEWLOC(NUMSIG,NUMDIR),ACOLDLOC(NUMSIG,NUMDIR)
+        INTEGER                  :: IP
+
+        DO IP = 1, NP_RES
+          ACOLDLOC = ACNEW(:,:,IP)
+          CALL BREAKING_LIMITER_LOCAL(IP,ACNEWLOC,SSBRL)
+          ACNEW(:,:,IP) = ACNEWLOC
+        ENDDO
+
+      END SUBROUTINE BREAKING_LIMITER_GLOBAL
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+         SUBROUTINE BREAKING_LIMITER_LOCAL(IP,WALOC,SSBRL)
          USE DATAPOOL
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)  :: IP
 
-         REAL(rkind), INTENT(IN)     :: WAOLD(NUMSIG,NUMDIR)
-         REAL(rkind), INTENT(OUT)    :: WANEW(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(INOUT)  :: WALOC(NUMSIG,NUMDIR)
          REAL(rkind), INTENT(OUT)    :: SSBRL(NUMSIG,NUMDIR)
 
          REAL(rkind)                 :: HS
@@ -319,17 +366,15 @@
          REAL(rkind)                 :: DINTSPEC
 
 !AR: here we can save time to ommit this calculation of the mean value!!!
-         ETOT = DINTSPEC(WAOLD)
+         ETOT = DINTSPEC(WALOC)
          HS = 4.*SQRT(ETOT)
-
          !IF (LMONO_IN) HMAX(IP) = HMAX(IP) * SQRT(2.)
-
          EMAX = 1./16. * (HMAX(IP))**2
 
          IF (ETOT .GT. EMAX .AND. ETOT .GT. THR) THEN
            RATIO = EMAX/ETOT
-           SSBRL = WAOLD - RATIO * WAOLD
-           WANEW = RATIO * WAOLD
+           SSBRL = WALOC - RATIO * WALOC
+           WALOC = RATIO * WALOC
          END IF
 
          END SUBROUTINE

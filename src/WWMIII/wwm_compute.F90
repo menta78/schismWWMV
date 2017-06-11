@@ -335,52 +335,6 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE ACTION_LIMITER_GLOBAL(ACOLD,ACNEW)
-        USE DATAPOOL
-        IMPLICIT NONE
-        REAL(rkind), INTENT(IN)  :: ACOLD(NUMSIG,NUMDIR,MNP)
-        REAL(rkind), INTENT(OUT) :: ACNEW(NUMSIG,NUMDIR,MNP)
-        REAL(rkind)              :: SSLIM(NUMSIG,NUMDIR)
-
-        REAL(rkind)              :: MAXDAC(NUMSIG)
-        REAL(rkind)              :: ACNEWLOC(NUMSIG,NUMDIR),ACOLDLOC(NUMSIG,NUMDIR)
-        INTEGER                  :: IP
-       
-        DO IP = 1, MNP
-          ACOLDLOC = ACOLD(:,:,IP)
-          ACNEWLOC = ACNEW(:,:,IP)
-          IF (MELIM .EQ. 1) THEN
-            CALL GET_MAXDAC(IP,MAXDAC)
-            CALL ACTION_LIMITER_LOCAL(MAXDAC,ACOLDLOC,ACNEWLOC,SSLIM)
-          ENDIF 
-          ACNEW(:,:,IP) = ACNEWLOC
-        ENDDO
-
-      END SUBROUTINE ACTION_LIMITER_GLOBAL
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE BREAKING_LIMITER_GLOBAL(ACOLD,ACNEW)
-        USE DATAPOOL
-        IMPLICIT NONE
-        REAL(rkind), INTENT(IN)  :: ACOLD(NUMSIG,NUMDIR,MNP)
-        REAL(rkind), INTENT(OUT) :: ACNEW(NUMSIG,NUMDIR,MNP)
-        REAL(rkind)              :: SSBRL(NUMSIG,NUMDIR)
-
-        REAL(rkind)              :: MAXDAC(NUMSIG)
-        REAL(rkind)              :: ACNEWLOC(NUMSIG,NUMDIR),ACOLDLOC(NUMSIG,NUMDIR)
-        INTEGER                  :: IP
-
-        DO IP = 1, MNP
-          ACOLDLOC = ACNEW(:,:,IP)
-          IF (LMAXETOT) CALL BREAKING_LIMITER_LOCAL(IP,ACOLDLOC,ACNEWLOC,SSBRL)
-          ACNEW(:,:,IP) = ACNEWLOC
-        ENDDO
-
-      END SUBROUTINE BREAKING_LIMITER_GLOBAL
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
       SUBROUTINE CFLSPEC
          USE DATAPOOL
          IMPLICIT NONE
