@@ -519,7 +519,7 @@
       REAL(rkind) :: BLOC(NUMSIG,NUMDIR)
       REAL(rkind) :: ASPAR_DIAG(NUMSIG,NUMDIR)
       REAL(rkind) :: SSLIM(NUMSIG,NUMDIR), SSBRL(NUMSIG,NUMDIR)
-      LOGICAL     :: test=.true.
+      LOGICAL     :: test=.true., LCONVERGED(MNP)
       REAL(rkind) :: ASPAR_LOC(NUMSIG,NUMDIR,MAX_DEG), MAXDAC(NUMSIG)
 #ifdef DEBUG_ITERATION_LOOP
       integer iIter
@@ -601,6 +601,8 @@
       NumberIterationSolver = 0
       nbIter=0
 
+      LCONVERGED = .FALSE. 
+
       DO
         is_converged(1) = 0
         JDX=0
@@ -615,7 +617,7 @@
        
         DO IP=1,NP_RES
 
-          IF (IOBDP(IP) .EQ. 0) THEN
+          IF (IOBDP(IP) .EQ. 0 .OR. LCONVERGED(IP)) THEN
             is_converged(1) = is_converged(1) + 1
             cycle
           END IF
@@ -665,6 +667,7 @@
 !              WRITE(STAT%FHNDL,*) 'p_is_converged=', p_is_converged
               IF (IPstatus(IP) .eq. 1) THEN
                 IF (p_is_converged .lt. jgs_diff_solverthr) THEN
+                  LCONVERGED(IP) = .TRUE. 
                   is_converged(1) = is_converged(1) + 1
                   IF (WAE_JGS_CFL_LIM) THEN
                     NumberOperationJGS(IP) = NumberOperationJGS(IP) +1
