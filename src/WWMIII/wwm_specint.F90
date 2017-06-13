@@ -94,7 +94,6 @@
             RATIO  = ONE/MAX(ONE,ABS(NEWDAC/MAXDAC(IS)))
 !            WRITE(*,*) IS, ID, RATIO, MAXDAC(IS), NEWDAC, PHI(IS,ID), DPHIDN(IS,ID), SUM(PHI), SUM(DPHIDN)
             PHI(IS,ID)    = RATIO * PHI(IS,ID)
-            DPHIDN(IS,ID) = RATIO * DPHIDN(IS,ID)
           END DO
         END DO
       ENDIF

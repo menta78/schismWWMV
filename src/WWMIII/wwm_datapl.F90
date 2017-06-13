@@ -308,10 +308,10 @@
          INTEGER    :: idxWind
 
 
-         LOGICAL    :: LWRITE_ORIG_WIND                = .TRUE.
-         LOGICAL    :: LWRITE_WW3_RESULTS              = .TRUE.
-         LOGICAL    :: LWRITE_ALL_WW3_RESULTS          = .TRUE.
-         LOGICAL    :: LWRITE_INTERPOLATED_WW3_RESULTS = .TRUE.
+         LOGICAL    :: LWRITE_ORIG_WIND                = .FALSE.
+         LOGICAL    :: LWRITE_WW3_RESULTS              = .FALSE.
+         LOGICAL    :: LWRITE_ALL_WW3_RESULTS          = .FALSE.
+         LOGICAL    :: LWRITE_INTERPOLATED_WW3_RESULTS = .FALSE.
 
          character(len=20) :: MODEL_OUT_TYPE = "WW3"
 
