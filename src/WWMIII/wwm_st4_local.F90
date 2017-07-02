@@ -64,7 +64,6 @@
 !/                  ! This code was provided for WWM-III !
 !/                  ! by F. Ardhuin it is simillar       !
 !/                  ! to the WWM-III 5.16 implementation !
-!/                  |                        FORTRAN 90  |
 !/                  +------------------------------------+
 !/
 !/
