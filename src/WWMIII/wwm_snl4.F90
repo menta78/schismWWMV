@@ -1,7 +1,68 @@
 #include "wwm_functions.h"
+! __      __  __      __  _____  .___.___.___ 
+!/  \    /  \/  \    /  \/     \ |   |   |   |
+!\   \/\/   /\   \/\/   /  \ /  \|   |   |   |
+! \        /  \        /    Y    \   |   |   |
+!  \__/\  /    \__/\  /\____|__  /___|___|___|
+!       \/          \/         \/             
+!
+! WWM-III (Wind Wave Model) source code 
+! 
+! The 1st version of the WWM code was written by Jian-Ming Liau in his thesis supervised by Tai-Wen Hsu (Liau et al. 2002). 
+! The source code served as the basis for my thesis that was as well supervised by Tai-Wen Hsu and Ulrich Zanke. In my thesis work
+! new numerics and source terms have beend developed (Roland, 2008) and resulted in the WWM-II version of the code. Following this
+! the code has served from than as a basis for a 10 year development. In this time the source code was significantly rewritten and 
+! enhanced with various capabilities. The numerics have been completely revised (Roland, 2008) and parallelized.
+! The source term package of Ardhuin et al. 2009, 2010 and from ECMWF (courtesy Jean-Bidlot) was implemented in the WWM-III. 
+! The code has served as a basis for a 10 year development. In this time the source code was significantly rewritten and 
+! enhanced with various capabilities. The numerics have been completely revised (Roland, 2008), which lead to the version of WWM-II. 
+! In WWM-III the model was fully parallelized using Domain Decomposition and coupled to SCHISM. Moreover,
+! the source term package of Ardhuin et al. 2009, 2010 and from ECMWF (courtesy Jean-Bidlot) was implemented in the WWM-III. 
+! The I/O was completely rewritten in NETCDF and various common wind fields can be read such as CFRS, ECMWF, NCEP or others.  
+! Parallelization is done using the PDLIB decomposition library developed by BGS IT&E GmbH and based on domain decmoposition. 
+! 
+! Leading: 
+!
+!   Aron Roland (Roland & Partner, Darmstadt),
+!
+! Initial Code WWM-I v.2005: 
+!
+!   Tai-Wen Hsu (NTOU, NCKU, Taiwan) 
+!   Jian-Ming Liau (NCKU, Taiwan)
+!
+! Contributors:
+!
+!   Fabrice Ardhuin (INRIA, France)
+!   Jean Bidlot (ECMWF, Reading, U.K.)
+!   Peter Janssen (ECMWF, Reading, U.K)
+!   Mathieu Dutour Sikiric (IRB, Zagreb),
+!   Yinglong Joseph Zhang (VIMS, USA),
+!   Christian Ferrarin (ISMAR-CNR, Venice, Italy),
+!   Fabrice Ardhuin (IFREMER, Brest, France),
+!   Thomas Huxhorn (BGS IT&E, Darmstadt, Germany),
+!   Andrea Fortunato (LNEC, Lissabon, Portugal),
+!   Guillaume Dodet (IFREMER, Brest, France),
+!   Kai Li, 
+!               
+! Copyright: 2008 - 2017 (Aron Roland, Jian-Ming Liau, Tai-Wen Hsu)
+! All Rights Reserved                                     
+!
+! http://www.apache.org/licenses/LICENSE-2.0
+!
+! Unless required by applicable law or agreed to in writing, software
+! distributed under the License is distributed on an "AS IS" BASIS,
+! WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+! See the License for the specific language governing permissions and
+! limitations under the License.
+
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+! Comments: 
+!
+! This code is based on the WW3 v.2.22 and is modified to fit the freq.
+! Directional Spectrum of WWM-III
+!
       SUBROUTINE DIASNL4PARAM
          USE DATAPOOL
          IMPLICIT NONE
