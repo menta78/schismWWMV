@@ -1,18 +1,72 @@
 #include "wwm_functions.h"
 !/ ------------------------------------------------------------------- /
       MODULE W3SRC4MD
+! __      __  __      __  _____  .___.___.___ 
+!/  \    /  \/  \    /  \/     \ |   |   |   |
+!\   \/\/   /\   \/\/   /  \ /  \|   |   |   |
+! \        /  \        /    Y    \   |   |   |
+!  \__/\  /    \__/\  /\____|__  /___|___|___|
+!       \/          \/         \/             
+!
+! WWM-III (Wind Wave Model) source code 
+! 
+! The 1st version of the WWM code was written by Jian-Ming Liau in his thesis supervised by Tai-Wen Hsu (Liau et al. 2002). 
+! The source code served as the basis for my thesis that was as well supervised by Tai-Wen Hsu and Ulrich Zanke. In my thesis work
+! new numerics and source terms have beend developed (Roland, 2008) and resulted in the WWM-II version of the code. Following this
+! the code has served from than as a basis for a 10 year development. In this time the source code was significantly rewritten and 
+! enhanced with various capabilities. The numerics have been completely revised (Roland, 2008) and parallelized.
+! The source term package of Ardhuin et al. 2009, 2010 and from ECMWF (courtesy Jean-Bidlot) was implemented in the WWM-III. 
+! The code has served as a basis for a 10 year development. In this time the source code was significantly rewritten and 
+! enhanced with various capabilities. The numerics have been completely revised (Roland, 2008), which lead to the version of WWM-II. 
+! In WWM-III the model was fully parallelized using Domain Decomposition and coupled to SCHISM. Moreover,
+! the source term package of Ardhuin et al. 2009, 2010 and from ECMWF (courtesy Jean-Bidlot) was implemented in the WWM-III. 
+! The I/O was completely rewritten in NETCDF and various common wind fields can be read such as CFRS, ECMWF, NCEP or others.  
+! Parallelization is done using the PDLIB decomposition library developed by BGS IT&E GmbH and based on domain decmoposition. 
+! 
+! Leading: 
+!
+!   Aron Roland (Roland & Partner, Darmstadt),
+!
+! Initial Code WWM-I v.2005: 
+!
+!   Tai-Wen Hsu (NTOU, NCKU, Taiwan) 
+!   Jian-Ming Liau (NCKU, Taiwan)
+!
+! Contributors:
+!
+!   Fabrice Ardhuin (INRIA, France)
+!   Jean Bidlot (ECMWF, Reading, U.K.)
+!   Mathieu Dutour Sikiric (IRB, Zagreb),
+!   Yinglong Joseph Zhang (VIMS, USA),
+!   Christian Ferrarin (ISMAR-CNR, Venice, Italy),
+!   Fabrice Ardhuin (IFREMER, Brest, France),
+!   Thomas Huxhorn (BGS IT&E, Darmstadt, Germany),
+!   Andrea Fortunato (LNEC, Lissabon, Portugal),
+!   Guillaume Dodet (IFREMER, Brest, France),
+!   Kai Li, 
+!               
+! Copyright: 2008 - 2017 (Aron Roland, Jian-Ming Liau, Tai-Wen Hsu)
+! All Rights Reserved                                     
+!
+! http://www.apache.org/licenses/LICENSE-2.0
+!
+! Unless required by applicable law or agreed to in writing, software
+! distributed under the License is distributed on an "AS IS" BASIS,
+! WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+! See the License for the specific language governing permissions and
+! limitations under the License.
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
 !/
-!/                  +-----------------------------------+
-!/                  | WAVEWATCH III                SHOM |
-!/                  !            F. Ardhuin             !
-!/                  |                        FORTRAN 90 |
-!/                  | Last update :         13-Nov-2013 |
-!/                  +-----------------------------------+
+!/                  +------------------------------------+
+!/                  !            F. Ardhuin              !
+!/                  ! This code was provided for WWM-III !
+!/                  ! by F. Ardhuin it is simillar       !
+!/                  ! to the WWM-III 5.16 implementation !
+!/                  |                        FORTRAN 90  |
+!/                  +------------------------------------+
 !/
-!/    30-Aug-2010 : Origination.                        ( version 3.14-Ifremer )
-!/    02-Nov-2010 : Addding fudge factor for low freq.  ( version 4.03 )
-!/    02-Sep-2011 : Clean up and time optimization      ( version 4.04 )
-!/    04-Sep-2011 : Estimation of whitecap stats.       ( version 4.04 )
 !/
 !  1. Purpose :
 !
@@ -384,6 +438,14 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+!/                  +------------------------------------+
+!/                  !            F. Ardhuin              !
+!/                  ! This code was provided for WWM-III !
+!/                  ! by F. Ardhuin it is simillar       !
+!/                  ! to the WWM-III 5.16 implementation !
+!/                  |                        FORTRAN 90  |
+!/                  +------------------------------------+
+
       SUBROUTINE READ_INSIN4
       USE DATAPOOL, ONLY : LPRECOMP_EXIST, DBG, NUMSIG, NUMDIR
       IMPLICIT NONE
@@ -419,77 +481,21 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE TABU_FW
-!/
-!/                  +-----------------------------------+
-!/                  | WAVEWATCH III           NOAA/NCEP |
-!/                  |            F. Ardhuin             |
-!/                  |                        FORTRAN 90 |
-!/                  | Last update :         28-Feb-2013 |
-!/                  +-----------------------------------+
-!/
-!/    19-Oct-2007 : Origination.                        ( version 3.13 )
-!/    28-Feb-2013 : Caps the friction factor to 0.5     ( version 4.08 )
-!/
-!  1. Purpose :
-!     TO estimate friction coefficients in oscillatory boundary layers
-!     METHOD.
-!      tabulation on Kelvin functions
-!
-!  2. Method :
-!
-!  3. Parameters :
-!
-!     Parameter list
-!     ----------------------------------------------------------------
-!     ----------------------------------------------------------------
-!
-!  4. Subroutines used :
-!
-!      Name      Type  Module   Description
-!     ----------------------------------------------------------------
-!      STRACE    Subr. W3SERVMD Subroutine tracing.
-!     ----------------------------------------------------------------
-!
-!  5. Called by :
-!
-!      Name      Type  Module   Description
-!     ----------------------------------------------------------------
-!      WW3_GRID  Prog. WW3_GRID Model grid initialization
-!     ----------------------------------------------------------------
-!
-!  6. Error messages :
-!
-!       None.
-!
-!  7. Remarks :
-!
-!  8. Structure :
-!
-!     See source code.
-!
-!  9. Switches :
-!
-!     !/S  Enable subroutine tracing.
-!
-! 10. Source code :
-!
-!/ ------------------------------------------------------------------- /
+!/                  +------------------------------------+
+!/                  !            F. Ardhuin              !
+!/                  ! This code was provided for WWM-III !
+!/                  ! by F. Ardhuin it is simillar       !
+!/                  ! to the WWM-III 5.16 implementation !
+!/                  |                        FORTRAN 90  |
+!/                  +------------------------------------+
+
       USE DATAPOOL, only : ONE, ZERO, rkind
       IMPLICIT NONE
       INTEGER, PARAMETER      :: NITER=100
       REAL(rkind)   , PARAMETER      :: XM=0.50, EPS1=0.00001
-!     VARIABLE.   TYPE.     PURPOSE.
-!      *XM*        REAL      POWER OF TAUW/TAU IN ROUGHNESS LENGTH.
-!      *XNU*       REAL      KINEMATIC VISCOSITY OF AIR.
-!      *NITER*     INTEGER   NUMBER OF ITERATIONS TO OBTAIN TOTAL STRESS
-!      *EPS1*      REAL      SMALL NUMBER TO MAKE SURE THAT A SOLUTION
-!                            IS OBTAINED IN ITERATION WITH TAU>TAUW.
-! ----------------------------------------------------------------------
       INTEGER I,ITER
       REAL(rkind) KER, KEI
       REAL(rkind) ABR,ABRLOG,L10,FACT,FSUBW,FSUBWMEMO,dzeta0,dzeta0memo
-!
-!
 !
       DELAB   = (ABMAX-ABMIN)/REAL(SIZEFWTABLE)
       L10=ALOG(10.)
@@ -521,6 +527,14 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+!/                  +------------------------------------+
+!/                  !            F. Ardhuin              !
+!/                  ! This code was provided for WWM-III !
+!/                  ! by F. Ardhuin it is simillar       !
+!/                  ! to the WWM-III 5.16 implementation !
+!/                  |                        FORTRAN 90  |
+!/                  +------------------------------------+
+
       SUBROUTINE KZEONE(Xin, Yin, RE0out, IM0out, RE1out, IM1out)
       USE DATAPOOL
       IMPLICIT NONE
@@ -539,6 +553,14 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE KZEONE_KERNEL(X, Y, RE0, IM0, RE1, IM1)
+!/                  +------------------------------------+
+!/                  !            F. Ardhuin              !
+!/                  ! This code was provided for WWM-III !
+!/                  ! by F. Ardhuin it is simillar       !
+!/                  ! to the WWM-III 5.16 implementation !
+!/                  |                        FORTRAN 90  |
+!/                  +------------------------------------+
+
 !  June 1999 adaptation to CRESTb, all tests on range of (x,y) have been
 !  bypassed, we implicitly expect X to be positive or |x,y| non zero
 ! 
@@ -705,6 +727,14 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+!/                  +------------------------------------+
+!/                  !            F. Ardhuin              !
+!/                  ! This code was provided for WWM-III !
+!/                  ! by F. Ardhuin it is simillar       !
+!/                  ! to the WWM-III 5.16 implementation !
+!/                  |                        FORTRAN 90  |
+!/                  +------------------------------------+
+
       SUBROUTINE KERKEI(X,KER,KEI)
 !**********************************************************************
 ! Computes the values of the zeroth order Kelvin function Ker and Kei
@@ -725,105 +755,26 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+!/                  +------------------------------------+
+!/                  !            F. Ardhuin              !
+!/                  ! This code was provided for WWM-III !
+!/                  ! by F. Ardhuin it is simillar       !
+!/                  ! to the WWM-III 5.16 implementation !
+!/                  |                        FORTRAN 90  |
+!/                  +------------------------------------+
+
       SUBROUTINE W3SPR4 (A, CG, WN, EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, U, UDIR, USTAR, USDIR, TAUWX, TAUWY, CD, Z0, CHARN, LLWS, FMEANWS)
-!/
-!/                  +-----------------------------------+
-!/                  | WAVEWATCH III                SHOM |
-!/                  !            F. Ardhuin             !
-!/                  |           H. L. Tolman            |
-!/                  |                        FORTRAN 90 |
-!/                  | Last update :         13-Jun-2011 |
-!/                  +-----------------------------------+
-!/
-!/    03-Oct-2007 : Origination.                        ( version 3.13 )
-!/    13-Jun-2011 : Adds f_m0,-1 as FMEAN in the outout ( version 4.xx )
-!/
-!  1. Purpose :
-!
-!     Calculate mean wave parameters for the use in the source term
-!     routines. 
-!
-!  2. Method :
-!
-!     See source term routines.
-!
-!  3. Parameters :
-!
-!     Parameter list
-!     ----------------------------------------------------------------
-!       A       R.A.  I   Action density spectrum.
-!       CG      R.A.  I   Group velocities.
-!       WN      R.A.  I   Wavenumbers.
-!       EMEAN   Real  O   Energy
-!       FMEAN1  Real  O   Mean  frequency (fm0,-1) used for reflection
-!       FMEAN   Real  O   Mean  frequency for determination of tail
-!       WNMEAN  Real  O   Mean wavenumber.
-!       AMAX    Real  O   Maximum of action spectrum.
-!       U       Real  I   Wind speed.
-!       UDIR    Real  I   Wind direction.
-!       USTAR   Real I/O  Friction velocity.
-!       USDIR   Real I/O  wind stress direction.
-!       TAUWX-Y Real  I   Components of wave-supported stress.
-!       CD      Real  O   Drag coefficient at wind level ZWND.
-!       Z0      Real  O   Corresponding z0.
-!       CHARN   Real  O   Corresponding Charnock coefficient
-!       LLWS    L.A.  I   Wind sea true/false array for each component            
-!       FMEANWS Real  O   Mean frequency of wind sea, used for tail 
-!     ----------------------------------------------------------------
-!
-!  4. Subroutines used :
-!
-!       STRACE   Service routine.
-!
-!  5. Called by :
-!
-!       W3SRCE   Source term integration routine.
-!       W3OUTP   Point output program.
-!       GXEXPO   GrADS point output program.
-!
-!  6. Error messages :
-!
-!  7. Remarks :
-!
-!  8. Structure :
-!
-!     See source code.
-!
-!  9. Switches :
-!
-!       !/S      Enable subroutine tracing.
-!       !/T      Enable test output.
-!
-! 10. Source code :
-!
-!/ ------------------------------------------------------------------- /
       USE DATAPOOL, ONLY: INVPI2, PI2, RKIND, NSPEC
       USE DATAPOOL, ONLY: ZERO, ONE, myrank
       IMPLICIT NONE
-!/
-!/ ------------------------------------------------------------------- /
-!/ Parameter list
-!/
       REAL(rkind) , INTENT(IN)        :: A(NTH,NK), CG(NK), WN(NK), U, UDIR
       REAL(rkind) , INTENT(IN)        :: TAUWX, TAUWY
       LOGICAL, INTENT(IN)             :: LLWS(NSPEC)
       REAL(rkind) , INTENT(INOUT)     :: USTAR ,USDIR
       REAL(rkind) , INTENT(OUT)       :: EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX,  & 
-                                         CD, Z0, CHARN, FMEANWS
-!/
-!/ ------------------------------------------------------------------- /
-!/ Local parameters
-!/
       INTEGER                 :: IS, IK, ITH
-!/S      INTEGER, SAVE           :: IENT = 0
 
-      REAL(rkind)            :: TAUW, EBAND, EMEANWS, RDCH,   &
-                                 UNZ,                         &
-                                 EB(NK),EB2(NK),ALFA(NK)
-!/
-!/ ------------------------------------------------------------------- /
-!/
-!/S      CALL STRACE (IENT, 'W3SPR3')
+      REAL(rkind)            :: TAUW, EBAND, EMEANWS, RDCH, UNZ, EB(NK),EB2(NK),ALFA(NK)
 !
       UNZ    = MAX ( 0.01_rkind , U )
       USTAR  = MAX ( 0.0001_rkind , USTAR )
@@ -916,82 +867,13 @@
       END SUBROUTINE
 !/ ------------------------------------------------------------------- /
       SUBROUTINE W3SIN4 (IP, A, CG, K, U, USTAR, DRAT, AS, USDIR, Z0, CD, TAUWX, TAUWY, TAUWNX, TAUWNY, S, D, LLWS, BRLAMBDA)
-!/
-!/                  +-----------------------------------+
-!/                  | WAVEWATCH III                SHOM |
-!/                  !            F. Ardhuin             !
-!/                  |           H. L. Tolman            |
-!/                  |                        FORTRAN 90 |
-!/                  | Last update :         16-May-2010 |
-!/                  +-----------------------------------+
-!/
-!/    09-Oct-2007 : Origination.                        ( version 3.13 )
-!/    16-May-2010 : Adding sea ice                      ( version 3.14_Ifremer ) 
-!/
-!  1. Purpose :
-!
-!     Calculate diagonal and input source term for WAM4+ approach.
-!
-!  2. Method :
-!
-!       WAM-4 : Janssen et al. 
-!       WAM-"4.5" : gustiness effect (Cavaleri et al. )
-!       SAT       : high-frequency input reduction for balance with 
-!                   saturation dissipation (Ardhuin et al., 2008)
-!       SWELL     : negative wind input (Ardhuin et al. 2008)
-!
-!  3. Parameters :
-!
-!     Parameter list
-!     ----------------------------------------------------------------
-!       A       R.A.  I   Action density spectrum (1-D).
-!       CG      R.A.  I   Group speed                              *)
-!       K       R.A.  I   Wavenumber for entire spectrum.          *)
-!       U       Real  I   WIND SPEED
-!       USTAR   Real  I   Friction velocity.
-!       DRAT    Real  I   Air/water density ratio.
-!       AS      Real  I   Air-sea temperature difference
-!       USDIR   Real  I   wind stress direction
-!       Z0      Real  I   Air-side roughness lengh.
-!       CD      Real  I   Wind drag coefficient.
-!       USDIR   Real  I   Direction of friction velocity
-!       TAUWX-Y Real  I   Components of the wave-supported stress.
-!       TAUWNX  Real  I   Component of the negative wave-supported stress.
-!       TAUWNY  Real  I   Component of the negative wave-supported stress.
-!       ICE     Real  I   Sea ice fraction.
-!       S       R.A.  O   Source term (1-D version).
-!       D       R.A.  O   Diagonal term of derivative.             *)
-!     ----------------------------------------------------------------
-!                         *) Stored as 1-D array with dimension NTH*NK
-!
-!  4. Subroutines used :
-!
-!       STRACE    Subroutine tracing.                 ( !/S switch )
-!       PRT2DS    Print plot of spectrum.             ( !/T0 switch )
-!       OUTMAT    Print out matrix.                   ( !/T1 switch )
-!
-!  5. Called by :
-!
-!       W3SRCE   Source term integration.
-!       W3EXPO   Point output program.
-!       GXEXPO   GrADS point output program.
-!
-!  6. Error messages :
-!
-!  7. Remarks :
-!
-!  8. Structure :
-!
-!     See source code.
-!
-!  9. Switches :
-!
-!     !/S   Enable subroutine tracing.
-!     !/T   Enable general test output.
-!     !/T0  2-D print plot of source term.
-!     !/T1  Print arrays.
-!
-! 10. Source code :
+!/                  +------------------------------------+
+!/                  !            F. Ardhuin              !
+!/                  ! This code was provided for WWM-III !
+!/                  ! by F. Ardhuin it is simillar       !
+!/                  ! to the WWM-III 5.16 implementation !
+!/                  |                        FORTRAN 90  |
+!/                  +------------------------------------+
 !
 !/ ------------------------------------------------------------------- /
       USE DATAPOOL, ONLY : G9, PI2, RADDEG, RKIND, NSPEC, ZERO, ONE, DBG, THR8, myrank
@@ -1371,70 +1253,18 @@
       END SUBROUTINE
 !/ ------------------------------------------------------------------- /
       SUBROUTINE INSIN4
-!/
-!/                  +-----------------------------------+
-!/                  | WAVEWATCH III           NOAA/NCEP |
-!/                  |                         SHOM      |
-!/                  |            F. Ardhuin             |
-!/                  |                        FORTRAN 90 |
-!/                  | Last update :         30-Aug-2010 |
-!/                  +-----------------------------------+
-!/
-!/    30-Aug-2010 : Origination.                        ( version 3.14-Ifremer )
-!
-!  1. Purpose :
-!
-!     Initialization for source term routine.
-!
-!  2. Method :
-!
-!  3. Parameters :
-!       
-!     ----------------------------------------------------------------
-!      FLTABS    Logical   
-!     ----------------------------------------------------------------
-! 
-!  4. Subroutines used :
-!
-!      Name      Type  Module   Description
-!     ----------------------------------------------------------------
-!      STRACE    Subr. W3SERVMD Subroutine tracing.
-!     ----------------------------------------------------------------
-!
-!  5. Called by :
-!
-!      Name      Type  Module   Description
-!     ----------------------------------------------------------------
-!      W3SIN4    Subr. W3SRC3MD Corresponding source term.
-!     ----------------------------------------------------------------
-!
-!  6. Error messages :
-!
-!       None.
-!
-!  7. Remarks :
-!
-!  8. Structure :
-!
-!     See source code.
-!
-!  9. Switches :
-!
-!     !/S  Enable subroutine tracing.
-!
-! 10. Source code :
-!
-!/ ------------------------------------------------------------------- /
+!/                  +------------------------------------+
+!/                  !            F. Ardhuin              !
+!/                  ! This code was provided for WWM-III !
+!/                  ! by F. Ardhuin it is simillar       !
+!/                  ! to the WWM-III 5.16 implementation !
+!/                  |                        FORTRAN 90  |
+!/                  +------------------------------------+
+
       USE DATAPOOL, ONLY: G9, INVPI2, RADDEG, RKIND, LPRECOMP_EXIST, NUMSIG, NUMDIR
       USE DATAPOOL, ONLY: ZERO, ONE, TWO, STAT, TH
       USE DATAPOOL, ONLY: myrank
       IMPLICIT NONE
-!/
-!/ ------------------------------------------------------------------- /
-!/ Parameter list
-!/
-!/
-!/ ------------------------------------------------------------------- /
 !/
       INTEGER  SDSNTH, ITH, I_INT, J_INT, IK, IK2, ITH2 , IS, IS2
       INTEGER  IKL, ID, IKD, IKHS, IKH, TOTO, ISTAT
@@ -1444,19 +1274,6 @@
       REAL(rkind) ::  DKD, KDD, CN, CC
       REAL(rkind), DIMENSION(:,:)   , ALLOCATABLE :: SIGTAB
       REAL(rkind), DIMENSION(:,:)   , ALLOCATABLE :: K1, K2
-!/
-!/ ------------------------------------------------------------------- /
-!/ Local parameters
-!/
-!/S      INTEGER, SAVE           :: IENT = 0
-!/
-!/ ------------------------------------------------------------------- /
-!/
-!/S      CALL STRACE (IENT, 'INSIN4')
-!
-! 1.  .... ----------------------------------------------------------- *
-!
-! These precomputed tables are written in mod_def.ww3 
 !
       CALL TABU_STRESS
       CALL TABU_TAUHF   !tabulate high-frequency stress
@@ -1652,85 +1469,19 @@
       END SUBROUTINE INSIN4
 ! ----------------------------------------------------------------------
       SUBROUTINE TABU_STRESS
-!/
-!/                  +-----------------------------------+
-!/                  | WAVEWATCH III           NOAA/NCEP |
-!/                  |            F. Ardhuin             |
-!/                  |                        FORTRAN 90 |
-!/                  | Last update :         17-Oct-2007 |
-!/                  +-----------------------------------+
-!/
-!/    23-Jun-2006 : Origination.                        ( version 3.13 )
-!/     adapted from WAM, original:P.A.E.M. JANSSEN    KNMI AUGUST 1990
-!/     adapted version (subr. STRESS): J. BIDLOT    ECMWF OCTOBER 2004
-!/     Table values were checkes against the original f90 result and found to 
-!/     be identical (at least at 0.001 m/s accuracy)
-!/
-!  1. Purpose :
-!     TO GENERATE friction velocity table TAUT(TAUW,U10)=SQRT(TAU).
-!     METHOD.
-!       A STEADY STATE WIND PROFILE IS ASSUMED.
-!       THE WIND STRESS IS COMPUTED USING THE ROUGHNESSLENGTH
-!                  Z1=Z0/SQRT(1-TAUW/TAU)
-!       WHERE Z0 IS THE CHARNOCK RELATION , TAUW IS THE WAVE-
-!       INDUCED STRESS AND TAU IS THE TOTAL STRESS.
-!       WE SEARCH FOR STEADY-STATE SOLUTIONS FOR WHICH TAUW/TAU < 1.
-!       FOR QUASILINEAR EFFECT SEE PETER A.E.M. JANSSEN,1990.
-!
-!     Initialization for source term routine.
-!
-!  2. Method :
-!
-!  3. Parameters :
-!
-!     Parameter list
-!     ----------------------------------------------------------------
-!     ----------------------------------------------------------------
-!
-!  4. Subroutines used :
-!
-!      Name      Type  Module   Description
-!     ----------------------------------------------------------------
-!      STRACE    Subr. W3SERVMD Subroutine tracing.
-!     ----------------------------------------------------------------
-!
-!  5. Called by :
-!
-!      Name      Type  Module   Description
-!     ----------------------------------------------------------------
-!      W3SIN3    Subr. W3SRC3MD Corresponding source term.
-!     ----------------------------------------------------------------
-!
-!  6. Error messages :
-!
-!       None.
-!
-!  7. Remarks :
-!
-!  8. Structure :
-!
-!     See source code.
-!
-!  9. Switches :
-!
-!     !/S  Enable subroutine tracing.
-!
-! 10. Source code :
-!
-!/ ------------------------------------------------------------------- /
+!/                  +------------------------------------+
+!/                  !            F. Ardhuin              !
+!/                  ! This code was provided for WWM-III !
+!/                  ! by F. Ardhuin it is simillar       !
+!/                  ! to the WWM-III 5.16 implementation !
+!/                  +------------------------------------+
+
 !
       USE DATAPOOL, ONLY : G9, PI2, RKIND, ONE, TWO, ZERO
 !
       IMPLICIT NONE
       INTEGER, PARAMETER      :: NITER=10
       REAL(rkind)   , PARAMETER      :: XM=0.50, EPS1=0.00001
-!     VARIABLE.   TYPE.     PURPOSE.
-!      *XM*        REAL(rkind)      POWER OF TAUW/TAU IN ROUGHNESS LENGTH.
-!      *XNU*       REAL(rkind)      KINEMATIC VISCOSITY OF AIR.
-!      *NITER*     INTEGER   NUMBER OF ITERATIONS TO OBTAIN TOTAL STRESS
-!      *EPS1*      REAL(rkind)      SMALL NUMBER TO MAKE SURE THAT A SOLUTION
-!                            IS OBTAINED IN ITERATION WITH TAU>TAUW.
-! ----------------------------------------------------------------------
       INTEGER I,J,ITER
       REAL(rkind) ZTAUW,UTOP,CDRAG,WCD,USTOLD,TAUOLD
       REAL(rkind) X,UST,ZZ0,F,DELF,ZZ00
@@ -1775,78 +1526,16 @@
       END SUBROUTINE TABU_STRESS
 !/ ------------------------------------------------------------------- /
       SUBROUTINE TABU_TAUHF
-!/
-!/                  +-----------------------------------+
-!/                  | WAVEWATCH III           NOAA/NCEP |
-!/                  |            F. Ardhuin             |
-!/                  |                        FORTRAN 90 |
-!/                  | Last update 2006/08/14            |
-!/                  +-----------------------------------+
-!/
-!/    27-Feb-2004 : Origination in WW3                  ( version 2.22.SHOM )
-!/     the resulting table was checked to be identical to the original f77 result
-!/    14-Aug-2006 : Modified following Bidlot           ( version 2.22.SHOM )
-!/    18-Aug-2006 : Ported to version 3.09      
-!
-!  1. Purpose :
-!
-!     Tabulation of the high-frequency wave-supported stress
-!
-!  2. Method :
-!
-!       SEE REFERENCE FOR WAVE STRESS CALCULATION.
-!       FOR QUASILINEAR EFFECT SEE PETER A.E.M. JANSSEN,1990.
-!     See tech. Memo ECMWF 03 december 2003 by Bidlot & Janssen
-!
-!  3. Parameters :
-!
-!     Parameter list
-!     ----------------------------------------------------------------
-!       FRMAX   Real  I   maximum frequency.
-!     ----------------------------------------------------------------
-!
-!  4. Subroutines used :
-!
-!       STRACE   Service routine.
-!
-!  5. Called by :
-!
-!       W3SIN3   Wind input Source term routine.
-!
-!  6. Error messages :
-!
-!  7. Remarks :
-!
-!  8. Structure :
-!
-!     See source code.
-!
-!  9. Switches :
-!
-!       !/S      Enable subroutine tracing.
-!       !/T      Enable test output.
-!
-! 10. Source code :
-!
-!/ ------------------------------------------------------------------- /
-!/T      USE W3ODATMD, ONLY: NDST
+!/                  +------------------------------------+
+!/                  !            F. Ardhuin              !
+!/                  ! This code was provided for WWM-III !
+!/                  ! by F. Ardhuin it is simillar       !
+!/                  ! to the WWM-III 5.16 implementation !
+!/                  +------------------------------------+
+
 !
       USE DATAPOOL, ONLY : G9, PI2, RKIND, ZERO, ONE, SPSIG, NUMSIG
       IMPLICIT NONE
-!/
-!/ ------------------------------------------------------------------- /
-!/ Local parameters
-!/
-!       USTARM  R.A.  Maximum friction velocity
-!       ALPHAM  R.A.  Maximum Charnock Coefficient
-!       WLV     R.A.  Water levels.
-!       UA      R.A.  Absolute wind speeds.
-!       UD      R.A.  Absolute wind direction.
-!       U10     R.A.  Wind speed used.
-!       U10D    R.A.  Wind direction used.
-! 10. Source code :
-!
-!/ ------------------------------------------------------------------- /
       REAL(rkind)                    :: USTARM, ALPHAM
       REAL(rkind)                    :: CONST1, OMEGA, OMEGAC 
       REAL(rkind)                    :: UST, ZZ0,OMEGACC, CM
@@ -1911,78 +1600,18 @@
 
 !/ ------------------------------------------------------------------- /
       SUBROUTINE TABU_TAUHF2
-!/
-!/                  +-----------------------------------+
-!/                  | WAVEWATCH III           NOAA/NCEP |
-!/                  |            F. Ardhuin             |
-!/                  |                        FORTRAN 90 |
-!/                  | Last update 2006/08/14            |
-!/                  +-----------------------------------+
-!/
-!/    15-May-2007 : Origination in WW3                  ( version 3.10.SHOM )
-!
-!  1. Purpose :
-!
-!     Tabulation of the high-frequency wave-supported stress as a function of
-!     ustar, alpha (modified Charnock), and tail energy level
-!
-!  2. Method :
-!
-!       SEE REFERENCE FOR WAVE STRESS CALCULATION.
-!       FOR QUASILINEAR EFFECT SEE PETER A.E.M. JANSSEN,1990.
-!     See tech. Memo ECMWF 03 december 2003 by Bidlot & Janssen
-!
-!  3. Parameters :
-!
-!     Parameter list
-!     ----------------------------------------------------------------
-!       SIGMAX   Real  I   maximum frequency*TPI
-!     ----------------------------------------------------------------
-!
-!  4. Subroutines used :
-!
-!       STRACE   Service routine.
-!
-!  5. Called by :
-!
-!       W3SIN3   Wind input Source term routine.
-!
-!  6. Error messages :
-!
-!  7. Remarks :
-!
-!  8. Structure :
-!
-!     See source code.
-!
-!  9. Switches :
-!
-!       !/S      Enable subroutine tracing.
-!       !/T      Enable test output.
-!
-! 10. Source code :
-!
-!/ ------------------------------------------------------------------- /
-!/T      USE W3ODATMD, ONLY: NDST
+!/                  +------------------------------------+
+!/                  !            F. Ardhuin              !
+!/                  ! This code was provided for WWM-III !
+!/                  ! by F. Ardhuin it is simillar       !
+!/                  ! to the WWM-III 5.16 implementation !
+!/                  |                        FORTRAN 90  |
+!/                  +------------------------------------+
+
 !
       USE DATAPOOL, ONLY : G9, PI2, RKIND, ZERO, ONE, SPSIG, NUMSIG, STAT 
 
       IMPLICIT NONE
-!/
-!/ ------------------------------------------------------------------- /
-!/ Local parameters
-!/
-!       USTARM  R.A.  Maximum friction velocity
-!       ALPHAM  R.A.  Maximum Charnock Coefficient
-!       WLV     R.A.  Water levels.
-!       UA      R.A.  Absolute wind speeds.
-!       UD      R.A.  Absolute wind direction.
-!       U10     R.A.  Wind speed used.
-!       U10D    R.A.  Wind direction used.
-! 10. Source code :
-!
-!/ ------------------------------------------------------------------- /
-!/S      INTEGER, SAVE           :: IENT = 0
       REAL(rkind)                    :: USTARM, ALPHAM, LEVTAILM
       REAL(rkind)                    :: CONST1, OMEGA, OMEGAC, LEVTAIL 
       REAL(rkind)                    :: UST, UST0, ZZ0,OMEGACC, CM
@@ -2118,63 +1747,14 @@
 !/ ------------------------------------------------------------------- /
       SUBROUTINE CALC_USTAR(WINDSPEED,TAUW,USTAR,Z0,CHARN)
 !/
-!/                  +-----------------------------------+
-!/                  | WAVEWATCH III           NOAA/NCEP |
-!/                  |            F. Ardhuin             |
-!/                  |                        FORTRAN 90 |
-!/                  | Last update 2006/08/14            |
-!/                  +-----------------------------------+
-!/
-!/    27-Feb-2004 : Origination in WW3                  ( version 2.22-SHOM )
-!/     the resulting table was checked to be identical to the original f77 result
-!/    14-Aug-2006 : Modified following Bidlot           ( version 2.22-SHOM )
-!/    18-Aug-2006 : Ported to version 3.09      
-!/    03-Apr-2010 : Adding output of Charnock parameter ( version 3.14-IFREMER )
-!
-!  1. Purpose :
-!
-!     Compute friction velocity based on wind speed U10
-!
-!  2. Method :
-!
-!     Computation of u* based on Quasi-linear theory
-!
-!  3. Parameters :
-!
-!     Parameter list
-!     ----------------------------------------------------------------
-!       U10,TAUW,USTAR,Z0
-!     ----------------------------------------------------------------
-!       WINDSPEED Real  I   10-m wind speed ... should be NEUTRAL 
-!       TAUW      Real  I   Wave-supported stress
-!       USTAR     Real  O   Friction velocity.
-!       Z0        Real  O   air-side roughness length
-!     ----------------------------------------------------------------
-!
-!  4. Subroutines used :
-!
-!       STRACE   Service routine.
-!
-!  5. Called by :
-!
-!       W3SIN3   Wind input Source term routine.
-!
-!  6. Error messages :
-!
-!  7. Remarks :
-!
-!  8. Structure :
-!
-!     See source code.
-!
-!  9. Switches :
-!
-!       !/S      Enable subroutine tracing.
-!       !/T      Enable test output.
-!
-! 10. Source code :
-!-----------------------------------------------------------------------------!
-!/T      USE W3ODATMD, ONLY: NDST
+!/                  +------------------------------------+
+!/                  !            F. Ardhuin              !
+!/                  ! This code was provided for WWM-III !
+!/                  ! by F. Ardhuin it is simillar       !
+!/                  ! to the WWM-III 5.16 implementation !
+!/                  |                        FORTRAN 90  |
+!/                  +------------------------------------+
+
       USE DATAPOOL, ONLY : G9, PI2, RKIND, ZERO, ONE, THR
 
       IMPLICIT NONE
@@ -2216,7 +1796,14 @@
       END SUBROUTINE CALC_USTAR
 !/ ------------------------------------------------------------------- /
       SUBROUTINE W3SDS4(A, K, CG, USTAR, USDIR, DEPTH, S, D, BRLAMBDA, WHITECAP)
-!/ ------------------------------------------------------------------- /
+!/                  +------------------------------------+
+!/                  !            F. Ardhuin              !
+!/                  ! This code was provided for WWM-III !
+!/                  ! by F. Ardhuin it is simillar       !
+!/                  ! to the WWM-III 5.16 implementation !
+!/                  |                        FORTRAN 90  |
+!/                  +------------------------------------+
+
       USE DATAPOOL, ONLY : INVPI2, G9, RHOW, RHOA, RADDEG, PI2, RKIND, NSPEC, ZERO, ONE, ZERO, THR8, PI
 !
       IMPLICIT NONE
