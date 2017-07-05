@@ -24,7 +24,15 @@
 !        vdens_local     =  ! veg. density / per layer and node 
 !        lthick_local    =  ! lay. thickness / per layer and node 
 !
-        CALL intvegdissip(vegdiss,nvrt,vdrgcoeff_local,vdiam_local,vdens_local,kbar,lthick_local) 
+        IF (LVEGCONST) THEN
+#ifdef SCHISM
+          CALL intvegdissip_const_schism(vegdiss,vdrgcoeff_local,vdiam_local,vdens_local,kbar,lthick_local)
+#else
+          CALL intvegdissip_const(vegdiss,vdrgcoeff_local,vdiam_local,vdens_local,kbar,lthick_local) 
+#endif
+        ELSE
+          CALL intvegdissip_var(vegdiss,nvrt,vdrgcoeff_local,vdiam_local,vdens_local,kbar,lthick_local) 
+        ENDIF
         
         SVEGET = BGDISS + VEGDISS 
     
