@@ -578,6 +578,11 @@
          INTEGER   :: MNE
          INTEGER   :: NVRT
 #endif
+
+#ifndef SCHISM
+        INTEGER, PARAMETER      :: NVRT = 10
+#endif
+
          INTEGER   :: NUMDIR
          INTEGER   :: NUMSIG, NUMSIGL
          INTEGER   :: NSPEC

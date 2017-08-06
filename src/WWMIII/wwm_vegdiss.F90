@@ -11,45 +11,26 @@
         REAL(rkind),INTENT(IN)  :: ACLOC(NUMSIG,NUMDIR)
         REAL(rkind),INTENT(OUT) :: SSVEG(NUMSIG,NUMDIR), DSSVEG(NUMSIG,NUMDIR)
 
-        REAL(rkind) :: BGDISS, KDBAR, SVEGET, VEGDISS
-        INTEGER     :: IS, ID
+        INTEGER                 :: IS, ID
+
+        REAL(rkind)             :: BGDISS, KDBAR, SVEGET, VEGDISS
+        REAL(rkind)             :: VCD, VDM, VDENS, VLTH(NVRT)
 
         IF (ETOT .LT. THR) RETURN
 
         KDBAR  = KBAR * DEPTH
 !
-        BGDISS = SQRT(TWO/PI)*G9**2*(KBAR/SBAR)**3*SQRT(ETOT)/(THREE*KBAR*(COSH(KDBAR))**3)*NPLANTSPSQM(IP)
+        BGDISS = SQRT(TWO/PI)*G9**2*(KBAR/SBAR)**3*SQRT(ETOT)/(THREE*KBAR*(COSH(KDBAR))**3)*VDENS
 !
-!        vdrgcoeff_local =  ! drag coefficient / per layer and node 
-!        vdiam_local     =  ! diam of veg. / per layer and node 
-!        vdens_local     =  ! veg. density / per layer and node 
-!        lthick_local    =  ! lay. thickness / per layer and node 
+!       VCD =  ! drag coefficient / per layer and node 
+!       VDM =  ! diam of veg. / per layer and node 
+!       VDENS =  ! veg. density / per layer and node 
+!       VLTH =  ! lay. thickness / per layer and node 
 !
-<<<<<<< HEAD
-        vegdiss(:,IP)   = 0
-        vdrgcoeff(:,IP) = 1.
-        vdiam(:,IP)     = 0.04
-        vdens(:,IP)     = 0.6 
-        lthick(:,IP)    = 2.
-
-        CALL INTVEGDISSIP(vegdiss,nvrt,dep(ip),kbar,vdrgcoeff(:,IP),vdiam(:,IP),vdens(:,IP),lthick(:,IP)) 
+        CALL INTVEGDISSIP(vegdiss,nvrt,depth,kbar,vcd,vdm,vdens,vlth) 
 
         SVEGET = BGDISS * VEGDISS 
 
-=======
-        IF (LVEGCONST) THEN
-#ifdef SCHISM
-          CALL intvegdissip_const_schism(vegdiss,vdrgcoeff_local,vdiam_local,vdens_local,kbar,lthick_local)
-#else
-          CALL intvegdissip_const(vegdiss,vdrgcoeff_local,vdiam_local,vdens_local,kbar,lthick_local) 
-#endif
-        ELSE
-          CALL intvegdissip_var(vegdiss,nvrt,vdrgcoeff_local,vdiam_local,vdens_local,kbar,lthick_local) 
-        ENDIF
-        
-        SVEGET = BGDISS + VEGDISS 
-    
->>>>>>> 2d3fa1a007b1f051c382479180de34bc85a36ca2
         DO IS = 1, NUMSIG
           DO ID = 1, NUMDIR
             DSSVEG(IS,ID) = - SVEGET
@@ -61,8 +42,8 @@
 !****************************************************************
 !
 !****************************************************************
-      subroutine intvegdissip(vegdiss,nlay,depth,kbar,vdrgcoeff,vdiam,vdens,lthick)
-        USE DATAPOOL, ONLY : RKIND
+      SUBROUTINE INTVEGDISSIP(vegdiss,nlay,depth,kbar,vdrgcoeff,vdiam,vdens,lthick)
+        USE DATAPOOL, ONLY : RKIND, ZERO
         implicit none
 
         real(rkind),intent(in)  :: depth
@@ -72,14 +53,15 @@
         real(rkind),intent(in)  :: vdens(nlay)
         real(rkind),intent(in)  :: lthick(nlay)
         real(rkind),intent(out) :: vegdiss
-        real(rkind)             :: svkh1, svkh2, coeff, kvh
+        real(rkind)             :: svkh1, svkh2, coeff, kvh, sumlay 
 
         integer,intent(in)      :: nlay
         integer                 :: i,j
 
-        svkh1 = 0.d0
-        svkh2 = 0.d0
-        kvh   = 0.d0
+        svkh1 = ZERO
+        svkh2 = ZERO
+        kvh   = ZERO
+        sumlay = ZERO
         do i = 1, nlay
           sumlay  = sumlay + lthick(i)  
           if (vdiam(i) .gt. ZERO) then
