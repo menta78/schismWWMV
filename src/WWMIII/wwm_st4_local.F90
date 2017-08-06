@@ -770,8 +770,8 @@
       REAL(rkind) , INTENT(IN)        :: TAUWX, TAUWY
       LOGICAL, INTENT(IN)             :: LLWS(NSPEC)
       REAL(rkind) , INTENT(INOUT)     :: USTAR ,USDIR
-      REAL(rkind) , INTENT(OUT)       :: EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX,  & 
-      INTEGER                 :: IS, IK, ITH
+      REAL(rkind) , INTENT(OUT)       :: EMEAN, FMEAN, FMEAN1, WNMEAN, AMAX, CD, Z0, CHARN, FMEANWS
+      INTEGER                         :: IS, IK, ITH
 
       REAL(rkind)            :: TAUW, EBAND, EMEANWS, RDCH, UNZ, EB(NK),EB2(NK),ALFA(NK)
 !

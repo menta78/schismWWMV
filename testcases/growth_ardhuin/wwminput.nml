@@ -321,7 +321,7 @@
 /
 
 &HISTORY       
- BEGTC          = '18581117.000000', 
+ BEGTC          = '20030920.000000', 
  DELTC          = 600.000000000000,  
  UNITC          = 'SEC',             
  ENDTC          = '20040930.000000', 
@@ -333,7 +333,7 @@
  LWXFN          = .T.,               
  GRIDWRITE      = .T.,               
  PARAMWRITE     = .T.,               
- MULTIPLEOUT    = 0,                 
+ MULTIPLEOUT    =  0,                 
  USE_SINGLE_OUT = .T.,               
  PRINTMMA       = .F.,               
  TEXT_OUTPUT_PRINT = .F.,               
