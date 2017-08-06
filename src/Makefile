@@ -27,7 +27,7 @@
 # Libraries (needed for parallel code). Need to re-compile these when compilers are changed.
 #   MTSLIBS: Flags for linking ParMeTiS/MeTiS libaries
 #   netcdf: v3.x has been tested
-#   GOTM:    v3.2.5
+#   GOTM77051428:    v3.2.5
 #   ALTLIBS: (obsolete) Flags for linking alternate solver libraries (LAPACK or ITPACK,
 #            these are just for testing)
 ################################################################################
@@ -63,7 +63,16 @@ ifeq ($(FCS),)
     FCS := ${FCP}
 endif
 
-
+##PetSc config file that defines things like PETSC_FC_INCLUDES below
+ifeq ($(PETSC_VERSION),v1) #v3.5
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DPETSCV=1
+  include ${PETSC_DIR}/conf/variables
+else
+  ifeq ($(PETSC_VERSION),v2) ##v3.6, 3.7
+    PPFLAGS := $(PPFLAGS) $(IBMCPP)-DPETSCV=2
+    include ${PETSC_DIR}/lib/petsc/conf/variables
+  endif
+endif
 
 ############
 # Derived compiler flags
@@ -91,22 +100,29 @@ endif
 # rules to build objects for executable programs and libraries
 
 #Search path
-VPATH = Core/ Driver/ Hydro/ EcoSim/ ICM/ Sediment/ Sed2d/ WWMIII/ \
-        /disk/ambcs03/0/yinglong/SELFE/from_Durski_Sept2009/V3.0c/ \
-        TiMor/ SCHISM_Additional/
+VPATH = Core/ Driver/ Hydro/ EcoSim/ COSINE/ Sediment/ Sed2d/ \
+        WWMIII/ ICM/ TIMOR/ FIB/
 
-ifdef USE_PETSC
-  include ${PETSC_DIR}/conf/variables
+ifdef FUJITSU
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DFUJITSU
 endif
 
+#Cores
 OBJS = schism_glbl.o schism_msgp.o misc_modules.o schism_driver.o
+
+ifdef USE_PETSC
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_PETSC
+  PETSCLIBS = ${PETSC_LIB}
+  PETSCMOD = ${PETSC_FC_INCLUDES}
+
+  OBJS := $(OBJS) petsc_schism.o
+else
+  PETSCLIBS =
+  PETSCMOD =
+endif
 
 ifdef USE_PREC_EVAP
   PPFLAGS := $(PPFLAGS) $(IBMCPP)-DPREC_EVAP
-endif
-
-ifdef USE_BULK_FLUX
-  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_BULK_FLUX_FORMULATION
 endif
 
 ifdef USE_MM5
@@ -133,6 +149,10 @@ endif
 
 ifdef USE_DEBUG
   PPFLAGS := $(PPFLAGS) $(IBMCPP)-DDEBUG 
+endif
+
+ifdef USE_TIMER2
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DTIMER2
 endif
 
 ifdef USE_TIMER
@@ -184,7 +204,7 @@ endif
 
 ifdef USE_COSINE
   PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_COSINE
-  OBJS := $(OBJS) cosine.o 
+  OBJS := $(OBJS) cosine_mod.o cosine_init.o cosine.o 
 endif
 
 ifdef USE_FIB
@@ -212,43 +232,42 @@ ifdef USE_OIL
 endif
 
 ifdef USE_WWM
-# please take care we have now ST41 (ardhuin_old) and ST42 (ardhuin_new)
-  PPFLAGS := $(PPFLAGS) -DUSE_WWM -DNCDF -DST42 -DWWM_SOLVER 
+  PPFLAGS := $(PPFLAGS) -DUSE_WWM -DNCDF -DST42 -DWWM_SOLVER # -DDEBUG_SOURCE_TERM -DDEBUG_SOLVER -DDEBUG 
 OBJS := $(OBJS) wwm_datapl.o wwm_petscpool.o  wwm_petsc_seriell.o wwm_petsc_parallel.o \
          wwm_petsc_block.o wwm_petsc_controller.o wwm_aux.o wwm_aux_parall.o wwm_mjdv2.o wwm_blasaux.o wwm_sparskit.o \
-         wwm_wind.o wwm_ardhuin_new.o wwm_breaking.o wwm_friction.o wwm_cycle3.o \
+         wwm_wind.o wwm_breaking.o wwm_friction.o wwm_cycle3.o \
          wwm_gridcf.o wwm_hotfile.o wwm_parall_solver.o wwm_m_constants.o \
          wwm_m_fileio.o wwm_serv_xnl4v5.o wwm_mod_xnl4v5.o wwm_snl4_wrt.o \
-         wwm_wave_setup.o wwm_ecmwf_local.o wwm_initio.o wwm_netcdf.o wwm_input.o wwm_grid.o\
-         wwm_ecmwf.o wwm_deep.o wwm_shallow.o wwm_st4.o wwm_snl4.o wwm_snl4_tsa.o wwm_babanin.o \
+         wwm_wave_setup.o wwm_ecmwf_local.o wwm_st4_local.o wwm_initio.o wwm_netcdf.o wwm_input.o wwm_grid.o\
+         wwm_ecmwf.o wwm_deep.o wwm_shallow.o wwm_st4.o wwm_snl4.o \
          wwm_bdcons_init.o wwm_bdcons.o wwm_bdcons_wam.o wwm_nesting.o \
-         wwm_specparam.o wwm_windinput.o wwm_dissipation.o wwm_snl3.o wwm_vegdiss.o\
+         wwm_specparam.o wwm_windinput.o wwm_snl3.o wwm_vegdiss.o\
          wwm_specint.o wwm_nums1d.o wwm_numtheta.o wwm_numsigma.o wwm_fluctsplit.o \
          wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms_pipe.o wwm_coupl_roms_pgmcl.o\
          wwm_jacobi.o wwm_coupl_shyfem.o wwm_coupl_selfe.o wwm_coupl_timor.o wwm_main.o wwm_export_ww3.o
 endif
 
-ifdef USE_PETSC
-  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DPETSC
-  PETSCMOD = ${PETSC_FC_INCLUDES}
-  PETSCLIBS = ${PETSC_LIB}
-else
-  PETSCLIBS =
-  PETSCMOD =
+ifdef USE_MARSH
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_MARSH
 endif
 
 ifdef USE_SED2D
   PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_SED2D
   OBJS := $(OBJS) sed2d_mod.o sed2d_read.o sed2d_filter.o sed2d_transport.o \
                   sed2d_friction.o sed2d_morpho.o sed2d_check.o sed2d_init.o \
-                  sed2d_main.o sed2d_main_mcml.o
+                  sed2d_main.o
 endif
 
 #Remaining Hydro
-OBJS := $(OBJS) grid_subs.o hydraulic_structures.o simpler_wind.o schism_init.o \
+OBJS := $(OBJS) grid_subs.o hydraulic_structures.o schism_init.o \
         schism_step.o schism_finalize.o bktrk_subs.o solver_subs.o \
         io_subs.o misc_subs.o transport_TVD.o transport_TVD_imp.o \
-        bulk_flux.o sflux_9c.o lap.o single_netcdf.o
+        sflux_9c.o lap.o single_netcdf.o
+
+ifdef USE_SIMPLE_WIND
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_SIMPLE_WIND
+   OBJS := $(OBJS) simpler_wind.o
+endif
 
 # Names of the object files with configuration intermediate file (.o,.mod) output directory prepended
 CONFIG_OBJS :=  $(addprefix o/$(config)/, $(OBJS))
@@ -269,10 +288,9 @@ LIBS = $(MTSLIBS) $(CDFLIBS) $(GTMLIBS) $(PETSCLIBS)
 .PRECIOUS: $(SELFE_HOME)/mk/.check.$(config) o/$(config)/%.o o/$(config)/.dummy
 
 
-
 # Allow for the override of executable name by the user
 ifeq ($(EXEC),)
-    EXEC := /home/zanke/pschism.$(config).ex
+    EXEC := pschism.$(config).ex
 endif
 
 
@@ -287,6 +305,12 @@ all: pschism utility
 
 
 PARMETISDIR := ./ParMetis-3.1-Sep2010
+ifeq ($(ENV),CORI)
+    PARMETISDIR := ./ParMetis-3.1-Sep2010.cray
+endif
+ifeq ($(ENV),CORI2)
+    PARMETISDIR := ./ParMetis-3.1-Sep2010.cray
+endif
 
 # This is the main executable target
 $(EXEC): $(CONFIG_OBJS) $(PARMETISDIR)/parmetis.a $(PARMETISDIR)/metis.a
@@ -319,23 +343,8 @@ ifneq "$(MAKECMDGOALS)" "clean"
   -include o/$(config)/.depend
 endif
 
-#o/$(config)/%.o: Hydro/%.F90 o/$(config)/.dummy o/$(config)/.depend
-#	$(QUIET)$(FCP) -c $(FCPFLAGS)  ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTMMOD) $(CDFMOD) $< -o $@
-
-# for some reason make version >= 3.81 create some cyclic dependency if a mod file depends on an object file
-# in the .depend list and one rule have multiple targets. plus the builtin  rule .mod.o:
-# workaround: split the multiple target rule into two rules
-
-#o/$(config)/%.o o/$(config)/%.mod: %.F90 o/$(config)/.dummy o/$(config)/.depend
 o/$(config)/%.o: %.F90 o/$(config)/.dummy o/$(config)/.depend
-	$(QUIET)$(FCP) -c $(FCPFLAGS)  ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTMMOD) $(CDFMOD) $(PETSCMOD) $< -o $(patsubst %.mod,%.o,$@)
-	@touch $(patsubst %.o,%.mod,$@)
-
-o/$(config)/%.mod: %.F90 o/$(config)/.dummy o/$(config)/.depend
-	$(QUIET)$(FCP) -c $(FCPFLAGS)  ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTMMOD) $(CDFMOD) $(PETSCMOD) $< -o $(patsubst %.mod,%.o,$@)
-	@touch $(patsubst %.o,%.mod,$@)
-
-
+	$(QUIET)$(FCP) -c $(FCPFLAGS)  ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTMMOD) $(CDFMOD) $(PETSCMOD) $< -o $@
 
 
 
@@ -404,6 +413,7 @@ o/$(config)/%.o : %.f90 o/$(config)/.dummy  ../bin/.dummy
 
 
 
+
 #################################################################################
 
 # This file exists solely to force creation of the subdirectories that
@@ -445,8 +455,9 @@ clean:
 	$(QUIET)rm -f $(EXEC)
 	$(QUIET)rm -rf o/*
 	$(QUIET)rm -rf ../bin/*
+	$(QUIET)rm -rf WWMIII/*.mod
+	$(QUIET)rm -rf WWMIII/*.o
 ###	$(QUIET)rm -rf $(PARMETISDIR)/*.a
-	#(cd $(PARMETISDIR)/METISLib ; make realclean )
-	#(cd $(PARMETISDIR)/ParMETISLib ; make realclean )
-	$(QUIET)rm -rf *.mod
-	$(QUIET)make -C WWMIII clean
+	(cd $(PARMETISDIR)/METISLib ; make realclean )
+	(cd $(PARMETISDIR)/ParMETISLib ; make realclean )
+

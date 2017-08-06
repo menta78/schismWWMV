@@ -68,7 +68,8 @@
      &                         WIND_INTPAR=>out_wwm_windpar, & ! boundary layer stuff from wwm ...
      &                         ISBND,                        & !bnd flags
      &                         RKIND,                        &
-     &                         STOKES_VEL,JPRESS,SBR,SBF !for vortex formulation
+     &                         STOKES_VEL,JPRESS,SBR,SBF,    & !for vortex formulation
+     &                         SAV_ALPHA, SAV_H
 # endif
 #endif
       IMPLICIT NONE
