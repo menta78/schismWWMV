@@ -17,14 +17,15 @@
         REAL(rkind)             :: VCD, VDM, VNV, VLTH
         REAL(rkind)             :: VALPHAD, VALPHAP, VALPHADH
 
+        DSSVEG = ZERO
+        SSVEG  = ZERO
         IF (ETOT .LT. THR) RETURN
-
-        KDBAR   = KBAR * DEPTH
-        
-        IF (SBAR .GT. ZERO) THEN
+        KDBAR  = KBAR * DEPTH
+!       
+        IF (SBAR .GT. THR) THEN
           KSBAR = KBAR/SBAR
         ELSE
-          KSBAR = ZERO
+          RETURN
         ENDIF
 
 #ifndef SCHISM
@@ -36,14 +37,13 @@
         VALPHAD   = VLTH/DEPTH 
         VALPHADH  = VLTH 
 #else
-        VALPHAP   = SAV_ALPHA(IP)
-        VALPHAD   = SAV_H(IP)/DEPTH
-        VALPHADH  = SAV_H(IP)
+        VALPHAP  = SAV_ALPHA(IP)
+        VALPHAD  = SAV_H(IP)/DEPTH
+        VALPHADH = SAV_H(IP)
 #endif
-        ZAEHLER = SINH(KBAR*VALPHADH)**3+3*SINH(KBAR*VALPHADH)
-        NENNER  = 3*COSH(KBAR*DEPTH)**3
-!
-        BGDISS = - SQRT(TWO/PI)*G9**2*2*VALPHAP*(KBAR/SBAR)**3*ZAEHLER/NENNER*SQRT(ETOT)
+        ZAEHLER = SINH(MIN(KDMAX,KBAR*VALPHADH))**3+3*SINH(MIN(KDMAX,KBAR*VALPHADH))
+        NENNER  = 3*COSH(MIN(KDMAX,KBAR*DEPTH))**3
+        BGDISS  = - SQRT(TWO/PI)*G9**2*2*VALPHAP*KSBAR**3*ZAEHLER/NENNER*SQRT(ETOT)
 !
         DO IS = 1, NUMSIG
           DO ID = 1, NUMDIR
