@@ -13,28 +13,42 @@
 
         INTEGER                 :: IS, ID
 
-        REAL(rkind)             :: BGDISS, KDBAR, SVEGET, VEGDISS
-        REAL(rkind)             :: VCD, VDM, VDENS, VLTH(NVRT)
+        REAL(rkind)             :: BGDISS, KDBAR, KSBAR, ZAEHLER, NENNER
+        REAL(rkind)             :: VCD, VDM, VNV, VLTH
+        REAL(rkind)             :: VALPHAD, VALPHAP, VALPHADH
 
         IF (ETOT .LT. THR) RETURN
 
-        KDBAR  = KBAR * DEPTH
-!
-        BGDISS = SQRT(TWO/PI)*G9**2*(KBAR/SBAR)**3*SQRT(ETOT)/(THREE*KBAR*(COSH(KDBAR))**3)*VDENS
-!
-!       VCD =  ! drag coefficient / per layer and node 
-!       VDM =  ! diam of veg. / per layer and node 
-!       VDENS =  ! veg. density / per layer and node 
-!       VLTH =  ! lay. thickness / per layer and node 
-!
-        CALL INTVEGDISSIP(vegdiss,nvrt,depth,kbar,vcd,vdm,vdens,vlth) 
+        KDBAR   = KBAR * DEPTH
+        
+        IF (SBAR .GT. ZERO) THEN
+          KSBAR = KBAR/SBAR
+        ELSE
+          KSBAR = ZERO
+        ENDIF
 
-        SVEGET = BGDISS * VEGDISS 
-
+#ifndef SCHISM
+        VCD   = 1.  ! drag coefficient 
+        VDM   = 0.04 ! diam of veg. 
+        VNV   = 10 ! veg. density 
+        VLTH  = 2. ! vegetation height  
+        VALPHAP   = VDM*VNV*VCD/TWO
+        VALPHAD   = VLTH/DEPTH 
+        VALPHADH  = VLTH 
+#else
+        VALPHAP   = SAV_ALPHA(IP)
+        VALPHAD   = SAV_H(IP)/DEPTH
+        VALPHADH  = SAV_H(IP)
+#endif
+        ZAEHLER = SINH(KBAR*VALPHADH)**3+3*SINH(KBAR*VALPHADH)
+        NENNER  = 3*COSH(KBAR*DEPTH)**3
+!
+        BGDISS = - SQRT(TWO/PI)*G9**2*2*VALPHAP*(KBAR/SBAR)**3*ZAEHLER/NENNER*SQRT(ETOT)
+!
         DO IS = 1, NUMSIG
           DO ID = 1, NUMDIR
-            DSSVEG(IS,ID) = - SVEGET
-            SSVEG(IS,ID)  = - SVEGET * ACLOC(IS,ID)
+            DSSVEG(IS,ID) = BGDISS 
+            SSVEG(IS,ID)  = BGDISS * ACLOC(IS,ID)
           ENDDO
         ENDDO 
  
