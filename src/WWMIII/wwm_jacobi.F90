@@ -664,15 +664,17 @@
 #ifdef DEBUG_ITERATION_LOOP
               FieldOut1(IP)=p_is_converged
 #endif
-!              WRITE(STAT%FHNDL,*) 'p_is_converged=', p_is_converged
               IF (IPstatus(IP) .eq. 1) THEN
-                IF (p_is_converged .lt. jgs_diff_solverthr) THEN
-                  LCONVERGED(IP) = .TRUE. 
+                IF (p_is_converged .LT. THR) THEN ! not real ... mostly never touched point or whatorever ...
+                  LCONVERGED(IP) = .FALSE. 
+                ELSE IF (.NOT. p_is_converged .LT. THR .AND. p_is_converged .LT. jgs_diff_solverthr) THEN
+                  !write(*,*) ip, p_is_converged, jgs_diff_solverthr
+                  LCONVERGED(IP) = .TRUE.
                   is_converged(1) = is_converged(1) + 1
                   IF (WAE_JGS_CFL_LIM) THEN
                     NumberOperationJGS(IP) = NumberOperationJGS(IP) +1
                   END IF
-                END IF
+                ENDIF
               END IF
             END IF!JGS_CHKCONV
           ELSE!test
@@ -682,6 +684,8 @@
             END IF
           END IF!test
         END DO!IP
+
+        WRITE(*,*) SIZE(LCONVERGED), COUNT(LCONVERGED .eqv. .TRUE.)
 #ifdef DEBUG
         WRITE(STAT%FHNDL,*) 'sumESUM=', sumESUM
 #endif
@@ -710,7 +714,7 @@
 #ifdef DEBUG
         WRITE(STAT%FHNDL,*) ' After iteration sum(AC2)=', sum(abs(AC2))
 #endif
-#ifdef DEBUG_ITERATION_LOOP
+#ifdef DEBUG
         iIter=nbIter + 1
 # ifdef NCDF        
         CALL DEBUG_EIMPS_TOTAL_JACOBI(iPass, iIter, FieldOut1)
