@@ -1675,6 +1675,39 @@
       SUBROUTINE READSPEC2D
       USE DATAPOOL
       IMPLICIT NONE
+!
+!     Read Spectrum 2-D File ...
+!     Second Line ... number of frequencies
+!     Third  Line ... number of directions
+!
+      IF (LFIRST) THEN
+        CALL TEST_FILE_EXIST_DIE('Missing wave file : ', TRIM(WAV%FNAME))
+        OPEN(WAV%FHNDL, FILE = TRIM(WAV%FNAME), STATUS = 'OLD')
+        READ (WAV%FHNDL,*) WBNUMSIG
+        READ (WAV%FHNDL,*) WBNUMDIR
+        CALL ALLOC_SPEC_BND
+        DO IS = 1, WBNUMSIG
+          READ (WAV%FHNDL,*) SFRQ(IS,1)
+        END DO
+        DO ID = 1, WBNUMDIR
+          READ (WAV%FHNDL,*) SDIR(ID,1)
+        ENDDO
+      END IF
+      IF (LINHOM) THEN
+        STOP 'NOT YET AVAILABLE' 
+        DO IP = 1, IWBMNP
+          DO IS = 1, WBNUMSIG
+            DO ID = 1, WBNUMDIR
+              READ (WAV%FHNDL, *) SPEG(IS,ID,IP)
+            ENDDO
+          END DO
+        END DO
+      ELSE
+        DO IS = 1, WBNUMSIG
+          READ (WAV%FHNDL, *) SPEG(IS,ID,IP)
+        END DO
+      END IF
+
       END SUBROUTINE
 !**********************************************************************
 !* READSPEC2D_WW3INIT1
