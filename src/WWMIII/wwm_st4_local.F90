@@ -492,9 +492,18 @@
       IMPLICIT NONE
       INTEGER, PARAMETER      :: NITER=100
       REAL(rkind)   , PARAMETER      :: XM=0.50, EPS1=0.00001
+!     VARIABLE.   TYPE.     PURPOSE.
+!      *XM*        REAL      POWER OF TAUW/TAU IN ROUGHNESS LENGTH.
+!      *XNU*       REAL      KINEMATIC VISCOSITY OF AIR.
+!      *NITER*     INTEGER   NUMBER OF ITERATIONS TO OBTAIN TOTAL STRESS
+!      *EPS1*      REAL      SMALL NUMBER TO MAKE SURE THAT A SOLUTION
+!                            IS OBTAINED IN ITERATION WITH TAU>TAUW.
+! ----------------------------------------------------------------------
       INTEGER I,ITER
       REAL(rkind) KER, KEI
       REAL(rkind) ABR,ABRLOG,L10,FACT,FSUBW,FSUBWMEMO,dzeta0,dzeta0memo
+!
+!
 !
       DELAB   = (ABMAX-ABMIN)/REAL(SIZEFWTABLE)
       L10=ALOG(10.)
@@ -1481,6 +1490,13 @@
       IMPLICIT NONE
       INTEGER, PARAMETER      :: NITER=10
       REAL(rkind)   , PARAMETER      :: XM=0.50, EPS1=0.00001
+!     VARIABLE.   TYPE.     PURPOSE.
+!      *XM*        REAL(rkind)      POWER OF TAUW/TAU IN ROUGHNESS LENGTH.
+!      *XNU*       REAL(rkind)      KINEMATIC VISCOSITY OF AIR.
+!      *NITER*     INTEGER   NUMBER OF ITERATIONS TO OBTAIN TOTAL STRESS
+!      *EPS1*      REAL(rkind)      SMALL NUMBER TO MAKE SURE THAT A SOLUTION
+!                            IS OBTAINED IN ITERATION WITH TAU>TAUW.
+! ----------------------------------------------------------------------
       INTEGER I,J,ITER
       REAL(rkind) ZTAUW,UTOP,CDRAG,WCD,USTOLD,TAUOLD
       REAL(rkind) X,UST,ZZ0,F,DELF,ZZ00
@@ -1535,6 +1551,20 @@
 !
       USE DATAPOOL, ONLY : G9, PI2, RKIND, ZERO, ONE, SPSIG, NUMSIG
       IMPLICIT NONE
+!/
+!/ ------------------------------------------------------------------- /
+!/ Local parameters
+!/
+!       USTARM  R.A.  Maximum friction velocity
+!       ALPHAM  R.A.  Maximum Charnock Coefficient
+!       WLV     R.A.  Water levels.
+!       UA      R.A.  Absolute wind speeds.
+!       UD      R.A.  Absolute wind direction.
+!       U10     R.A.  Wind speed used.
+!       U10D    R.A.  Wind direction used.
+! 10. Source code :
+!
+!/ ------------------------------------------------------------------- /
       REAL(rkind)                    :: USTARM, ALPHAM
       REAL(rkind)                    :: CONST1, OMEGA, OMEGAC 
       REAL(rkind)                    :: UST, ZZ0,OMEGACC, CM
@@ -1611,6 +1641,21 @@
       USE DATAPOOL, ONLY : G9, PI2, RKIND, ZERO, ONE, SPSIG, NUMSIG, STAT 
 
       IMPLICIT NONE
+!/
+!/ ------------------------------------------------------------------- /
+!/ Local parameters
+!/
+!       USTARM  R.A.  Maximum friction velocity
+!       ALPHAM  R.A.  Maximum Charnock Coefficient
+!       WLV     R.A.  Water levels.
+!       UA      R.A.  Absolute wind speeds.
+!       UD      R.A.  Absolute wind direction.
+!       U10     R.A.  Wind speed used.
+!       U10D    R.A.  Wind direction used.
+! 10. Source code :
+!
+!/ ------------------------------------------------------------------- /
+!/S      INTEGER, SAVE           :: IENT = 0
       REAL(rkind)                    :: USTARM, ALPHAM, LEVTAILM
       REAL(rkind)                    :: CONST1, OMEGA, OMEGAC, LEVTAIL 
       REAL(rkind)                    :: UST, UST0, ZZ0,OMEGACC, CM

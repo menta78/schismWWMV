@@ -931,7 +931,7 @@
           ELSE IF (LBSP2D) THEN ! 2-D Spectra is prescribed
             WRITE(STAT%FHNDL,'("+TRACE...",A)') '2d Spectra is given as Wave Boundary Condition'
             IF (IBOUNDFORMAT == 1) THEN
-              CALL READSPEC2D
+              CALL READSPEC2D(LFIRSTREAD)
             ELSE IF (IBOUNDFORMAT == 3) THEN
               CALL GET_BINARY_WW3_SPECTRA(WBACOUT) 
             END IF
@@ -1672,9 +1672,12 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE READSPEC2D
+      SUBROUTINE READSPEC2D(LFIRST)
       USE DATAPOOL
       IMPLICIT NONE
+ 
+      INTEGER :: IP, IS, ID 
+      LOGICAL, INTENT(IN)  :: LFIRST
 !
 !     Read Spectrum 2-D File ...
 !     Second Line ... number of frequencies

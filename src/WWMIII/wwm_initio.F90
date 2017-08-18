@@ -1229,7 +1229,7 @@
                  ENDDO
                ENDDO
              END IF ! INITSTYLE
-             IF (LMAXETOT .AND. ISHALLOW(IP) .EQ. 1) CALL BREAKING_LIMITER_LOCAL(IP,WALOC,WALOC,SSBRL) ! Miche for initial cond.
+             IF (LMAXETOT .AND. ISHALLOW(IP) .EQ. 1) CALL BREAKING_LIMITER_LOCAL(IP,WALOC,SSBRL) ! Miche for initial cond.
            ELSE
              FDLESS      = 0.
              HS          = 0.

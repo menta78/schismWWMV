@@ -237,6 +237,17 @@
              ELSE IF (IOBP(IP) .EQ. 0 .AND. .NOT. LSOUBOUND) THEN ! CALL ONLY FOR NON BOUNDARY POINTS
                CALL COMPUTE_PHI_DPHI(IP,WAIN,PHI,DPHIDN)
              ENDIF
+             IF (MELIM .EQ. 2) THEN
+               CALL GET_MAXDAC(IP,MAXDAC)
+               DO IS = 1, NUMSIG
+                 DO ID = 1, NUMDIR
+                   NEWDAC = PHI(IS,ID) * DT4A / (ONE-DT4A*MIN(ZERO,DPHIDN(IS,ID)))
+                   RATIO  = ONE/MIN(ONE,ABS(NEWDAC/MAXDAC(IS)))
+                   PHI    = RATIO * PHI
+                   DPHIDN = RATIO * DPHIDN
+                 END DO
+               END DO
+             ENDIF
              PHIA(:,:,IP)    = PHI    ! STORE ...
              DPHIDNA(:,:,IP) = DPHIDN
            ELSE

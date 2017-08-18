@@ -664,6 +664,7 @@
 #ifdef DEBUG_ITERATION_LOOP
               FieldOut1(IP)=p_is_converged
 #endif
+!              WRITE(STAT%FHNDL,*) 'p_is_converged=', p_is_converged
               IF (IPstatus(IP) .eq. 1) THEN
                 IF (p_is_converged .LT. THR) THEN ! not real ... mostly never touched point or whatorever ...
                   LCONVERGED(IP) = .FALSE. 
@@ -685,7 +686,7 @@
           END IF!test
         END DO!IP
 
-        WRITE(*,*) SIZE(LCONVERGED), COUNT(LCONVERGED .eqv. .TRUE.)
+!        WRITE(*,*) SIZE(LCONVERGED), COUNT(LCONVERGED .eqv. .TRUE.)
 #ifdef DEBUG
         WRITE(STAT%FHNDL,*) 'sumESUM=', sumESUM
 #endif

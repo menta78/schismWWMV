@@ -807,7 +807,6 @@
          MAIN%DELT   = DELTC
          MAIN%UNIT   = UNITC
          MAIN%ENDT   = ENDTC
-         write(*,*) MAIN%BEGT, MAIN%BMJD
          CALL CT2MJD(MAIN%BEGT, MAIN%BMJD)
          CALL CT2MJD(MAIN%ENDT, MAIN%EMJD)
          CALL CU2SEC(MAIN%UNIT, MAIN%DELT)
