@@ -11,15 +11,18 @@ add_library(hydro hydraulic_structures.F90
                   schism_finalize.F90
                   bktrk_subs.F90 
                   grid_subs.F90 
-                  io_subs.F90 
+                  schism_io.F90 
                   lap.F90 
                   misc_subs.F90
                   sflux_9c.F90 
                   solver_subs.F90 
                   transport_TVD.F90
                   transport_TVD_imp.F90
-                  simpler_wind.F90
                   )
+if(DEFINED USE_SIMPLE_WIND)
+  add_library(hydro simpler_wind.F90)
+  add_definitions(-DUSE_SIMPLE_WIND)
+endif()
 list( APPEND locallibs hydro)
 
 # The next line depends perhaps too much on the order of operations -- I'll try to fix it so that it is more intuitive.

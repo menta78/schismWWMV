@@ -63,7 +63,7 @@ module schism_glbl
   real(rkind),save :: timer_ns(11)
 
   ! For debugging
-  character(72) :: fdb  ! Name of debugging file
+  character(len=72) :: fdb  ! Name of debugging file
   integer :: lfdb       ! Length of debugging file name
 
   ! Error message string
@@ -75,14 +75,15 @@ module schism_glbl
                       ubs0,ubs1,ubs2,ubs4,ubs5,ubs6, &
                       a2_cm03,schk,schpsi
 
-  integer,parameter :: natrm=10 !# of _available_ tracer models at the moment (including T,S)
+  integer,parameter :: natrm=11 !# of _available_ tracer models at the moment (including T,S)
   !Parameters from param.in
   integer,save :: ipre,indvel,imm,ihot,ics,iwbl,iharind,nws,iwindoff, &
                   &ibc,nrampbc,nrampwind,nramp,nramp_ss,ibdef,ihorcon,nstep_wwm,icou_elfe_wwm, &
                   &iwind_form,irec_nu,itur,ihhat,inu_elev, &
                   &inu_uv,ibcc_mean,iflux,iout_sta,nspool_sta,nhot,nhot_write, &
-                  &moitn0,mxitn0,nchi,ibtrack_test,islip,ibtp,inunfl, &
-                  &inv_atm_bnd,ieos_type,ieos_pres,iupwind_mom,inter_mom,ishapiro,ihydlg,isav
+                  &moitn0,mxitn0,nchi,ibtrack_test,nramp_elev,islip,ibtp,inunfl, &
+                  &inv_atm_bnd,ieos_type,ieos_pres,iupwind_mom,inter_mom,ishapiro,ihydlg,isav, &
+                  &nstep_ice
   integer,save :: ntrs(natrm)
 
   real(rkind),save :: dt,h0,drampbc,drampwind,dramp,dramp_ss,wtiminc,npstime,npstiminc, &
@@ -123,7 +124,7 @@ module schism_glbl
   character(len=12),save :: ifile_char
   character(len=48),save,dimension(mnout) :: outfile,variable_nm,variable_dim
   integer,save :: ihfskip,nrec,nspool,ifile,ifile_len, &
-                  &noutput,it_main,iths_main
+                  &noutput,it_main,iths_main,id_out_var(2000)
   integer,save,dimension(mnout) :: ichan,iof !,mrec,irec
   integer,save,allocatable :: ichan_ns(:),iof_ns(:)
   real(rkind) :: time_stamp !simulation time in sec
@@ -260,7 +261,7 @@ module schism_glbl
 !  integer,save,allocatable :: ibad(:)             ! Reliable bndry elevation flag
 !  integer,save,allocatable :: nnegb(:),inegb(:,:) ! Global node-element tables
   integer,save,allocatable :: nne(:),indel(:,:)     ! Node-element tables
-  integer,save,allocatable :: nnp(:),indnd(:,:)     ! Node-node tables
+  integer,save,allocatable :: nnp(:),indnd(:,:)     ! Node-node tables (exlcuding the node itself)
   integer,save,allocatable :: isbnd(:,:)        ! local node to _global_ open bndry segment flags
   integer,save,allocatable :: ibnd_ext_int(:)        ! interior (-1) /exterior (1) bnd node flag for an aug. node (0: not on bnd) 
 !  real(rkind),save,allocatable :: edge_angle(:,:) !angles (orientation) at a bnd node of 2 adjacent sides
@@ -348,8 +349,8 @@ module schism_glbl
   real(4),save,allocatable :: ath2(:,:,:,:,:)
 
   ! Land boundary segment data
-  integer,save :: nland_global                 ! Global number of local land bndry segments
-  integer,save :: nvel_global                  ! Global number of local land bndry nodes
+  integer,save :: nland_global                 ! Global number of land bndry segments
+  integer,save :: nvel_global                  ! Global number of land bndry nodes
   integer,save :: nland                        ! Local number of local land bndry segments
   integer,save :: nvel                         ! Local number of local land bndry nodes
   integer,save :: mnlnd                        ! Max # nodes per land bndry segment
@@ -413,6 +414,9 @@ module schism_glbl
   real(rkind),save,allocatable :: sdbt(:,:,:),shapiro(:), &
                                   &windx1(:),windy1(:),windx2(:),windy2(:), &
                                   &surf_t1(:),surf_t2(:),surf_t(:), & !YC
+                                  !WARNING: airt[12] are in C not K. The
+                                  !original air T in sflux_air*.nc is in K but
+                                  !get_wind() converts it to C
                                   &tau(:,:),windfactor(:),pr1(:),airt1(:), &
                                   &shum1(:),pr2(:),airt2(:),shum2(:),pr(:), &
                                   &sflux(:),srad(:),tauxz(:),tauyz(:),fluxsu(:), &
@@ -422,9 +426,60 @@ module schism_glbl
                                   &tr_nudge(:,:),dr_dxy(:,:,:),fun_lat(:,:), &
                                   &elev_nudge(:),uv_nudge(:),fluxprc(:),fluxevp(:), &
                                   &dav(:,:),elevmax(:),dav_max(:,:),dav_maxmag(:), & 
-                                  &etaic(:),diffmax(:),diffmin(:),dfq1(:,:),dfq2(:,:)
+                                  &etaic(:),diffmax(:),diffmin(:),dfq1(:,:),dfq2(:,:) 
+
+  !(2,npa). ocean-ice stress (junk if no ice) [m^2/s/s]
+  real(rkind),save,allocatable :: tau_oi(:,:)
+  !(npa). freshwater flux due to ice melting [m water/sec]. >0: precip; <0: evap
+  real(rkind),save,allocatable :: fresh_wa_flux(:)
+  !(npa). net heat flux into the ocean surface [W/m/m]. >0: warm the ocean
+  real(rkind),save,allocatable :: net_heat_flux(:)
+  logical,save,allocatable :: lhas_ice(:)
+  logical,save :: lice_free_gb
+
   real(4),save,dimension(:,:,:),allocatable :: trnd_nu1,trnd_nu2,trnd_nu
   integer,save,allocatable :: iadv(:),iwater_type(:) 
+
+  !weno>
+  integer,save,allocatable :: isbe(:) !(ne): bnd seg flags, isbe(ie)=1 if any node of element ie lies on bnd; isbe(ie)=0 otherwise
+  logical,save,allocatable :: is_inter(:)  !identifier of interface sides (between two ranks), for debugging only
+  integer,save,allocatable :: iremove1(:,:)  !(3 x mnweno1, ne), keep a record of the p1 stencils removed due to small determinants
+  integer,save,allocatable :: nremove1(:)  !size: ne, number of p1 stencils removed at each element
+  integer,save,allocatable :: iremove2(:,:)  !(6 x mnweno2, ne), keep a record of the p2 stencils removed due to small determinants
+  integer,save,allocatable :: nremove2(:)  !size: ne, number of p2 stencils removed at each element
+  integer,save,allocatable :: iside_table(:) !a record of all interface sides within the current rank
+  integer, save :: ip_weno !order of the polynomials used for weno stencils, see param.in.sample
+  real(rkind),save :: courant_weno !Courant number for weno transport
+  real(rkind),save :: epsilon1 !coefficient for 2nd order weno smoother
+  real(rkind),save :: epsilon2 !1st coefficient for 3rd order weno smoother
+  real(rkind),save :: epsilon3 !2nd coefficient for 3rd order weno smoother
+  !Elad filter
+  integer, save :: ielad_weno !switch for elad filter, not used at the moment
+  real(rkind),save :: small_elad !criteria for ELAD, not used at the moment
+
+  real(rkind),save,allocatable :: xqp(:,:),yqp(:,:)  !quadrature point coordinates
+
+  integer,save :: mnweno1       !maxium number of p1 polynomial 
+  integer,save,allocatable :: nweno1(:)     !number of p1 polynomial 
+  !stencil of P1 polynomial (3 elements #,mnweno1 polynomials,ne)
+  integer,save,allocatable :: isten1(:,:,:)   
+  !polynomial coefficients at quadrature points (3 poly. coeffcients, mnweno1 ploynomials, 2 quadrature points, 3 sides, ne elem.)
+  real(rkind),save,allocatable :: wmat1(:,:,:,:,:)  
+  !coefficients for final p1 polynomial weight (3 components, xy direction,mnweno1 polynomials,ne)
+  real(rkind),save,allocatable :: wts1(:,:,:,:) 
+  !stencil quality, check if at least 1 stencil is on one side of an element side
+  logical,save,allocatable :: isten_qual1(:), isten_qual2(:)
+  integer,save :: mnweno2       !maxium number of p2 polynomial 
+  integer,save,allocatable :: nweno2(:)     !number of p2 polynomial
+  !stencil of P2 polynomial (6 element #,mnweno2 polynomials,ne)
+  integer,save,allocatable :: isten2(:,:,:)   
+  !polynomial coefficient at quadrature points (3 poly. coeffcients, mnweno2 ploynomials, 2 quadrature points, 3 sides, ne elem.)
+  real(rkind),save,allocatable :: wmat2(:,:,:,:,:)  
+  !coefficient for calculating final p2 polynomial weight (6 directions,5 compoents,mnweno2 polynomials,ne)
+  real(rkind),save,allocatable :: wts2(:,:,:,:) 
+  !coefficients used in smoother calculation (3,ne)
+  real(rkind),save,allocatable :: fwts2(:,:) 
+  !<weno
 
   ! Non-hydrostatic arrays
   real(rkind),save,allocatable :: qnon(:,:)   
@@ -448,7 +503,20 @@ module schism_glbl
 !  character(len=48) :: inputfile
   integer :: flag_ic(natrm)
   character(len=3) :: tr_mname(natrm) !model names
-  real(rkind),save,allocatable :: wsett(:) !wsett(ntracers); settling velocity>=0 [m/s] for each tracer
+  !wsett(ntracers,nvrt,nea); settling velocity (positive downward) [m/s] for each tracer
+  !@whole levels
+  !IMPORTANT: there are currently 3 options for imposing wsett; remember to set
+  !iwsett together with wsett!
+  !1) iwsett(itrc)=0: wrap into body force (may cause stability problem)
+  !2) iwsett(itrc)=1 (like sediment): the surface & bottom b.c. has w_s terms (Robin
+  !             type) so tracer settles out of bottom. wsett(itrc) must NOT 
+  !             be varying along vertical! (itrc is the tracer index)
+  !3) iwsett(itrc)=2: variable settling (or swimming) vel along vertical. MUST set
+  !             wsett(:,nvrt,:)=0, and also pay attention to bottom value as it impacts
+  !             conservation statement! The surface & bottom b.c. is no flux.
+  !             The term is treated implicitly.
+  real(rkind),save,allocatable :: wsett(:,:,:) 
+  integer,save,allocatable :: iwsett(:) !iwsett(ntracers)
 
   !Declarations for other modules
 ! WWM
@@ -501,14 +569,11 @@ module schism_glbl
       real(rkind),save :: tr_tmp1
 !#endif
 
-! IVICA: nws=5,6 option
-  real(rkind),save,allocatable     :: cf_a(:),cf_b(:),cf_c(:),cf_d(:),cf_J(:)
-  integer,save,allocatable         :: cf_c11(:,:), cf_c21(:,:), cf_c22(:,:), cf_c12(:,:), wind_time_sec(:)
-  integer,save                     :: NDX_WIND_FD, NDY_WIND_FD, rec1, rec2, rec1_old, rec2_old, nwtimes
-  real(rkind),save                 :: cf_scale_factor_uwind, cf_add_offset_uwind
-  real(rkind),save                 :: cf_scale_factor_vwind, cf_add_offset_vwind
-  real(rkind),save                 :: cf_scale_factor_pr, cf_add_offset_pr
-
+#ifdef USE_SIMPLE_WIND
+! nws=5,6 option
+  real(rkind),save,allocatable     :: cf_x1(:),cf_x2(:),cf_y1(:),cf_y2(:),cf_denom(:)
+  integer,save,allocatable         :: cf_i(:), cf_j(:)
+#endif
 ! Marsh model
   integer,save,allocatable     :: imarsh(:),ibarrier_m(:)
 

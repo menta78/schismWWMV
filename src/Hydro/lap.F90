@@ -1635,7 +1635,8 @@
 !       
 !     COPY DOUBLE PRECISION DX TO DOUBLE PRECISION DY.    
 !       
-      DOUBLE PRECISION DX(1),DY(1)    
+      DOUBLE PRECISION DX(N),DY(N)    
+
       IF (N.LE.0) RETURN    
       IF (INCX.EQ.INCY) IF (INCX-1) 10 , 30 , 70
    10 CONTINUE    
@@ -1689,7 +1690,7 @@
 !       
 !     RETURNS THE DOT PRODUCT OF DOUBLE PRECISION DX AND DY.
 !       
-      DOUBLE PRECISION DX(1),DY(1)    
+      DOUBLE PRECISION DX(N),DY(N)    
       DDOT = 0.D0 
       IF (N.LE.0) RETURN    
       IF (INCX.EQ.INCY) IF (INCX-1) 10 , 30 , 70

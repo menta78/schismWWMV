@@ -45,6 +45,25 @@
 ! subroutine quad_shape
 ! function quad_int
 
+!weno>
+! subroutine weno1_coef 
+! subroutine weno2_coef 
+! subroutine set_isbe
+! subroutine quadpts 
+! subroutine GetSten11 
+! subroutine CheckSten2
+! subroutine GetSten21 
+! subroutine weno_flux 
+! subroutine inline (not used; comment out?)
+! subroutine inverse 
+! subroutine matmul1 (not used)
+! subroutine insidetriangle (not used)
+! function weno_diag 
+! function M33DET 
+! function M66DET 
+! subroutine GetSten1 
+!<weno
+
 !===============================================================================
 !===============================================================================
       subroutine zcoor(itag,inode,kbpl,ztmp)
@@ -3482,5 +3501,1438 @@
 
       end function quad_int
 
+!weno>
 !===============================================================================
+! START: SUBROUTINES AND FUNCTIONS FOR WENO 
 !===============================================================================
+
+!===============================================================================
+!     calculate p1 coefficients for weno linear stencils
+!===============================================================================
+      subroutine weno1_coef
+      use schism_glbl, only:wts1,wmat1,ne,isten1,nweno1,xctr,yctr,xqp,yqp,mnweno1 &
+      &,rkind, elside,i34,iremove1,nremove1,ipre,ics,eframe,zctr,zcj
+      use schism_msgp
+      implicit none
+    
+      !local variables
+      real(rkind) :: a1(3,3),a2(3,3),p1(3),tmp,a3(3,3),det,xy_max
+      integer :: i,j,k,l,ie,je,je1,je2,je3,jsj,istat !,ierr defined in schism_msgp
+      logical :: iremove
+
+      !Function
+      real(rkind) :: M33DET 
+
+      !character(72) :: ftest  ! Name of debugging file
+      !integer :: lftest       ! Length of debugging file name
+
+      !ftest='test_xxxx'
+      !lftest=len_trim(ftest)
+      !write(ftest(lftest-3:lftest),'(i4.4)') myrank
+      !open(40,file='outputs/'//ftest,status='replace')
+
+      !!------get stencil---------------------------------------------
+      mnweno1=0
+
+      !Hu and Shu (1999)'s method
+      !call GetSten1(.false.) !get mnweno1
+      !call GetSten1(.true.)  !get nweno1, and istenl
+
+      !sequentially listing tier 1 elements
+      call GetSten11(.false.) !get mnweno1
+      call GetSten11(.true.)  !get nweno1, and istenl
+     
+      if (ipre/=0) then !diagnostic outputs
+        allocate(iremove1(3*mnweno1,ne),stat=istat)
+        if(istat/=0) call parallel_abort('failed in alloc. iremove1')
+        iremove1=0
+
+        allocate(nremove1(ne),stat=istat)
+        if(istat/=0) call parallel_abort('failed in alloc. nremove1')
+        nremove1=0
+      endif
+
+      !debug>
+      !write(40,*)'stencil for 1st order polynomial' 
+      !do i=1,ne
+      !  write(40,'(I5,I5)') i, ielg(i)
+      !  write(40,'(I5,1x,I3,1x,a1,100(I4,1x,I4,1x,I4,a1))') i,nweno1(i),',',((ielg(isten1(j,k,i)),j=1,3),',',k=1,nweno1(i))
+      !enddo
+      !close(40)
+      !pause
+      !read(*,*)
+      !<debug
+    
+      !-------compute weno p1 coefficients----------------------------
+      if (.not. allocated(wts1)) then
+        allocate(wts1(3,2,mnweno1,ne),stat=istat)
+        if(istat/=0) call parallel_abort('failed in alloc. wts1')
+      endif
+      if (.not. allocated(wmat1)) then
+        allocate(wmat1(3,mnweno1,2,4,ne),stat=istat)
+        if(istat/=0) call parallel_abort('failed in alloc. wmat1')
+      endif
+    
+      !debug>
+      !ftest='a1_xxxx'
+      !lftest=len_trim(ftest)
+      !write(ftest(lftest-3:lftest),'(i4.4)') myrank
+      !open(95,file='outputs/'//ftest,status='replace')
+      !<debug
+
+      do ie=1,ne
+        i=1
+        do while (i<=nweno1(ie))
+          iremove=.false.
+          xy_max=0.0d0
+
+          a1(1:3,1)=1.0 !store coordinate matrix for each polynomial
+          do j=1,3
+            je=isten1(j,i,ie)
+            !use local coordinates to reduce round-off errors
+            if (ics==1) then 
+              a1(j,2)=xctr(je) - xctr(ie)
+              a1(j,3)=yctr(je) - yctr(ie)
+            else !lat/lon, local frame centered at ie
+              a1(j,2)=(xctr(je)-xctr(ie))*eframe(1,1,ie)+(yctr(je)-yctr(ie))*eframe(2,1,ie)+ &
+               &(zctr(je)-zctr(ie))*eframe(3,1,ie)
+              a1(j,3)=(xctr(je)-xctr(ie))*eframe(1,2,ie)+(yctr(je)-yctr(ie))*eframe(2,2,ie)+ &
+               &(zctr(je)-zctr(ie))*eframe(3,2,ie)
+            endif
+
+            tmp=(a1(j,2)**2+a1(j,3)**2)**0.5
+            if (tmp>xy_max) then
+              xy_max=tmp
+            endif
+          enddo !j
+          !scaled local coordinates for calculating determinants
+          a3(1:3,1)=1.0 !same as a1
+          do j=1,3
+            je=isten1(j,i,ie)
+            !scaled by the largest distance from (0,0)
+            a3(j,2)=a1(j,2)/xy_max
+            a3(j,3)=a1(j,3)/xy_max
+          enddo !j
+
+          !debug>
+          !write(95,'(3(f15.8,x))') a1(1,:)
+          !write(95,'(3(f15.8,x))') a1(2,:)
+          !write(95,'(3(f15.8,x))') a1(3,:)
+          !<debug
+
+          det=M33DET(a3)
+          if (abs(det)<1d-3) then
+            iremove=.true.
+          else
+            call inverse(a1,a2,3,ierr) !matrix inverse
+            do j=1,3 !check for nan values
+              do k=1,3
+                if(.not.(a2(j,k)>=0.or.a2(j,k)<0)) then
+                  call parallel_abort('nan: inverse(a1),p2')
+                endif
+              enddo
+            enddo
+            if(ierr/=0) then
+              iremove=.true.
+            endif
+          endif
+
+          if (iremove) then
+            if (ipre/=0) then
+              !keep a record for diagnostic files
+              nremove1(ie)=nremove1(ie)+1
+              iremove1(nremove1(ie)*3-2:nremove1(ie)*3,ie)=isten1(:,i,ie)
+            endif
+            !remove this stencil from isten1 and rearrange the others
+            if (i<nweno1(ie)) then
+              do k=i+1,nweno1(ie)
+                isten1(:,k-1,ie)=isten1(:,k,ie)
+              enddo
+            endif
+            isten1(:,nweno1(ie),ie)=0
+            nweno1(ie)=nweno1(ie)-1
+            cycle !go to next stencil
+          endif
+    
+          do j=2,3 !gradient coeff. x,y direction
+            do k=1,3 ! 3 components
+              wts1(k,j-1,i,ie)=a2(j,k)
+            enddo !k
+          enddo !j
+           
+          do j=1,i34(ie) !for three sides
+            jsj=elside(j,ie)
+            do k=1,2 ! for two quadrature points
+              p1(1)=1.0
+              if (ics==1) then
+                p1(2)=xqp(k,jsj) - xctr(ie) 
+                p1(3)=yqp(k,jsj) - yctr(ie)
+              else !lat/lon, local frame centered at ie
+                p1(2)=(xqp(k,jsj)-xctr(ie))*eframe(1,1,ie)+(yqp(k,jsj)-yctr(ie))*eframe(2,1,ie)+ &
+                 &(zcj(jsj)-zctr(ie))*eframe(3,1,ie)
+                p1(3)=(xqp(k,jsj)-xctr(ie))*eframe(1,2,ie)+(yqp(k,jsj)-yctr(ie))*eframe(2,2,ie)+ &
+                 &(zcj(jsj)-zctr(ie))*eframe(3,2,ie)
+              endif
+              wmat1(:,i,k,j,ie)=matmul(p1,a2) !p1 coefficient 
+            enddo !k
+          enddo !j
+
+          i=i+1 !advance to next valid stencil
+
+        enddo !i
+        !write(40,'(I8,6000(1x,f16.8))') ielg(ie),wmat1(:,:,:,:,ie)
+        !flush(40)
+        !write(40,'(6000(I12))') ie,ielg(ie),isten1(:,:,ie)
+        !flush(40)
+      enddo !ie
+
+      end subroutine weno1_coef
+
+!===============================================================================
+!     calculate p2 coefficients for weno quadratic stencils
+!===============================================================================
+      subroutine weno2_coef
+      use schism_glbl, only:wts2,wmat2,ne,isten2,nweno2,xctr,yctr,xqp,yqp,mnweno2 &
+      &,rkind,elside,i34,fwts2,xnd,ynd,elnode,area,errmsg,iremove2,nremove2,ipre,ics &
+      &,eframe,znd,zctr,zcj
+      use schism_msgp
+      implicit none
+
+      !local variables
+      real(rkind) :: a1(6,6),a2(6,6),p2(6),det,a3(6,6),xy_max,tmp
+      real(rkind) :: signa,x1,x2,x3,x4,y1,y2,y3,y4,xctr1,xctr2,yctr1,yctr2,s1,s2,wts(5,2)
+      integer :: i,j,k,ie,je,je1,je2,jsj,istat
+      logical :: iremove
+
+      !Function
+      real(rkind) :: M66DET 
+
+      !character(72) :: ftest  ! Name of debugging file
+      !integer :: lftest       ! Length of debugging file name
+
+      !----get stencil for p2
+      mnweno2=0
+      !Hu and Shu (1999)'s method
+      !call GetSten2(.false.) !get mnweno2
+      !call GetSten2(.true.)  !get nweno2, isten2
+
+      !sequentially listing tier 1 elements
+      call GetSten21(.false.)
+      call GetSten21(.true.)
+      
+      if (ipre/=0) then !diagnostic outputs
+        allocate(iremove2(6*mnweno2,ne),stat=istat)
+        if(istat/=0) call parallel_abort('failed in alloc. iremove2')
+        iremove2=0
+        allocate(nremove2(ne),stat=istat)
+        if(istat/=0) call parallel_abort('failed in alloc. nremove2')
+        nremove2=0
+      endif
+
+      !write(22,*)'stencil for 2nd order polynomial' 
+      !do i=1,ne
+      !  write(22,'(I5,1x,I3,1x,a1,100(6(I4,x),a1))')i,nweno2(i),',',((isten2(j,k,i),j=1,6),',',k=1,nweno2(i))
+      !enddo
+      
+      !-------compute weno p2 coefficients----------------------------
+      allocate(wts2(6,5,mnweno2,ne),fwts2(5,ne),wmat2(6,mnweno2,2,4,ne),stat=istat)
+      if(istat/=0) call parallel_abort('failed in alloc. nweno2')
+
+      !debug>
+      !ftest='a2_xxxx'
+      !lftest=len_trim(ftest)
+      !write(ftest(lftest-3:lftest),'(i4.4)') myrank
+      !open(95,file='outputs/'//ftest,status='replace')
+      !<debug
+
+      do ie=1,ne
+        !debug>
+        !write(95,'(6(i10))') ie,nweno2(ie),-999,-999,-999,-999
+        !<debug
+        i=1
+        do while (i<=nweno2(ie))
+          iremove=.false.
+          xy_max=0.0d0
+
+          a1(1:6,1)=1.0 !store p2 coordinate matrix
+          do j=1,6
+            je=isten2(j,i,ie)
+            !use local coordinates to reduce round-off errors
+            !je=ie when j=1
+            if (ics==1) then
+              a1(j,2)=xctr(je)-xctr(ie)
+              a1(j,3)=yctr(je)-yctr(ie)
+            else !lat/lon, local frame centered at ie
+              a1(j,2)=(xctr(je)-xctr(ie))*eframe(1,1,ie)+(yctr(je)-yctr(ie))*eframe(2,1,ie)+ &
+               &(zctr(je)-zctr(ie))*eframe(3,1,ie)
+              a1(j,3)=(xctr(je)-xctr(ie))*eframe(1,2,ie)+(yctr(je)-yctr(ie))*eframe(2,2,ie)+ &
+               &(zctr(je)-zctr(ie))*eframe(3,2,ie)
+            endif
+
+            tmp=(a1(j,2)**2+a1(j,3)**2)**0.5
+            if (tmp>xy_max) then
+              xy_max=tmp
+            endif
+
+            a1(j,4)=a1(j,2)**2; a1(j,5)=a1(j,2)*a1(j,3); a1(j,6)=a1(j,3)**2
+          enddo !j
+          !scaled local coordinates for calculating determinants
+          a3(1:6,1)=1.0 !same as a1
+          do j=1,6
+            je=isten2(j,i,ie)
+            !scaled by the largest distance from (0,0)
+            a3(j,2)=a1(j,2)/xy_max; a3(j,3)=a1(j,3)/xy_max
+            a3(j,4)=a3(j,2)**2; a3(j,5)=a3(j,2)*a3(j,3); a3(j,6)=a3(j,3)**2
+          enddo !j
+
+          !debug>
+          !write(95,'(6(f25.12,x))') a1(1,:)
+          !write(95,'(6(f25.12,x))') a1(2,:)
+          !write(95,'(6(f25.12,x))') a1(3,:)
+          !write(95,'(6(f25.12,x))') a1(4,:)
+          !write(95,'(6(f25.12,x))') a1(5,:)
+          !write(95,'(6(f25.12,x))') a1(6,:)
+          !<debug
+          det=M66DET(a3)
+          if (abs(det)<1d-3) then
+            iremove=.true.
+          else
+            call inverse(a1,a2,6,ierr) !matrix inverse
+            do j=1,6 !check for nan values
+              do k=1,6
+                if(.not.(a2(j,k)>=0.or.a2(j,k)<0)) then
+                  call parallel_abort('nan: inverse(a1),p2')
+                endif
+              enddo !k
+            enddo !j
+            if(ierr/=0) then
+              iremove=.true.
+            endif
+          endif
+
+          
+          if (iremove) then
+            if (ipre/=0) then
+              !keep a record
+              nremove2(ie)=nremove2(ie)+1
+              iremove2(nremove2(ie)*6-5:nremove2(ie)*6,ie)=isten2(:,i,ie)
+            endif
+            !remove this stencil from isten2 and rearrange the others
+            if (i<nweno2(ie)) then
+              do k=i+1,nweno2(ie)
+                isten2(:,k-1,ie)=isten2(:,k,ie)
+              enddo
+            endif
+            isten2(:,nweno2(ie),ie)=0
+            nweno2(ie)=nweno2(ie)-1
+            cycle
+          endif
+    
+          do j=2,6 !for x, y, x2, xy, y2 direction
+            do k=1,6 !6 components
+              wts2(k,j-1,i,ie)=a2(j,k)
+            enddo !k
+          enddo !j
+          
+          do j=1,i34(ie) !for 3 sides
+            jsj=elside(j,ie)
+            p2(1)=1.0
+            do k=1,2 !for two quadrature pts
+              if (ics==1) then
+                p2(2)=xqp(k,jsj)-xctr(ie) 
+                p2(3)=yqp(k,jsj)-yctr(ie)
+              else !lat/lon, local frame centered at ie
+                p2(2)=(xqp(k,jsj)-xctr(ie))*eframe(1,1,ie)+(yqp(k,jsj)-yctr(ie))*eframe(2,1,ie)+ &
+                 &(zcj(jsj)-zctr(ie))*eframe(3,1,ie)
+                p2(3)=(xqp(k,jsj)-xctr(ie))*eframe(1,2,ie)+(yqp(k,jsj)-yctr(ie))*eframe(2,2,ie)+ &
+                 &(zcj(jsj)-zctr(ie))*eframe(3,2,ie)
+              endif
+              p2(4)=p2(2)**2
+              p2(5)=p2(2)*p2(3)
+              p2(6)=p2(3)**2
+              wmat2(:,i,k,j,ie)=matmul(p2,a2) !p2 coefficient
+            enddo !k
+          enddo !j
+
+          i=i+1 !advance to next valid stencil
+
+        enddo !i
+
+        !use local coordinates to reduce round-off errors
+        if (ics==1) then
+          x1=xnd(elnode(1,ie))-xctr(ie);x2=xnd(elnode(2,ie))-xctr(ie);x3=xnd(elnode(3,ie))-xctr(ie);
+          y1=ynd(elnode(1,ie))-yctr(ie);y2=ynd(elnode(2,ie))-yctr(ie);y3=ynd(elnode(3,ie))-yctr(ie);
+          if(i34(ie)==4) then
+            x4=xnd(elnode(4,ie))-xctr(ie);
+            y4=ynd(elnode(4,ie))-yctr(ie);
+          endif
+        else !lat/lon, local frame centered at ie
+          x1=(xnd(elnode(1,ie))-xctr(ie))*eframe(1,1,ie)+(ynd(elnode(1,ie))-yctr(ie))*eframe(2,1,ie)+ &
+           &(znd(elnode(1,ie))-zctr(ie))*eframe(3,1,ie)
+          x2=(xnd(elnode(2,ie))-xctr(ie))*eframe(1,1,ie)+(ynd(elnode(2,ie))-yctr(ie))*eframe(2,1,ie)+ &
+           &(znd(elnode(2,ie))-zctr(ie))*eframe(3,1,ie)
+          x3=(xnd(elnode(3,ie))-xctr(ie))*eframe(1,1,ie)+(ynd(elnode(3,ie))-yctr(ie))*eframe(2,1,ie)+ &
+           &(znd(elnode(3,ie))-zctr(ie))*eframe(3,1,ie)
+          y1=(xnd(elnode(1,ie))-xctr(ie))*eframe(1,2,ie)+(ynd(elnode(1,ie))-yctr(ie))*eframe(2,2,ie)+ &
+           &(znd(elnode(1,ie))-zctr(ie))*eframe(3,2,ie)
+          y2=(xnd(elnode(2,ie))-xctr(ie))*eframe(1,2,ie)+(ynd(elnode(2,ie))-yctr(ie))*eframe(2,2,ie)+ &
+           &(znd(elnode(2,ie))-zctr(ie))*eframe(3,2,ie)
+          y3=(xnd(elnode(3,ie))-xctr(ie))*eframe(1,2,ie)+(ynd(elnode(3,ie))-yctr(ie))*eframe(2,2,ie)+ &
+           &(znd(elnode(3,ie))-zctr(ie))*eframe(3,2,ie)
+          if(i34(ie)==4) then
+            x4=(xnd(elnode(4,ie))-xctr(ie))*eframe(1,1,ie)+(ynd(elnode(4,ie))-yctr(ie))*eframe(2,1,ie)+ &
+             &(znd(elnode(4,ie))-zctr(ie))*eframe(3,1,ie)
+            y4=(xnd(elnode(4,ie))-xctr(ie))*eframe(1,2,ie)+(ynd(elnode(4,ie))-yctr(ie))*eframe(2,2,ie)+ &
+             &(znd(elnode(4,ie))-zctr(ie))*eframe(3,2,ie)
+          endif
+        endif
+
+        wts=0.0; s1=0.0; s2=0.0    
+
+        wts(1,1)=(x1+x2+x3)/3.0d0 
+        wts(2,1)=(y1+y2+y3)/3.0d0 
+        wts(3,1)=(x1*x1+x2*x2+x3*x3+x1*x2+x2*x3+x3*x1)/6d0
+        wts(4,1)=(x1*y1+x2*y2+x3*y3)/6d0+(x1*y2+x2*y1+x2*y3+x3*y2+x3*y1+x1*y3)/12d0
+        wts(5,1)=(y1*y1+y2*y2+y3*y3+y1*y2+y2*y3+y3*y1)/6d0
+        s1=signa(x1,x2,x3,y1,y2,y3)
+        
+        if(i34(ie)==4) then
+          wts(1,2)=(x1+x3+x4)/3.0d0 
+          wts(2,2)=(y1+y3+y4)/3.0d0 
+          wts(3,2)=(x1*x1+x3*x3+x4*x4+x1*x3+x3*x4+x4*x1)/6d0
+          wts(4,2)=(x1*y1+x3*y3+x4*y4)/6d0+(x1*y3+x3*y1+x3*y4+x4*y3+x4*y1+x1*y4)/12d0
+          wts(5,2)=(y1*y1+y3*y3+y4*y4+y1*y3+y3*y4+y4*y1)/6d0
+          s2=signa(x1,x3,x4,y1,y3,y4)
+        endif
+        if(abs((s1+s2-area(ie))/area(ie))>1e-8) then
+          write(errmsg,*)'s1+s2/=area(ie)',s1+s2,area(ie),ie
+          call parallel_abort(errmsg)
+        endif
+        do i=1,5
+          fwts2(i,ie)=(s1*wts(i,1)+s2*wts(i,2))/(s1+s2)
+        enddo
+
+        !debug>
+        !write(95,'(6(i10))') nweno2(ie), -999, -999, -999, -999, -999
+        !<debug
+
+      enddo !ie
+      !debug>
+      !close(95)
+      !<debug
+      call CheckSten2   !different from the CheckSten2 in the serial version.
+                        !Check for each side ("jsj") of an element: 
+                        !at least 1 stencil does not straddle "jsj", i.e.,
+                        !at least 1 stencil has all its elements on one side of "jsj"
+
+      end subroutine weno2_coef
+
+
+!===============================================================================
+      !set up element to bnd table
+      !Init. isbe(1:ne)=0
+      !bnd elements: marked as isbe(ie)=1, if at least one node is on
+      !land or open boundary; other elements: marked as 0
+!===============================================================================
+      subroutine set_isbe !weno
+      use schism_glbl, only: npa,np,ne,nvrt,i34,isbe,isbs,elside,elnode,ilnd,nlnd,nland,isbnd
+      use schism_msgp
+      implicit none
+      
+      integer, allocatable :: iland(:)
+      integer :: i,j,istat,jsj,nd
+      
+      allocate(isbe(ne),stat=istat)
+      if(istat/=0) call parallel_abort('failed in alloc. isbe')
+
+      allocate(iland(npa),stat=istat)
+      if(istat/=0) call parallel_abort('failed in alloc. iland')
+
+      isbe=0; iland=0
+
+      !mark land bnd nodes
+      do i=1,nland
+        do j=1,nlnd(i)
+          nd=ilnd(i,j)
+          iland(nd)=1
+        enddo
+      enddo
+
+      !mark bnd elements
+      do i=1,ne
+        do j=1,i34(i)
+          nd=elnode(j,i) !node
+          if (isbnd(1,nd)>0.or.iland(nd)==1) then !bnd node
+            isbe(i)=1 
+          endif
+        enddo
+      enddo !i
+     
+      deallocate(iland)
+    
+      end subroutine set_isbe
+      
+!===============================================================================
+      !calculate quadrature points coordinates
+!===============================================================================
+      subroutine quadpts !weno
+      use schism_glbl, only: xqp,yqp,xnd,ynd,isidenode,rkind,ns
+      use schism_msgp
+      implicit none
+      
+      integer :: i,j,n1,n2,istat
+      real(rkind) :: qrat(2)
+      
+      if(.not. allocated(xqp)) then
+        allocate(xqp(2,ns),stat=istat)
+        if(istat/=0) call parallel_abort('failed in alloc. xqp')
+      endif
+      if(.not. allocated(yqp)) then
+        allocate(yqp(2,ns),stat=istat)
+        if(istat/=0) call parallel_abort('failed in alloc. xqp')
+      endif
+      
+      xqp=0.0;yqp=0.0
+      qrat(1)=0.5d0-sqrt(3.0d0)/6.0d0
+      qrat(2)=0.5d0+sqrt(3.0d0)/6.0d0 
+      do j=1,ns
+        n1=isidenode(1,j)
+        n2=isidenode(2,j)
+        do i=1,2 !two quadrature points on each side
+          xqp(i,j)=xnd(n1)+qrat(i)*(xnd(n2)-xnd(n1))
+          yqp(i,j)=ynd(n1)+qrat(i)*(ynd(n2)-ynd(n1))
+        enddo
+      enddo
+     
+    
+      end subroutine quadpts
+    
+!===============================================================================
+!   assemble stencils of 1st order polynomials for each element
+!   alternative method: sequentially listing all tier1 elements, 3 at a time
+!===============================================================================
+      subroutine GetSten11(flag)
+      use schism_glbl
+      use schism_msgp
+      implicit none
+      
+      logical, intent(in) :: flag 
+
+      !local variables 
+      integer :: i,j,k,kk,l,l1,l2,l3,m,n0,n1,n2,iflag,k0,istat
+      integer :: ie,je,je1,je2,je3,ke1,ke2,ke1_1,ke1_2,ke1_3,ke2_1,ke2_2,ke2_3
+      integer,allocatable :: tier1(:)
+      integer :: ntier1
+      
+      !get stencils of p2 polynomials
+      if(.not.allocated(nweno1)) then
+        allocate(nweno1(ne),stat=istat)
+        if(istat/=0) call parallel_abort('failed in alloc. newno1')
+      endif
+ 
+      if(flag) then
+        allocate(isten1(3,mnweno1,ne),stat=istat)
+        if(istat/=0) call parallel_abort('failed in alloc. isten1')
+      endif
+
+      allocate(tier1(0:mnei*4),stat=istat) !tier1(0) should be 0 at all time
+      if(istat/=0) call parallel_abort('failed in alloc. tier1')
+      do ie=1,ne
+        ntier1=0 !number of tier 1 elements
+        tier1=0 ! reset tier 1
+        nweno1(ie)=0 !number of p1 polynomial
+
+        do j=1,i34(ie)
+          n1=elnode(j,ie)
+          !find position of ie in the nodal ball
+          do k=1,nne(n1)
+            if (indel(k,n1).eq.ie) then
+              k0=k
+              exit
+            endif
+          enddo !k
+          do k=1,nne(n1)-1
+            !counter-clockwise: from the first non-ie element to the last non-ie element
+            !thus, the possible overlapping of tier1 elements (from next node of ie) can only 
+            !occur at the first or last element in the current tier1
+            kk=k+k0; if (kk>nne(n1)) kk=kk-nne(n1)
+            if (indel(kk,n1).ne.0 .and. indel(kk,n1).ne.tier1(1) .and. indel(kk,n1).ne.tier1(ntier1)) then
+              ntier1=ntier1+1
+              if (ntier1<=mnei*4) then
+                tier1(ntier1)=indel(kk,n1)
+              else
+                call parallel_abort('tier 1 > mnei*4')
+              endif
+            endif
+          enddo !k
+        enddo
+
+        !assemble stencils by listing 2 of the tier1 elements plus ie    
+        if (ntier1<2) then 
+          nweno1(ie)=0  
+          cycle !not enough elements to construct 1st order polynomial
+        elseif (ntier1==2) then
+          nweno1(ie)=1  !exactly 1 stencil
+          if (.not.flag) cycle
+          !record the stencil 
+          isten1(1,nweno1(ie),ie)=ie !center element goes first
+          do k=1,ntier1
+            isten1(k+1,nweno1(ie),ie)=tier1(k) !2 elements from tier 1
+          enddo
+        else !more than 1 stencil
+          do j=1,ntier1
+            nweno1(ie)=nweno1(ie)+1 !counting stencils
+            if (.not.flag) cycle
+
+            !record the stencil 
+            isten1(1,nweno1(ie),ie)=ie !center element
+            do k=j,j+1
+              kk=k; if (kk>ntier1) kk=kk-ntier1
+              isten1(k-j+2,nweno1(ie),ie)=tier1(kk) !2 elements from tier 1
+            enddo
+
+          enddo
+          mnweno1=max(mnweno1,nweno1(ie))
+        endif !assemble stencils
+      enddo !ie
+      deallocate(tier1)
+
+      end subroutine GetSten11
+
+!========================================================================================
+!   quality check for stencils (2nd order polynomials)
+!   For each element side ("jsj"), make sure at least 1 stencil does not straddle "jsj";
+!   otherwise, over/under-shoots may occur from the reconstruction at this side
+!   Assuming lat\lon's effect on this particular geometry is negligible
+!========================================================================================
+      subroutine CheckSten2
+      use schism_glbl,only: rkind,xctr,yctr,xnd,ynd,ne,isten_qual2,isten2 &
+      &,nweno2,isidenode,elside,i34
+      use schism_msgp
+      implicit none
+
+      integer :: iqual(4),ielqual,jsj,ie,i,j,k,n1,n2
+      real(rkind) :: tmp1,tmp2
+      
+      do ie=1,ne
+        iqual=1; !at first, assuming bad quality for each side
+        do j=1,i34(ie) !check each side
+          jsj=elside(j,ie)
+          n1=isidenode(1,jsj); n2=isidenode(2,jsj)
+          do i=1,nweno2(ie)
+            !Initially, assuming all 6 elements in the ith stencil lie on the same side
+            ielqual=0; 
+
+            if (ie.ne.isten2(1,i,ie)) then
+              call parallel_abort('center element of a stencil is not self')
+!'
+            endif
+
+            !On which side of jsj does the center element (ie) lie?
+            tmp1 = yctr(ie) -( (ynd(n1)-ynd(n2))/(xnd(n1)-xnd(n2))*(xctr(ie)-xnd(n2))+ynd(n2) )
+            !Are the other 5 elements on the same side as ie?
+            do k=2,6
+              tmp2=yctr(isten2(k,i,ie)) -( (ynd(n1)-ynd(n2))/(xnd(n1)-xnd(n2))*(xctr(isten2(k,i,ie))-xnd(n2))+ynd(n2) )
+              if ((tmp1*tmp2)<0) then  
+                ielqual=1 !the current element is on the other side
+                exit !which is sufficient for disqualifying this stencil 
+              endif
+            enddo !k=1,6
+            if (ielqual==0) then
+              iqual(j)=0 !at least one qualified stencil exists for this side
+              exit !which suffices, no need to check other stencils
+            endif
+          enddo !loop stencils of ie
+        enddo!loop j sides
+
+        if (sum(iqual(1:i34(ie)))==0) then
+          !all sides have qualified stencils
+          isten_qual2(ie)=.true.
+        else
+          isten_qual2(ie)=.false.
+        endif
+
+      enddo !ne
+
+      end subroutine CheckSten2
+
+!===============================================================================
+!   assemble stencils of 2nd order polynomials for each element
+!   alternative method: sequentially listing all tier1 elements, 6 at a time
+!===============================================================================
+      subroutine GetSten21(flag)
+      use schism_glbl
+      use schism_msgp
+      implicit none
+      
+      logical, intent(in) :: flag 
+
+      !local variables 
+      integer :: i,j,k,kk,l,l1,l2,l3,m,n0,n1,n2,iflag,k0,istat
+      integer :: ie,je,je1,je2,je3,ke,ke1,ke2,ke1_1,ke1_2,ke1_3,ke2_1,ke2_2,ke2_3
+      integer,allocatable :: tier1(:)
+      integer :: ntier1,ntmp
+      
+      !array for recording stencil quality for each element
+      if(.not.allocated(isten_qual2)) then
+        allocate(isten_qual2(ne),stat=istat)
+        if(istat/=0) call parallel_abort('failed in alloc. isten_qual2')
+        isten_qual2=.true.
+      endif
+
+      !get stencil of p2
+      if(.not.allocated(nweno2)) then
+        allocate(nweno2(ne),stat=istat)
+        if(istat/=0) call parallel_abort('failed in alloc. newno2')
+      endif
+ 
+      if(flag) then
+        allocate(isten2(6,mnweno2,ne),stat=istat)
+        if(istat/=0) call parallel_abort('failed in alloc. isten2')
+      endif
+
+      allocate(tier1(0:mnei*4),stat=istat) !tier1(0)=0 at all times
+      if(istat/=0) call parallel_abort('failed in alloc. tier1')
+      do ie=1,ne
+        ntier1=0 !number of tier 1 elements
+        tier1=0 ! reset tier 1
+        nweno2(ie)=0 !number of p2 polynomial
+
+        do j=1,i34(ie)
+          n1=elnode(j,ie)
+          !find position of ie in the nodal ball
+          do k=1,nne(n1)
+            if (indel(k,n1).eq.ie) then
+              k0=k
+              exit
+            endif
+          enddo !k
+          do k=1,nne(n1)-1
+            !counter-clockwise: from the first non-ie element to the last non-ie element
+            !thus, the possible overlapping of tier1 elements (from next node of ie) can only 
+            !occur at the first or last element in the current tier1
+            kk=k+k0; if (kk>nne(n1)) kk=kk-nne(n1)
+            if (indel(kk,n1).ne.0 .and. indel(kk,n1).ne.tier1(1) .and. indel(kk,n1).ne.tier1(ntier1)) then
+              ntier1=ntier1+1
+              if (ntier1<=mnei*4) then
+                tier1(ntier1)=indel(kk,n1)
+              else
+                call parallel_abort('tier 1 > mnei*4')
+              endif
+            endif
+          enddo !k
+        enddo
+
+        !assemble stencils by listing 5 of the tier1 elements plus ie    
+        if (ntier1<5) then
+          nweno2(ie)=0 
+          cycle !not enough elements to construct 2nd order polynomial
+        elseif (ntier1==5) then 
+          nweno2(ie)=1 !exactly 1 stencil
+          if (.not.flag) cycle
+          !record the stencil 
+          isten2(1,nweno2(ie),ie)=ie !center element goes first
+          do k=1,ntier1
+            isten2(k+1,nweno2(ie),ie)=tier1(k) !5 elements from tier 1
+          enddo
+        else ! more than 1 stencil; at least 6 elements in tier 1
+          do j=1,ntier1
+            nweno2(ie)=nweno2(ie)+1 !counting stencils
+            if (.not.flag) cycle
+
+            !record the stencil 
+            isten2(1,nweno2(ie),ie)=ie !center element
+            do k=j,j+4
+              kk=k
+              if (kk>ntier1) kk=kk-ntier1
+              isten2(k-j+2,nweno2(ie),ie)=tier1(kk) !5 elements from tier 1
+            enddo
+          enddo
+
+
+          !-------------Alternative listing methods---------------------------
+          !do j=1,i34(ie)
+          !  nweno2(ie)=nweno2(ie)+1 !counting stencils
+          !  if (.not.flag) cycle
+
+          !  !record the stencil 
+          !  ntmp=1
+          !  isten2(ntmp,nweno2(ie),ie)=ie !1st is the center element
+          !  ntmp=ntmp+1
+
+          !  je=ic3(j,ie)
+          !  isten2(ntmp,nweno2(ie),ie)=je !2nd is the direct neighbor of the center element
+          !  ntmp=ntmp+1
+
+          !  do k=1,ntier1
+          !    if (tier1(k)==je) then
+          !      ke=k
+          !      exit
+          !    endif
+          !  enddo
+          !  !2 direct neighbors of the 2nd
+          !  kk=ke+1
+          !  if (kk>ntier1) kk=kk-ntier1
+          !  isten2(ntmp,nweno2(ie),ie)=tier1(kk) !first 3 elements from tier 1
+          !  ntmp=ntmp+1
+          !  kk=ke-1
+          !  if (kk<1) kk=kk+ntier1
+          !  isten2(ntmp,nweno2(ie),ie)=tier1(kk) !first 3 elements from tier 1
+          !  ntmp=ntmp+1
+
+          !  kk=ke+3
+          !  if (kk>ntier1) kk=kk-ntier1
+          !  isten2(ntmp,nweno2(ie),ie)=tier1(kk) !first 3 elements from tier 1
+          !  ntmp=ntmp+1
+          !  kk=ke-3
+          !  if (kk<1) kk=kk+ntier1
+          !  isten2(ntmp,nweno2(ie),ie)=tier1(kk) !first 3 elements from tier 1
+          !  ntmp=ntmp+1
+
+          !enddo
+
+          !do j=1,ntier1,2
+          !  nweno2(ie)=nweno2(ie)+1 !counting stencils
+          !  if (.not.flag) cycle
+          !  ntmp=1
+          !  isten2(ntmp,nweno2(ie),ie)=ie !1st is the center element
+          !  ntmp=ntmp+1
+          !  !first 4 in tier 1
+          !  do k=j,j+2
+          !    kk=k
+          !    if (kk>ntier1) kk=kk-ntier1
+          !    isten2(ntmp,nweno2(ie),ie)=tier1(kk) !first 3 elements from tier 1
+          !    ntmp=ntmp+1
+          !  enddo
+          !  !skip one
+          !  kk=j+4
+          !  if (kk>ntier1) kk=kk-ntier1
+          !  isten2(ntmp,nweno2(ie),ie)=tier1(kk) !first 3 elements from tier 1
+          !  ntmp=ntmp+1
+          !  !skip one
+          !  kk=j+6
+          !  if (kk>ntier1) kk=kk-ntier1
+          !  isten2(ntmp,nweno2(ie),ie)=tier1(kk) !first 3 elements from tier 1
+          !  ntmp=ntmp+1
+          !enddo
+          !-------------End: Alternative listing methods---------------------------
+
+        endif !assemble stencils
+        mnweno2=max(mnweno2,nweno2(ie))
+      enddo !ie
+
+      deallocate(tier1)
+
+      end subroutine GetSten21
+
+!===============================================================================
+!     to determine whether 3 pts are in a line
+!     x1,x2,x3,y1,y2,y3:  triangle coordinates of 3 points
+!     iflag: iflag=1 means 3 pts are in a line
+!===============================================================================
+!      subroutine inline(x1,x2,x3,y1,y2,y3,iflag) !weno
+!
+!      integer, intent(out) :: iflag
+!      real(kind=8),intent(in) :: x1,x2,x3,y1,y2,y3 
+!      
+!      !local variables
+!      real(kind=8) :: sa,pl,signa,dist
+!     
+!      iflag=0 
+!      sa=signa(x1,x2,x3,y1,y2,y3)
+!      pl=(dist(x1,x2,y1,y2)+dist(x2,x3,y2,y3)+dist(x3,x1,y3,y1))/3d0
+!      if(abs(sa)<0.01*pl) then
+!        iflag=1
+!         !write(*,*)'iflag==1, 3 pts in a line'
+!      endif
+!    
+!      end subroutine inline
+    
+!==============================================================================
+!     Gauss elemination method to find the inverse of a square matrix, written by ZG 
+!     a_in: input matrix (n,n)
+!     a_out: output inverse matrix of a_in
+!     n: dimension
+!     ierr: error flag, ierr=0 means success, ierr/=0 means fail
+!==============================================================================
+      subroutine inverse(a_in,a_out,n,ierr) !weno
+      implicit none
+      integer, intent(in) :: n
+      integer, intent(out) :: ierr
+      real(8), intent(in),dimension(n,n) :: a_in
+      real(8), intent(out),dimension(n,n) :: a_out
+
+      !local variables
+      integer :: i,j,k
+      real(8),dimension(n,2*n) :: a !augumented matrix
+      real(8) :: rat
+      logical :: found
+
+      !matrix condition number, FY
+      
+      ierr=0
+      a_out=0.0
+      found=.true.
+      !initializing 
+      do i=1,n
+        do j=1,2*n
+          if(j<=n) then
+            a(i,j)=a_in(i,j) 
+          elseif((j-n)==i) then
+            a(i,j)=1.0
+          else
+            a(i,j)=0.0
+          endif
+        enddo !j
+      enddo !i
+
+      !forward eleminating
+      do i=1,n-1
+        if(a(i,i)==0) then !try to make a(i,i)/=0
+          found=.false.
+          do j=i+1,n
+            if(a(j,i)/=0) then !add line j to line i
+              found=.true.
+              do k=i,2*n
+                 a(i,k)=a(i,k)+a(j,k)
+              enddo
+            endif
+            if(found) exit
+          enddo !j
+        endif !a(i,i)==0
+        if(.not.found) then !matrix not inversiable
+          ierr=1
+          return
+        endif
+        
+        rat=a(i,i)
+        if(rat/=1.0) then
+          do j=i,2*n !making a(i,i)=1
+            a(i,j)=a(i,j)/rat
+          enddo
+        endif
+
+        do j=i+1,n ! making a(j,i)=0
+          rat=a(j,i)
+          if(rat==0) cycle
+          do k=i,2*n
+            a(j,k)=a(j,k)-rat*a(i,k)
+          enddo !k
+        enddo !j
+      enddo !i
+
+      if(a(n,n)==0) then
+        ierr=1
+        return
+      endif
+      
+      rat=a(n,n)
+      if(rat/=1.0) then
+        do i=n,2*n !making a(n,n)=1
+          a(n,i)=a(n,i)/rat
+        enddo
+      endif
+
+      !backward eleminating
+      do i=n,2,-1
+        do j=1,i-1
+          rat=a(j,i)
+          do k=i,2*n
+            a(j,k)=a(j,k)-rat*a(i,k) 
+          enddo !k
+        enddo!j
+      enddo !i
+
+      !get the inverse matrix 
+      do i=1,n
+        do j=1,n
+          a_out(i,j)=a(i,j+n)
+        enddo
+      enddo
+      return
+
+      !---------------------------------------------------------------
+      end subroutine inverse
+
+!==============================================================================
+      !matrix multiplication a3=a1(n,m)*a2(m,l)
+!==============================================================================
+      subroutine matmul1(a1,a2,n,m,l,a3) !weno
+
+      integer,intent(in) :: n, m, l
+      real(8),intent(in) :: a1(n,m),a2(m,l)
+      real(8),intent(out) :: a3(n,l)
+      
+      !local variables
+      integer :: i,j,k
+      real(8) :: sum1
+      
+      a3=0.0
+      do i=1,n
+        do j=1,l
+          sum1=0.0
+          do k=1,m
+            sum1=sum1+a1(i,k)*a2(k,j)
+          enddo !m
+          a3(i,j)=sum1
+        enddo !j
+      enddo !i
+
+      return
+      end subroutine matmul1
+      
+!==============================================================================
+!     Compute the distance between two points (weno)
+!==============================================================================
+      !function dist(x1,x2,y1,y2)
+      !use schism_glbl, only : rkind,errmsg
+      !implicit none
+      !real(rkind) :: dist,xd,yd
+      !real(rkind),intent(in) :: x1,x2,y1,y2
+    
+      !xd=x2-x1;yd=y2-y1
+      !dist=sqrt(xd*xd+yd*yd)
+    
+      !end function dist
+    
+!==============================================================================
+!to decide whether a point is inside the pologon
+!(xi,yi): coordinates of a point
+!xnd(3),ynd(3): triangle coordinates of nploy points
+!iflag: iflag=1 means the point is inside the polygon
+!assuming lat\lon's effect on this particular geometry is negligible
+!==============================================================================
+      subroutine insidetriangle(xi,yi,xnd,ynd,iflag)
+      integer, intent(out) :: iflag
+      real(kind=8), intent(in) :: xi,yi,xnd(3),ynd(3)
+    
+      !local variables
+      integer :: i,j,k,icount
+      real(kind=8) :: s1,s2,s3,signa
+    
+      iflag=0
+      s1=signa(xi,xnd(1),xnd(2),yi,ynd(1),ynd(2))
+      s2=signa(xi,xnd(2),xnd(3),yi,ynd(2),ynd(3))
+      s3=signa(xi,xnd(3),xnd(1),yi,ynd(3),ynd(1))
+      if(s1==0.or.s2==0.or.s3==0) then !pt is on side
+        iflag=1
+      endif
+      
+      if(s1>0.and.s2>0.and.s3>0) then !pt is inside
+        iflag=1
+      endif
+    
+      end subroutine insidetriangle
+
+!==============================================================================
+!     output weno diagnostic files:
+!     (1) weno_accuracy_out.prop;
+!     (2) weno_stencil.out;
+!     (3) removed_stencil1.out;
+!     (4) removed_stencil1.prop;
+!     (5) removed_stencil2.out;
+!     (6) removed_stencil2.prop.
+!     See below for details of each file
+!     NOTE: valid for single processor only!
+!==============================================================================
+      subroutine weno_diag
+
+      use schism_glbl,only: ne,ip_weno,nweno2,nweno1,isten_qual2,isbe,isten1,isten2&
+      &,mnweno2,mnweno1,iremove1,iremove2,nremove1,nremove2
+      implicit none
+      integer :: ie,nrow,i,ifill(500)
+      ifill=0
+
+      !Write order of accuracy for each element in *.prop format
+      !(1) upwind; (2) 2nd-order weno; (3) 3rd-order weno
+      open(32,file='weno_accuracy_out.prop')
+      do ie=1,ne
+        if(ip_weno==2 .and. nweno2(ie)>0 .and. isten_qual2(ie) .and. isbe(ie)==0) then !p2 weno method
+          write(32,'(2(i10))') ie,3
+        elseif((ip_weno==1.or.ip_weno==2).and.nweno1(ie)>0.and.isbe(ie)==0) then !p1 weno method
+          write(32,'(2(i10))') ie,2
+        else
+          write(32,'(2(i10))') ie,1
+        endif
+      enddo 
+      close(32)
+
+      !Write all stencils for each element:
+      !format (space delimited txt):
+      !   element_index   order_of_accuracy   number_of_stencils   element_idx_in_stencils (multiple columns)
+      !for "element_idx_in_stencils", delimiters are not used between two stencils,
+      !since the first element in each stencil is always ie
+      open(32,file='weno_stencil.out')
+      nrow=max(mnweno2*6,mnweno1*3)
+      do ie=1,ne
+        if(ip_weno==2 .and. nweno2(ie)>0 .and. isten_qual2(ie) .and. isbe(ie)==0) then !p2 weno method
+          write(32,'(500(i10))') ie,3,nweno2(ie),isten2(:,:,ie),(ifill(i), i=1,nrow-mnweno2*6)
+        elseif((ip_weno==1.or.ip_weno==2).and.nweno1(ie)>0.and.isbe(ie)==0) then !p1 weno method
+          write(32,'(500(i10))') ie,2,nweno1(ie),isten1(:,:,ie),(ifill(i), i=1,nrow-mnweno1*3)
+        else
+          write(32,'(500(i10))') ie,1,(ifill(i), i=1,nrow+1)
+        endif
+      enddo 
+      close(32)
+
+      !Write linear stencils that are removed due to small determinants in *.prop format
+      !In removed_stencil1.prop the value is the ratio between the number of removed stencils
+      !and the number of original stencils at each element.
+      !2nd order accuracy degrades to 1st order upwind ONLY when the ratio equals 1,
+      !i.e., all linear stencils are removed
+      !"removed_stencil1.out" provides details on the removed stencils
+      !format:
+      !col 1: ie; col 2: number of sencils removed
+      !col 3-5: element IDs of the first removed stencil;
+      !col 6-8: element IDs of the 2nd removed stencil; ...
+      !nan values are filled with "0"
+      open(32,file='removed_stencil1.prop')
+      do ie=1,ne
+        if (nremove1(ie)+nweno1(ie)>0) then
+          write(32,'((i10),(f25.12,x))') ie,nremove1(ie)/float(nremove1(ie)+nweno1(ie))
+        else
+          write(32,'(2(i10))') ie,-999
+        endif
+      enddo 
+      close(32)
+      open(32,file='removed_stencil1.out')
+      do ie=1,ne
+        if (iremove1(1,ie)>0) then
+          write(32,'(500(i10))') ie,nremove1(ie),iremove1(:,ie)
+        endif
+      enddo 
+      close(32)
+      if (allocated(iremove1)) deallocate(iremove1)
+      if (allocated(nremove1)) deallocate(nremove1)
+
+      !Write quadratic stencils that are removed due to small determinants
+      !"removed_stencil2.prop"
+      !shows the ratio between the removed stencils and all original stencils at each element.
+      !The 3rd order accuracy degrades to 2nd order ONLY when the ratio equals 1,
+      !i.e., all quadratic stencils are removed
+      !"removed_stencil2.out" provides details on the removed stencils
+      !format:
+      !col 1: ie; col 2: number of stencils removed
+      !col 3-8: element IDs of the first removed stencil;
+      !col 9-14: element IDs of the 2nd removed stencil; ...
+      !nan values are filled with "0"
+      if (ip_weno==2) then
+        open(32,file='removed_stencil2.prop')
+        do ie=1,ne
+          if (nremove2(ie)+nweno2(ie)>0) then
+            write(32,'((i10),(f25.12,x))') ie,nremove2(ie)/float(nremove2(ie)+nweno2(ie))
+          else
+            write(32,'(2(i10))') ie,-999
+          endif
+        enddo 
+        close(32)
+        open(32,file='removed_stencil2.txt')
+        do ie=1,ne
+          if (iremove2(1,ie)>0) then
+            write(32,'(500(i10))') ie,nremove2(ie),iremove2(:,ie)
+          endif
+        enddo 
+        close(32)
+      endif
+      if (allocated(iremove2)) deallocate(iremove2)
+      if (allocated(nremove2)) deallocate(nremove2)
+
+      end subroutine weno_diag
+
+!***********************************************************************************************************************************
+!  M33DET  -  Compute the determinant of a 3x3 matrix.
+!  Adapted from: David G. Simpson (2005)
+!***********************************************************************************************************************************
+
+      FUNCTION M33DET (A) 
+
+      IMPLICIT NONE
+
+      DOUBLE PRECISION :: M33DET
+      DOUBLE PRECISION, DIMENSION(3,3), INTENT(IN)  :: A
+
+      DOUBLE PRECISION :: DET
+
+
+      M33DET =   A(1,1)*A(2,2)*A(3,3)  &
+               - A(1,1)*A(2,3)*A(3,2)  &
+               - A(1,2)*A(2,1)*A(3,3)  &
+               + A(1,2)*A(2,3)*A(3,1)  &
+               + A(1,3)*A(2,1)*A(3,2)  &
+               - A(1,3)*A(2,2)*A(3,1)
+
+      RETURN
+
+      END FUNCTION M33DET
+
+!***********************************************************************************************************************************
+!  M66DET  -  Compute the determinant of a 6x6 matrix.
+!  Adapted from: David G. Simpson (2009)
+!***********************************************************************************************************************************
+      FUNCTION M66DET(A) 
+
+      IMPLICIT NONE
+
+      DOUBLE PRECISION :: M66DET
+      DOUBLE PRECISION, DIMENSION(6,6), INTENT(IN)  :: A
+
+      DOUBLE PRECISION ::  A11, A12, A13, A14, A15, A16, A21, A22, A23, A24, &
+         A25, A26, A31, A32, A33, A34, A35, A36, A41, A42, A43, A44, A45, A46,   &
+         A51, A52, A53, A54, A55, A56, A61, A62, A63, A64, A65, A66
+
+      A11=A(1,1); A12=A(1,2); A13=A(1,3); A14=A(1,4); A15=A(1,5); A16=A(1,6)
+      A21=A(2,1); A22=A(2,2); A23=A(2,3); A24=A(2,4); A25=A(2,5); A26=A(2,6)
+      A31=A(3,1); A32=A(3,2); A33=A(3,3); A34=A(3,4); A35=A(3,5); A36=A(3,6)
+      A41=A(4,1); A42=A(4,2); A43=A(4,3); A44=A(4,4); A45=A(4,5); A46=A(4,6)
+      A51=A(5,1); A52=A(5,2); A53=A(5,3); A54=A(5,4); A55=A(5,5); A56=A(5,6)
+      A61=A(6,1); A62=A(6,2); A63=A(6,3); A64=A(6,4); A65=A(6,5); A66=A(6,6)
+
+      M66DET = -(A16*A25*A34*A43*A52-A15*A26*A34*A43*A52-A16*A24*A35*A43*          &
+         A52+A14*A26*A35*A43*A52+A15*A24*A36*A43*A52-A14*A25*A36*A43*A52-A16*A25*  &
+         A33*A44*A52+A15*A26*A33*A44*A52+A16*A23*A35*A44*A52-A13*A26*A35*A44*      &
+         A52-A15*A23*A36*A44*A52+A13*A25*A36*A44*A52+A16*A24*A33*A45*A52-A14*A26*  &
+         A33*A45*A52-A16*A23*A34*A45*A52+A13*A26*A34*A45*A52+A14*A23*A36*A45*      &
+         A52-A13*A24*A36*A45*A52-A15*A24*A33*A46*A52+A14*A25*A33*A46*A52+A15*A23*  &
+         A34*A46*A52-A13*A25*A34*A46*A52-A14*A23*A35*A46*A52+A13*A24*A35*A46*      &
+         A52-A16*A25*A34*A42*A53+A15*A26*A34*A42*A53+A16*A24*A35*A42*A53-A14*A26*  &
+         A35*A42*A53-A15*A24*A36*A42*A53+A14*A25*A36*A42*A53+A16*A25*A32*A44*      &
+         A53-A15*A26*A32*A44*A53-A16*A22*A35*A44*A53+A12*A26*A35*A44*A53+A15*A22*  &
+         A36*A44*A53-A12*A25*A36*A44*A53-A16*A24*A32*A45*A53+A14*A26*A32*A45*      &
+         A53+A16*A22*A34*A45*A53-A12*A26*A34*A45*A53-A14*A22*A36*A45*A53+A12*A24*  &
+         A36*A45*A53+A15*A24*A32*A46*A53-A14*A25*A32*A46*A53-A15*A22*A34*A46*      &
+         A53+A12*A25*A34*A46*A53+A14*A22*A35*A46*A53-A12*A24*A35*A46*A53+A16*A25*  &
+         A33*A42*A54-A15*A26*A33*A42*A54-A16*A23*A35*A42*A54+A13*A26*A35*A42*      &
+         A54+A15*A23*A36*A42*A54-A13*A25*A36*A42*A54-A16*A25*A32*A43*A54+A15*A26*  &
+         A32*A43*A54+A16*A22*A35*A43*A54-A12*A26*A35*A43*A54-A15*A22*A36*A43*      &
+         A54+A12*A25*A36*A43*A54+A16*A23*A32*A45*A54-A13*A26*A32*A45*A54-A16*A22*  &
+         A33*A45*A54+A12*A26*A33*A45*A54+A13*A22*A36*A45*A54-A12*A23*A36*A45*      &
+         A54-A15*A23*A32*A46*A54+A13*A25*A32*A46*A54+A15*A22*A33*A46*A54-A12*A25*  &
+         A33*A46*A54-A13*A22*A35*A46*A54+A12*A23*A35*A46*A54-A16*A24*A33*A42*      &
+         A55+A14*A26*A33*A42*A55+A16*A23*A34*A42*A55-A13*A26*A34*A42*A55-A14*A23*  &
+         A36*A42*A55+A13*A24*A36*A42*A55+A16*A24*A32*A43*A55-A14*A26*A32*A43*      &
+         A55-A16*A22*A34*A43*A55+A12*A26*A34*A43*A55+A14*A22*A36*A43*A55-A12*A24*  &
+         A36*A43*A55-A16*A23*A32*A44*A55+A13*A26*A32*A44*A55+A16*A22*A33*A44*      &
+         A55-A12*A26*A33*A44*A55-A13*A22*A36*A44*A55+A12*A23*A36*A44*A55+A14*A23*  &
+         A32*A46*A55-A13*A24*A32*A46*A55-A14*A22*A33*A46*A55+A12*A24*A33*A46*      &
+         A55+A13*A22*A34*A46*A55-A12*A23*A34*A46*A55+A15*A24*A33*A42*A56-A14*A25*  &
+         A33*A42*A56-A15*A23*A34*A42*A56+A13*A25*A34*A42*A56+A14*A23*A35*A42*      &
+         A56-A13*A24*A35*A42*A56-A15*A24*A32*A43*A56+A14*A25*A32*A43*A56+A15*A22*  &
+         A34*A43*A56-A12*A25*A34*A43*A56-A14*A22*A35*A43*A56+A12*A24*A35*A43*      &
+         A56+A15*A23*A32*A44*A56-A13*A25*A32*A44*A56-A15*A22*A33*A44*A56+A12*A25*  &
+         A33*A44*A56+A13*A22*A35*A44*A56-A12*A23*A35*A44*A56-A14*A23*A32*A45*      &
+         A56+A13*A24*A32*A45*A56+A14*A22*A33*A45*A56-A12*A24*A33*A45*A56-A13*A22*  &
+         A34*A45*A56+A12*A23*A34*A45*A56)*A61+(A16*A25*A34*A43*A51-A15*A26*A34*    &
+         A43*A51-A16*A24*A35*A43*A51+A14*A26*A35*A43*A51+A15*A24*A36*A43*A51-A14*  &
+         A25*A36*A43*A51-A16*A25*A33*A44*A51+A15*A26*A33*A44*A51+A16*A23*A35*A44*  &
+         A51-A13*A26*A35*A44*A51-A15*A23*A36*A44*A51+A13*A25*A36*A44*A51+A16*A24*  &
+         A33*A45*A51-A14*A26*A33*A45*A51-A16*A23*A34*A45*A51+A13*A26*A34*A45*      &
+         A51+A14*A23*A36*A45*A51-A13*A24*A36*A45*A51-A15*A24*A33*A46*A51+A14*A25*  &
+         A33*A46*A51+A15*A23*A34*A46*A51-A13*A25*A34*A46*A51-A14*A23*A35*A46*      &
+         A51+A13*A24*A35*A46*A51-A16*A25*A34*A41*A53+A15*A26*A34*A41*A53+A16*A24*  &
+         A35*A41*A53-A14*A26*A35*A41*A53-A15*A24*A36*A41*A53+A14*A25*A36*A41*      &
+         A53+A16*A25*A31*A44*A53-A15*A26*A31*A44*A53-A16*A21*A35*A44*A53+A11*A26*  &
+         A35*A44*A53+A15*A21*A36*A44*A53-A11*A25*A36*A44*A53-A16*A24*A31*A45*      &
+         A53+A14*A26*A31*A45*A53+A16*A21*A34*A45*A53-A11*A26*A34*A45*A53-A14*A21*  &
+         A36*A45*A53+A11*A24*A36*A45*A53+A15*A24*A31*A46*A53-A14*A25*A31*A46*      &
+         A53-A15*A21*A34*A46*A53+A11*A25*A34*A46*A53+A14*A21*A35*A46*A53-A11*A24*  &
+         A35*A46*A53+A16*A25*A33*A41*A54-A15*A26*A33*A41*A54-A16*A23*A35*A41*      &
+         A54+A13*A26*A35*A41*A54+A15*A23*A36*A41*A54-A13*A25*A36*A41*A54-A16*A25*  &
+         A31*A43*A54+A15*A26*A31*A43*A54+A16*A21*A35*A43*A54-A11*A26*A35*A43*      &
+         A54-A15*A21*A36*A43*A54+A11*A25*A36*A43*A54+A16*A23*A31*A45*A54-A13*A26*  &
+         A31*A45*A54-A16*A21*A33*A45*A54+A11*A26*A33*A45*A54+A13*A21*A36*A45*      &
+         A54-A11*A23*A36*A45*A54-A15*A23*A31*A46*A54+A13*A25*A31*A46*A54+A15*A21*  &
+         A33*A46*A54-A11*A25*A33*A46*A54-A13*A21*A35*A46*A54+A11*A23*A35*A46*      &
+         A54-A16*A24*A33*A41*A55+A14*A26*A33*A41*A55+A16*A23*A34*A41*A55-A13*A26*  &
+         A34*A41*A55-A14*A23*A36*A41*A55+A13*A24*A36*A41*A55+A16*A24*A31*A43*      &
+         A55-A14*A26*A31*A43*A55-A16*A21*A34*A43*A55+A11*A26*A34*A43*A55+A14*A21*  &
+         A36*A43*A55-A11*A24*A36*A43*A55-A16*A23*A31*A44*A55+A13*A26*A31*A44*      &
+         A55+A16*A21*A33*A44*A55-A11*A26*A33*A44*A55-A13*A21*A36*A44*A55+A11*A23*  &
+         A36*A44*A55+A14*A23*A31*A46*A55-A13*A24*A31*A46*A55-A14*A21*A33*A46*      &
+         A55+A11*A24*A33*A46*A55+A13*A21*A34*A46*A55-A11*A23*A34*A46*A55+A15*A24*  &
+         A33*A41*A56-A14*A25*A33*A41*A56-A15*A23*A34*A41*A56+A13*A25*A34*A41*      &
+         A56+A14*A23*A35*A41*A56-A13*A24*A35*A41*A56-A15*A24*A31*A43*A56+A14*A25*  &
+         A31*A43*A56+A15*A21*A34*A43*A56-A11*A25*A34*A43*A56-A14*A21*A35*A43*      &
+         A56+A11*A24*A35*A43*A56+A15*A23*A31*A44*A56-A13*A25*A31*A44*A56-A15*A21*  &
+         A33*A44*A56+A11*A25*A33*A44*A56+A13*A21*A35*A44*A56-A11*A23*A35*A44*      &
+         A56-A14*A23*A31*A45*A56+A13*A24*A31*A45*A56+A14*A21*A33*A45*A56-A11*A24*  &
+         A33*A45*A56-A13*A21*A34*A45*A56+A11*A23*A34*A45*A56)*A62-(A16*A25*A34*    &
+         A42*A51-A15*A26*A34*A42*A51-A16*A24*A35*A42*A51+A14*A26*A35*A42*A51+A15*  &
+         A24*A36*A42*A51-A14*A25*A36*A42*A51-A16*A25*A32*A44*A51+A15*A26*A32*A44*  &
+         A51+A16*A22*A35*A44*A51-A12*A26*A35*A44*A51-A15*A22*A36*A44*A51+A12*A25*  &
+         A36*A44*A51+A16*A24*A32*A45*A51-A14*A26*A32*A45*A51-A16*A22*A34*A45*      &
+         A51+A12*A26*A34*A45*A51+A14*A22*A36*A45*A51-A12*A24*A36*A45*A51-A15*A24*  &
+         A32*A46*A51+A14*A25*A32*A46*A51+A15*A22*A34*A46*A51-A12*A25*A34*A46*      &
+         A51-A14*A22*A35*A46*A51+A12*A24*A35*A46*A51-A16*A25*A34*A41*A52+A15*A26*  &
+         A34*A41*A52+A16*A24*A35*A41*A52-A14*A26*A35*A41*A52-A15*A24*A36*A41*      &
+         A52+A14*A25*A36*A41*A52+A16*A25*A31*A44*A52-A15*A26*A31*A44*A52-A16*A21*  &
+         A35*A44*A52+A11*A26*A35*A44*A52+A15*A21*A36*A44*A52-A11*A25*A36*A44*      &
+         A52-A16*A24*A31*A45*A52+A14*A26*A31*A45*A52+A16*A21*A34*A45*A52-A11*A26*  &
+         A34*A45*A52-A14*A21*A36*A45*A52+A11*A24*A36*A45*A52+A15*A24*A31*A46*      &
+         A52-A14*A25*A31*A46*A52-A15*A21*A34*A46*A52+A11*A25*A34*A46*A52+A14*A21*  &
+         A35*A46*A52-A11*A24*A35*A46*A52+A16*A25*A32*A41*A54-A15*A26*A32*A41*      &
+         A54-A16*A22*A35*A41*A54+A12*A26*A35*A41*A54+A15*A22*A36*A41*A54-A12*A25*  &
+         A36*A41*A54-A16*A25*A31*A42*A54+A15*A26*A31*A42*A54+A16*A21*A35*A42*      &
+         A54-A11*A26*A35*A42*A54-A15*A21*A36*A42*A54+A11*A25*A36*A42*A54+A16*A22*  &
+         A31*A45*A54-A12*A26*A31*A45*A54-A16*A21*A32*A45*A54+A11*A26*A32*A45*      &
+         A54+A12*A21*A36*A45*A54-A11*A22*A36*A45*A54-A15*A22*A31*A46*A54+A12*A25*  &
+         A31*A46*A54+A15*A21*A32*A46*A54-A11*A25*A32*A46*A54-A12*A21*A35*A46*      &
+         A54+A11*A22*A35*A46*A54-A16*A24*A32*A41*A55+A14*A26*A32*A41*A55+A16*A22*  &
+         A34*A41*A55-A12*A26*A34*A41*A55-A14*A22*A36*A41*A55+A12*A24*A36*A41*      &
+         A55+A16*A24*A31*A42*A55-A14*A26*A31*A42*A55-A16*A21*A34*A42*A55+A11*A26*  &
+         A34*A42*A55+A14*A21*A36*A42*A55-A11*A24*A36*A42*A55-A16*A22*A31*A44*      &
+         A55+A12*A26*A31*A44*A55+A16*A21*A32*A44*A55-A11*A26*A32*A44*A55-A12*A21*  &
+         A36*A44*A55+A11*A22*A36*A44*A55+A14*A22*A31*A46*A55-A12*A24*A31*A46*      &
+         A55-A14*A21*A32*A46*A55+A11*A24*A32*A46*A55+A12*A21*A34*A46*A55-A11*A22*  &
+         A34*A46*A55+A15*A24*A32*A41*A56-A14*A25*A32*A41*A56-A15*A22*A34*A41*      &
+         A56+A12*A25*A34*A41*A56+A14*A22*A35*A41*A56-A12*A24*A35*A41*A56-A15*A24*  &
+         A31*A42*A56+A14*A25*A31*A42*A56+A15*A21*A34*A42*A56-A11*A25*A34*A42*      &
+         A56-A14*A21*A35*A42*A56+A11*A24*A35*A42*A56+A15*A22*A31*A44*A56-A12*A25*  &
+         A31*A44*A56-A15*A21*A32*A44*A56+A11*A25*A32*A44*A56+A12*A21*A35*A44*      &
+         A56-A11*A22*A35*A44*A56-A14*A22*A31*A45*A56+A12*A24*A31*A45*A56+A14*A21*  &
+         A32*A45*A56-A11*A24*A32*A45*A56-A12*A21*A34*A45*A56+A11*A22*A34*A45*A56)* &
+         A63+(A16*A25*A33*A42*A51-A15*A26*A33*A42*A51-A16*A23*A35*A42*A51+A13*A26* &
+         A35*A42*A51+A15*A23*A36*A42*A51-A13*A25*A36*A42*A51-A16*A25*A32*A43*      &
+         A51+A15*A26*A32*A43*A51+A16*A22*A35*A43*A51-A12*A26*A35*A43*A51-A15*A22*  &
+         A36*A43*A51+A12*A25*A36*A43*A51+A16*A23*A32*A45*A51-A13*A26*A32*A45*      &
+         A51-A16*A22*A33*A45*A51+A12*A26*A33*A45*A51+A13*A22*A36*A45*A51-A12*A23*  &
+         A36*A45*A51-A15*A23*A32*A46*A51+A13*A25*A32*A46*A51+A15*A22*A33*A46*      &
+         A51-A12*A25*A33*A46*A51-A13*A22*A35*A46*A51+A12*A23*A35*A46*A51-A16*A25*  &
+         A33*A41*A52+A15*A26*A33*A41*A52+A16*A23*A35*A41*A52-A13*A26*A35*A41*      &
+         A52-A15*A23*A36*A41*A52+A13*A25*A36*A41*A52+A16*A25*A31*A43*A52-A15*A26*  &
+         A31*A43*A52-A16*A21*A35*A43*A52+A11*A26*A35*A43*A52+A15*A21*A36*A43*      &
+         A52-A11*A25*A36*A43*A52-A16*A23*A31*A45*A52+A13*A26*A31*A45*A52+A16*A21*  &
+         A33*A45*A52-A11*A26*A33*A45*A52-A13*A21*A36*A45*A52+A11*A23*A36*A45*      &
+         A52+A15*A23*A31*A46*A52-A13*A25*A31*A46*A52-A15*A21*A33*A46*A52+A11*A25*  &
+         A33*A46*A52+A13*A21*A35*A46*A52-A11*A23*A35*A46*A52+A16*A25*A32*A41*      &
+         A53-A15*A26*A32*A41*A53-A16*A22*A35*A41*A53+A12*A26*A35*A41*A53+A15*A22*  &
+         A36*A41*A53-A12*A25*A36*A41*A53-A16*A25*A31*A42*A53+A15*A26*A31*A42*      &
+         A53+A16*A21*A35*A42*A53-A11*A26*A35*A42*A53-A15*A21*A36*A42*A53+A11*A25*  &
+         A36*A42*A53+A16*A22*A31*A45*A53-A12*A26*A31*A45*A53-A16*A21*A32*A45*      &
+         A53+A11*A26*A32*A45*A53+A12*A21*A36*A45*A53-A11*A22*A36*A45*A53-A15*A22*  &
+         A31*A46*A53+A12*A25*A31*A46*A53+A15*A21*A32*A46*A53-A11*A25*A32*A46*      &
+         A53-A12*A21*A35*A46*A53+A11*A22*A35*A46*A53-A16*A23*A32*A41*A55+A13*A26*  &
+         A32*A41*A55+A16*A22*A33*A41*A55-A12*A26*A33*A41*A55-A13*A22*A36*A41*      &
+         A55+A12*A23*A36*A41*A55+A16*A23*A31*A42*A55-A13*A26*A31*A42*A55-A16*A21*  &
+         A33*A42*A55+A11*A26*A33*A42*A55+A13*A21*A36*A42*A55-A11*A23*A36*A42*      &
+         A55-A16*A22*A31*A43*A55+A12*A26*A31*A43*A55+A16*A21*A32*A43*A55-A11*A26*  &
+         A32*A43*A55-A12*A21*A36*A43*A55+A11*A22*A36*A43*A55+A13*A22*A31*A46*      &
+         A55-A12*A23*A31*A46*A55-A13*A21*A32*A46*A55+A11*A23*A32*A46*A55+A12*A21*  &
+         A33*A46*A55-A11*A22*A33*A46*A55+A15*A23*A32*A41*A56-A13*A25*A32*A41*      &
+         A56-A15*A22*A33*A41*A56+A12*A25*A33*A41*A56+A13*A22*A35*A41*A56-A12*A23*  &
+         A35*A41*A56-A15*A23*A31*A42*A56+A13*A25*A31*A42*A56+A15*A21*A33*A42*      &
+         A56-A11*A25*A33*A42*A56-A13*A21*A35*A42*A56+A11*A23*A35*A42*A56+A15*A22*  &
+         A31*A43*A56-A12*A25*A31*A43*A56-A15*A21*A32*A43*A56+A11*A25*A32*A43*      &
+         A56+A12*A21*A35*A43*A56-A11*A22*A35*A43*A56-A13*A22*A31*A45*A56+A12*A23*  &
+         A31*A45*A56+A13*A21*A32*A45*A56-A11*A23*A32*A45*A56-A12*A21*A33*A45*      &
+         A56+A11*A22*A33*A45*A56)*A64-(A16*A24*A33*A42*A51-A14*A26*A33*A42*        &
+         A51-A16*A23*A34*A42*A51+A13*A26*A34*A42*A51+A14*A23*A36*A42*A51-A13*A24*  &
+         A36*A42*A51-A16*A24*A32*A43*A51+A14*A26*A32*A43*A51+A16*A22*A34*A43*      &
+         A51-A12*A26*A34*A43*A51-A14*A22*A36*A43*A51+A12*A24*A36*A43*A51+A16*A23*  &
+         A32*A44*A51-A13*A26*A32*A44*A51-A16*A22*A33*A44*A51+A12*A26*A33*A44*      &
+         A51+A13*A22*A36*A44*A51-A12*A23*A36*A44*A51-A14*A23*A32*A46*A51+A13*A24*  &
+         A32*A46*A51+A14*A22*A33*A46*A51-A12*A24*A33*A46*A51-A13*A22*A34*A46*      &
+         A51+A12*A23*A34*A46*A51-A16*A24*A33*A41*A52+A14*A26*A33*A41*A52+A16*A23*  &
+         A34*A41*A52-A13*A26*A34*A41*A52-A14*A23*A36*A41*A52+A13*A24*A36*A41*      &
+         A52+A16*A24*A31*A43*A52-A14*A26*A31*A43*A52-A16*A21*A34*A43*A52+A11*A26*  &
+         A34*A43*A52+A14*A21*A36*A43*A52-A11*A24*A36*A43*A52-A16*A23*A31*A44*      &
+         A52+A13*A26*A31*A44*A52+A16*A21*A33*A44*A52-A11*A26*A33*A44*A52-A13*A21*  &
+         A36*A44*A52+A11*A23*A36*A44*A52+A14*A23*A31*A46*A52-A13*A24*A31*A46*      &
+         A52-A14*A21*A33*A46*A52+A11*A24*A33*A46*A52+A13*A21*A34*A46*A52-A11*A23*  &
+         A34*A46*A52+A16*A24*A32*A41*A53-A14*A26*A32*A41*A53-A16*A22*A34*A41*      &
+         A53+A12*A26*A34*A41*A53+A14*A22*A36*A41*A53-A12*A24*A36*A41*A53-A16*A24*  &
+         A31*A42*A53+A14*A26*A31*A42*A53+A16*A21*A34*A42*A53-A11*A26*A34*A42*      &
+         A53-A14*A21*A36*A42*A53+A11*A24*A36*A42*A53+A16*A22*A31*A44*A53-A12*A26*  &
+         A31*A44*A53-A16*A21*A32*A44*A53+A11*A26*A32*A44*A53+A12*A21*A36*A44*      &
+         A53-A11*A22*A36*A44*A53-A14*A22*A31*A46*A53+A12*A24*A31*A46*A53+A14*A21*  &
+         A32*A46*A53-A11*A24*A32*A46*A53-A12*A21*A34*A46*A53+A11*A22*A34*A46*      &
+         A53-A16*A23*A32*A41*A54+A13*A26*A32*A41*A54+A16*A22*A33*A41*A54-A12*A26*  &
+         A33*A41*A54-A13*A22*A36*A41*A54+A12*A23*A36*A41*A54+A16*A23*A31*A42*      &
+         A54-A13*A26*A31*A42*A54-A16*A21*A33*A42*A54+A11*A26*A33*A42*A54+A13*A21*  &
+         A36*A42*A54-A11*A23*A36*A42*A54-A16*A22*A31*A43*A54+A12*A26*A31*A43*      &
+         A54+A16*A21*A32*A43*A54-A11*A26*A32*A43*A54-A12*A21*A36*A43*A54+A11*A22*  &
+         A36*A43*A54+A13*A22*A31*A46*A54-A12*A23*A31*A46*A54-A13*A21*A32*A46*      &
+         A54+A11*A23*A32*A46*A54+A12*A21*A33*A46*A54-A11*A22*A33*A46*A54+A14*A23*  &
+         A32*A41*A56-A13*A24*A32*A41*A56-A14*A22*A33*A41*A56+A12*A24*A33*A41*      &
+         A56+A13*A22*A34*A41*A56-A12*A23*A34*A41*A56-A14*A23*A31*A42*A56+A13*A24*  &
+         A31*A42*A56+A14*A21*A33*A42*A56-A11*A24*A33*A42*A56-A13*A21*A34*A42*      &
+         A56+A11*A23*A34*A42*A56+A14*A22*A31*A43*A56-A12*A24*A31*A43*A56-A14*A21*  &
+         A32*A43*A56+A11*A24*A32*A43*A56+A12*A21*A34*A43*A56-A11*A22*A34*A43*      &
+         A56-A13*A22*A31*A44*A56+A12*A23*A31*A44*A56+A13*A21*A32*A44*A56-A11*A23*  &
+         A32*A44*A56-A12*A21*A33*A44*A56+A11*A22*A33*A44*A56)*A65+(A15*A24*A33*    &
+         A42*A51-A14*A25*A33*A42*A51-A15*A23*A34*A42*A51+A13*A25*A34*A42*A51+A14*  &
+         A23*A35*A42*A51-A13*A24*A35*A42*A51-A15*A24*A32*A43*A51+A14*A25*A32*A43*  &
+         A51+A15*A22*A34*A43*A51-A12*A25*A34*A43*A51-A14*A22*A35*A43*A51+A12*A24*  &
+         A35*A43*A51+A15*A23*A32*A44*A51-A13*A25*A32*A44*A51-A15*A22*A33*A44*      &
+         A51+A12*A25*A33*A44*A51+A13*A22*A35*A44*A51-A12*A23*A35*A44*A51-A14*A23*  &
+         A32*A45*A51+A13*A24*A32*A45*A51+A14*A22*A33*A45*A51-A12*A24*A33*A45*      &
+         A51-A13*A22*A34*A45*A51+A12*A23*A34*A45*A51-A15*A24*A33*A41*A52+A14*A25*  &
+         A33*A41*A52+A15*A23*A34*A41*A52-A13*A25*A34*A41*A52-A14*A23*A35*A41*      &
+         A52+A13*A24*A35*A41*A52+A15*A24*A31*A43*A52-A14*A25*A31*A43*A52-A15*A21*  &
+         A34*A43*A52+A11*A25*A34*A43*A52+A14*A21*A35*A43*A52-A11*A24*A35*A43*      &
+         A52-A15*A23*A31*A44*A52+A13*A25*A31*A44*A52+A15*A21*A33*A44*A52-A11*A25*  &
+         A33*A44*A52-A13*A21*A35*A44*A52+A11*A23*A35*A44*A52+A14*A23*A31*A45*      &
+         A52-A13*A24*A31*A45*A52-A14*A21*A33*A45*A52+A11*A24*A33*A45*A52+A13*A21*  &
+         A34*A45*A52-A11*A23*A34*A45*A52+A15*A24*A32*A41*A53-A14*A25*A32*A41*      &
+         A53-A15*A22*A34*A41*A53+A12*A25*A34*A41*A53+A14*A22*A35*A41*A53-A12*A24*  &
+         A35*A41*A53-A15*A24*A31*A42*A53+A14*A25*A31*A42*A53+A15*A21*A34*A42*      &
+         A53-A11*A25*A34*A42*A53-A14*A21*A35*A42*A53+A11*A24*A35*A42*A53+A15*A22*  &
+         A31*A44*A53-A12*A25*A31*A44*A53-A15*A21*A32*A44*A53+A11*A25*A32*A44*      &
+         A53+A12*A21*A35*A44*A53-A11*A22*A35*A44*A53-A14*A22*A31*A45*A53+A12*A24*  &
+         A31*A45*A53+A14*A21*A32*A45*A53-A11*A24*A32*A45*A53-A12*A21*A34*A45*      &
+         A53+A11*A22*A34*A45*A53-A15*A23*A32*A41*A54+A13*A25*A32*A41*A54+A15*A22*  &
+         A33*A41*A54-A12*A25*A33*A41*A54-A13*A22*A35*A41*A54+A12*A23*A35*A41*      &
+         A54+A15*A23*A31*A42*A54-A13*A25*A31*A42*A54-A15*A21*A33*A42*A54+A11*A25*  &
+         A33*A42*A54+A13*A21*A35*A42*A54-A11*A23*A35*A42*A54-A15*A22*A31*A43*      &
+         A54+A12*A25*A31*A43*A54+A15*A21*A32*A43*A54-A11*A25*A32*A43*A54-A12*A21*  &
+         A35*A43*A54+A11*A22*A35*A43*A54+A13*A22*A31*A45*A54-A12*A23*A31*A45*      &
+         A54-A13*A21*A32*A45*A54+A11*A23*A32*A45*A54+A12*A21*A33*A45*A54-A11*A22*  &
+         A33*A45*A54+A14*A23*A32*A41*A55-A13*A24*A32*A41*A55-A14*A22*A33*A41*      &
+         A55+A12*A24*A33*A41*A55+A13*A22*A34*A41*A55-A12*A23*A34*A41*A55-A14*A23*  &
+         A31*A42*A55+A13*A24*A31*A42*A55+A14*A21*A33*A42*A55-A11*A24*A33*A42*      &
+         A55-A13*A21*A34*A42*A55+A11*A23*A34*A42*A55+A14*A22*A31*A43*A55-A12*A24*  &
+         A31*A43*A55-A14*A21*A32*A43*A55+A11*A24*A32*A43*A55+A12*A21*A34*A43*      &
+         A55-A11*A22*A34*A43*A55-A13*A22*A31*A44*A55+A12*A23*A31*A44*A55+A13*A21*  &
+         A32*A44*A55-A11*A23*A32*A44*A55-A12*A21*A33*A44*A55+A11*A22*A33*A44*A55)* &
+         A66
+
+      RETURN
+
+      END FUNCTION M66DET
+
+      !debugging routines used in schism_step.F90
+      !weno_debug> variable definition
+      !real(4) :: rctr,ang1
+
+      !weno_debug> before do_trans*
+        !do j=1,ns
+        !  n1=isidenode(1,j)
+        !  n2=isidenode(2,j)
+        !  rctr=sqrt((ynd(n2)+ynd(n1))**2+(xnd(n2)+xnd(n1))**2)/2.0d0
+        !  ang1=datan2(ynd(n2)+ynd(n1),xnd(n2)+xnd(n1))
+        !  !su2(:,j)=-0.002094395102393d0*rctr*sin(ang1)
+        !  !sv2(:,j)=0.002094395102393d0*rctr*cos(ang1)
+        !  su2=100.0d0
+        !  sv2=0.0d0
+        !  flux_adv_vface=0.0d0
+        !  zs(1,j)=-1.0d0
+        !  zs(2,j)=0.0d0
+        !enddo !j
+
+        !open(95,file='outputs/trelm',status='replace')
+        !write(95,'(f8.1,x,360000(f15.8,x))') 0.0 ,tr_el(1,2,1:ne)
+        !flush(95)
+      !<weno_debug
+
+      !weno_debug> after do_trans*
+        !write(95,'(f8.1,x,360000(f15.8,x))') dt,tr_el(1,2,1:ne)
+        !flush(95)
+        !close(95)
+        !write(errmsg,*)'force stop debugging'
+        !call parallel_abort(errmsg)
+      !<weno_debug
+
+
+!===============================================================================
+! End: SUBROUTINES AND FUNCTIONS FOR WENO 
+!===============================================================================
+!<weno

@@ -38,7 +38,7 @@ module schism_msgp
                        &np_global,np,npg,npa,iplg,ipgl,nne,indel,dp, &
                        &ns_global,ns,nsg,nsa,islg,isgl,isdel,isidenode, &
                        &errmsg,fdb,lfdb,ntracers,msc2,mdc2,i34,nea2, &
-                       &ielg2,iegl2
+                       &ielg2,iegl2,is_inter,iside_table
   implicit none
 !#ifndef USE_MPIMODULE
   include 'mpif.h'
@@ -75,6 +75,12 @@ module schism_msgp
   integer,public,save,allocatable :: nbrrank_2t(:)  ! Rank of neighboring processors (2-tier elements)
   integer,public,save,allocatable :: ranknbr_2t(:)  ! Mapping from MPI rank to neighbor index (2-tierelements)
 
+  !weno>
+  integer,public,save :: nnbr_s3
+  integer,public,save,allocatable :: nbrrank_s3(:)  ! Rank of neighboring processors (elements)
+  integer,public,save,allocatable :: ranknbr_s3(:)  ! Mapping from MPI rank to neighbor index (elements)
+  !<weno
+
   !-----------------------------------------------------------------------------
   ! Private data
   !-----------------------------------------------------------------------------
@@ -102,6 +108,15 @@ module schism_msgp
   integer,save :: mnsrecv                 ! Max number of sides to receive from a nbr
   integer,save,allocatable :: nsrecv(:)   ! Number of sides to receive from each nbr
   integer,save,allocatable :: isrecv(:,:) ! Local index of recv sides
+
+  !weno>
+  integer,save :: mnssend3                 ! Max number of sides to send to a nbr (weno)
+  integer,save,allocatable :: nssend3(:)   ! Number of sides to send to each nbr (weno) (weno)
+  integer,save,allocatable :: issend3(:,:) ! Local index of send sides (weno)
+  integer,save :: mnsrecv3                 ! Max number of sides to receive from a nbr
+  integer,save,allocatable :: nsrecv3(:)   ! Number of sides to receive from each nbr
+  integer,save,allocatable :: isrecv3(:,:) ! Local index of recv sides
+  !<weno
 
   integer,save :: mnesend_2t              ! Max number of 2-tier elements to send to a nbr
   integer,save,allocatable :: nesend_2t(:)   ! Number of 2-tier elements to send to each nbr
@@ -224,6 +239,15 @@ module schism_msgp
   integer,save,allocatable :: s3d_tr2_recv_rqst(:)   
   integer,save,allocatable :: s3d_tr2_recv_stat(:,:) 
 
+  !weno>
+  integer,save,allocatable :: s3d_tr3_send_type(:)   ! 3Dx2 side send MPI datatype
+  integer,save,allocatable :: s3d_tr3_send_rqst(:)   
+  integer,save,allocatable :: s3d_tr3_send_stat(:,:) 
+  integer,save,allocatable :: s3d_tr3_recv_type(:)   
+  integer,save,allocatable :: s3d_tr3_recv_rqst(:)   
+  integer,save,allocatable :: s3d_tr3_recv_stat(:,:) 
+  !<weno
+
   integer,save,allocatable :: p3d_2_send_type(:)   ! 3Dx2 node send MPI datatype
   integer,save,allocatable :: p3d_2_send_rqst(:)   
   integer,save,allocatable :: p3d_2_send_stat(:,:) 
@@ -333,6 +357,9 @@ module schism_msgp
   public :: exchange_s3d_4          ! 3Dx4 ghost side exchange of type (4,nvrt,nm) where nm>=nsa
   public :: exchange_s3d_2          ! 3Dx2 ghost side exchange of type (2,nvrt,nm) where nm>=nsa
   public :: exchange_s3d_tr2        ! ghost side exchange of type (ntracers,nvrt,nm) where nm>=nsa
+  !weno>
+  public :: exchange_s3d_tr3        ! interface side exchange
+  !<weno
 
 contains
 
@@ -505,11 +532,15 @@ subroutine msgp_tables
   implicit none
   integer :: i,j,k,l,ie,ip,isd,irank,stat,iegb,itmp
   type(llist_type),pointer :: nd,sd
-  logical,allocatable :: nbr(:),nbr_p(:),nbr_s(:)
+  logical,allocatable :: nbr(:),nbr_p(:),nbr_s3(:)
   integer,allocatable :: iegrecv(:,:),iegsend(:,:)
   integer,allocatable :: iegrecv_2t(:,:),iegsend_2t(:,:)
   integer,allocatable :: ipgrecv(:,:),ipgsend(:,:)
   integer,allocatable :: isgrecv(:,:),isgsend(:,:)
+  !weno>
+  integer,allocatable :: isgrecv3(:,:),isgsend3(:,:)
+  !<weno
+
   integer,allocatable :: srqst(:),sstat(:,:)
   integer,allocatable :: rrqst(:),rstat(:,:)
 !-------------------------------------------------------------------------------
@@ -705,7 +736,7 @@ subroutine msgp_tables
   !-----------------------------------------------------------------------------
   ! Neigbor table (excluding myrank itself)
   ! Neighbors from 2-layers into ghost zone in order to find the smallest rank
-  ! for each ghost node later
+  ! for each ghost node (as the smallest rank may not be inside nnbr for elem)
   allocate(nbr_p(0:nproc-1),stat=stat)
   if(stat/=0) call parallel_abort('msgp_tables: nbr allocation failure')
   nbr_p=.false.
@@ -982,10 +1013,251 @@ subroutine msgp_tables
   deallocate(ipgsend)
   deallocate(ipgrecv)
 
+  !weno>
+  !===============================================================================
+  ! Construct table of neighbors for interface sides
+  ! This table cannot be the same as "nbr" based on nodes, otherwise 0 interface side
+  ! can occur between two neighboring ranks
+  !===============================================================================
+  allocate(nbr_s3(0:nproc-1),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_tables: nbr_s3 allocation failure')
+  nbr_s3=.false.
+
+  allocate(is_inter(ns),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_tables: is_inter allocation failure')
+  is_inter=.false.
+
+  !make interface side table for each rank, saved for transport routine
+  !count interface sides
+  itmp=0
+  do isd=1,ns
+    sd=>isgl(islg(isd))%next
+    if(associated(sd)) then !interface
+      itmp=itmp+1
+    endif
+  enddo
+  allocate(iside_table(itmp),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_tables: iside_table allocation failure')
+  iside_table=0
+
+  !make interface side table
+  itmp=0
+  do isd=1,ns
+    sd=>isgl(islg(isd))%next
+    if(associated(sd)) then !interface
+      itmp=itmp+1
+      nbr_s3(sd%rank)=.true.
+      is_inter(isd)=.true.
+      iside_table(itmp)=isd
+    endif
+  enddo
+
+  ! Count neighbors
+  nnbr_s3=0
+  do irank=0,nproc-1
+    if(nbr_s3(irank)) nnbr_s3=nnbr_s3+1
+  enddo
+  if(nnbr_s3==0) call parallel_abort('msgp_tables: nnbr_s3==0')
+
+  ! Build table of neighbors
+  allocate(nbrrank_s3(nnbr_s3),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_tables: nbrrank_s3 allocation failure')
+  allocate(ranknbr_s3(0:nproc-1),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_tables: ranknbr_s3 allocation failure')
+  nnbr_s3=0
+  ranknbr_s3=0 !flag
+  do irank=0,nproc-1
+    if(nbr_s3(irank)) then
+      nnbr_s3=nnbr_s3+1
+      nbrrank_s3(nnbr_s3)=irank
+      ranknbr_s3(irank)=nnbr_s3
+    endif
+  enddo
+
+  !debug>
+  !ftest='exch_xxxx'
+  !lftest=len_trim(ftest)
+  !write(ftest(lftest-3:lftest),'(i4.4)') myrank
+  !open(92,file='./'//ftest,status='replace')
+
+  !write(92,*) 'myrank,nnbr_s3,nbrrank_s3,ranknbr_s3: '
+  !write(92,'(2(i8,x))') myrank,nnbr_s3
+  !write(92,'(40(i8,x))') nbrrank_s3
+  !write(92,'(40(i8,x))') ranknbr_s3 
+  !flush(92)
+  !close(92)
+  !pause
+  !read(*,*)
+  !<debug
+
+  ! Finished with nbr_s3
+  deallocate(nbr_s3)
+
+  !-----------------------------------------------------------------------------
+  ! Construct interface side message-passing tables
+  !-----------------------------------------------------------------------------
+  allocate(nsrecv3(nnbr_s3),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_tables: nsrecv3 allocation failure')
+  nsrecv3=0
+
+  do isd=1,ns
+    sd=>isgl(islg(isd))%next
+    if(associated(sd)) then !interface
+      j=0 !flag
+      do i=1,nnbr_s3
+        if(sd%rank==nbrrank_s3(i)) then
+          j=i; exit 
+        endif
+      enddo !i
+      if(j==0) call parallel_abort('msgp_tables: Failed to find a process (4)')
+      nsrecv3(j)=nsrecv3(j)+1
+    endif
+  enddo
+
+  mnsrecv3=0
+  do i=1,nnbr_s3
+    if(nsrecv3(i)==0) call parallel_abort('msgp_tables: nsrecv3==0')
+    mnsrecv3=max(mnsrecv3,nsrecv3(i)) !>0
+  enddo
+
+  allocate(isrecv3(mnsrecv3,nnbr_s3),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_tables: isrecv3 allocation failure')
+  allocate(isgrecv3(mnsrecv3,nnbr_s3),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_tables: isgrecv3 allocation failure')
+  nsrecv3=0
+
+  do isd=1,ns
+    sd=>isgl(islg(isd))%next
+    if(associated(sd)) then !interface
+      j=0 !flag
+      do i=1,nnbr_s3
+        if(sd%rank==nbrrank_s3(i)) then
+          j=i; exit
+        endif
+      enddo !i
+      if(j==0) call parallel_abort('msgp_tables: Failed to find a process (weno interface)')
+      nsrecv3(j)=nsrecv3(j)+1
+      isrecv3(nsrecv3(j),j)=isd         !local index
+      isgrecv3(nsrecv3(j),j)=islg(isd)  !global index
+    endif !interface
+  enddo !isd
+
+  !debug>
+  !ftest='exch_xxxx'
+  !lftest=len_trim(ftest)
+  !write(ftest(lftest-3:lftest),'(i4.4)') myrank
+  !open(92,file='./'//ftest,status='replace')
+
+  !write(92,'(a)') 'Side Receive Table:'
+  !do i=1,nnbr_s3
+  !  write(92,'(a,6i8)') 'myrank,i,nnbr_s3,nbrindx,rank,nsrecv3: ', myrank,i,nnbr_s3,&
+  !  &ranknbr_s3(nbrrank_s3(i)),nbrrank_s3(i),nsrecv3(i)
+  !  if(nsrecv3(i)==0) then
+  !    write(92,*)'Zero recv side'
+  !    write(errmsg,*) 'MSGP: Zero recv side; see ctb*'
+  !    call parallel_abort(errmsg)
+  !  endif
+  !  do j=1,nsrecv3(i)
+  !    write(92,'(t1,4i8)') isrecv3(j,i),isgrecv3(j,i),iplg(isidenode(1:2,isrecv3(j,i)))
+  !  enddo
+
+  !enddo
+  !write(92,'(a)') '##########################################################'
+  !flush(92)
+
+  ! Allocate side send count array
+  allocate(nssend3(nnbr_s3),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_tables: nssend3 allocation failure')
+  do i=1,nnbr_s3
+    call mpi_irecv(nssend3(i),1,itype,nbrrank_s3(i),42,comm,rrqst(i),ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_tables: mpi_irecv3 tag=42',ierr)
+  enddo
+  do i=1,nnbr_s3
+    call mpi_isend(nsrecv3(i),1,itype,nbrrank_s3(i),42,comm,srqst(i),ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_tables: mpi_isend3 tag=42',ierr)
+  enddo
+  call mpi_waitall(nnbr_s3,rrqst,rstat,ierr)
+  if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_tables: mpi_waitall rrqst tag=42',ierr)
+  call mpi_waitall(nnbr_s3,srqst,sstat,ierr)
+  if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_tables: mpi_waitall srqst tag=42',ierr)
+
+  mnssend3=0
+  do i=1,nnbr_s3
+    if(nssend3(i)==0) call parallel_abort('msgp_tables: nssend3==0')
+    mnssend3=max(mnssend3,nssend3(i)) !>0
+  enddo
+
+  ! Allocate tables for send sides
+  allocate(issend3(mnssend3,nnbr_s3),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_tables: issend3 allocation failure')
+  allocate(isgsend3(mnssend3,nnbr_s3),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_tables: isgsend3 allocation failure')
+
+  ! Communicate side send lists (global node index pairs) with nbrs
+  do i=1,nnbr_s3
+!    if(nssend3(i)/=0) then
+    call mpi_irecv(isgsend3(1,i),nssend3(i),itype,nbrrank_s3(i),43,comm,rrqst(i),ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_tables: mpi_irecv3 tag=43',ierr)
+!    else
+!      rrqst(i)=MPI_REQUEST_NULL
+!    endif
+  enddo
+  do i=1,nnbr_s3
+!    if(nsrecv3(i)/=0) then
+    call mpi_isend(isgrecv3(1,i),nsrecv3(i),itype,nbrrank_s3(i),43,comm,srqst(i),ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_tables: mpi_isend3 tag=43',ierr)
+!    else
+!      srqst(i)=MPI_REQUEST_NULL
+!    endif
+  enddo
+  call mpi_waitall(nnbr_s3,rrqst,rstat,ierr)
+  if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_tables: mpi_waitall rrqst tag=43',ierr)
+  call mpi_waitall(nnbr_s3,srqst,sstat,ierr)
+  if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_tables: mpi_waitall srqst tag=43',ierr)
+
+
+  ! Construct locally indexed side send table
+  do i=1,nnbr_s3
+    do j=1,nssend3(i)
+      if(isgl(isgsend3(j,i))%rank/=myrank)  then
+        write(errmsg,*)'msgp_tables:weno not my rank:',myrank, isgl(isgsend3(j,i))%rank, iplg(isidenode(1:2,isgl(isgsend3(j,i))%id))
+        call parallel_abort(errmsg)
+      endif
+      issend3(j,i)=isgl(isgsend3(j,i))%id !send side is resident
+      if(issend3(j,i)>ns) call parallel_abort('msgp_tables:weno send side is ghost')
+    enddo
+  enddo
+
+!debug>
+  !do i=1,nnbr_s3
+  !  write(92,'(a,4i8)') 'nbrindx,rank,nssend3: ', myrank,&
+  !  &ranknbr_s3(nbrrank_s3(i)),nbrrank_s3(i),nssend3(i)
+  !  if(nssend3(i)==0) then
+  !    write(92,*)'Zero send side'
+! !     write(errmsg,*) 'MSGP: Zero send side; see ctb*'
+! !     call parallel_abort(errmsg)
+  !  endif
+  !  do j=1,nssend3(i)
+  !    write(92,'(t1,4i8)') issend3(j,i),isgsend3(j,i),iplg(isidenode(1:2,issend3(j,i)))
+  !  enddo
+  !enddo
+  !write(92,'(a)') '##########################################################'
+  !flush(92)
+  !close(92)
+  !pause
+  !read(*,*)
+  !<debug
+
+!  call parallel_barrier
+
+  deallocate(isgsend3)
+  deallocate(isgrecv3)
+
+  !<weno
+
   !-----------------------------------------------------------------------------
   ! Construct side message-passing tables
   !-----------------------------------------------------------------------------
-
   ! Sides share same nbr info as nodes
 
   ! Allocate and count number of recv ghost sides
@@ -1051,6 +1323,8 @@ subroutine msgp_tables
   allocate(isgrecv(mnsrecv,nnbr_p),stat=stat)
   if(stat/=0) call parallel_abort('msgp_tables: isgrecv allocation failure')
   nsrecv=0
+
+
   do isd=ns+1,nsa
     sd=>isgl(islg(isd))%next
     itmp=nproc
@@ -1084,9 +1358,9 @@ subroutine msgp_tables
   enddo !isd
 
 #ifdef DEBUG
-  write(10,'(a)') 'Side Receive Table:'
+  write(10,'(a)') 'Side Receive Table (WENO):'
   do i=1,nnbr_p
-    write(10,'(a,3i8)') 'nbrindx,rank,nsrecv: ',&
+    write(10,'(a,6i8)') 'myrank,i,nnbr_p,nbrindx,rank,nsrecv: ', myrank,i,nnbr_p,&
     &ranknbr_p(nbrrank_p(i)),nbrrank_p(i),nsrecv(i)
     if(nsrecv(i)==0) then
       write(10,*)'Zero recv side'
@@ -1098,7 +1372,10 @@ subroutine msgp_tables
     enddo
   enddo
   write(10,'(a)') '##########################################################'
+  flush(10)
   call parallel_barrier
+  !pause
+  !read(*,*)
 #endif
 
   ! Allocate side send count array
@@ -1124,6 +1401,7 @@ subroutine msgp_tables
   do i=1,nnbr_p
     mnssend=max(mnssend,nssend(i))
   enddo
+
 
   ! Allocate tables for send sides
   allocate(issend(mnssend,nnbr_p),stat=stat)
@@ -1153,10 +1431,14 @@ subroutine msgp_tables
   call mpi_waitall(nnbr_p,srqst,sstat,ierr)
   if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_tables: mpi_waitall srqst tag=31',ierr)
 
+
   ! Construct locally indexed side send table
   do i=1,nnbr_p
     do j=1,nssend(i)
-      if(isgl(isgsend(j,i))%rank/=myrank) call parallel_abort('Send side not resident')
+      if(isgl(isgsend(j,i))%rank/=myrank)  then
+        write(12,*) myrank, isgl(isgsend(j,i))%rank, iplg(isidenode(1:2,isgl(isgsend(j,i))%id))
+        call parallel_abort('Send side not resident (original)')
+      endif
       issend(j,i)=isgl(isgsend(j,i))%id !send side is resident
       if(issend(j,i)>ns) call parallel_abort('Send side is ghost')
     enddo
@@ -1165,7 +1447,7 @@ subroutine msgp_tables
 #ifdef DEBUG
   write(10,'(a)') 'Side Send Table:'
   do i=1,nnbr_p
-    write(10,'(a,3i8)') 'nbrindx,rank,nssend: ',&
+    write(10,'(a,4i8)') 'nbrindx,rank,nssend: ', myrank,&
     &ranknbr_p(nbrrank_p(i)),nbrrank_p(i),nssend(i)
     if(nssend(i)==0) then
       write(10,*)'Zero send side'
@@ -1177,6 +1459,7 @@ subroutine msgp_tables
     enddo
   enddo
   write(10,'(a)') '##########################################################'
+
   call parallel_barrier
 
   ! Check if recv/send sides are different
@@ -1199,6 +1482,7 @@ subroutine msgp_tables
   ! Done with global indexed arrays -- deallocate
   deallocate(isgsend)
   deallocate(isgrecv)
+
 
   !===============================================================================
   ! Construct table of 2-tier neighbors for elements
@@ -2146,6 +2430,57 @@ if(ntracers>0) then
     endif
   enddo !i
 endif !ntracers>0
+
+!weno>
+  !-----------------------------------------------------------------------------
+  ! Interface-side Message-Passing; order of indices must be (ntracers,nvrt,ns)  
+  !-----------------------------------------------------------------------------
+if(ntracers>0) then
+  allocate(s3d_tr3_send_rqst(nnbr_s3),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_init: s3d_tr3_send_rqst allocation failure')
+  allocate(s3d_tr3_send_stat(MPI_STATUS_SIZE,nnbr_s3),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_init: s3d_tr3_send_stat allocation failure')
+  allocate(s3d_tr3_recv_rqst(nnbr_s3),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_init: s3d_tr3_recv_rqst allocation failure')
+  allocate(s3d_tr3_recv_stat(MPI_STATUS_SIZE,nnbr_s3),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_init: s3d_tr3_recv_stat allocation failure')
+
+  ! 3D-whole-level side comm user-defined datatypes
+  allocate(s3d_tr3_send_type(nnbr_s3),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_init: s3d_tr3_send_type allocation failure')
+  allocate(s3d_tr3_recv_type(nnbr_s3),stat=stat)
+  if(stat/=0) call parallel_abort('msgp_init: s3d_tr3_recv_type allocation failure')
+  do i=1,nnbr_s3
+!    if(nssend3(i)/=0) then
+    !Send
+    blen_send(:)=nvrt*ntracers
+    dspl_send(1:mnssend3)=(issend3(:,i)-1)*nvrt*ntracers
+#if MPIVERSION==1
+    call mpi_type_indexed(nssend3(i),blen_send,dspl_send,rtype,s3d_tr3_send_type(i),ierr)
+#elif MPIVERSION==2
+    call mpi_type_create_indexed_block(nssend3(i),nvrt*ntracers,dspl_send,rtype,s3d_tr3_send_type(i),ierr)
+#endif
+    if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_init: create s3d_tr3_send_type',ierr)
+    call mpi_type_commit(s3d_tr3_send_type(i),ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_init: commit s3d_tr3_send_type',ierr)
+!    endif
+
+!    if(nsrecv3(i)/=0) then
+    !Recv
+    blen_recv(:)=nvrt*ntracers
+    dspl_recv(1:mnsrecv3)=(isrecv3(:,i)-1)*nvrt*ntracers
+#if MPIVERSION==1
+    call mpi_type_indexed(nsrecv3(i),blen_recv,dspl_recv,rtype,s3d_tr3_recv_type(i),ierr)
+#elif MPIVERSION==2
+    call mpi_type_create_indexed_block(nsrecv3(i),nvrt*ntracers,dspl_recv,rtype,s3d_tr3_recv_type(i),ierr)
+#endif
+    if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_init: create s3d_tr3_recv_type',ierr)
+    call mpi_type_commit(s3d_tr3_recv_type(i),ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort('msgp_init: commit s3d_tr3_recv_type',ierr)
+!    endif
+  enddo !i
+endif !ntracers>0
+!<weno
 
   !-----------------------------------------------------------------------------
   ! Setup 3Dx2 Node Message-Passing; order of indices must be (2,nvrt,nm) (nm>=npa)
@@ -3269,6 +3604,60 @@ subroutine exchange_s3d_tr2(s3d_tr2_data)
   if(ierr/=MPI_SUCCESS) call parallel_abort('exchange_s3d_tr2: waitall send',ierr)
 
 end subroutine exchange_s3d_tr2
+
+!weno>
+subroutine exchange_s3d_tr3(s3d_tr3_tmp0,s3d_tr3_tmp)
+!-------------------------------------------------------------------------------
+! Interface Side Exchange
+!-------------------------------------------------------------------------------
+  implicit none
+  real(rkind),intent(inout) :: s3d_tr3_tmp0(:,:,:),s3d_tr3_tmp(:,:,:)  !indices must be (ntracers,nvrt,nm) where nm>=ns
+  integer :: i,j
+!-------------------------------------------------------------------------------
+
+  ! Handle single processor case
+  if(nproc==1.or.ntracers<=0) return
+
+  ! Post receives
+  do i=1,nnbr_s3
+!    if(nsrecv3(i)/=0) then
+    !nsrecv3(i)/=0 checked
+    call mpi_irecv(s3d_tr3_tmp0,1,s3d_tr3_recv_type(i),nbrrank_s3(i),44,comm,s3d_tr3_recv_rqst(i),ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort('exchange_s3d_tr3: irecv tag=44',ierr)
+!#ifdef DEBUG
+!    else
+!      s3d_tr3_recv_rqst(i)=MPI_REQUEST_NULL
+!      write(errmsg,*) 'MPI_REQUEST_NULL: ', myrank
+!      call parallel_abort(errmsg,ierr)
+!#endif
+!    endif
+  enddo
+
+  ! Post sends
+  do i=1,nnbr_s3
+!    if(nssend3(i)/=0) then
+    call mpi_isend(s3d_tr3_tmp,1,s3d_tr3_send_type(i),nbrrank_s3(i),44,comm,s3d_tr3_send_rqst(i),ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort('exchange_s3d_tr3: isend tag=44',ierr)
+!#ifdef DEBUG
+!    else
+!      s3d_tr3_recv_rqst(i)=MPI_REQUEST_NULL
+!      write(errmsg,*) 'MPI_REQUEST_NULL: ', myrank
+!      call parallel_abort(errmsg,ierr)
+!#endif
+!    endif
+  enddo
+
+  ! Wait for completion
+  call mpi_waitall(nnbr_s3,s3d_tr3_recv_rqst,s3d_tr3_recv_stat,ierr)
+  if(ierr/=MPI_SUCCESS) call parallel_abort('exchange_s3d_tr3: waitall recv',ierr)
+  call mpi_waitall(nnbr_s3,s3d_tr3_send_rqst,s3d_tr3_send_stat,ierr)
+  if(ierr/=MPI_SUCCESS) call parallel_abort('exchange_s3d_tr3: waitall send',ierr)
+
+
+end subroutine exchange_s3d_tr3
+!<weno
+
+
 
 subroutine exchange_p3d_2(p3d_2_data)
 !-------------------------------------------------------------------------------

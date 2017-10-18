@@ -21,6 +21,8 @@
 
       use schism_glbl
       use schism_msgp
+      use schism_io
+      use netcdf
       use misc_modules
 
 #ifdef USE_GOTM
@@ -34,6 +36,11 @@
       USE eclight
 #endif
 
+#ifdef USE_FABM
+      USE fabm_schism, only: fabm_schism_do, fs, fabm_istart => istart
+      USE fabm_schism, only: fabm_schism_write_output_netcdf
+#endif
+
 #ifdef USE_ICM
       use icm_mod, only : iSun,iRea,WMS,wqc,iPh,PH_nd
       USE icm_sed_mod, only: sed_BENDO,CTEMP,BBM,CPOS,PO4T2TM1S,NH4T2TM1S,NO3T2TM1S, &
@@ -41,6 +48,10 @@
                             &NH41TM1S,NO31TM1S,HS1TM1S,SI1TM1S,PO41TM1S,PON1TM1S,PON2TM1S,PON3TM1S,POC1TM1S,POC2TM1S,&
                             &POC3TM1S,POP1TM1S,POP2TM1S,POP3TM1S,PSITM1S,BFORMAXS,ISWBENS,DFEEDM1S, &  !added by wangzg
                             &SED_BENDOC,SED_BENNH4,SED_BENNO3,SED_BENPO4,SED_BENCOD,SED_BENSA
+#endif
+
+#ifdef USE_COSINE
+      USE cosine_mod,only :mS2,mDN,mZ1,mZ2,sS2,sDN,sZ1,sZ2,nstep 
 #endif
 
 #ifdef USE_NAPZD
@@ -67,14 +78,13 @@
       USE harm
 #endif
 
-      USE hydraulic_structures
-#ifdef USE_SIMPLE_WIND
-      USE CF_VARIABLES, only : READ_NETCDF_CF_ALLVAR
+#ifdef USE_ICE
+      use ice_module, only: ntr_ice,u_ice,v_ice,ice_tr,delta_ice,sigma11, &
+   &sigma12,sigma22
+      use ice_therm_mod, only: t_oi
 #endif
 
-#ifdef SINGLE_NETCDF_OUTPUT
-      USE single_netcdf, only : NETCDF_SINGLE_OUTPUT
-#endif
+      USE hydraulic_structures
 
 #ifdef USE_PETSC
       use petsc_schism
@@ -101,7 +111,11 @@
                  &id2,id3,ip,ndelt,ibot_fl,ibelow,indx,nj,ind,ind2,lim,in1, &
                  &in2,irank_s,itmp,itmp1,itmp2,node1,node2,ndim,mk,nd_lam, &
                  &iee,idel,irow,icol,ieq,ij,kbb,lwrite,lit,ihot_len,IHOTSTP, &
-                 &itmpf,ibt,mmk,ndo,n,ind_tr,n_columns
+                 &itmpf,ibt,mmk,ndo,n,ind_tr,n_columns,ncid_hot,node_dim,elem_dim, &
+                 &side_dim,nvrt_dim,ntracers_dim,three_dim,two_dim,one_dim, &
+                 &four_dim,five_dim,six_dim,seven_dim,eight_dim,nine_dim,nvars_hot, &
+                 &MBEDP_dim,Nbed_dim,SED_ntr_dim,ice_ntr_dim, &
+                 &var1d_dim(1),var2d_dim(2),var3d_dim(3)
 !      integer :: nstp,nnew !Tsinghua group !1120:close
       real(rkind) :: cwtmp,cwtmp2,cwtmp3,wtmp1,wtmp2,time,ramp,rampbc,rampwind,dzdx,dzdy, &
                      &dudz,dvdz,dudx,dudx2,dvdx,dvdx2,dudy,dudy2,dvdy,dvdy2, &
@@ -114,7 +128,7 @@
                      &xlfs,xlbot,prod,buoy,diss,psi_n,psi_n1,q2l,upper, &
                      &xl_max,vd,td,qd1,qd2,t0,s0,rot_per,rot_f,xt,yt,zt, &
                      &xt4,yt4,zt4,uuint,vvint,wwint,vis_coe,suma,dtbk,eps, &
-                     &time_rm,time_rm2,u1,u2,v1,v2,eta_min,zmax,xn1,yn1, &
+                     &time_rm,time_rm2,u1,u2,v1,v2,eic,eta_min,zmax,xn1,yn1, &
                      &xn2,yn2,x10,x20,y10,y20,bb1,bb2,rl10,rl20,delta, &
                      &sintheta,tau_x,tau_x2,tau_y,tau_y2,detadx,detady,dprdx, &
                      &dprdy,detpdx,detpdy,chigamma,ubstar,vbstar,hhat_bar, &
@@ -155,6 +169,7 @@
       integer :: lfgb       ! Length of processor specific global output file name
       real(4) :: floatout,floatout2
 
+
 !     Inter-subdomain backtracking
       logical :: lbt(1),lbtgb(1)
 !      logical :: lbt_l(1), lbtgb_l(1)
@@ -169,7 +184,7 @@
 !      real(rkind),allocatable :: qhat(:,:),dqnon_dxy(:,:,:),qmatr(:,:,:,:),qir(:,:)
 
 !     Misc 
-      integer :: nwild(nea+12),nwild2(ne_global)
+      integer :: nwild(nea+300),nwild2(ne_global)
 !                 &jcoef(npa*(mnei+1)),ibt_p(npa),ibt_s(nsa)
       real(rkind) :: dfz(2:nvrt),dzz(2:nvrt),deta1_dx(nsa),deta1_dy(nsa),deta2_dx(nsa), &
                      &deta2_dy(nsa),dpr_dx(nsa),dpr_dy(nsa),detp_dx(nsa),detp_dy(nsa), &
@@ -177,7 +192,7 @@
                      &bigu(2,nsa),ghat1(2,nea),etp(npa),h1d(0:nvrt),SS1d(0:nvrt), &
                      &NN1d(0:nvrt),q2tmp(nvrt),xltmp(nvrt),rzbt(nvrt),shearbt(2:nvrt),sav_prod(nvrt), &
                      &xlmax(nvrt),cpsi3(2:nvrt),cpsi2p(2:nvrt),q2ha(2:nvrt),xlha(2:nvrt), &
-                     &chi(nsa),chi2(nsa),vsource(nea),sav_c2(nsa),sav_beta(nsa) !,dldxy_sd(4,2,nea)
+                     &chi(nsa),chi2(nsa),vsource(nea),sav_c2(nsa),sav_beta(nsa)
       real(rkind) :: swild(max(100,nsa+nvrt+12+ntracers)),swild2(nvrt,12),swild10(max(4,nvrt),12), &
      &swild3(20+ntracers),swild4(2,4)
 !#ifdef USE_SED
@@ -216,6 +231,9 @@
      &stokes_vel_sd(:,:,:) !,jpress(:),sbr(:,:),sbf(:,:),stokes_vel(:,:,:)
 #endif /*USE_WWM*/
 
+#ifdef USE_FABM
+      real(rkind) :: tau_bottom_nodes(npa)
+#endif
       real(4) :: buffer(2*nvrt*nnode_fl+1)
       real(4),allocatable  :: buffer1(:)
 
@@ -223,8 +241,11 @@
       integer, allocatable :: column_ix(:)
       real(rkind), allocatable :: coeff_vals(:),eta_npi(:),qel2(:)
 #endif
-      
+
 !     End of declarations
+#ifdef USE_FABM
+      tau_bottom_nodes(:)=0.0d0
+#endif
 
 !      if(nonhydro==1) then
 !        allocate(qhat(nvrt,npa),dqnon_dxy(2,nvrt,nsa),qmatr(nvrt,-1:1,0:(mnei+1),np), &
@@ -289,13 +310,6 @@
         allocate(rwild(np_global,3),stat=istat)
         if(istat/=0) call parallel_abort('MAIN: failed to alloc. (71)')
       endif !nws=4
-
-#ifdef USE_SIMPLE_WIND
-      if(nws==5.or.nws==6) then
-        allocate(rwild(npa,3),stat=istat)
-        if(istat/=0) call parallel_abort('MAIN: failed to alloc. (72)')
-      endif !nws
-#endif
 
 !     End alloc.
 
@@ -492,10 +506,30 @@
       endif !nws=4
 
 #ifdef USE_SIMPLE_WIND
-! IVICA
       if(nws==5.or.nws==6) then
-        CALL READ_NETCDF_CF_ALLVAR(time, windx, windy, pr)
+        itmp1=floor(time/wtiminc)+1
+        if(time>=wtime2) then
+          wtime1=wtime2
+          wtime2=wtime2+wtiminc
+          windx1=windx2
+          windy1=windy2
+          pr1=pr2
+          if(nws==5) then
+            CALL READ_REC_ATMO_FD(itmp1+1, windx2, windy2, pr2) !  read 2.nd record for init only
+          endif
+          if(nws==6) then
+            CALL READ_REC_ATMO_FEM(itmp1+1, windx2, windy2, pr2)
+          endif
+        endif
       endif !5|6
+      wtratio=(time-wtime1)/wtiminc
+!$OMP parallel do default(shared) private(i)
+      do i=1,npa        
+        windx(i)=windx1(i)+wtratio*(windx2(i)-windx1(i))
+        windy(i)=windy1(i)+wtratio*(windy2(i)-windy1(i))
+        pr(i)=pr1(i)+wtratio*(pr2(i)-pr1(i))
+      enddo !i
+!$OMP end parallel do
 #endif
 
 !     CORIE mode
@@ -686,7 +720,7 @@
         call hgrad_nodes(2,0,nvrt,npa,nsa,uu2,dr_dxy)
         do i=1,ns
           if(idry_s(i)==0) then
-            n1=isidenode(1,i); n2=isidenode(2,i)
+            !n1=isidenode(1,i); n2=isidenode(2,i)
             !f*v_s-du/dy*v_s
             wwave_force(1,:,i)=wwave_force(1,:,i)+(cori(i)-dr_dxy(2,:,i))*stokes_vel_sd(2,:,i)
             !-f*u_s+du/dy*u_s
@@ -697,7 +731,7 @@
         call hgrad_nodes(2,0,nvrt,npa,nsa,vv2,dr_dxy)
         do i=1,ns
           if(idry_s(i)==0) then
-            n1=isidenode(1,i); n2=isidenode(2,i)
+            !n1=isidenode(1,i); n2=isidenode(2,i)
             !dv/dx*v_s
             wwave_force(1,:,i)=wwave_force(1,:,i)+dr_dxy(1,:,i)*stokes_vel_sd(2,:,i)
             !-dv/dx*u_s
@@ -747,26 +781,34 @@
 
           if(kbs(j)+1==nvrt) then !2D side
             if(idry_s(j)==1.or.isbs(j)>0) cycle          !Wet side
-            wwave_force(1,:,j)=wwave_force(1,:,j)-sum(sbr(1,isidenode(:,j)))/(2.d0*htot) !/rho0!/grav
+            wwave_force(1,:,j)=wwave_force(1,:,j)-sum(sbr(1,isidenode(:,j)))/(2.d0*htot) !/rho0!/grav; dimension: m/s/s
             wwave_force(2,:,j)=wwave_force(2,:,j)-sum(sbr(2,isidenode(:,j)))/(2.d0*htot) !/rho0!/grav
-          else
+          else !3D
             tmp0=sum(out_wwm(isidenode(:,j),1))/2.d0 !Hs
-            if(idry_s(j)==1.or.isbs(j)>0.or.tmp0<=0.1) cycle 
+!            if(idry_s(j)==1.or.isbs(j)>0.or.tmp0<=0.1) cycle 
 !            if(idry_s(j)==1.or.isbs(j)>0) cycle 
+
+!Guerin: the tmp0/htot<0.1 condition is related to the use of a cosh
+!profile for the vertical distribution of qdm induced by wave breaking
+!(i.e. to avoid too strong values of swild(k) close to the surface)
+            if(idry_s(j)==1.or.isbs(j)>0.or.tmp0<=0.05.or.tmp0/htot<0.1) cycle
+
 !           !Wet side
             swild=0
             do k=kbs(j),nvrt
-              swild(k)=cosh(5*sqrt(2.d0)*(zs(k,j)+dps(j)))/tmp0
+              !swild(k)=cosh(5*sqrt(2.d0)*(zs(k,j)+dps(j)))/tmp0
+              swild(k)=cosh((dps(j)+zs(k,j))/(0.2d0*tmp0)) !see Eq. 53 of Uchiyama et al. (2010)
             enddo !k
     
-            sum1=0 !integral
+            sum1=0 !integral of the vertical distribution function
             do k=kbs(j),nvrt-1
-              sum1=sum1+(swild(k+1)+swild(k))*(zs(k+1,j)-zs(k,j))/2.d0 !*rho0
+              sum1=sum1+(swild(k+1)+swild(k))*(zs(k+1,j)-zs(k,j))/2.d0 !unit = m
             enddo !k
           
             if(sum1==0) call parallel_abort('STEP: integral=0')
-            wwave_force(1,:,j)=wwave_force(1,:,j)-swild(1:nvrt)/sum1*sum(sbr(1,isidenode(:,j)))/(2.d0*htot) !/rho0!/grav
-            wwave_force(2,:,j)=wwave_force(2,:,j)-swild(1:nvrt)/sum1*sum(sbr(2,isidenode(:,j)))/(2.d0*htot) !/rho0!/grav
+!Guerin
+            wwave_force(1,:,j)=wwave_force(1,:,j)-swild(1:nvrt)/sum1*sum(sbr(1,isidenode(:,j)))/2.d0 !m/s/s
+            wwave_force(2,:,j)=wwave_force(2,:,j)-swild(1:nvrt)/sum1*sum(sbr(2,isidenode(:,j)))/2.d0
           endif !2/3D
         enddo !j
 
@@ -872,6 +914,37 @@
 
         call exchange_p3dw(stokes_w_nd)
 
+!Guerin suggestion
+!Error: use nsa
+        !Adding term -w_s*(du/dz,dv/dz) to wwave_force
+        do i=1,ns
+           if(idry_s(i)==1) cycle
+           tmp1=0.d0
+           tmp2=0.d0
+           do k=kbs(i),nvrt
+              if (k==kbs(i)) then
+                ztmp=zs(k+1,i)-zs(k,i)
+                tmp1=su2(k+1,i)-su2(k,i)
+                tmp2=sv2(k+1,i)-sv2(k,i)
+              else if (k==nvrt) then
+                ztmp=zs(k,i)-zs(k-1,i)
+                tmp1=su2(k,i)-su2(k-1,i)
+                tmp2=sv2(k,i)-sv2(k-1,i)
+              else
+                ztmp=zs(k+1,i)-zs(k-1,i)
+                tmp1=su2(k+1,i)-su2(k-1,i)
+                tmp2=sv2(k+1,i)-sv2(k-1,i)
+              endif
+
+              if(ztmp<=0.d0) call parallel_abort('ztmp<=0')
+              wwave_force(1,k,i)=wwave_force(1,k,i)-sum(stokes_w_nd(k,isidenode(:,i)))/2.d0*tmp1/ztmp
+              wwave_force(2,k,i)=wwave_force(2,k,i)-sum(stokes_w_nd(k,isidenode(:,i)))/2.d0*tmp2/ztmp
+           enddo !k
+        enddo !i=1,ns
+
+        call exchange_s3d_2(wwave_force)
+!end Guerin
+
       endif !RADFLAG.eq.'VOR'
 
 #endif /*USE_WWM*/
@@ -929,6 +1002,38 @@
       endif !icou_elfe_wwm
 #endif
 !$OMP end parallel
+
+#ifdef USE_ICE
+      !Major exchange variables btw hydro and ice:
+      !From hydro to ice: uu2,vv2,wind[x,y],
+      !tr_nd(1:2,:,:),pr,fluxprc,srad,hradd,airt2,shum2
+      !From ice to hydro: tau_oi,fresh_wa_flux,net_heat_flux
+      !Beware hotstart implication
+      if(mod(it-1,nstep_ice)==0) call ice_step
+
+      !Overwrite ocean stress with ice (tau_oi)
+      tmp_max=0. !init max stress
+      smax=0 !init abs previp rate
+      tmax=0 !init abs heat flux
+      do i=1,npa
+        if(lhas_ice(i)) then
+          tau(:,i)=tau_oi(:,i)*rampwind !m^2/s/s
+          !Update fluxes
+          fluxprc(i)=fluxprc(i)+fresh_wa_flux(i)*rho0 !kg/s/m/m
+          sflux(i)=sflux(i)+net_heat_flux(i) !W/m/m
+ 
+          tmp=abs(tau_oi(1,i))+abs(tau_oi(2,i))
+          if(tmp>tmp_max) tmp_max=tmp
+          if(abs(fresh_wa_flux(i))>smax) smax=fresh_wa_flux(i)
+          if(abs(net_heat_flux(i))>tmax) tmax=net_heat_flux(i)
+        else !for output
+          tau_oi(:,i)=0; fresh_wa_flux(i)=0; net_heat_flux(i)=0
+        endif
+      enddo !i
+      write(12,*)'Max ice-ocean stress etc:',it,rampwind,tmp_max,smax,tmax
+
+      if(myrank==0) write(16,*) 'done ice...'
+#endif /*USE_ICE*/
 
       if(myrank==0) write(16,*)'done adjusting wind stress ...'
 
@@ -1280,7 +1385,9 @@
 
         rat=(time-th_time(1,1,2))/th_dt(1,2)
         if(rat<-small1.or.rat>1+small1) then
-          write(errmsg,*) 'STEP: rat out in flux.th:',rat,time,th_time(1,1:2,2)
+          write(errmsg,*) 'STEP: ratio out of range while interpolating &
+     &flux.th. Probably times are not equally spaced or dt has changesd &
+     &from a prior run (ratio, time, th times):',rat,time,th_time(1,1:2,2)
           call parallel_abort(errmsg)
         endif
         icount=0
@@ -1503,7 +1610,7 @@
 
           do i=1,nsources
             if(ath3(i,1,1,1)<0.or.ath3(i,1,2,1)<0) then
-              write(errmsg,*)'STEP: wrong vsource',it,i,ath3(i,1,1:2,1)
+              write(errmsg,*)'STEP: wrong sign vsource',it,i,ath3(i,1,1:2,1)
               call parallel_abort(errmsg)
             endif
 
@@ -1545,7 +1652,7 @@
 
           do i=1,nsinks
             if(ath3(i,1,1,2)>0.or.ath3(i,1,2,2)>0) then
-              write(errmsg,*)'STEP: wrong vsink',it,i,ath3(i,1,1:2,2)
+              write(errmsg,*)'STEP: wrong sign vsink',it,i,ath3(i,1,1:2,2)
               call parallel_abort(errmsg)
             endif
 
@@ -2007,6 +2114,9 @@
 !         Friction velocity: [\niu*|du/dz|]^0.5 (m/s)
           u_taus=sqrt(sqrt(tau(1,j)**2+tau(2,j)**2))
           u_taub=sqrt(Cdp(j)*(uu2(kbp(j)+1,j)**2+vv2(kbp(j)+1,j)**2))
+#ifdef USE_FABM
+          tau_bottom_nodes(j) = prho(kbp(j)+1,j) * (u_taus**2 + u_taub**2)
+#endif
           nlev=nvrt-kbp(j) !>1
           do k=0,nlev 
             klev=k+kbp(j) !kbp <= klev <= nvrt
@@ -2215,6 +2325,13 @@
 
 !	b.c. (computed using values from previous time except wind)
         q2fs=16.6**(2.0/3)*sqrt(tau(1,j)**2+tau(2,j)**2)/2
+!Guerin suggestion
+#ifdef USE_WWM
+        !Adding wave breaking induced turbulence: partial sink of
+        !momentum (15%) due to breaking according to Feddersen (2012)
+        q2fs=q2fs+0.5d0*16.6d0**(2.d0/3.d0)*0.15d0*sqrt(sbr(1,j)**2.d0+sbr(2,j)**2.d0) !unit = m2.s-2
+#endif
+
         q2fs=max(q2fs,q2min)
         q2bot=16.6**(2.0/3)*Cdp(j)*(uu2(kbp(j)+1,j)**2+vv2(kbp(j)+1,j)**2)/2
         q2bot=max(q2bot,q2min)
@@ -2224,7 +2341,7 @@
 !modif AD :: modification of mixing layer as Delpey et al.
 #ifdef USE_WWM
         tmp0=out_wwm(j,1) !Hs
-        zsurf=0.2*tmp0
+        zsurf=0.6*tmp0 !Guerin: following Terray et al. (1996) and also used by Bennis et al. (2014) and Moghimi et al. (2016)
 #else
         zsurf=dzz(nvrt)
 #endif
@@ -4131,10 +4248,15 @@
           nd=iond_global(i,j) !global
           if(ipgl(nd)%rank==myrank) then
             ip=ipgl(nd)%id
+            if(nramp_elev==1) then
+              eic=etaic(ip)
+            else
+              eic=0
+            endif
 
             !Prep tide
             if(iettype(i)==3.or.iettype(i)==5) then
-              eta1_bar=(1-ramp)*etaic(ip) !initialize
+              eta1_bar=(1-ramp)*eic !etaic(ip) !initialize
               do jfr=1,nbfr
                 ncyc=int(amig(jfr)*time/2/pi)
                 arg=amig(jfr)*time-ncyc*2*pi+face(jfr)-efa(i,j,jfr)
@@ -4143,11 +4265,11 @@
             endif
 
             if(iettype(i)==1.or.iettype(i)==2) then
-              elbc(ip)=ramp*eth(1,i)+(1-ramp)*etaic(ip) !eic
+              elbc(ip)=ramp*eth(1,i)+(1-ramp)*eic
             else if(iettype(i)==3) then
               elbc(ip)=eta1_bar
             else if(iettype(i)==4) then
-              elbc(ip)=ramp*eth(j,i)+(1-ramp)*etaic(ip)
+              elbc(ip)=ramp*eth(j,i)+(1-ramp)*eic !etaic(ip)
             else if(iettype(i)==5) then
               elbc(ip)=ramp*eth(j,i)+eta1_bar
             endif
@@ -6174,11 +6296,14 @@
      &bflux*area_e(l))/sne(3,l+1)/area_e(l+1)
 
           !Save flux_adv_vface for transport - not working for bed deformation
-          !Add (const) settling vel for each tracer, which does not upset volume balance
-          flux_adv_vface(l,1:ntracers,i)=bflux*area_e(l)-wsett(1:ntracers)*area(i)
+          !Add settling vel for each tracer, which does not upset volume balance
+          flux_adv_vface(l,1:ntracers,i)=bflux*area_e(l) !-wsett(1:ntracers,nvrt,i)*area(i)
+          do j=1,ntracers 
+            !iwsett=1: wsett must NOT vary along vertical!
+            if(iwsett(j)==1) &
+     &flux_adv_vface(l,j,i)=flux_adv_vface(l,j,i)-wsett(j,nvrt,i)*area(i)
+          enddo !j
 
-!Tsinghua group--------------------------------
-!1007
 #ifdef USE_SED
           if(itur==5) then !1018:itur==5 1128:Wsed
             flux_adv_vface(l,irange_tr(1,5):irange_tr(2,5),i)=bflux*area_e(l)- &
@@ -6190,10 +6315,12 @@
           !Add surface value as well
           if(l==nvrt-1) then
             flux_adv_vface(l+1,1:ntracers,i)=(ubar1*sne(1,l+1)+vbar1*sne(2,l+1)+ &
-       &we(l+1,i)*sne(3,l+1))*area_e(l+1)-wsett(1:ntracers)*area(i)
+       &we(l+1,i)*sne(3,l+1))*area_e(l+1) !-wsett(1:ntracers,nvrt,i)*area(i)
+            do j=1,ntracers
+              if(iwsett(j)==1) &
+     &flux_adv_vface(l+1,j,i)=flux_adv_vface(l+1,j,i)-wsett(j,nvrt,i)*area(i)
+            enddo !j
 
-!Tsinghua group-------------------------------
-!1007
 #ifdef USE_SED
             if(itur==5) then !1018:itur==5 1128:Wsed
               flux_adv_vface(l+1,irange_tr(1,5):irange_tr(2,5),i)=(ubar1*sne(1,l+1)+vbar1*sne(2,l+1)+ &
@@ -6427,6 +6554,10 @@
         itmp2=irange_tr(2,3)
 !$OMP   end single
 
+!       I'm showing an example of adding swimming velocity as body force below
+!       IMPORTANT: if you check conservation, make sure you take into account
+!       b.c. and body force. The example below sets velocity to 0 at surface and
+!       bottom in order to conserve mass (with no-flux b.c. there)
 !$OMP   do
         do i=1,nea
           if(idry_e(i)==1) cycle
@@ -6434,8 +6565,16 @@
           !Element wet
           flx_sf(itmp1:itmp2,i)=0
           flx_bt(itmp1:itmp2,i)=0
+          wwint=-1e-4 !swimming vel in internal prisms (<0 to follow wsett)
           do k=kbe(i)+1,nvrt !all prisms along vertical
-            bdy_frc(itmp1:itmp2,k,i)= 0
+            do m=itmp1,itmp2 !tracer
+              tmp=0 !init bdy_frc
+              !Use upwind prism for concentration
+              if(k>kbe(i)+1) tmp=tmp-wwint*tr_el(m,k-1,i)/(ze(k,i)-ze(k-1,i))
+              if(k<nvrt) tmp=tmp+wwint*tr_el(m,k,i)/(ze(k,i)-ze(k-1,i))
+            
+              bdy_frc(m,k,i)=tmp
+            enddo !m
           enddo !k
         enddo !i
 !$OMP   end do
@@ -6579,6 +6718,18 @@
 !            if(myrank==0) write(16,*) 'done NAPZD preparation....'
 !#endif /*USE_NAPZD*/
 
+#ifdef USE_FABM
+        if(myrank==0) &
+          write(16,*) 'Calculating FABM sources and sinks terms'
+        ! calculate bottom stress for elements
+        do i = 1,nea
+          if (idry_e(i)==1) cycle
+          fs%tau_bottom(i) = sum(tau_bottom_nodes(elnode(1:i34(i),i)))/i34(i)
+        end do
+        call fabm_schism_do()
+        if(myrank==0) write(16,*) 'Done FABM calculations'
+#endif
+
 #ifdef USE_ICM
         itmp1=irange_tr(1,7)
         itmp2=irange_tr(2,7)
@@ -6664,7 +6815,7 @@
         ltvd=itr_met>=2
         if(itr_met<=2) then !upwind or explicit TVD
           call do_transport_tvd(it,ltvd,ntracers,difnum_max_l) !,nvrt,npa,dfh)
-        else if(itr_met<=4) then !implicit TVD
+        else if(itr_met==3.or.itr_met==4) then !vertically implicit TVD
           call do_transport_tvd_imp(it,ltvd,ntracers,difnum_max_l) !,nvrt,npa,dfh)
         endif !itr_met
         if(myrank==0) write(16,*)'done tracer transport...'
@@ -6973,32 +7124,39 @@
 !$OMP do
       do i=1,nea
         if(ibarrier_m(i)==1) imarsh(i)=0
+        nwild(i)=imarsh(i) !save last step
       enddo !i
 !$OMP end do
 
 !$OMP do
       do i=1,ne
+        if(ibarrier_m(i)==1) cycle
+
+        !not barrier
         smax=maxval(dp(elnode(1:i34(i),i)))+slr_elev !max depth with SLR
         smin=minval(dp(elnode(1:i34(i),i)))+slr_elev !min depth
-        if(imarsh(i)==1) then !marsh elem
+        if(nwild(i)==1) then !marsh elem
           if(smax>0.5d0) then !drowned
             imarsh(i)=0
             Cdp(elnode(1:i34(i),i))=0.001
             Cd(elside(1:i34(i),i))=0.001
             rough_p(elnode(1:i34(i),i))=1.e-4
           endif !smax
-        else !non-marsh elem
-          if(smax<=0.25.and.smin>=-1) then
+        else !non-marsh elem @last step
+          if(smax<=0.and.smin>=-1) then
             ifl=0
-            do j=1,i34(i)
-              ie=ic3(j,i)
-              if(imarsh(ie)==1) then !not barrier
-                ifl=1; exit
-              endif
-            enddo !j
+            loop16: do j=1,i34(i)
+              nd=elnode(j,i)
+              do m=1,nne(nd)
+                ie=indel(m,nd)
+                if(nwild(ie)==1) then !not barrier
+                  ifl=1; exit loop16
+                endif
+              enddo !m
+            end do loop16
             if(ifl==1) imarsh(i)=1
           endif !smax
-        endif !imarsh
+        endif !nwild
       enddo !i=1,ne
 !$OMP end do
 
@@ -7029,31 +7187,6 @@
         call levels1(iths_main,it)
       endif
       if(myrank==0) write(16,*) 'done recomputing levels...'
-
-!...  Compute total mass of S,T (after levels are updated to 
-!     approx. d/dt(total)
-!      if(1==1) then
-!        tot_heat=0
-!        tot_salt=0
-!        do i=1,ne
-!          if(idry_e(i)==1) cycle
-!
-!          do k=kbe(i)+1,nvrt
-!            vol=(ze(k,i)-ze(k-1,i))*area(i)
-!            tot_heat=tot_heat+vol*tsel(1,k,i)
-!            tot_salt=tot_salt+vol*tsel(2,k,i)
-!          enddo !k
-!        enddo !i=1,ne
-!
-!#ifdef INCLUDE_TIMING
-!        cwtmp=mpi_wtime()
-!#endif
-!        call mpi_allreduce(tot_heat,tot_heat_gb,1,rtype,MPI_SUM,comm,ierr)
-!        call mpi_allreduce(tot_salt,tot_salt_gb,1,rtype,MPI_SUM,comm,ierr)
-!#ifdef INCLUDE_TIMING
-!        wtimer(9,2)=wtimer(9,2)+mpi_wtime()-cwtmp
-!#endif
-!        if(myrank==0) write(91,*)time/86400,tot_heat_gb,tot_salt_gb
 
 !...  Compute nodal vel. for output and next backtracking
       call nodalvel
@@ -7603,403 +7736,390 @@
       endif !ihydlg
 
 #ifndef SINGLE_NETCDF_OUTPUT
-      do j=1,noutput
-        if(iof(j)==1.and.mod(it,nspool)==0) then
-          write(ichan(j)) real(time,out_rkind)
-          write(ichan(j)) it
-          write(ichan(j)) (real(eta2(i),out_rkind),i=1,np)
-          if(j<=13) then
-            if(j==1) then
-              write(ichan(j)) (real(eta2(i),out_rkind),i=1,np)
-            else if(j==2) then !.and.ihconsv.ne.0) then
-              write(ichan(j)) (real(pr(i),out_rkind),i=1,np)
-            else if(j==3.and.ihconsv/=0) then
-              write(ichan(j)) (real(airt1(i),out_rkind),i=1,np)
-            else if(j==4.and.ihconsv/=0) then
-              write(ichan(j)) (real(shum1(i),out_rkind),i=1,np)
-            else if(j==5.and.ihconsv/=0) then
-              write(ichan(j)) (real(srad(i),out_rkind),i=1,np)
-            else if(j==6.and.ihconsv/=0) then
-              write(ichan(j)) (real(fluxsu(i),out_rkind),i=1,np)
-            else if(j==7.and.ihconsv/=0) then
-              write(ichan(j)) (real(fluxlu(i),out_rkind),i=1,np)
-            else if(j==8.and.ihconsv/=0) then
-              write(ichan(j)) (real(hradu(i),out_rkind),i=1,np)
-            else if(j==9.and.ihconsv/=0) then
-              write(ichan(j)) (real(hradd(i),out_rkind),i=1,np)
-            else if(j==10.and.ihconsv/=0) then
-              write(ichan(j)) (real(sflux(i),out_rkind),i=1,np)
-            else if(j==11.and.isconsv/=0) then
-              write(ichan(j)) (real(fluxevp(i),out_rkind),i=1,np)
-            else if(j==12.and.isconsv/=0) then
-              write(ichan(j)) (real(fluxprc(i),out_rkind),i=1,np)
-            else if(j==13) then
-              write(ichan(j)) (real(Cdp(i),out_rkind),i=1,np)
-            else ! for undefined case as floatout=0 in old code
-              write(ichan(j)) (0.0,i=1,np)
-            endif
-          else if(j<=16) then
-            if(j==14) then
-              if(nws==0) then
-                write(ichan(j))((0.0,0.0),i=1,np)
-              else !in ll frame if ics=2
-                write(ichan(j)) (real(windx(i),out_rkind),real(windy(i),out_rkind),i=1,np)
-              endif
-            else if(j==15) then !in ll frame if ics=2
-              write(ichan(j)) (real(tau(1,i),out_rkind),real(tau(2,i),out_rkind),i=1,np)
-            else !j=16
-              write(ichan(j)) (real(dav(1,i),out_rkind),real(dav(2,i),out_rkind),i=1,np)
-            endif
-          else if(j<27) then
-            floatout=0 !for some undefined variables
-            if(j==17) then
-              write(ichan(j)) ((real(ww2(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-            else
-              if(j==18) then
-                do i=1,np
-                  if(idry(i)==1) then
-                    write(ichan(j)) (-99.,k=max0(1,kbp00(i)),nvrt)
-                  else
-                    write(ichan(j)) (real(tr_nd(1,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt)
-                  endif
-                enddo
-              else if(j==19) then
-                do i=1,np
-                  if(idry(i)==1) then
-                    write(ichan(j)) (-99.,k=max0(1,kbp00(i)),nvrt)
-                  else
-                    write(ichan(j)) (real(tr_nd(2,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt)
-                  endif
-                enddo
-              else if(j==20) then
-                write(ichan(j)) ((real(prho(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-              else if(j==21) then
-                write(ichan(j)) ((real(dfh(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-              else if(j==22) then
-                write(ichan(j)) ((real(dfv(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-              else if(j==23) then
-                write(ichan(j)) ((real(q2(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-              else if(j==24) then
-                write(ichan(j)) ((real(xl(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-              else if(j==25) then
-                do i=1,np
-                  if(idry(i)==1) then
-                    write(ichan(j)) (0.,k=max0(1,kbp00(i)),nvrt)
-                  else
-                    write(ichan(j)) (real(znl(max0(k,kbp(i)),i),out_rkind),k=max0(1,kbp00(i)),nvrt)
-                  endif
-                enddo
-              else if(j==26) then
-                  write(ichan(j)) ((real(qnon(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-              endif
-            endif
-          else if(j==27) then
-            write(ichan(j)) ((real(uu2(k,i),out_rkind),real(vv2(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-!          else if(j<=27+ntracers) then !tracers; implies ntracers>0
-!            write(ichan(j)) ((real(tr_nd(j-27,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-          else !optional modules; MUST BE IN THE SAME ORDER AS BEFORE
+      if(mod(it,nspool)==0) then
+!        call writeout_nc(id_out_var(1),'wetdry_node',1,1,npa,dble(idry))
+        call writeout_nc(id_out_var(2),'wetdry_elem',4,1,nea,dble(idry_e))
+!        call writeout_nc(id_out_var(3),'wetdry_side',7,1,nsa,dble(idry_s))
+        call writeout_nc(id_out_var(4),'zcor',2,nvrt,npa,znl(:,:))
+        if(iof(1)==1) call writeout_nc(id_out_var(5),'elev',1,1,npa,eta2)
+        if(iof(2)==1) call writeout_nc(id_out_var(6),'air_pressure',1,1,npa,pr)
+        if(iof(3)==1) call writeout_nc(id_out_var(7),'air_temperature',1,1,npa,airt1)
+        if(iof(4)==1) call writeout_nc(id_out_var(8),'specific_humidity',1,1,npa,shum1)
+        if(iof(5)==1) call writeout_nc(id_out_var(9),'solar_radiation',1,1,npa,srad)
+        if(iof(6)==1) call writeout_nc(id_out_var(10),'sensible_flux',1,1,npa,fluxsu)
+        if(iof(7)==1) call writeout_nc(id_out_var(11),'latent_heat',1,1,npa,fluxlu)
+        if(iof(8)==1) call writeout_nc(id_out_var(12),'upward_longwave',1,1,npa,hradu)
+        if(iof(9)==1) call writeout_nc(id_out_var(13),'downward_longwave',1,1,npa,hradd)
+        if(iof(10)==1) call writeout_nc(id_out_var(14),'total_heat_flux',1,1,npa,sflux)
+        if(iof(11)==1) call writeout_nc(id_out_var(15),'evaporation',1,1,npa,fluxevp)
+        if(iof(12)==1) call writeout_nc(id_out_var(16),'precipitation',1,1,npa,fluxprc)
+        if(iof(13)==1) call writeout_nc(id_out_var(17),'bottom_drag_coef',1,1,npa,Cdp)
+        if(iof(14)==1) call writeout_nc(id_out_var(18),'wind_speed',1,1,npa,windx,windy)
+        if(iof(15)==1) call writeout_nc(id_out_var(19),'wind_stress',1,1,npa,tau(1,:),tau(2,:))
+        if(iof(16)==1) call writeout_nc(id_out_var(20),'dahv',1,1,npa,dav(1,:),dav(2,:))
+        if(iof(17)==1) call writeout_nc(id_out_var(21),'vertical_velocity',2,nvrt,npa,ww2)
+        if(iof(18)==1) call writeout_nc(id_out_var(22),'temp',2,nvrt,npa,tr_nd(1,:,:))
+        if(iof(19)==1) call writeout_nc(id_out_var(23),'salt',2,nvrt,npa,tr_nd(2,:,:))
+        if(iof(20)==1) call writeout_nc(id_out_var(24),'water_density',2,nvrt,npa,prho)
+        if(iof(21)==1) call writeout_nc(id_out_var(25),'diffusivity',2,nvrt,npa,dfh)
+        if(iof(22)==1) call writeout_nc(id_out_var(26),'viscosity',2,nvrt,npa,dfv)
+        if(iof(23)==1) call writeout_nc(id_out_var(27),'TKE',2,nvrt,npa,q2)
+        if(iof(24)==1) call writeout_nc(id_out_var(28),'mixing_length',2,nvrt,npa,xl)
+        if(iof(25)==1) call writeout_nc(id_out_var(29),'hvel',2,nvrt,npa,uu2,vv2)
 
+        if(iof(26)==1) call writeout_nc(id_out_var(30),'hvel_side',8,nvrt,nsa,su2,sv2)
+        if(iof(27)==1) call writeout_nc(id_out_var(31),'wvel_elem',5,nvrt,nea,we)
+        if(iof(28)==1) call writeout_nc(id_out_var(32),'temp_elem',6,nvrt,nea,tr_el(1,:,:))
+        if(iof(29)==1) call writeout_nc(id_out_var(33),'salt_elem',6,nvrt,nea,tr_el(2,:,:))
+        noutput=29 !total # of outputs for iof() so far
+
+        !'Modules
 #ifdef USE_GEN
-            if(j>=indx_out(1,1).and.j<=indx_out(1,2)) then
-              ind_tr=j-indx_out(1,1)+irange_tr(1,3) !j-indx_out(1,1)+1+2
-              write(ichan(j))((real(tr_nd(ind_tr,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-            endif
+        do i=1,ntrs(3)
+          write(it_char,'(i72)')i
+          it_char=adjustl(it_char); lit=len_trim(it_char)
+          itmp=irange_tr(1,3)+i-1 !tracer #
+          if(iof(noutput+i)==1) call writeout_nc(id_out_var(noutput+i+4), &
+     &'GEN_'//it_char(1:lit),2,nvrt,npa,tr_nd(itmp,:,:))
+        enddo !
+        noutput=noutput+ntrs(3)
 #endif
 
 #ifdef USE_AGE
-            if(j>=indx_out(2,1).and.j<=indx_out(2,2)) then
-              ind_tr=j-indx_out(2,1)+irange_tr(1,4) !index into tracer #
-              do i=1,np
-                do k=max0(1,kbp00(i)),nvrt
-                  tmp1=max(1.d-5, tr_nd(ind_tr,k,i)) !tr_nd(j-indx_out(2,1)+1+2,k,i))
-                  !floatout=tr_nd(j-indx_out(2,1)+1+ntrs(4)/2+2,k,i)/tmp1/86400
-                  floatout=tr_nd(ind_tr+ntrs(4)/2,k,i)/tmp1/86400
-                  write(ichan(j)) real(floatout,out_rkind)
-                enddo !k
-              enddo !i
-            endif
+        do i=1,ntrs(4)/2
+          write(it_char,'(i72)')i
+          itmp=irange_tr(1,4)+i-1 !tracer #
+          bcc(1,1:nvrt,1:npa)=max(1.d-5, tr_nd(itmp,:,:))
+          bcc(2,1:nvrt,1:npa)=tr_nd(itmp+ntrs(4)/2,:,:)/bcc(1,1:nvrt,1:npa)/86400
+
+          it_char=adjustl(it_char); lit=len_trim(it_char)
+          if(iof(noutput+i)==1) call writeout_nc(id_out_var(noutput+i+4), &
+     &'AGE_'//it_char(1:lit),2,nvrt,npa,bcc(2,1:nvrt,1:npa))
+        enddo !i
+        noutput=noutput+ntrs(4)/2
 #endif
 
 #ifdef USE_SED
-            if(j>=indx_out(3,1).and.j<=indx_out(3,2)) then
-              if(j<=indx_out(3,1)+ntrs(5)-1) then !conc
-                ind_tr=j-indx_out(3,1)+irange_tr(1,5) !index into tracer #
-                write(ichan(j))((real(tr_nd(ind_tr,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-              else if(j<=indx_out(3,1)+2*ntrs(5)-1) then !bedload
-                itmp1=j-indx_out(3,1)-ntrs(5)+1
-                write(ichan(j))(real(bedldu(i,itmp1),out_rkind), &
-     &real(bedldv(i,itmp1),out_rkind),i=1,np)
-              else if(j<=indx_out(3,1)+3*ntrs(5)-1) then !bed fraction
-                itmp1=j-indx_out(3,1)-2*ntrs(5)+1
-                write(ichan(j))(real(bed_fracn(i,itmp1),out_rkind),i=1,np)
-              else if(j==indx_out(3,1)+3*ntrs(5)) then !depth
-                write(ichan(j))(real(dp(i)-dp00(i),out_rkind),i=1,np)
-              else if(j==indx_out(3,1)+3*ntrs(5)+1) then !D50
-                write(ichan(j))(real(bed_d50n(i)*1000.d0,out_rkind),i=1,np) ! in mm
-              else if(j==indx_out(3,1)+3*ntrs(5)+2) then !bot. stress
-                write(ichan(j))(real(bed_taun(i)*rho0,out_rkind),i=1,np) ! in Pa
-              else if(j==indx_out(3,1)+3*ntrs(5)+3) then !roughness
-                write(ichan(j))(real(bed_rough(i)*1000.d0,out_rkind),i=1,np) ! in mm
-!Tsinghua group------------------------------------------ 1120:close
-!              else if(j==indx_out(3,1)+3*ntrs(5)+4) then !water velocity in horizontal
-!                write(ichan(j)) ((real(vwaterx_nd(k,i),out_rkind),real(vwatery_nd(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-!              else if(j==indx_out(3,1)+3*ntrs(5)+5) then !water velocity z
-!                write(ichan(j)) ((real(vwaterz_nd(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-!
-!              else if(j<=indx_out(3,1)+4*ntrs(5)+5) then !horizontal drift velocity   !tsinghua-lxn  
-!                itmp1=j-indx_out(3,1)-3*ntrs(5)-6+irange_tr(1,5) !index into tracer # 
-!                write(ichan(j))((real(drfvx_nd(itmp1,k,i),out_rkind),real(drfvy_nd(itmp1,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-!              else if(j<=indx_out(3,1)+5*ntrs(5)+5) then !z drift velocity
-!                itmp1=j-indx_out(3,1)-4*ntrs(5)-6+irange_tr(1,5) !index into tracer #  
-!                write(ichan(j))((real(drfvz_nd(itmp1,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-!
-!              else if(j<=indx_out(3,1)+6*ntrs(5)+5) then !x sed velocity !tsinghua-lxn  
-!                itmp1=j-indx_out(3,1)-5*ntrs(5)-6+irange_tr(1,5) !index into tracer # 
-!                write(ichan(j))((real(vsedx_nd(itmp1,k,i),out_rkind),real(vsedy_nd(itmp1,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-!              else if(j<=indx_out(3,1)+7*ntrs(5)+5) then !z sed velocity
-!                itmp1=j-indx_out(3,1)-6*ntrs(5)-6+irange_tr(1,5) !index into tracer #  
-!                write(ichan(j))((real(vsedz_nd(itmp1,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-!Tsinghua group------------------------------------------
-              endif !j
+        do i=1,ntrs(5)
+          write(it_char,'(i72)')i
+          it_char=adjustl(it_char); lit=len_trim(it_char)
+          itmp=irange_tr(1,5)+i-1 !trcer #
+          if(iof(noutput+3*i-2)==1) call writeout_nc(id_out_var(noutput+3*i+2), &
+     &'SED3D_'//it_char(1:lit),2,nvrt,npa,tr_nd(itmp,:,:))
+          if(iof(noutput+3*i-1)==1) call writeout_nc(id_out_var(noutput+3*i+3), &
+     &'SED_bdld_'//it_char(1:lit),1,1,npa,bedldu(:,itmp),bedldv(:,itmp))
+          if(iof(noutput+3*i)==1) call writeout_nc(id_out_var(noutput+3*i+4), &
+     &'SED_bedfrac_'//it_char(1:lit),1,1,npa,bed_fracn(:,itmp))
+        enddo !i
+        noutput=noutput+ntrs(5)*3
 
-!                if(j==indx_out(1,1)) then
-!                  ! depth.61
-!                  write(ichan(j)) (real(dp(i)-dp00(i),out_rkind),i=1,np)
-!                else if(j<=indx_out(1,1)+ntracers) then
-!                  !qbdl_n.62
-!                  write(ichan(j)) (real(bedldu(i,j-indx_out(1,1)),out_rkind),real(bedldv(i,j-indx_out(1,1)),out_rkind),i=1,np)
-!                else if(j<=indx_out(1,1)+2*ntracers) then
-!                  !bfrac_n.61 (top layer only)
-!                  write(ichan(j)) (real(bed_fracn(i,j-indx_out(1,1)-ntracers),out_rkind),i=1,np)
-!                else if(j==indx_out(1,1)+1+2*ntracers) then
-!                  !bedd50.61
-!                  write(ichan(j)) (real(bed_d50n(i)*1000.d0,out_rkind),i=1,np) ! in mm
-!                else if (j==indx_out(1,1)+2+2*ntracers) then
-!                  !bstress.61
-!                  write(ichan(j)) (real(bed_taun(i)*rho0,out_rkind),i=1,np) ! in N.m-2
-!                else if (j==indx_out(1,1)+3+2*ntracers) then
-!                  !brough.61
-!                  write(ichan(j)) (real(bed_rough(i)*1000.d0,out_rkind),i=1,np) ! in mm
-!                endif
-            endif !scope of SED model
+        if(iof(noutput+1)==1) call writeout_nc(id_out_var(noutput+5), &
+     &'SED_depth_change',1,1,npa,dp-dp00)
+        if(iof(noutput+2)==1) call writeout_nc(id_out_var(noutput+6), &
+     &'SED_D50',1,1,npa,bed_d50n*1.d3) !in mm
+        if(iof(noutput+3)==1) call writeout_nc(id_out_var(noutput+7), &
+     &'SED_bed_stress',1,1,npa,bed_taun*rho0) ![Pa]
+        if(iof(noutput+4)==1) call writeout_nc(id_out_var(noutput+8), &
+     &'SED_bed_roughness',1,1,npa,bed_rough*1d3) !mm
+
+        if(iof(noutput+5)==1) call writeout_nc(id_out_var(noutput+9), &
+     &'z0st',4,1,nea,bottom(:,izbld))
+        if(iof(noutput+6)==1) call writeout_nc(id_out_var(noutput+10), &
+     &'z0cr',4,1,nea,bottom(:,izcr))
+        if(iof(noutput+7)==1) call writeout_nc(id_out_var(noutput+11), &
+     &'z0sw',4,1,nea,bottom(:,izsw))
+        if(iof(noutput+8)==1) call writeout_nc(id_out_var(noutput+12), &
+     &'z0wr',4,1,nea,bottom(:,izwr))
+        if(iof(noutput+9)==1) call writeout_nc(id_out_var(noutput+13), &
+     &'bed_thickness',4,1,nea,sum(bed(:,:,ithck),1))
+        if(iof(noutput+10)==1) call writeout_nc(id_out_var(noutput+14), &
+     &'bed_age',4,1,nea,sum(bed(:,:,iaged),1))
+
+        noutput=noutput+10
 #endif /*USE_SED*/
 
 #ifdef USE_ECO
-            if(j>=indx_out(4,1).and.j<=indx_out(4,2)) then
-              ind_tr=j-indx_out(4,1)+irange_tr(1,6) !index into tracer #
-              write(ichan(j))((real(tr_nd(ind_tr,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-            endif
-#endif
+        do i=1,ntrs(6)
+          write(it_char,'(i72)')i
+          it_char=adjustl(it_char); lit=len_trim(it_char)
+          itmp=irange_tr(1,6)+i-1 !trcer #
+          if(iof(noutput+i)==1) call writeout_nc(id_out_var(noutput+i+4), &
+     &'ECO_'//it_char(1:lit),2,nvrt,npa,tr_nd(itmp,:,:))
+        enddo !i
+        noutput=noutput+ntrs(6)
+#endif 
 
 #ifdef USE_ICM
-            if(j>=indx_out(5,1).and.j<=indx_out(5,2)) then
-              ind_tr=j-indx_out(5,1)+irange_tr(1,7) !index into tracer #
-              if(ind_tr<=irange_tr(2,7)) then
-                write(ichan(j))((real(tr_nd(ind_tr,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-              else if(ind_tr==irange_tr(2,7)+1) then
-                write(ichan(j))((real(PH_nd(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-              else
-                call parallel_abort('ind_tr too large in ICM')
-              endif
-            endif
+        do i=1,ntrs(7)
+          write(it_char,'(i72)')i
+          it_char=adjustl(it_char); lit=len_trim(it_char)
+          itmp=irange_tr(1,7)+i-1 !trcer #
+          if(iof(noutput+i)==1) call writeout_nc(id_out_var(noutput+i+4), &
+     &'ICM_'//it_char(1:lit),2,nvrt,npa,tr_nd(itmp,:,:))
+        enddo !i
+        noutput=noutput+ntrs(7)
+
+!        if(iPh==1) then
+!          if(iof(noutput+1)==1) call writeout_nc(id_out_var(noutput+5), &
+!     &'ICM_PH',2,nvrt,npa,tr_nd(itmp,:,:))
+!        endif !iPh
+
+        if(iof(noutput+1)==1) call writeout_nc(id_out_var(noutput+5), &
+     &'ICM_BENDOC',4,1,nea,BENDOC)
+        if(iof(noutput+2)==1) call writeout_nc(id_out_var(noutput+6), &
+     &'ICM_SED_BENNH4',4,1,nea,SED_BENNH4)
+        if(iof(noutput+3)==1) call writeout_nc(id_out_var(noutput+7), &
+     &'ICM_SED_BENNO3',4,1,nea,SED_BENNO3)
+        if(iof(noutput+4)==1) call writeout_nc(id_out_var(noutput+8), &
+     &'ICM_BENPO4',4,1,nea,BENPO4)
+        if(iof(noutput+5)==1) call writeout_nc(id_out_var(noutput+9), &
+     &'ICM_SED_BENCOD',4,1,nea,SED_BENCOD)
+        if(iof(noutput+6)==1) call writeout_nc(id_out_var(noutput+10), &
+     &'ICM_sed_BENDO',4,1,nea,sed_BENDO)
+        if(iof(noutput+7)==1) call writeout_nc(id_out_var(noutput+11), &
+     &'ICM_BENSA',4,1,nea,BENSA)
+
+        noutput=noutput+7
 #endif
 
 #ifdef USE_COSINE
-            if(j>=indx_out(8,1).and.j<=indx_out(8,2)) then
-              ind_tr=j-indx_out(8,1)+irange_tr(1,8) !index into tracer #
-              write(ichan(j))((real(tr_nd(ind_tr,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-            endif
+        do i=1,ntrs(8)
+          write(it_char,'(i72)')i
+          it_char=adjustl(it_char); lit=len_trim(it_char)
+          itmp=irange_tr(1,8)+i-1 !trcer #
+          if(iof(noutput+i)==1) call writeout_nc(id_out_var(noutput+i+4), &
+     &'COS_'//it_char(1:lit),2,nvrt,npa,tr_nd(itmp,:,:))
+        enddo !i
+        noutput=noutput+ntrs(8)
 #endif
 
 #ifdef USE_FIB
-            if(j>=indx_out(9,1).and.j<=indx_out(9,2)) then
-              ind_tr=j-indx_out(9,1)+irange_tr(1,9) !index into tracer #
-              write(ichan(j))((real(tr_nd(ind_tr,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-            endif
+        do i=1,ntrs(9)
+          write(it_char,'(i72)')i
+          it_char=adjustl(it_char); lit=len_trim(it_char)
+          itmp=irange_tr(1,9)+i-1 !trcer #
+          if(iof(noutput+i)==1) call writeout_nc(id_out_var(noutput+i+4), &
+     &'FIB_'//it_char(1:lit),2,nvrt,npa,tr_nd(itmp,:,:))
+        enddo !i
+        noutput=noutput+ntrs(9)
 #endif
 
 #ifdef USE_TIMOR
-            if(j>=indx_out(10,1).and.j<=indx_out(10,2)) then
-              ind_tr=j-indx_out(10,1)+irange_tr(1,10) !index into tracer #
-              write(ichan(j))((real(tr_nd(ind_tr,k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-            endif
+#endif
+
+#ifdef USE_FABM
+        do i=1,ntrs(11)
+          call writeout_nc(id_out_var(noutput+i+4),trim(fs%model%state_variables(i)%name),2,nvrt,npa,tr_nd(i+fabm_istart-1,:,:))
+        end do
+        noutput=noutput+ntrs(11)
 #endif
 
 #ifdef USE_SED2D
-            if(j>=indx_out(6,1).and.j<=indx_out(6,2)) then          
-              if(j<=indx_out(6,1)+3) then !scalar
-                if(j==indx_out(6,1)) then
-                   write(ichan(j)) (real(dp(i)-dp00(i),out_rkind),i=1,np)
-                else if(j==indx_out(6,1)+1) then
-                   write(ichan(j)) (real(Cdsed(i),out_rkind),i=1,np)
-                else if(j==indx_out(6,1)+2) then
-                   write(ichan(j)) (real(cflsed(i),out_rkind),i=1,np)
-                else if(j==indx_out(6,1)+3) then
-                   write(ichan(j)) (real(d50(i,1),out_rkind),i=1,np)
-                endif
-              else if(j>indx_out(6,1)+3) then !vector
-                if(j==indx_out(6,1)+4) then
-                   write(ichan(j)) (real(qtot(i,1),out_rkind),real(qtot(i,2),out_rkind),i=1,np)
-                else if(j==indx_out(6,1)+5) then
-                   write(ichan(j)) (real(qs(i,1),out_rkind),real(qs(i,2),out_rkind),i=1,np)
-                else if(j==indx_out(6,1)+6) then
-                   write(ichan(j)) (real(qb(i,1),out_rkind),real(qb(i,2),out_rkind),i=1,np)
-                else if(j==indx_out(6,1)+7) then 
-                   write(ichan(j)) (real(dpdxy(i,1),out_rkind),real(dpdxy(i,2),out_rkind),i=1,np)
-                else if(j==indx_out(6,1)+8) then
-                   write(ichan(j)) (real(qav(i,1),out_rkind),real(qav(i,2),out_rkind),i=1,np)
-                endif
-              endif
-            endif !scope of SED2D model
-#endif /*USE_SED2D*/
+        if(iof(noutput+1)==1) call writeout_nc(id_out_var(noutput+5), &
+     &'SED2D_depth_change',1,1,npa,dp-dp00)
+        if(iof(noutput+2)==1) call writeout_nc(id_out_var(noutput+6), &
+     &'SED2D_Cd',1,1,npa,Cdsed)
+        if(iof(noutput+3)==1) call writeout_nc(id_out_var(noutput+7), &
+     &'SED2D_cflsed',1,1,npa,cflsed)
+        if(iof(noutput+4)==1) call writeout_nc(id_out_var(noutput+8), &
+     &'SED2D_d50',1,1,npa,d50moy)
+        if(iof(noutput+5)==1) call writeout_nc(id_out_var(noutput+9), &
+     &'SED2D_total_transport',1,1,npa,qtot(:,1),qtot(:,2))
+        if(iof(noutput+6)==1) call writeout_nc(id_out_var(noutput+10), &
+     &'SED2D_susp_load',1,1,npa,qs(:,1),qs(:,2))
+        if(iof(noutput+7)==1) call writeout_nc(id_out_var(noutput+11), &
+     &'SED2D_bed_load',1,1,npa,qb(:,1),qb(:,2))
+        if(iof(noutput+8)==1) call writeout_nc(id_out_var(noutput+12), &
+     &'SED2D_bottom_slope',1,1,npa,dpdxy(:,1),dpdxy(:,2))
+        if(iof(noutput+9)==1) call writeout_nc(id_out_var(noutput+13), &
+     &'SED2D_average_transport',1,1,npa,qav(:,1),qav(:,2))
+        if(iof(noutput+10)==1) call writeout_nc(id_out_var(noutput+14), &
+     &'z0eq',4,1,nea,z0_e)
+        if(iof(noutput+11)==1) call writeout_nc(id_out_var(noutput+15), &
+     &'z0cr',4,1,nea,z0cr_e)
+        if(iof(noutput+12)==1) call writeout_nc(id_out_var(noutput+16), &
+     &'z0sw',4,1,nea,z0sw_e)
+        if(iof(noutput+13)==1) call writeout_nc(id_out_var(noutput+17), &
+     &'z0wr',4,1,nea,z0wr_e)
 
-!#ifdef USE_NAPZD
-!              if(j<=indx_out(2,2)) then
-!                if(j==indx_out(2,1)) then
-!                  write(ichan(j)) ((real(Bio_bdefp(k,i),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-!                else !total N
-!                  write(ichan(j)) ((real(sum(tr_nd(1:4,k,i)),out_rkind),k=max0(1,kbp00(i)),nvrt),i=1,np)
-!                endif
-!              endif !scope of NAPZD
-!#endif /*USE_NAPZD*/
+        noutput=noutput+13
+#endif
 
 #ifdef USE_WWM
-            if((j>=indx_out(7,1)).and.(j<=indx_out(7,2))) then
-              if(j<=indx_out(7,2)-2) then !scalar
-                itmp=j-indx_out(7,1)+1
-                if(itmp>24) call parallel_abort('MAIN: wwm_out over')
-                write(ichan(j)) (real(out_wwm(i,indx_wwm_out(itmp)),out_rkind),i=1,np)
-              else !vectors
-                if (j==indx_out(7,2)-1) then
-                  write(ichan(j)) (real(out_wwm(i,8),out_rkind),real(out_wwm(i,7),out_rkind),i=1,np)
-                else if (j==indx_out(7,2)) then
-                  write(ichan(j)) (real(out_wwm(i,27),out_rkind),real(out_wwm(i,28),out_rkind),i=1,np)
-                endif
-              endif !j
-            endif !scope of WWM; j<=indx_out(3,2)
-#endif /*USE_WWM*/
-          endif !j
+        do i=1,28
+          if(i==7.or.i==8) cycle !skip vectors first  
 
-          if(myrank==0) write(16,'(a48)')'done outputting '//variable_nm(j)
-        endif !iof(j).eq.1.and.mod(it,nspool).eq.0
-      enddo !j=1,noutput
-#else
+          write(it_char,'(i72)')i
+          it_char=adjustl(it_char); lit=len_trim(it_char)
+          noutput=noutput+1
+          if(iof(noutput)==1) call writeout_nc(id_out_var(noutput+4), &
+     &'WWM_'//it_char(1:lit),1,1,npa,outwwm(:,i))
+        enddo !i
+
+        !Deal with vectors
+        if(iof(noutput+1)==1) call writeout_nc(id_out_var(noutput+5), &
+     &'WWM_energy_dir',1,1,npa,outwwm(:,8),outwwm(:,7))
+        noutput=noutput+1
+#endif
+
+#ifdef DEBUG
+        if(iof(noutput+1)==1) call writeout_nc(id_out_var(noutput+5), &
+     &'pressure_gradient',7,1,nsa,bpgr(:,1),bpgr(:,2))
+        noutput=noutput+1
+#ifdef USE_WWM
+        if(iof(noutput+1)==1) call writeout_nc(id_out_var(noutput+6), &
+     &'wave_force',8,nvrt,nsa,wafo(:,:,1),wafo(:,:,2))
+        noutput=noutput+1
+#endif
+#endif
+
+#ifdef USE_MARSH
+        if(iof(noutput+1)==1) call writeout_nc(id_out_var(noutput+5), &
+     &'marsh_flag',4,1,nea,dble(imarsh))
+        noutput=noutput+1
+#endif
+
+#ifdef USE_ICE
+        do i=1,ntr_ice
+          write(it_char,'(i72)')i
+          it_char=adjustl(it_char); lit=len_trim(it_char)
+          if(iof(noutput+i)==1) call writeout_nc(id_out_var(noutput+i+4), &
+     &'ICE_tracer_'//it_char(1:lit),1,1,npa,ice_tr(i,:))
+        enddo !i
+        noutput=noutput+ntr_ice
+
+        if(iof(noutput+1)==1) call writeout_nc(id_out_var(noutput+5), &
+     &'ICE_velocity',1,1,npa,u_ice,v_ice)
+        if(iof(noutput+2)==1) call writeout_nc(id_out_var(noutput+6), &
+     &'ICE_strain_rate',4,1,nea,delta_ice)
+        noutput=noutput+2
+#endif
+
+        !write(12,*)'id_out_var=',it,id_out_var(1:noutput)
+      endif !mod(it,nspool)==0
+#else /*SINGLE_NETCDF_OUTPUT*/
       IF (mod(it,nspool)==0) THEN
         CALL NETCDF_SINGLE_OUTPUT(it)
       END IF
 #endif /*SINGLE_NETCDF_OUTPUT*/
 
-      
 !...  Non-standard outputs
-      if(iof_ns(1)==1) then 
-        call schism_output_custom(lwrite,6,2,201,'hvel',nvrt,nsa,su2,sv2)
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting hvel.67'
-      endif !iof_ns
-      if(iof_ns(2)==1) then 
-        call schism_output_custom(lwrite,8,1,202,'vert',nvrt,nea,we)
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting vert.68'
-      endif !iof_ns
-      if(iof_ns(3)==1) then 
-        call schism_output_custom(lwrite,9,1,203,'temp',nvrt,nea,tr_el(1,:,:))
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting temp.70'
-      endif !iof_ns
-      if(iof_ns(4)==1) then 
-        call schism_output_custom(lwrite,9,1,204,'salt',nvrt,nea,tr_el(2,:,:))
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting salt.70'
-      endif !iof_ns
-#ifdef USE_SED
-      if(iof_ns(5)==1)then
-        call schism_output_custom(lwrite,5,1,209,'z0st',1,nea,bottom(:,izbld))
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting z0st.66'
-      endif !iof_ns
-      if(iof_ns(7)==1)then
-        call schism_output_custom(lwrite,5,1,206,'z0cr',1,nea,bottom(:,izcr))
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting z0cr.66'
-      endif !iof_ns
-      if(iof_ns(8)==1)then
-        call schism_output_custom(lwrite,5,1,207,'z0sw',1,nea,bottom(:,izsw))
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting z0sw.66'
-      endif !iof_ns
-      if(iof_ns(9)==1)then
-        call schism_output_custom(lwrite,5,1,208,'z0wr',1,nea,bottom(:,izwr))
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting z0wr.66'
-      endif !iof_ns
-      if(iof_ns(19)==1)then
-        call schism_output_custom(lwrite,5,1,219,'bthk',1,nea,sum(bed(:,:,ithck),1))
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bthk.66'
-      endif !iof_ns
-      if(iof_ns(20)==1)then
-        call schism_output_custom(lwrite,5,1,220,'bage',1,nea,sum(bed(:,:,iaged),1))
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bage.66'
-      endif !iof_ns
-#elif USE_SED2D
-      if(iof_ns(6)==1)then
-        call schism_output_custom(lwrite,5,1,206,'z0eq',1,nea,z0_e(:))
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting z0eq.66'
-      endif !iof_ns
-      if(iof_ns(7)==1)then
-        call schism_output_custom(lwrite,5,1,207,'z0cr',1,nea,z0cr_e(:))
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting z0cr.66'
-      endif !iof_ns
-      if(iof_ns(8)==1)then
-        call schism_output_custom(lwrite,5,1,208,'z0sw',1,nea,z0sw_e(:))
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting z0sw.66'
-      endif !iof_ns
-      if(iof_ns(9)==1)then
-        call schism_output_custom(lwrite,5,1,209,'z0wr',1,nea,z0wr_e(:))
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting z0wr.66'
-      endif !iof_ns
-#endif
+!      if(iof_ns(1)==1) then 
+!        call schism_output_custom(lwrite,6,2,201,'hvel',nvrt,nsa,su2,sv2)
+!        if(myrank==0.and.lwrite==1) write(16,*)'done outputting hvel.67'
+!      endif !iof_ns
+!      if(iof_ns(2)==1) then 
+!        call schism_output_custom(lwrite,8,1,202,'vert',nvrt,nea,we)
+!        if(myrank==0.and.lwrite==1) write(16,*)'done outputting vert.68'
+!      endif !iof_ns
+!      if(iof_ns(3)==1) then 
+!        call schism_output_custom(lwrite,9,1,203,'temp',nvrt,nea,tr_el(1,:,:))
+!        if(myrank==0.and.lwrite==1) write(16,*)'done outputting temp.70'
+!      endif !iof_ns
+!      if(iof_ns(4)==1) then 
+!        call schism_output_custom(lwrite,9,1,204,'salt',nvrt,nea,tr_el(2,:,:))
+!        if(myrank==0.and.lwrite==1) write(16,*)'done outputting salt.70'
+!      endif !iof_ns
+!#ifdef USE_SED
+!      if(iof_ns(5)==1)then
+!        call schism_output_custom(lwrite,5,1,209,'z0st',1,nea,bottom(:,izbld))
+!        if(myrank==0.and.lwrite==1) write(16,*)'done outputting z0st.66'
+!      endif !iof_ns
+!      if(iof_ns(7)==1)then
+!        call schism_output_custom(lwrite,5,1,206,'z0cr',1,nea,bottom(:,izcr))
+!        if(myrank==0.and.lwrite==1) write(16,*)'done outputting z0cr.66'
+!      endif !iof_ns
+!      if(iof_ns(8)==1)then
+!        call schism_output_custom(lwrite,5,1,207,'z0sw',1,nea,bottom(:,izsw))
+!        if(myrank==0.and.lwrite==1) write(16,*)'done outputting z0sw.66'
+!      endif !iof_ns
+!      if(iof_ns(9)==1)then
+!        call schism_output_custom(lwrite,5,1,208,'z0wr',1,nea,bottom(:,izwr))
+!        if(myrank==0.and.lwrite==1) write(16,*)'done outputting z0wr.66'
+!      endif !iof_ns
+!      if(iof_ns(19)==1)then
+!        call schism_output_custom(lwrite,5,1,219,'bthk',1,nea,sum(bed(:,:,ithck),1))
+!        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bthk.66'
+!      endif !iof_ns
+!      if(iof_ns(20)==1)then
+!        call schism_output_custom(lwrite,5,1,220,'bage',1,nea,sum(bed(:,:,iaged),1))
+!        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bage.66'
+!      endif !iof_ns
+!#elif USE_SED2D
+!      if(iof_ns(6)==1)then
+!        call schism_output_custom(lwrite,5,1,206,'z0eq',1,nea,z0_e(:))
+!        if(myrank==0.and.lwrite==1) write(16,*)'done outputting z0eq.66'
+!      endif !iof_ns
+!      if(iof_ns(7)==1)then
+!        call schism_output_custom(lwrite,5,1,207,'z0cr',1,nea,z0cr_e(:))
+!        if(myrank==0.and.lwrite==1) write(16,*)'done outputting z0cr.66'
+!      endif !iof_ns
+!      if(iof_ns(8)==1)then
+!        call schism_output_custom(lwrite,5,1,208,'z0sw',1,nea,z0sw_e(:))
+!        if(myrank==0.and.lwrite==1) write(16,*)'done outputting z0sw.66'
+!      endif !iof_ns
+!      if(iof_ns(9)==1)then
+!        call schism_output_custom(lwrite,5,1,209,'z0wr',1,nea,z0wr_e(:))
+!        if(myrank==0.and.lwrite==1) write(16,*)'done outputting z0wr.66'
+!      endif !iof_ns
+!#endif
+!
+!#ifdef DEBUG
+!      if(iof_ns(10)==1) then
+!        call schism_output_custom(lwrite,4,2,210,'bpgr',1,nsa,bpgr(:,1),bpgr(:,2))
+!        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bpgr.65'
+!      endif !iof_ns
+!#ifdef USE_WWM
+!      if(iof_ns(11)==1) then
+!        call schism_output_custom(lwrite,6,2,211,'wafo',nvrt,nsa,wafo(:,:,1),wafo(:,:,2))
+!        if(myrank==0.and.lwrite==1) write(16,*)'done outputting wafo.67'
+!      endif !iof_ns
+!#endif /*USE_WWM*/
+!#endif /*DEBUG*/
+!
+!#ifdef USE_ICM
+!      if(iof_ns(12)==1) then
+!        call schism_output_custom(lwrite,5,1,212,'bdoc',1,nea,SED_BENDOC)
+!        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bdoc.66'
+!      endif 
+!      if(iof_ns(13)==1) then
+!        call schism_output_custom(lwrite,5,1,213,'bnh4',1,nea,SED_BENNH4)
+!        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bnh4.66'
+!      endif 
+!      if(iof_ns(14)==1) then
+!        call schism_output_custom(lwrite,5,1,214,'bno3',1,nea,SED_BENNO3)
+!        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bno3.66'
+!      endif 
+!      if(iof_ns(15)==1) then
+!        call schism_output_custom(lwrite,5,1,215,'bpo4',1,nea,SED_BENPO4)
+!        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bpo4.66'
+!      endif 
+!      if(iof_ns(16)==1) then
+!        call schism_output_custom(lwrite,5,1,216,'bcod',1,nea,SED_BENCOD)
+!        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bcod.66'
+!      endif 
+!      if(iof_ns(17)==1) then
+!        call schism_output_custom(lwrite,5,1,217,'sbdo',1,nea,sed_BENDO)
+!        if(myrank==0.and.lwrite==1) write(16,*)'done outputting sbdo.66'
+!      endif 
+!      if(iof_ns(18)==1) then
+!        call schism_output_custom(lwrite,5,1,218,'sbsa',1,nea,SED_BENSA)
+!        if(myrank==0.and.lwrite==1) write(16,*)'done outputting sbsa.66'
+!      endif 
+!#endif /*USE_ICM*/
+!
+!#ifdef USE_MARSH
+!      if(iof_ns(21)==1) then
+!        call schism_output_custom(lwrite,5,1,221,'mrsh',1,nea,dble(imarsh))
+!        if(myrank==0.and.lwrite==1) write(16,*)'done outputting mrsh.66'
+!      endif
+!#endif
 
-#ifdef DEBUG
-      if(iof_ns(10)==1) then
-        call schism_output_custom(lwrite,4,2,210,'bpgr',1,nsa,bpgr(:,1),bpgr(:,2))
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bpgr.65'
-      endif !iof_ns
-#ifdef USE_WWM
-      if(iof_ns(11)==1) then
-        call schism_output_custom(lwrite,6,2,211,'wafo',nvrt,nsa,wafo(:,:,1),wafo(:,:,2))
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting wafo.67'
-      endif !iof_ns
-#endif /*USE_WWM*/
-#endif /*DEBUG*/
-
-#ifdef USE_ICM
-      if(iof_ns(12)==1) then
-        call schism_output_custom(lwrite,5,1,212,'bdoc',1,nea,SED_BENDOC)
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bdoc.66'
-      endif 
-      if(iof_ns(13)==1) then
-        call schism_output_custom(lwrite,5,1,213,'bnh4',1,nea,SED_BENNH4)
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bnh4.66'
-      endif 
-      if(iof_ns(14)==1) then
-        call schism_output_custom(lwrite,5,1,214,'bno3',1,nea,SED_BENNO3)
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bno3.66'
-      endif 
-      if(iof_ns(15)==1) then
-        call schism_output_custom(lwrite,5,1,215,'bpo4',1,nea,SED_BENPO4)
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bpo4.66'
-      endif 
-      if(iof_ns(16)==1) then
-        call schism_output_custom(lwrite,5,1,216,'bcod',1,nea,SED_BENCOD)
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting bcod.66'
-      endif 
-      if(iof_ns(17)==1) then
-        call schism_output_custom(lwrite,5,1,217,'sbdo',1,nea,sed_BENDO)
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting sbdo.66'
-      endif 
-      if(iof_ns(18)==1) then
-        call schism_output_custom(lwrite,5,1,218,'sbsa',1,nea,SED_BENSA)
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting sbsa.66'
-      endif 
-#endif /*USE_ICM*/
-
-#ifdef USE_MARSH
-      if(iof_ns(21)==1) then
-        call schism_output_custom(lwrite,5,1,221,'mrsh',1,nea,dble(imarsh))
-        if(myrank==0.and.lwrite==1) write(16,*)'done outputting mrsh.66'
-      endif
+#ifdef USE_FABM
+      if(mod(it,nspool)==0) then
+        call fs%get_diagnostics_for_output()
+        call fabm_schism_write_output_netcdf(time=time)
+      end if
 #endif
 
 !     Test 
@@ -8007,20 +8127,21 @@
 !      if(myrank==0.and.lwrite==1) write(16,*)'done outputting elev.71'
 
 !     Open new global output files and write header data
-      !if(it==ifile*ihfskip) then !.and.it/=ntime) then
       if(mod(it,ihfskip)==0) then
+        !i=nf90_close(ncid)
         ifile=ifile+1                   !output file #
-        write(ifile_char,'(i12)') ifile !convert ifile to a string
-        ifile_char=adjustl(ifile_char)  !place blanks at end
-        ifile_len=len_trim(ifile_char)  !length without trailing blanks
-        fgb=ifile_char(1:ifile_len)//'_0000'; lfgb=len_trim(fgb);
-        write(fgb(lfgb-3:lfgb),'(i4.4)') myrank
-        do i=1,noutput
-          ichan(i)=100+i !output channel #
-          if(iof(i)==1) then
-            open(ichan(i),file='outputs/'//(fgb(1:lfgb)//'_'//outfile(i)),status='replace',form="unformatted",access="stream")
-          endif
-        enddo !i
+        call fill_nc_header(1)
+!        write(ifile_char,'(i12)') ifile !convert ifile to a string
+!        ifile_char=adjustl(ifile_char)  !place blanks at end
+!        ifile_len=len_trim(ifile_char)  !length without trailing blanks
+!        fgb=ifile_char(1:ifile_len)//'_0000'; lfgb=len_trim(fgb);
+!        write(fgb(lfgb-3:lfgb),'(i4.4)') myrank
+!        do i=1,noutput
+!          ichan(i)=100+i !output channel #
+!          if(iof(i)==1) then
+!            open(ichan(i),file='outputs/'//(fgb(1:lfgb)//'_'//outfile(i)),status='replace',form="unformatted",access="stream")
+!          endif
+!        enddo !i
       endif !it==ifile*ihfskip
 
 !...  Station outputs
@@ -8086,8 +8207,10 @@
                           exit
                         endif
                       enddo !k
-                      if(k0==0) call parallel_abort('MAIN: impossible (71)')
-!'
+                      if(k0==0) then
+                        write(errmsg,*)'STEP: station elev error',i,zstal(i)
+                        call parallel_abort(errmsg)
+                      endif
                     endif !zstal
                     swild(m)=swild2(k0,m)*(1-zrat)+swild2(k0+1,m)*zrat
                   enddo !m
@@ -8208,16 +8331,132 @@
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
 ! Write hot start data
+! Rule: the first 3 dim IDs must be (local) node/elem/side. The hotstart outputs
+! can have 2 types of arrays: (1) those who have last dimension as node/elem/side
+! (most dynamic arrays); (2) other arrays like time stamp. The combine script
+! will automatically take care of (1) but if you add arrays of type (2), you
+! need to update the script (search for 'type II arrays').
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
-
       if(nhot==1.and.mod(it,nhot_write)==0) then
+
+        if(1==1) then
+!++++++++++++++++++++++++++++++++++++++
+        a_4='0000'
+        write(a_4,'(i4.4)') myrank
+        write(it_char,'(i72)')it
+        it_char=adjustl(it_char)
+        lit=len_trim(it_char)
+        it_char='outputs/hotstart_'//a_4//'_'//it_char(1:lit)//'.nc'
+        j=nf90_create(trim(adjustl(it_char)),OR(NF90_NETCDF4,NF90_CLOBBER),ncid_hot)
+        j=nf90_def_dim(ncid_hot,'nResident_node',np,node_dim)
+        j=nf90_def_dim(ncid_hot,'nResident_elem',ne,elem_dim)
+        j=nf90_def_dim(ncid_hot,'nResident_side',ns,side_dim)
+        j=nf90_def_dim(ncid_hot,'nVert',nvrt,nvrt_dim)
+        j=nf90_def_dim(ncid_hot,'ntracers',ntracers,ntracers_dim)
+        j=nf90_def_dim(ncid_hot,'one',1,one_dim)
+        j=nf90_def_dim(ncid_hot,'three',3,three_dim)
+        j=nf90_def_dim(ncid_hot,'two',2,two_dim)
+        j=nf90_def_dim(ncid_hot,'four',4,four_dim)
+        j=nf90_def_dim(ncid_hot,'five',5,five_dim)
+        j=nf90_def_dim(ncid_hot,'six',6,six_dim)
+        j=nf90_def_dim(ncid_hot,'seven',7,seven_dim)
+        j=nf90_def_dim(ncid_hot,'eight',8,eight_dim)
+        j=nf90_def_dim(ncid_hot,'nine',9,nine_dim)
+
+        var1d_dim(1)=one_dim
+        j=nf90_def_var(ncid_hot,'time',NF90_DOUBLE,var1d_dim,nwild(1))
+        j=nf90_def_var(ncid_hot,'it',NF90_INT,var1d_dim,nwild(2))
+        j=nf90_def_var(ncid_hot,'ifile',NF90_INT,var1d_dim,nwild(3))
+
+        var1d_dim(1)=elem_dim
+        j=nf90_def_var(ncid_hot,'idry_e',NF90_INT,var1d_dim,nwild(4))
+        var1d_dim(1)=side_dim
+        j=nf90_def_var(ncid_hot,'idry_s',NF90_INT,var1d_dim,nwild(5))
+        var1d_dim(1)=node_dim
+        j=nf90_def_var(ncid_hot,'idry',NF90_INT,var1d_dim,nwild(6))
+        j=nf90_def_var(ncid_hot,'eta2',NF90_DOUBLE,var1d_dim,nwild(7))
+
+        !Note the order of multi-dim arrays not reversed here!
+        !As long as the write is consistent with def it's fine 
+        var2d_dim(1)=nvrt_dim; var2d_dim(2)=elem_dim
+        j=nf90_def_var(ncid_hot,'we',NF90_DOUBLE,var2d_dim,nwild(8))
+        var3d_dim(1)=ntracers_dim; var3d_dim(2)=nvrt_dim; var3d_dim(3)=elem_dim
+        j=nf90_def_var(ncid_hot,'tr_el',NF90_DOUBLE,var3d_dim,nwild(9))
+        var2d_dim(1)=nvrt_dim; var2d_dim(2)=side_dim
+        j=nf90_def_var(ncid_hot,'su2',NF90_DOUBLE,var2d_dim,nwild(10))
+        j=nf90_def_var(ncid_hot,'sv2',NF90_DOUBLE,var2d_dim,nwild(11))
+        var3d_dim(1)=ntracers_dim; var3d_dim(2)=nvrt_dim; var3d_dim(3)=node_dim
+        j=nf90_def_var(ncid_hot,'tr_nd',NF90_DOUBLE,var3d_dim,nwild(12))
+        j=nf90_def_var(ncid_hot,'tr_nd0',NF90_DOUBLE,var3d_dim,nwild(13))
+        var2d_dim(1)=nvrt_dim; var2d_dim(2)=node_dim
+        j=nf90_def_var(ncid_hot,'q2',NF90_DOUBLE,var2d_dim,nwild(14))
+        j=nf90_def_var(ncid_hot,'xl',NF90_DOUBLE,var2d_dim,nwild(15))
+        j=nf90_def_var(ncid_hot,'dfv',NF90_DOUBLE,var2d_dim,nwild(16))
+        j=nf90_def_var(ncid_hot,'dfh',NF90_DOUBLE,var2d_dim,nwild(17))
+        j=nf90_def_var(ncid_hot,'dfq1',NF90_DOUBLE,var2d_dim,nwild(18))
+        j=nf90_def_var(ncid_hot,'dfq2',NF90_DOUBLE,var2d_dim,nwild(19))
+
+        !var1d_dim(1)=side_dim
+        !j=nf90_def_var(ncid_hot,'xcj',NF90_DOUBLE,var1d_dim,nwild(20))
+        !j=nf90_def_var(ncid_hot,'ycj',NF90_DOUBLE,var1d_dim,nwild(21))
+        !var1d_dim(1)=node_dim
+        !j=nf90_def_var(ncid_hot,'xnd',NF90_DOUBLE,var1d_dim,nwild(22))
+        !j=nf90_def_var(ncid_hot,'ynd',NF90_DOUBLE,var1d_dim,nwild(23))
+        !var2d_dim(1)=nvrt_dim; var2d_dim(2)=node_dim
+        !j=nf90_def_var(ncid_hot,'uu2',NF90_DOUBLE,var2d_dim,nwild(24))
+        !j=nf90_def_var(ncid_hot,'vv2',NF90_DOUBLE,var2d_dim,nwild(25))
+
+        j=nf90_enddef(ncid_hot)
+
+        !Write
+        j=nf90_put_var(ncid_hot,nwild(1),time) 
+        j=nf90_put_var(ncid_hot,nwild(2),it) 
+        j=nf90_put_var(ncid_hot,nwild(3),ifile) 
+        j=nf90_put_var(ncid_hot,nwild(4),idry_e,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(5),idry_s,(/1/),(/ns/))
+        j=nf90_put_var(ncid_hot,nwild(6),idry,(/1/),(/np/))
+        j=nf90_put_var(ncid_hot,nwild(7),eta2,(/1/),(/np/))
+        j=nf90_put_var(ncid_hot,nwild(8),we(:,1:ne),(/1,1/),(/nvrt,ne/))
+        j=nf90_put_var(ncid_hot,nwild(9),tr_el(:,:,1:ne),(/1,1,1/),(/ntracers,nvrt,ne/))
+        j=nf90_put_var(ncid_hot,nwild(10),su2(:,1:ns),(/1,1/),(/nvrt,ns/))
+        j=nf90_put_var(ncid_hot,nwild(11),sv2(:,1:ns),(/1,1/),(/nvrt,ns/))
+        j=nf90_put_var(ncid_hot,nwild(12),tr_nd(:,:,1:np),(/1,1,1/),(/ntracers,nvrt,np/))
+        j=nf90_put_var(ncid_hot,nwild(13),tr_nd0(:,:,1:np),(/1,1,1/),(/ntracers,nvrt,np/))
+        j=nf90_put_var(ncid_hot,nwild(14),q2(:,1:np),(/1,1/),(/nvrt,np/))
+        j=nf90_put_var(ncid_hot,nwild(15),xl(:,1:np),(/1,1/),(/nvrt,np/))
+        j=nf90_put_var(ncid_hot,nwild(16),dfv(:,1:np),(/1,1/),(/nvrt,np/))
+        j=nf90_put_var(ncid_hot,nwild(17),dfh(:,1:np),(/1,1/),(/nvrt,np/))
+        j=nf90_put_var(ncid_hot,nwild(18),dfq1(:,1:np),(/1,1/),(/nvrt,np/))
+        j=nf90_put_var(ncid_hot,nwild(19),dfq2(:,1:np),(/1,1/),(/nvrt,np/))
+
+        !j=nf90_put_var(ncid_hot,nwild(20),xcj,(/1/),(/ns/))
+        !j=nf90_put_var(ncid_hot,nwild(21),ycj,(/1/),(/ns/))
+        !j=nf90_put_var(ncid_hot,nwild(22),xnd,(/1/),(/np/))
+        !j=nf90_put_var(ncid_hot,nwild(23),ynd,(/1/),(/np/))
+        !j=nf90_put_var(ncid_hot,nwild(24),uu2(:,1:np),(/1,1/),(/nvrt,np/))
+        !j=nf90_put_var(ncid_hot,nwild(25),vv2(:,1:np),(/1,1/),(/nvrt,np/))
+
+        nvars_hot=19 !record # of vars in nwild so far
+        !Debug
+        !write(12,*)'hotout:',it,time
+        !do i=1,np
+        !  write(12,*)'node uv=',i,xnd(i),ynd(i),uu2(nvrt,i),vv2(nvrt,i)
+        !enddo !i
+        !do i=1,ns
+        !  write(12,*)'side uv=',i,xcj(i),ycj(i),su2(nvrt,i),sv2(nvrt,i)
+        !enddo !i
+!++++++++++++++++++++++++++++++++++++++
+        endif !1==
+
+        if(1==2) then
+!++++++++++++++++++++++++++++++++++++++
         !Flags for each module that needs hotstart outputs
         nwild=0 !init.
 #ifdef USE_ICM
         nwild(1)=1
 #endif
-#ifdef USE_SED2D 
+#ifdef USE_SED2D
         nwild(2)=1
 #endif
 #ifdef USE_SED
@@ -8226,162 +8465,375 @@
 #ifdef USE_HA
         nwild(4)=1
 #endif
-
+#ifdef USE_COSINE
+        nwild(5)=1
+#endif
+#ifdef USE_MARSH
+        nwild(6)=1
+#endif
+        
         write(it_char,'(i72)')it
         it_char=adjustl(it_char)
         lit=len_trim(it_char)
         it_char=it_char(1:lit)//'_0000'; lit=len_trim(it_char)
         write(it_char(lit-3:lit),'(i4.4)') myrank
+
         !Reserve 8 bytes for all integers as well
-        ihot_len=8*(7+(1+(1+ntracers)*nvrt)*ne+(1+2*nvrt)*ns+(2+(2*ntracers+7)*nvrt)*np)
+        ihot_len=8*(9+(1+(1+ntracers)*nvrt)*ne+(1+2*nvrt)*ns+(2+(2*ntracers+7)*nvrt)*np)
         open(36,file='outputs/'//it_char(1:lit)//'_hotstart', &
             &access='direct',recl=ihot_len,status='replace') 
 
-        write(36,rec=1)nwild(1:4),time,it,ifile,(idry_e(i),(we(j,i),tr_el(1:ntracers,j,i),j=1,nvrt),i=1,ne), &
+        write(36,rec=1)nwild(1:6),time,it,ifile,(idry_e(i),(we(j,i),tr_el(1:ntracers,j,i),j=1,nvrt),i=1,ne), &
      &(idry_s(i),(su2(j,i),sv2(j,i),j=1,nvrt),i=1,ns), &
      &(eta2(i),idry(i),(tr_nd(1:ntracers,j,i),tr_nd0(1:ntracers,j,i), & !dble(tem0(j,i)),dble(sal0(j,i)), &
      &q2(j,i),xl(j,i),dfv(j,i),dfh(j,i),dfq1(j,i),dfq2(j,i),qnon(j,i),j=1,nvrt),i=1,np) 
         close(36)
 
-        !Save starting record # for other modules, assuming 8-byte per record
-        IHOTSTP=ihot_len/8
+       !Save starting record # for other modules, assuming 8-byte per record
+       IHOTSTP=ihot_len/8
+!++++++++++++++++++++++++++++++++++++++
+       endif !1==
+
 #ifdef USE_ICM
-        open(36,file='outputs/'//it_char(1:lit)//'_hotstart', &
-             &access='direct',recl=8,status='old')
-        do i=1,ne
-          write(36,rec=IHOTSTP+1)sed_BENDO(i)
-          write(36,rec=IHOTSTP+2)CTEMP(i)
-          write(36,rec=IHOTSTP+3)BBM(i)
-          write(36,rec=IHOTSTP+4)CPOS(i)
-          write(36,rec=IHOTSTP+5)PO4T2TM1S(i)
-          write(36,rec=IHOTSTP+6)NH4T2TM1S(i)
-          write(36,rec=IHOTSTP+7)NO3T2TM1S(i)
-          write(36,rec=IHOTSTP+8)HST2TM1S(i)
-          write(36,rec=IHOTSTP+9)CH4T2TM1S(i)
-          write(36,rec=IHOTSTP+10)CH41TM1S(i)
-          write(36,rec=IHOTSTP+11)SO4T2TM1S(i)
-          write(36,rec=IHOTSTP+12)SIT2TM1S(i)
-          write(36,rec=IHOTSTP+13)BENSTR1S(i)
-          write(36,rec=IHOTSTP+14)CPOP(i,1)
-          write(36,rec=IHOTSTP+15)CPOP(i,2)
-          write(36,rec=IHOTSTP+16)CPOP(i,3)
-          write(36,rec=IHOTSTP+17)CPON(i,1)
-          write(36,rec=IHOTSTP+18)CPON(i,2)
-          write(36,rec=IHOTSTP+19)CPON(i,3)
-          write(36,rec=IHOTSTP+20)CPOC(i,1)
-          write(36,rec=IHOTSTP+21)CPOC(i,2)
-          write(36,rec=IHOTSTP+22)CPOC(i,3)
-          write(36,rec=IHOTSTP+23)NH41TM1S(i)
-          write(36,rec=IHOTSTP+24)NO31TM1S(i)
-          write(36,rec=IHOTSTP+25)HS1TM1S(i)
-          write(36,rec=IHOTSTP+26)SI1TM1S(i)
-          write(36,rec=IHOTSTP+27)PO41TM1S(i)
-          write(36,rec=IHOTSTP+28)PON1TM1S(i)
-          write(36,rec=IHOTSTP+29)PON2TM1S(i)
-          write(36,rec=IHOTSTP+30)PON3TM1S(i)
-          write(36,rec=IHOTSTP+31)POC1TM1S(i)
-          write(36,rec=IHOTSTP+32)POC2TM1S(i)
-          write(36,rec=IHOTSTP+33)POC3TM1S(i)
-          write(36,rec=IHOTSTP+34)POP1TM1S(i)
-          write(36,rec=IHOTSTP+35)POP2TM1S(i)
-          write(36,rec=IHOTSTP+36)POP3TM1S(i)
-          write(36,rec=IHOTSTP+37)PSITM1S(i)
-          write(36,rec=IHOTSTP+38)BFORMAXS(i)
-          write(36,rec=IHOTSTP+39)ISWBENS(i)
-          write(36,rec=IHOTSTP+40)DFEEDM1S(i)
-          IHOTSTP=IHOTSTP+40
-        enddo !i=1,ne
-        close(36)
+        !Reenter def mode
+        j=nf90_redef(ncid_hot)
+        var1d_dim(1)=elem_dim
+        j=nf90_def_var(ncid_hot,'sed_BENDO',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+1))
+        j=nf90_def_var(ncid_hot,'CTEMP',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+2))
+        j=nf90_def_var(ncid_hot,'BBM',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+3))
+        j=nf90_def_var(ncid_hot,'CPOS',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+4))
+        j=nf90_def_var(ncid_hot,'PO4T2TM1S',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+5))
+        j=nf90_def_var(ncid_hot,'NH4T2TM1S',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+6))
+        j=nf90_def_var(ncid_hot,'NO3T2TM1S',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+7))
+        j=nf90_def_var(ncid_hot,'HST2TM1S',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+8))
+        j=nf90_def_var(ncid_hot,'CH4T2TM1S',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+9))
+        j=nf90_def_var(ncid_hot,'CH41TM1S',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+10))
+        j=nf90_def_var(ncid_hot,'SO4T2TM1S',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+11))
+        j=nf90_def_var(ncid_hot,'SIT2TM1S',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+12))
+        j=nf90_def_var(ncid_hot,'BENSTR1S',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+13))
+        j=nf90_def_var(ncid_hot,'NH41TM1S',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+14))
+        j=nf90_def_var(ncid_hot,'NO31TM1S',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+15))
+        j=nf90_def_var(ncid_hot,'HS1TM1S',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+16))
+        j=nf90_def_var(ncid_hot,'SI1TM1S',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+17))
+        j=nf90_def_var(ncid_hot,'PO41TM1S',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+18))
+        j=nf90_def_var(ncid_hot,'PON1TM1S',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+19))
+        j=nf90_def_var(ncid_hot,'PON2TM1S',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+20))
+        j=nf90_def_var(ncid_hot,'PON3TM1S',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+21))
+        j=nf90_def_var(ncid_hot,'POC1TM1S',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+22))
+        j=nf90_def_var(ncid_hot,'POC2TM1S',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+23))
+        j=nf90_def_var(ncid_hot,'POC3TM1S',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+24))
+        j=nf90_def_var(ncid_hot,'POP1TM1S',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+25))
+        j=nf90_def_var(ncid_hot,'POP2TM1S',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+26))
+        j=nf90_def_var(ncid_hot,'POP3TM1S',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+27))
+        j=nf90_def_var(ncid_hot,'PSITM1S',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+28))
+        j=nf90_def_var(ncid_hot,'BFORMAXS',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+29))
+        j=nf90_def_var(ncid_hot,'ISWBENS',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+30))
+        j=nf90_def_var(ncid_hot,'DFEEDM1S',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+31))
+        !last dim must be node/elem/side- I suggest we swap indices for
+        !these 2D arrays
+        var2d_dim(1)=three_dim; var2d_dim(2)=elem_dim
+        j=nf90_def_var(ncid_hot,'CPOP',NF90_DOUBLE,var2d_dim,nwild(nvars_hot+32))
+        j=nf90_def_var(ncid_hot,'CPON',NF90_DOUBLE,var2d_dim,nwild(nvars_hot+33))
+        j=nf90_def_var(ncid_hot,'CPOC',NF90_DOUBLE,var2d_dim,nwild(nvars_hot+34))
+        j=nf90_enddef(ncid_hot)
+
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+1),sed_BENDO,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+2),CTEMP,(/1/),(/ne/))  
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+3),BBM,(/1/),(/ne/))        
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+4),CPOS,(/1/),(/ne/))        
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+5),PO4T2TM1S,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+6),NH4T2TM1S,(/1/),(/ne/)) 
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+7),NO3T2TM1S,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+8),HST2TM1S,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+9),CH4T2TM1S,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+10),CH41TM1S,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+11),SO4T2TM1S,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+12),SIT2TM1S,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+13),BENSTR1S,(/1/),(/ne/)) 
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+14),NH41TM1S,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+15),NO31TM1S,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+16),HS1TM1S,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+17),SI1TM1S,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+18),PO41TM1S,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+19),PON1TM1S,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+20),PON2TM1S,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+21),PON3TM1S,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+22),POC1TM1S,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+23),POC2TM1S,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+24),POC3TM1S,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+25),POP1TM1S,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+26),POP2TM1S,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+27),POP3TM1S,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+28),PSITM1S,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+29),BFORMAXS,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+30),ISWBENS,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+31),DFEEDM1S,(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+32),transpose(CPOP(1:ne,1:3)),(/1,1/),(/3,ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+33),transpose(CPON(1:ne,1:3)),(/1,1/),(/3,ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+34),transpose(CPOC(1:ne,1:3)),(/1,1/),(/3,ne/))
+        nvars_hot=nvars_hot+34 !update
+
+!        open(36,file='outputs/'//it_char(1:lit)//'_hotstart', &
+!             &access='direct',recl=8,status='old')
+!        do i=1,ne
+!          write(36,rec=IHOTSTP+1)sed_BENDO(i)
+!          write(36,rec=IHOTSTP+2)CTEMP(i)
+!          write(36,rec=IHOTSTP+3)BBM(i)
+!          write(36,rec=IHOTSTP+4)CPOS(i)
+!          write(36,rec=IHOTSTP+5)PO4T2TM1S(i)
+!          write(36,rec=IHOTSTP+6)NH4T2TM1S(i)
+!          write(36,rec=IHOTSTP+7)NO3T2TM1S(i)
+!          write(36,rec=IHOTSTP+8)HST2TM1S(i)
+!          write(36,rec=IHOTSTP+9)CH4T2TM1S(i)
+!          write(36,rec=IHOTSTP+10)CH41TM1S(i)
+!          write(36,rec=IHOTSTP+11)SO4T2TM1S(i)
+!          write(36,rec=IHOTSTP+12)SIT2TM1S(i)
+!          write(36,rec=IHOTSTP+13)BENSTR1S(i)
+!          write(36,rec=IHOTSTP+14)CPOP(i,1)
+!          write(36,rec=IHOTSTP+15)CPOP(i,2)
+!          write(36,rec=IHOTSTP+16)CPOP(i,3)
+!          write(36,rec=IHOTSTP+17)CPON(i,1)
+!          write(36,rec=IHOTSTP+18)CPON(i,2)
+!          write(36,rec=IHOTSTP+19)CPON(i,3)
+!          write(36,rec=IHOTSTP+20)CPOC(i,1)
+!          write(36,rec=IHOTSTP+21)CPOC(i,2)
+!          write(36,rec=IHOTSTP+22)CPOC(i,3)
+!          write(36,rec=IHOTSTP+23)NH41TM1S(i)
+!          write(36,rec=IHOTSTP+24)NO31TM1S(i)
+!          write(36,rec=IHOTSTP+25)HS1TM1S(i)
+!          write(36,rec=IHOTSTP+26)SI1TM1S(i)
+!          write(36,rec=IHOTSTP+27)PO41TM1S(i)
+!          write(36,rec=IHOTSTP+28)PON1TM1S(i)
+!          write(36,rec=IHOTSTP+29)PON2TM1S(i)
+!          write(36,rec=IHOTSTP+30)PON3TM1S(i)
+!          write(36,rec=IHOTSTP+31)POC1TM1S(i)
+!          write(36,rec=IHOTSTP+32)POC2TM1S(i)
+!          write(36,rec=IHOTSTP+33)POC3TM1S(i)
+!          write(36,rec=IHOTSTP+34)POP1TM1S(i)
+!          write(36,rec=IHOTSTP+35)POP2TM1S(i)
+!          write(36,rec=IHOTSTP+36)POP3TM1S(i)
+!          write(36,rec=IHOTSTP+37)PSITM1S(i)
+!          write(36,rec=IHOTSTP+38)BFORMAXS(i)
+!          write(36,rec=IHOTSTP+39)ISWBENS(i)
+!          write(36,rec=IHOTSTP+40)DFEEDM1S(i)
+!          IHOTSTP=IHOTSTP+40
+!        enddo !i=1,ne
+!        close(36)
 #endif /*USE_ICM*/
 
         !write(12,*)'After hot trcr:',it,real(trel),real(tr_nd0)
+#ifdef USE_COSINE
+        !Reenter def mode
+        j=nf90_redef(ncid_hot)
+        var3d_dim(1)=seven_dim; var3d_dim(2)=nvrt_dim; var3d_dim(3)=elem_dim
+        j=nf90_def_var(ncid_hot,'COS_mS2',NF90_DOUBLE,var3d_dim,nwild(nvars_hot+1))
+        j=nf90_def_var(ncid_hot,'COS_mDN',NF90_DOUBLE,var3d_dim,nwild(nvars_hot+2))
+        j=nf90_def_var(ncid_hot,'COS_mZ1',NF90_DOUBLE,var3d_dim,nwild(nvars_hot+3))
+        j=nf90_def_var(ncid_hot,'COS_mZ2',NF90_DOUBLE,var3d_dim,nwild(nvars_hot+4))
+        var2d_dim(1)=nvrt_dim; var2d_dim(2)=elem_dim
+        j=nf90_def_var(ncid_hot,'COS_sS2',NF90_DOUBLE,var2d_dim,nwild(nvars_hot+5))
+        j=nf90_def_var(ncid_hot,'COS_sDN',NF90_DOUBLE,var2d_dim,nwild(nvars_hot+6))
+        j=nf90_def_var(ncid_hot,'COS_sZ1',NF90_DOUBLE,var2d_dim,nwild(nvars_hot+7))
+        j=nf90_def_var(ncid_hot,'COS_sZ2',NF90_DOUBLE,var2d_dim,nwild(nvars_hot+8))
+        j=nf90_def_var(ncid_hot,'COS_nstep',NF90_DOUBLE,var2d_dim,nwild(nvars_hot+9))
+        j=nf90_enddef(ncid_hot)
+
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+1),mS2(1:7,1:nvrt,1:ne),(/1,1,1/),(/7,nvrt,ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+2),mDN(1:7,1:nvrt,1:ne),(/1,1,1/),(/7,nvrt,ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+3),mZ1(1:7,1:nvrt,1:ne),(/1,1,1/),(/7,nvrt,ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+4),mZ2(1:7,1:nvrt,1:ne),(/1,1,1/),(/7,nvrt,ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+5),sS2(1:nvrt,1:ne),(/1,1/),(/nvrt,ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+6),sDN(1:nvrt,1:ne),(/1,1/),(/nvrt,ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+7),sZ1(1:nvrt,1:ne),(/1,1/),(/nvrt,ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+8),sZ2(1:nvrt,1:ne),(/1,1/),(/nvrt,ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+9),dble(nstep(1:nvrt,1:ne)),(/1,1/),(/nvrt,ne/))
+
+        nvars_hot=nvars_hot+9
+
+!        open(36,file='outputs/'//it_char(1:lit)//'_hotstart', &
+!             &access='direct',recl=8,status='old')
+!        do i=1,ne
+!          do j=1,nvrt
+!            do k=1,7
+!              write(36,rec=IHOTSTP+1)mS2(k,j,i)
+!              write(36,rec=IHOTSTP+2)mDN(k,j,i)
+!              write(36,rec=IHOTSTP+3)mZ1(k,j,i)
+!              write(36,rec=IHOTSTP+4)mZ2(k,j,i)
+!              IHOTSTP=IHOTSTP+4
+!            enddo !k
+!            write(36,rec=IHOTSTP+1)sS2(j,i)
+!            write(36,rec=IHOTSTP+2)sDN(j,i)
+!            write(36,rec=IHOTSTP+3)sZ1(j,i)
+!            write(36,rec=IHOTSTP+4)sZ2(j,i)
+!            write(36,rec=IHOTSTP+5)nstep(j,i)
+!            IHOTSTP=IHOTSTP+5
+!          enddo!j
+!        enddo!i
+!        close(36)
+#endif /*USE_COSINE*/
 
 #ifdef USE_SED2D 
-        open(36,file='outputs/'//it_char(1:lit)//'_hotstart', &
-             &access='direct',recl=8,status='old')
-        do i=1,np
-          write(36,rec=IHOTSTP+1)dp(i)
-          IHOTSTP=IHOTSTP+1
-        enddo !i=1,np
-        close(36)
+        !Reenter def mode
+        j=nf90_redef(ncid_hot)
+        var1d_dim(1)=node_dim
+        j=nf90_def_var(ncid_hot,'SED2D_dp',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+1))
+        j=nf90_enddef(ncid_hot)
+
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+1),dp(1:np),(/1/),(/np/))
+        nvars_hot=nvars_hot+1
+
+!        open(36,file='outputs/'//it_char(1:lit)//'_hotstart', &
+!             &access='direct',recl=8,status='old')
+!        do i=1,np
+!          write(36,rec=IHOTSTP+1)dp(i)
+!          IHOTSTP=IHOTSTP+1
+!        enddo !i=1,np
+!        close(36)
 #endif /*USE_SED2D*/
 
 #ifdef USE_SED
-        open(36,file='outputs/'//it_char(1:lit)//'_hotstart', &
-             &access='direct',recl=8,status='old')
-        write(36,rec=IHOTSTP+1)MBEDP
-        write(36,rec=IHOTSTP+2)Nbed
-        write(36,rec=IHOTSTP+3)ntrs(5)
-        IHOTSTP=IHOTSTP+3
-        do i=1,np
-          write(36,rec=IHOTSTP+1)dp(i)
-          write(36,rec=IHOTSTP+2)rough_p(i)
-          IHOTSTP=IHOTSTP+2
-        enddo !i=1,np
-
+        !Re-order indices of 3 arrays
+        allocate(swild97(ntrs(5),Nbed,ne),swild98(MBEDP,Nbed,ne))
         do i=1,MBEDP
           do j=1,ne
             do k=1,Nbed
-              write(36,rec=IHOTSTP+1)bed(k,j,i)
-              IHOTSTP=IHOTSTP+1
+              swild98(i,k,j)=bed(k,j,i)
             enddo !k
           enddo !j
         enddo !i
-
         do i=1,ntrs(5) !ntracers
           do k=1,ne
             do m=1,Nbed
-              write(36,rec=IHOTSTP+1)bed_frac(m,k,i)
-              IHOTSTP=IHOTSTP+1
+              swild97(i,m,k)=bed_frac(m,k,i)
             enddo !m
           enddo !k
         enddo !i
+        
+        !Reenter def mode
+        j=nf90_redef(ncid_hot)
+        j=nf90_def_dim(ncid_hot,'SED_MBEDP',MBEDP,MBEDP_dim)
+        j=nf90_def_dim(ncid_hot,'SED_Nbed',Nbed,Nbed_dim)
+        j=nf90_def_dim(ncid_hot,'SED_ntr',ntrs(5),SED_ntr_dim)
 
-        close(36)
+        var1d_dim(1)=node_dim
+        j=nf90_def_var(ncid_hot,'SED3D_dp',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+1))
+        j=nf90_def_var(ncid_hot,'SED3D_rough',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+2))
+        var3d_dim(1)=MBEDP_dim; var3d_dim(2)=Nbed_dim; var3d_dim(3)=elem_dim
+        j=nf90_def_var(ncid_hot,'SED3D_bed',NF90_DOUBLE,var3d_dim,nwild(nvars_hot+3))
+        var3d_dim(1)=SED_ntr_dim; var3d_dim(2)=Nbed_dim; var3d_dim(3)=elem_dim
+        j=nf90_def_var(ncid_hot,'SED3D_bedfrac',NF90_DOUBLE,var3d_dim,nwild(nvars_hot+4))
+        j=nf90_enddef(ncid_hot)
+
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+1),dp(1:np),(/1/),(/np/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+2),rough_p(1:np),(/1/),(/np/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+3),swild98(1:MBEDP,1:Nbed,1:ne),(/1,1,1/),(/MBEDP,Nbed,ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+4),swild97(1:ntrs(5),1:Nbed,1:ne),(/1,1,1/),(/ntrs(5),Nbed,ne/))
+        nvars_hot=nvars_hot+4
+
+        deallocate(swild97,swild98)
+
+!        open(36,file='outputs/'//it_char(1:lit)//'_hotstart', &
+!             &access='direct',recl=8,status='old')
+!        write(36,rec=IHOTSTP+1)MBEDP
+!        write(36,rec=IHOTSTP+2)Nbed
+!        write(36,rec=IHOTSTP+3)ntrs(5)
+!        IHOTSTP=IHOTSTP+3
+!        do i=1,np
+!          write(36,rec=IHOTSTP+1)dp(i)
+!          write(36,rec=IHOTSTP+2)rough_p(i)
+!          IHOTSTP=IHOTSTP+2
+!        enddo !i=1,np
+!
+!        do i=1,MBEDP
+!          do j=1,ne
+!            do k=1,Nbed
+!              write(36,rec=IHOTSTP+1)bed(k,j,i)
+!              IHOTSTP=IHOTSTP+1
+!            enddo !k
+!          enddo !j
+!        enddo !i
+!
+!        do i=1,ntrs(5) !ntracers
+!          do k=1,ne
+!            do m=1,Nbed
+!              write(36,rec=IHOTSTP+1)bed_frac(m,k,i)
+!              IHOTSTP=IHOTSTP+1
+!            enddo !m
+!          enddo !k
+!        enddo !i
+!
+!        close(36)
 #endif /*USE_SED*/
 
+#ifdef USE_MARSH
+        !Reenter def mode
+        j=nf90_redef(ncid_hot)
+        var1d_dim(1)=elem_dim
+        j=nf90_def_var(ncid_hot,'marsh_flag',NF90_INT,var1d_dim,nwild(nvars_hot+1))
+        j=nf90_enddef(ncid_hot)
+
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+1),imarsh(1:ne),(/1/),(/ne/))
+        nvars_hot=nvars_hot+1
+
+!        open(36,file='outputs/'//it_char(1:lit)//'_hotstart', &
+!             &access='direct',recl=8,status='old')
+!        do i=1,ne
+!          write(36,rec=IHOTSTP+1)imarsh(i)
+!          IHOTSTP=IHOTSTP+1
+!        enddo !i=1,np
+!        close(36)
+#endif /*USE_MARSH*/
+
+#ifdef USE_ICE
+        !Reenter def mode
+        j=nf90_redef(ncid_hot)
+        j=nf90_def_dim(ncid_hot,'ice_ntr',ntr_ice,ice_ntr_dim)
+
+        var1d_dim(1)=one_dim
+        j=nf90_def_var(ncid_hot,'ice_free_flag',NF90_INT,var1d_dim,nwild(nvars_hot+1))
+        var1d_dim(1)=node_dim
+        j=nf90_def_var(ncid_hot,'ice_surface_T',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+2)) !t_oi
+        j=nf90_def_var(ncid_hot,'ice_water_flux',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+3))
+        j=nf90_def_var(ncid_hot,'ice_heat_flux',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+4))
+        j=nf90_def_var(ncid_hot,'ice_velocity_x',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+5))
+        j=nf90_def_var(ncid_hot,'ice_velocity_y',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+6))
+        var1d_dim(1)=elem_dim
+        j=nf90_def_var(ncid_hot,'ice_sigma11',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+7))
+        j=nf90_def_var(ncid_hot,'ice_sigma12',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+8))
+        j=nf90_def_var(ncid_hot,'ice_sigma22',NF90_DOUBLE,var1d_dim,nwild(nvars_hot+9))
+        var2d_dim(1)=two_dim; var2d_dim(2)=node_dim
+        j=nf90_def_var(ncid_hot,'ice_ocean_stress',NF90_DOUBLE,var2d_dim,nwild(nvars_hot+10))
+        var2d_dim(1)=ice_ntr_dim; var2d_dim(2)=node_dim
+        j=nf90_def_var(ncid_hot,'ice_tracers',NF90_DOUBLE,var2d_dim,nwild(nvars_hot+11))
+        j=nf90_enddef(ncid_hot)
+
+        !Convert to int
+        if(lice_free_gb) then
+          ifl=1
+        else
+          ifl=0
+        endif
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+1),ifl)
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+2),t_oi(1:np),(/1/),(/np/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+3),fresh_wa_flux(1:np),(/1/),(/np/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+4),net_heat_flux(1:np),(/1/),(/np/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+5),u_ice(1:np),(/1/),(/np/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+6),v_ice(1:np),(/1/),(/np/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+7),sigma11(1:ne),(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+8),sigma12(1:ne),(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+9),sigma22(1:ne),(/1/),(/ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+10),tau_oi(1:2,1:np),(/1,1/),(/2,np/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+11),ice_tr(1:ntr_ice,1:np),(/1,1/),(/ntr_ice,np/))
+        nvars_hot=nvars_hot+11
+
+#endif /*USE_ICE*/
+
 #ifdef USE_HA
-!...  not working properly yet
-!...    IF APPROPRIATE ADD HARMONIC ANALYSIS INFORMATION TO HOT START FILE
-!...    Adapted from ADCIRC
-        open(36,file='outputs/'//it_char(1:lit)//'_hotstart', &
-             &access='direct',recl=8,status='old') 
-        !IHOTSTP = 3+((1+(3+2*ntracers)*nvrt)*ne)+((1+4*nvrt)*ns)+((2+9*nvrt)*np)
-        IF((iharind.EQ.1).AND.(it.GT.ITHAS)) THEN
-           WRITE(36,REC=IHOTSTP+1) ICHA
-           IHOTSTP = IHOTSTP + 1
-           CALL HAHOUT(np,0,0,0,0,NHAGE,NHAGV,36,IHOTSTP)
-
-           IF(NHAGE.EQ.1) CALL HAHOUTEG(np,36,IHOTSTP)
-           IF(NHAGV.EQ.1) CALL HAHOUTVG(np,36,IHOTSTP)
-        ENDIF
-
-        if (CHARMV) then
-           IF((iharind.EQ.1).AND.(it.GT.ITMV)) THEN
-              IHOTSTP=IHOTSTP+1
-              WRITE(36,REC=IHOTSTP) NTSTEPS
-              IF(NHAGE.EQ.1) THEN
-                 DO I=1,np
-                    WRITE(36,REC=IHOTSTP+1) ELAV(I)
-                    WRITE(36,REC=IHOTSTP+2) ELVA(I)
-                    IHOTSTP=IHOTSTP+2
-                 END DO
-              ENDIF
-              IF(NHAGV.EQ.1) THEN
-                 DO I=1,np
-                    WRITE(36,REC=IHOTSTP+1) XVELAV(I)
-                    WRITE(36,REC=IHOTSTP+2) YVELAV(I)
-                    WRITE(36,REC=IHOTSTP+3) XVELVA(I)
-                    WRITE(36,REC=IHOTSTP+4) YVELVA(I)
-                    IHOTSTP=IHOTSTP+4
-                 END DO
-              ENDIF
-           ENDIF
-        endif               !  charmv
-        close(36)
 #endif /*USE_HA*/
 
-        if(myrank==0) write(16,*) 'hot start written',it,time,ifile
+        j=nf90_close(ncid_hot)
+
+        if(myrank==0) write(16,*) 'hot start written',it,time,ifile,nvars_hot
       endif !nhot
 
 #ifdef INCLUDE_TIMING

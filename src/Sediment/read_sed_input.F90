@@ -37,7 +37,7 @@
 !                                                                    !
 !--------------------------------------------------------------------!
 
-      USE schism_glbl, ONLY: rkind,ntrs,wsett,irange_tr,ddensed,grav,rho0,errmsg
+      USE schism_glbl, ONLY: rkind,ntrs,iwsett,wsett,irange_tr,ddensed,grav,rho0,errmsg
       USE schism_msgp, ONLY: myrank,parallel_abort
       USE sed_mod      
 
@@ -304,7 +304,8 @@
 
       !Update global array for settling vel.
       do i=1,ntr_l
-        wsett(i-1+irange_tr(1,5))=Wsed(i)
+        wsett(i-1+irange_tr(1,5),:,:)=Wsed(i)
+        iwsett(i-1+irange_tr(1,5))=1
       enddo !i
 
 !---------------------------------------------------------------------

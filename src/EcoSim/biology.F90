@@ -576,45 +576,45 @@
           !WS(iphy)=WS(iphy)*sec2day
           ! MFR, Nov/2015 - Set wsett for phytoplankton tracers
           tmp1 = tmp00+iPhyC(iphy)
-          wsett(tmp1)=WS(iphy)*sec2day
+          wsett(tmp1,:,:)=WS(iphy)*sec2day
           tmp1 = tmp00+iPhyN(iphy)
-          wsett(tmp1)=WS(iphy)*sec2day
+          wsett(tmp1,:,:)=WS(iphy)*sec2day
           tmp1 = tmp00+iPhyP(iphy)
-          wsett(tmp1)=WS(iphy)*sec2day
+          wsett(tmp1,:,:)=WS(iphy)*sec2day
           IF(IRON==1)THEN
              tmp1 = tmp00+iPhyF(iphy)
-             wsett(tmp1)=WS(iphy)*sec2day
+             wsett(tmp1,:,:)=WS(iphy)*sec2day
           ENDIF
           IF (iPhyS(iphy).gt.0) THEN
               tmp1 = tmp00+iPhyS(iphy)
-              wsett(tmp1)=WS(iphy)*sec2day
+              wsett(tmp1,:,:)=WS(iphy)*sec2day
           ENDIF 
   
           tmp1 = tmp00+iPigs(iphy,1)
-          wsett(tmp1)=WS(iphy)*sec2day
+          wsett(tmp1,:,:)=WS(iphy)*sec2day
           IF (iPigs(iphy,2).gt.0) THEN
              tmp1 = tmp00+iPigs(iphy,2)
-             wsett(tmp1)=WS(iphy)*sec2day
+             wsett(tmp1,:,:)=WS(iphy)*sec2day
           ENDIF
           IF (iPigs(iphy,3).gt.0) THEN
              tmp1 = tmp00+iPigs(iphy,3)
-             wsett(tmp1)=WS(iphy)*sec2day
+             wsett(tmp1,:,:)=WS(iphy)*sec2day
           ENDIF
           IF (iPigs(iphy,4).gt.0) THEN
              tmp1 = tmp00+iPigs(iphy,4)
-             wsett(tmp1)=WS(iphy)*sec2day
+             wsett(tmp1,:,:)=WS(iphy)*sec2day
           ENDIF
           IF (iPigs(iphy,5).gt.0) THEN
              tmp1 = tmp00+iPigs(iphy,5)
-             wsett(tmp1)=WS(iphy)*sec2day
+             wsett(tmp1,:,:)=WS(iphy)*sec2day
           ENDIF
           IF (iPigs(iphy,6).gt.0) THEN
              tmp1 = tmp00+iPigs(iphy,6)
-             wsett(tmp1)=WS(iphy)*sec2day
+             wsett(tmp1,:,:)=WS(iphy)*sec2day
           ENDIF
           IF (iPigs(iphy,7).gt.0) THEN
              tmp1 = tmp00+iPigs(iphy,7)
-             wsett(tmp1)=WS(iphy)*sec2day
+             wsett(tmp1,:,:)=WS(iphy)*sec2day
           ENDIF  
           ! End wsett for phytoplankton tracers
 
@@ -628,17 +628,17 @@
           ! WF(ifec)=WF(ifec)*sec2day
           ! MFR, Nov/2015 - Set wsett for fecal/detritus tracers
           tmp1 = tmp00+iFecC(ifec)
-          wsett(tmp1)=WF(ifec)*sec2day
+          wsett(tmp1,:,:)=WF(ifec)*sec2day
           tmp1 = tmp00+iFecN(ifec)
-          wsett(tmp1)=WF(ifec)*sec2day
+          wsett(tmp1,:,:)=WF(ifec)*sec2day
           tmp1 = tmp00+iFecP(ifec)
-          wsett(tmp1)=WF(ifec)*sec2day
+          wsett(tmp1,:,:)=WF(ifec)*sec2day
           IF(IRON==1) THEN
             tmp1 = tmp00+iFecF(ifec)
-            wsett(tmp1)=WF(ifec)*sec2day
+            wsett(tmp1,:,:)=WF(ifec)*sec2day
           ENDIF 
           tmp1 = tmp00+iFecS(ifec)
-          wsett(tmp1)=WF(ifec)*sec2day
+          wsett(tmp1,:,:)=WF(ifec)*sec2day
           ! End wsett for fecal/detritus tracers
         END DO
         RtNIT=RtNIT*sec2day

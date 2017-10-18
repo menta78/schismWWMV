@@ -62,6 +62,10 @@
       real(rkind), allocatable :: trel_tmp(:,:,:) !tracer @ elements and half levels
       real(rkind), allocatable :: flux_adv_hface(:,:) ! original horizontal flux (the local x-driection) 
       real(rkind), allocatable :: flux_mod_hface(:,:,:) !limited advective fluxes on horizontal faces
+      !weno>
+      real(rkind), allocatable :: trsd_tmp(:,:,:) !tmp concentration on horizontal faces
+      real(rkind), allocatable :: trsd_tmp0(:,:,:) !tmp concentration on horizontal faces, only used for message-passing
+      !<weno
       real(rkind), allocatable :: up_rat_hface(:,:,:) !upwind ratios for horizontal faces
 !      real(rkind), allocatable :: psum2(:,:,:)
 
@@ -84,28 +88,40 @@
 
       real(rkind) :: psumtr(ntr),delta_tr(ntr),adv_tr(ntr), &
      &alow(nvrt),bdia(nvrt),cupp(nvrt),rrhs(1,nvrt),soln(1,nvrt),gam(nvrt), &
-     &swild(max(3,nvrt)),swild4(3,2),trel_tmp_outside(ntr)
+     &swild(max(3,nvrt)),swild4(3,2),trel_tmp_outside(ntr),swild5(3)
       integer :: nwild(2)
 
-      integer :: istat,i,j,k,l,m,khh2,ie,n1,n2,n3,isd,isd0,isd1,isd2,isd3,j0, &
-                 &nd,it_sub,ntot_v,ntot_vgb,kup,kdo,jsj,kb, &
+      integer :: istat,i,j,k,kk,l,m,khh2,ie,n1,n2,n3,n4,isd,isd0,isd1,isd2,isd3,j0,je, &
+                 &nd,it_sub,ntot_v,ntot_vgb,kup,kdo,jsj,jsj0,kb, &
                  &kb1,iup,ido,ie01,lev01,in_st,ie02,lev02,in_st2,jj,ll,lll,ndim,kin,iel,ibnd, &
                  &ndo,ind1,ind2,nd1,nd2,ibio,iterK,iele_max,iterK_MAX,it_sum1,it_sum2
       real(rkind) :: vnor1,vnor2,xcon,ycon,zcon,dot1,sum1,tmp,cwtmp,toth, &
                      &time_r,psum,rat,dtbl,dtbl2,dtb,vj,av_df,av_dz,hdif_tmp, &
                      &av_h,difnum,cwtmp2,bigv,dt_by_bigv,dtb_by_bigv, &
-                     &term1,term2,term6,strat1,strat2,denom
+                     &term1,term2,term6,strat1,strat2,denom, &
+                     &b1,b2,b3,b4,b5
 
       real(rkind) :: ref_flux
       logical     :: same_sign, is_land
 !      logical, save :: first_call
+      !weno>
+      real(rkind) :: trsd(2),rctr,ang1,ui,vi,t_out
+      real(rkind),allocatable :: wm1(:),wm2(:),wm(:) !weight
+      logical :: iweno
+
+      !character(72) :: ftest  ! Name of debugging file
+      !integer :: lftest       ! Length of debugging file name
+      !integer :: iorder !temporary identifier for order of accuracy
+#define weno_debug
+      !<weno
       
 #ifdef INCLUDE_TIMING
       cwtmp2=mpi_wtime()
 #endif
 
-      allocate(trel_tmp(ntr,nvrt,nea),flux_adv_hface(nvrt,nsa), &
+      allocate(trel_tmp(ntr,nvrt,0:nea),flux_adv_hface(nvrt,nsa), &
               &flux_mod_hface(ntr,nvrt,ns),up_rat_hface(ntr,nvrt,nsa),stat=istat) 
+      trel_tmp=0d0
 !      allocate(psum2(ntr,nvrt,ne))
       if(istat/=0) call parallel_abort('Transport: fail to allocate')
 
@@ -133,6 +149,40 @@
       flux_adv_hface=-1.d34 !flags
       iupwind_e=0
 !$OMP end workshare
+      
+!#ifdef DEBUG
+!      !-------constant velocity filed used in a few benchmarks------
+!      !RUN01a,RUN03*
+!      !su2=0.1d0; sv2=0.0d0
+!      !RUN03g1*
+!      su2=10d0; sv2=0.0d0
+!      !RUN07
+!      !su2=1.0d0; sv2=0.0d0
+!
+!      !-------constant rotational velocity filed------
+!      !RUN02a
+!      !do j=1,ns
+!      !  n1=isidenode(1,j)
+!      !  n2=isidenode(2,j)
+!      !  rctr=sqrt((ynd(n2)+ynd(n1))**2+(xnd(n2)+xnd(n1))**2)/2.0d0
+!      !  ang1=datan2(ynd(n2)+ynd(n1),xnd(n2)+xnd(n1))
+!      !  ui=-0.002094395102393d0*rctr*sin(ang1)
+!      !  vi=0.002094395102393d0*rctr*cos(ang1)
+!      !  su2(:,j)=ui
+!      !  sv2(:,j)=vi
+!      !enddo !j
+!
+!      ftest='trelm_xxxx'
+!      lftest=len_trim(ftest)
+!      write(ftest(lftest-3:lftest),'(i4.4)') myrank
+!      open(95,file='outputs/'//ftest,status='replace')
+!      ftest='order_xxxx'
+!      lftest=len_trim(ftest)
+!      if (it==1) then
+!        write(ftest(lftest-3:lftest),'(i4.4)') myrank
+!        open(96,file='outputs/'//ftest,status='replace')
+!      endif
+!#endif
 
 !     Horizontal fluxes
 !$OMP do 
@@ -191,73 +241,318 @@
 
 !$OMP end parallel
 
+
+!weno>
       if(itr_met==4) then 
 !-------------------------------------------------------------------------------------
       !WENO in horizontal
+!new21: need OMP
 
-!#ifdef DEBUG
+      allocate(trsd_tmp(ntr,nvrt,ns),trsd_tmp0(ntr,nvrt,ns),stat=istat)
+      if(istat/=0) call parallel_abort('failed in alloc. trsd_tmp and trsd_tmp0') 
+      allocate(wm(max(mnweno1,mnweno2)),wm1(max(mnweno1,mnweno2)),wm2(max(mnweno1,mnweno2)), stat=istat)
+      if(istat/=0) call parallel_abort('failed in alloc. wm') 
+
+!'#ifdef DEBUG
 !      dtbe=dt !min (over all subcycles and all levels) time step allowed at each element
+!      t_out=0.0d0
 !#endif
 
+!$OMP   single
       it_sub=0
       time_r=dt !time remaining
-      loop12: do
-        it_sub=it_sub+1
+!$OMP   end single
 
-        !Compute sub time step (cf. TVD part)
-        !dtb=min(dtb,time_r) !for upwind
+
+
+      loop12: do
+!$OMP   single
+        it_sub=it_sub+1
+!$OMP   end single
+
+
+!$OMP     workshare
+        dtb_min3(:)=time_r !init
+!$OMP     end workshare
+
+        if (it_sub==1) then !only compute dtb for the first step, not related to scalar field
+!$OMP     do 
+          do i=1,ne
+            if(idry_e(i)==1) cycle
+            !if(idry_e(i)==1) then 
+            !  dtb_min3=huge(1.d0)
+            !  cycle
+            !endif
+            dtbl2=huge(1.d0) !init local
+
+            ie02=0 !element # where the exteme is attained (local)
+            lev02=0 !level #
+            in_st2=0
+            do k=kbe(i)+1,nvrt !prism
+              psumtr(1)=0.d0 !sum of horizontal fluxes for all inflow bnds
+     
+              do j=1,i34(i)
+                jsj=elside(j,i) !resident side
+                ie=ic3(j,i)
+
+                if(k>=kbs(jsj)+1) then
+                  ref_flux = flux_adv_hface(k,jsj)
+                  same_sign = (ssign(j,i)*ref_flux)<0 !inflow
+
+                  if((ie/=0.and.idry_e(max(1,ie))==0.or.ie==0.and.isbs(jsj)>0).and.same_sign) then 
+#ifdef DEBUG
+                      if(flux_adv_hface(k,jsj)<-1.d33) then
+                        write(errmsg,*)'Left out horizontal flux (10):',i,k,j,jj
+                        call parallel_abort(errmsg)
+                      endif
+#endif
+
+                    psumtr(1)=psumtr(1)+abs(flux_adv_hface(k,jsj))
+                  endif !ie
+                endif !k>=kbs
+
+              enddo !j
+
+
+              vj=area(i)*(ze(k,i)-ze(k-1,i))
+
+              if(psumtr(1)/=0) then
+                tmp=vj/psumtr(1)*courant_weno*(1-1.e-6) !safety factor 1.e-6 included
+
+                if(tmp<dtbl2) then
+                  dtbl2=tmp
+                  ie02=i; lev02=k; in_st2=jj
+                endif
+              endif !psumtr
+
+            enddo !k=kbe(i)+1,nvrt
+
+            dtb_min3(i)=dtbl2
+
+!!WARNING: 'critical' has to be outside if; otherwise some threads are
+!modifying while others may be comapring a transient 'dtbl'!!
+!!!$OMP       critical
+!            if(dtbl2<dtbl) then
+!              dtbl=dtbl2
+!              ie01=ie02; lev01=lev02; in_st=in_st2
+!            endif
+!!!$OMP       end critical
+          enddo !i=1,ne
+!$OMP     end do
+
+!$OMP     workshare
+          dtbl=minval(dtb_min3)
+!$OMP     end workshare
+
+!$OMP     master
+#ifdef INCLUDE_TIMING
+          cwtmp=mpi_wtime()
+          timer_ns(1)=timer_ns(1)+cwtmp-cwtmp2
+#endif
+          buf(1,1)=dtbl; buf(2,1)=myrank
+          call mpi_allreduce(buf,buf2,1,MPI_2DOUBLE_PRECISION,MPI_MINLOC,comm,ierr)
+          dtb=buf2(1,1)
+#ifdef INCLUDE_TIMING
+          cwtmp2=mpi_wtime()
+          wtimer(9,2)=wtimer(9,2)+cwtmp2-cwtmp
+#endif
+
+#ifdef DEBUG
+          if(dtb<=0.or.dtb>time_r) then
+            write(errmsg,*)'Transport: Illegal sub step:',dtb,time_r
+            call parallel_abort(errmsg)
+          endif
+#endif
+
+!         Output time step
+!          if(myrank==int(buf2(2,1)).and.ie01>0) &
+!     &write(12,'(a20,5(1x,i10),1x,f14.3,1x,e22.10)') &
+!     &'TVD-upwind dtb info:',it,it_sub,ielg(ie01),lev01,in_st,dtb,it*dt !,dtb_alt 
+!$OMP     end master
+
+
+        endif !if it_sub==1; compute dtb
+
+!debug>
+!#ifdef DEBUG
+!        write(*,*) 'rank ',myrank,': ',it, dtb,min(dtb,time_r) 
+!#endif
+!<debug
+        dtb=min(dtb,time_r) !for upwind
         time_r=time_r-dtb
 
-        !Store last step's S,T
+        !Store last step's tracer concentrations
         trel_tmp(1:ntr,:,1:nea)=tr_el(1:ntr,:,1:nea)
 
-        !Reconstruct tracer conc at faces, save as flux_mod_hface(1:ntr,1:nvrt,1:ns)
-        !call ....
-        !Extend below bottom if necessary
-        !No exchange to 1:nsa necessary as ghosts r not used below
+!Note:
+        !tracer concentrations are re-constructed at sides, saved as trsd_tmp(1:ntr,1:nvrt,1:ns).
+        !If an inflow side is also an interface side between two ranks, it will keep the
+        !initial value (0) inside the current rank; whereas the same side will be 
+        !an outflow side in the neighboring rank, where
+        !its concentration will be re-constructed and shared.
+        !Since the flow direction determines inflow/outflow, the side communication table 
+        !may be changing. The message-passing procedure implemented here
+        !circumvents this dynamic table by ASSUMING the interface side are resident in 2 ranks.
+        !For each interface side, its value is reconstructed in one and only one rank,
+        !whereas its value in the other rank is strictly 0.0d0
 
-!       Reset upwind faces
-!        do i=1,ne
-!          if(iupwind_e(i)/=0) then
-!            do j=1,i34(i) !sides
-!!              flux_mod_hface(:,:,elside(j,i))=
-!            enddo !j
-!          endif
-!        enddo !i=1,ne
-!       call exchange_..
+        trsd_tmp=0.0d0 
+        do ie=1,ne
 
+          if(ip_weno==2 .and. nweno2(ie)>0 .and. isten_qual2(ie) .and. isbe(ie)==0) then !p2 weno method
+            do m=1,ntr; do k=kbe(ie)+1,nvrt !!!possible optimization
+              !calculate each polynomial's weight 
+              wm=0.0; sum1=0.0; 
+              wm1=0.0; wm2=0.0; 
+              do i=1,nweno2(ie)
+                b1=dot_product(wts2(:,1,i,ie),tr_el(m,k,isten2(1:6,i,ie)))
+                b2=dot_product(wts2(:,2,i,ie),tr_el(m,k,isten2(1:6,i,ie)))
+                b3=dot_product(wts2(:,3,i,ie),tr_el(m,k,isten2(1:6,i,ie)))
+                b4=dot_product(wts2(:,4,i,ie),tr_el(m,k,isten2(1:6,i,ie)))
+                b5=dot_product(wts2(:,5,i,ie),tr_el(m,k,isten2(1:6,i,ie)))
+                b1=b1*b1+b2*b2+(4*b1*b3+2*b2*b4)*fwts2(1,ie)+(4*b2*b5+2*b1*b4)*fwts2(2,ie)
+                b2=(4*b3*b3+b4*b4)*fwts2(3,ie)+4*b4*(b3+b5)*fwts2(4,ie)+(4*b5*b5+b4*b4)*fwts2(5,ie)
+                b3=(4*b3*b3+b4*b4+4*b5*b5)*area(ie)
+                !-----------------Hu and Shu (1999)'s method----------------
+                b4=b1+b2+b3
+                if(b4<0.and.abs(b4)>1.0d-50) then
+                  write(errmsg,*)'b4<0',b1,b2,b3,b4
+                  call parallel_abort(errmsg)
+                endif
+                wm(i)=1.0/((epsilon2+b4)*(epsilon2+b4))
+                !----test-------------- 
+                !wm1(i)=1.0/((epsilon2+b1+b2)*(epsilon2+b1+b2)); ! sum1=sum1+wm1(i)
+                !wm2(i)=1.0/((epsilon3+b3)*(epsilon3+b3)); 
+                !wm(i)=wm1(i)*wm2(i)
+                !---------------------- 
+                sum1=sum1+wm(i)
+              enddo !i
+              wm=wm/sum1
+
+              do j=1,i34(ie) ! side
+                jsj=elside(j,ie)
+                n1=isidenode(1,jsj);   n2=isidenode(2,jsj)
+
+                if (ssign(j,ie)*flux_adv_hface(k,jsj)>=0) then !outflow face or bnd face
+                  trsd=0.0
+                  do kk=1,2 !two quadrature points
+                    do i=1,nweno2(ie)
+                      trsd(kk)=trsd(kk)+wm(i)*dot_product(wmat2(1:6,i,kk,j,ie),tr_el(m,k,isten2(1:6,i,ie)))
+                    enddo
+                  enddo !kk
+                  trsd_tmp(m,k,jsj)=(trsd(1)+trsd(2))*0.5 !mean value of the two quadrature points
+                endif !outward flux
+              enddo !j=1,i34(ie) ! side
+
+            enddo ; enddo ! do k=kbe(ie)+1,nvrt; do m=1,ntr
+            
+
+          elseif((ip_weno==1.or.ip_weno==2).and.nweno1(ie)>0.and.isbe(ie)==0) then !p1 weno method
+            !calculate each polynomial's weight 
+            do m=1,ntr; do k=kbe(ie)+1,nvrt!!!possible optimization
+              wm=0.0; sum1=0.0
+              do i=1,nweno1(ie) !for each polynomial
+                b1=dot_product(wts1(:,1,i,ie),tr_el(m,k,isten1(1:3,i,ie)))
+                b2=dot_product(wts1(:,2,i,ie),tr_el(m,k,isten1(1:3,i,ie)))
+                b1=b1*b1+b2*b2 !smoothness indicator
+                b2=1.0/((epsilon1+b1)*(epsilon1+b1))
+                wm(i)=b2
+                sum1=sum1+b2
+                !wm(i)=1.0
+                !sum1=sum1+1.0
+                  if(.not.(wm(i)>=0.or.wm(i)<0)) then
+                    write(errmsg,*)'wm(i)=nan',wts1(:,:,i,ie),tr_el(m,k,isten1(1:3,i,ie))
+                    call parallel_abort(errmsg)
+                  endif
+              enddo !i
+              wm=wm/sum1 !final weight
+
+              do j=1,i34(ie) ! side
+                jsj=elside(j,ie)
+                n1=isidenode(1,jsj);   n2=isidenode(2,jsj)
+
+                if ((ssign(j,ie)*flux_adv_hface(k,jsj)>=0) .or. isbs(jsj).ne.0) then !outflow face or bnd face
+                  trsd=0.0
+                  do kk=1,2 !two quadrature points
+                    do i=1,nweno1(ie)
+                      trsd(kk)=trsd(kk)+wm(i)*dot_product(wmat1(1:3,i,kk,j,ie),tr_el(m,k,isten1(1:3,i,ie)))
+                    enddo
+                  enddo !kk
+                  trsd_tmp(m,k,jsj)=(trsd(1)+trsd(2))*0.5 !mean value of the two quadrature points
+                endif !outward flux
+              enddo !j=1,i34(ie) ! side
+            enddo ; enddo !nvrt; ntr 
+
+          else !simple upwind method
+            do j=1,i34(ie)
+              jsj=elside(j,ie)
+              n1=isidenode(1,jsj);   n2=isidenode(2,jsj)
+              do k=kbe(ie)+1,nvrt !!!possible optimization
+                if(ssign(j,ie)*flux_adv_hface(k,jsj)>=0) then !outflow face
+                  trsd_tmp(:,k,jsj)=tr_el(:,k,ie) 
+                endif
+              enddo  !vertical layers
+            enddo !j=1,i34(ie) ! side
+          endif !order of accuracy
+
+        enddo !ie
+
+        !message passing
+        if (nproc>1) then
+          !make a copy of side concentrations
+          trsd_tmp0=trsd_tmp 
+
+          !this exchange routine swaps interface concentration between two partitions
+          !trsd_tmp0 receives neighboring info, while trsd_tmp remains the same
+          call exchange_s3d_tr3(trsd_tmp0,trsd_tmp) 
+
+          !Two sets of concentrations: before message-passing (trsd_tmp) and after (trsd_tmp0).
+          !(1) trsd_tmp0 is the same as trsd_tmp everywhere except on interface sides;
+          !(2) For an interface side, non-0 concentration can not be present in both trsd_tmp and trsd_tmp0;
+
+
+          !This obtains final values for interface sides
+          trsd_tmp(:,:,iside_table)= trsd_tmp(:,:,iside_table)+trsd_tmp0(:,:,iside_table)
+        endif !nproc>1
+        !message passing end
+
+
+        !add a loop in the future for OMP
 !       Do advection; conc @ dry elem will not be changed
+!       Follows the style of explicit TVD, but using WENO correction instead of TVD correction
         do i=1,ne
           if(idry_e(i)==1) cycle
 
+
 !         Wet elements with 3 wet nodes
           do k=kbe(i)+1,nvrt
+
+
             bigv=area(i)*(ze(k,i)-ze(k-1,i)) !volume
             dtb_by_bigv = dtb/bigv
   
 !           Advective flux
             adv_tr(1:ntr)=trel_tmp(1:ntr,k,i) 
+            !psum=0.d0 !sum of modified fluxes for all inflow bnds
             do j=1,i34(i)
               jsj=elside(j,i) !side
-              iel=ic3(j,i) !elem
+              iweno=.true. !use weno reconstruction as default
+              iel=ic3(j,i) !neighboring elem
 
-              !trel_tmp_outside: reconst'ed conc with b.c.
               if(iel/=0) then
                 if(idry_e(iel)==1) cycle
-
+                trel_tmp_outside(:)=trel_tmp(:,k,iel)
                 if(iupwind_e(i)+iupwind_e(iel)>0) then !reset to upwind
-                  if(ssign(j,i)*flux_adv_hface(k,jsj)>=0) then !outflow face
-                    trel_tmp_outside(:)=trel_tmp(:,k,i)
-                  else !inflow face
-                    trel_tmp_outside(:)=trel_tmp(:,k,iel)
-                  endif !ssign
-                else !not upwind
-                  trel_tmp_outside(:)=flux_mod_hface(:,k,jsj) !reconst'ed conc
-                endif !iupwind_e
-              else !bnd side
+                  iweno=.false.
+                endif
+              else !land or open bnd side
+                !skip land bnd and outflowing open bnd, 
+                !in this case iweno is not changed from initial value (.true.), but won't be used
+                !JZ: check TVD also
                 if(isbs(jsj)<=0.or.k>=kbs(jsj)+1.and.ssign(j,i)*flux_adv_hface(k,jsj)>=0) cycle
-       
-                !Open bnd side with _inflow_; compute trel_tmp from outside and save it as trel_tmp_outside(1:ntr)
+
+                !Open bnd side with inflow (must be wet elem)
+                iweno=.false.  !reset to upwind
                 ibnd=isbs(jsj) !global bnd #
                 !Find node indices on bnd segment for the 2 nodes (for type 4 b.c.)
                 nwild(1:2)=0
@@ -271,10 +566,6 @@
                   enddo !lll
                 enddo !ll
                 ind1=nwild(1); ind2=nwild(2);
-     !@         if(ind1==0.or.ind2==0) then
-     !@           write(errmsg,*)'Cannot find a local index'
-     !@           call parallel_abort(errmsg)
-     !@        endif
 
                 do jj=1,natrm
                   if(ntrs(jj)<=0) cycle
@@ -287,7 +578,6 @@
                     else if(itrtype(jj,ibnd)==3) then
                       tmp=sum(tr_nd0(ll,k,elnode(1:i34(i),i))+tr_nd0(ll,k-1,elnode(1:i34(i),i)))/2/i34(i)
                       trel_tmp_outside(ll)=trobc(jj,ibnd)*tmp+(1-trobc(jj,ibnd))*trel_tmp(ll,k,i)
-!                      trel_tmp_outside(ll)=trobc(jj,ibnd)*trel0(ll,k,i)+(1-trobc(jj,ibnd))*trel_tmp(ll,k,i)
                     else if(itrtype(jj,ibnd)==4) then
                       trel_tmp_outside(ll)=trobc(jj,ibnd)* &
      &(trth(ll,k,ind1,ibnd)+trth(ll,k,ind2,ibnd)+trth(ll,k-1,ind1,ibnd)+trth(ll,k-1,ind2,ibnd))/4+ &
@@ -298,34 +588,48 @@
                       call parallel_abort(errmsg)
                     endif !itrtype
                   enddo !ll
+
                 enddo !jj
               endif !iel
 
-              if(k>=kbs(jsj)+1) then 
-                do jj=1,ntr
-                  adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*flux_adv_hface(k,jsj)*(trel_tmp(jj,k,i)-trel_tmp_outside(jj))
-                enddo !jj
-              endif !k
-            enddo !j=1,i34(i)
+              !!upwind part
+              !if(k>=kbs(jsj)+1.and.ssign(j,i)*flux_adv_hface(k,jsj)<0) then !inflow
+              !  do jj=1,ntr
+              !    adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_hface(k,jsj))*(trel_tmp_outside(jj)-trel_tmp(jj,k,i))
+              !  enddo
+              !endif
+              !!weno correction
+              !if (iweno) then
+              !  if(k>=kbs(jsj)+1.and.ssign(j,i)*flux_adv_hface(k,jsj)<0) then !inflow
+              !    do jj=1,ntr
+              !      adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_hface(k,jsj))*(trsd_tmp(jj,k,jsj)-trel_tmp_outside(jj))
+              !    enddo
+              !  else if(k>=kbs(jsj)+1.and.ssign(j,i)*flux_adv_hface(k,jsj)>=0) then !outflow
+              !    do jj=1,ntr
+              !      adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_hface(k,jsj))*(trel_tmp(jj,k,i)-trsd_tmp(jj,k,jsj) )
+              !    enddo
+              !  endif !inflow or outflow
+              !endif !if use weno
 
-!           Check Courant number
-!            do jj=1,ntr
-!              if(1-dtb_by_bigv*psumtr(jj)<0) then
-!                write(errmsg,*)'Courant # condition violated:',i,k,1-dtb_by_bigv*psumtr(jj),jj
-!                call parallel_abort(errmsg)
-!              endif
-!            enddo !jj
+              !alternative formulation
+              if (k>=kbs(jsj)+1) then
+                if (iweno) then !weno
+                  do jj=1,ntr
+                    adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*( ssign(j,i)*(flux_adv_hface(k,jsj))*(trel_tmp(jj,k,i)-trsd_tmp(jj,k,jsj)) )
+                  enddo
+                else !upwind
+                  if(ssign(j,i)*flux_adv_hface(k,jsj)<0) then  !inflow 
+                    do jj=1,ntr
+                      adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_hface(k,jsj))*(trel_tmp_outside(jj)-trel_tmp(jj,k,i))
+                    enddo
+                  endif
+                endif
+              endif
+
+            enddo !j
 
             tr_el(1:ntr,k,i)=adv_tr(1:ntr) 
           enddo !k=kbe(i)+1,nvrt
-
-!         Check consistency between 2 formulations in TVD
-!            if(ltvd) then 
-!              if(abs(adv_t-rrhs(1,kin))>1.e-4.or.abs(adv_s-rrhs(2,kin))>1.e-4) then
-!                write(11,*)'Inconsistency between 2 TVD schemes:',i,k,adv_t,rrhs(1,kin),adv_s,rrhs(2,kin)
-!                stop
-!              endif
-!            endif !TVD
 
 !         Extend
           do k=1,kbe(i)
@@ -345,9 +649,33 @@
         wtimer(9,2)=wtimer(9,2)+cwtmp2-cwtmp
 #endif
 
-        if(time_r<1.e-8) exit loop12
+#ifdef weno_debug
+!        write(95,'(f8.1,x,360000(f15.8,x))') dt-time_r,tr_el(1,2,1:ne)
+!        flush(95)
+        if (myrank==0) then
+          write(*,*) 'time_r=',time_r
+        endif
+        flush(16)
+#endif
+
+        if(time_r<1.e-8) then 
+          exit loop12
+        endif
       end do loop12
-      if(myrank==0) write(17,*)it,it_sub
+      !write(errmsg,*)'force stop debugging'
+      !call parallel_abort(errmsg)
+      !if(myrank==0) write(17,*)it,it_sub
+
+!     Deallocate temp. arrays
+      deallocate(trsd_tmp,trsd_tmp0,wm1,wm2,wm)
+!     write number of sub steps
+      if(myrank==0) then
+        write(17,*)it,it_sub
+        flush(17)
+      endif
+
+!<weno
+
 !-------------------------------------------------------------------------------------
       else if(itr_met==3) then !TVD in horizontal
 !-------------------------------------------------------------------------------------
@@ -765,7 +1093,6 @@
                     else if(itrtype(jj,ibnd)==3) then
                       tmp=sum(tr_nd0(ll,k,elnode(1:i34(i),i))+tr_nd0(ll,k-1,elnode(1:i34(i),i)))/2/i34(i)
                       trel_tmp_outside(ll)=trobc(jj,ibnd)*tmp+(1-trobc(jj,ibnd))*trel_tmp(ll,k,i)
-!                      trel_tmp_outside(ll)=trobc(jj,ibnd)*trel0(ll,k,i)+(1-trobc(jj,ibnd))*trel_tmp(ll,k,i)
                     else if(itrtype(jj,ibnd)==4) then
                       trel_tmp_outside(ll)=trobc(jj,ibnd)* &
      &(trth(ll,k,ind1,ibnd)+trth(ll,k,ind2,ibnd)+trth(ll,k-1,ind1,ibnd)+trth(ll,k-1,ind2,ibnd))/4+ &
@@ -861,7 +1188,10 @@
 
 !$OMP end parallel
 
-      if(myrank==0) write(17,*)it,it_sub
+      if(myrank==0) then
+        write(17,*)it,it_sub
+        flush(17)
+      endif
 !-------------------------------------------------------------------------------------
       endif !itr_met=3,4
       
@@ -1222,28 +1552,25 @@
   
             !Diffusivity
             if(k<nvrt) then
-!Tsinghua group-----------------------------
               if(itur==5.and.m>=irange_tr(1,5).and.m<=irange_tr(1,5)) then !1018:itur==5
 !                av_df=Dpxyz_m(1,k,m,i)*beta_m(k,m,i) !1018:close
                 av_df=sum(dfhm(k,m-irange_tr(1,5)+1,elnode(1:i34(i),i)))/i34(i) !1007
               else
                 av_df=sum(dfh(k,elnode(1:i34(i),i)))/i34(i) !diffusivity
               endif              
-!Tsinghua group-----------------------------
               av_dz=(ze(k+1,i)-ze(k-1,i))/2.d0
               tmp=area(i)*dt_by_bigv*av_df/av_dz
               cupp(kin)=cupp(kin)-tmp
               bdia(kin)=bdia(kin)+tmp
             endif !k<nvrt
+
             if(k>kbe(i)+1) then
-!Tsinghua group-----------------------------
               if(itur==5.and.m>=irange_tr(1,5).and.m<=irange_tr(1,5)) then !1018:itur==5
 !                av_df=Dpxyz_m(1,k-1,m,i)*beta_m(k-1,m,i) !1018:close
                 av_df=sum(dfhm(k-1,m-irange_tr(1,5)+1,elnode(1:i34(i),i)))/i34(i) !1007
               else
                 av_df=sum(dfh(k-1,elnode(1:i34(i),i)))/i34(i)
               endif
-!Tsinghua group-----------------------------
               av_dz=(ze(k,i)-ze(k-2,i))/2.d0
               tmp=area(i)*dt_by_bigv*av_df/av_dz
               alow(kin)=alow(kin)-tmp
@@ -1255,23 +1582,47 @@
             !b.c.
             if(k==nvrt) then
               rrhs(1,kin)=rrhs(1,kin)+area(i)*dt_by_bigv*flx_sf(m,i)
-!Tsinghua group-----------------------------
-              if(itur==5.and.m>=irange_tr(1,5).and.m<=irange_tr(1,5)) then !1018:itur==5
-!                bdia(kin)=bdia(kin)+area(i)*dt_by_bigv*wsett(m)*phai_m(k,m,i) !1018:close
-                bdia(kin)=bdia(kin)+area(i)*dt_by_bigv*wsett(m)* &
+              if(iwsett(m)==1) then !wsett is not a function of z
+                if(itur==5.and.m>=irange_tr(1,5).and.m<=irange_tr(1,5)) then !1018:itur==5
+                  bdia(kin)=bdia(kin)+area(i)*dt_by_bigv*wsett(m,nvrt,i)* &
             &sum(Phai(k,m-irange_tr(1,5)+1,elnode(1:i34(i),i)))/i34(i) !1007            
-              else
-                bdia(kin)=bdia(kin)+area(i)*dt_by_bigv*wsett(m)
-              endif
-!Tsinghua group-----------------------------
+                else
+                  bdia(kin)=bdia(kin)+area(i)*dt_by_bigv*wsett(m,nvrt,i)
+                endif
+              endif !iwsett
             endif !k==nvrt
 
             if(k==kbe(i)+1) then
               !NOTE: with settling vel., flx_bt=D-E-w_s*T_{kbe+1}, since
-              !in well-formulated b.c., D \pprox -w_s*T_{kbe+1}. D&E are
+              !in well-formulated b.c., D \approx -w_s*T_{kbe+1}. D&E are
               !deposi. & erosional fluxes respectively
               rrhs(1,kin)=rrhs(1,kin)-area(i)*dt_by_bigv*flx_bt(m,i)
             endif !k==kbe(i)+1
+
+            ! 2nd option to treat vertical movement of POM (by Richard
+            ! Hofmeister)
+            !   for vertically varying velocities of vertical movement.
+            !   set wsett(nvrt|kbe)=0 and use wsett(kbe(i)+1:nvrt-1) for
+            !   vertical velocities at whole levels
+            !
+            ! -- upper interface --
+            if(iwsett(m)==2) then
+              if(k<nvrt) then
+                if(wsett(m,k,i).le.0.0d0) then !upwinding for conc
+                  bdia(kin) = bdia(kin) - area(i)*dt_by_bigv*wsett(m,k,i)
+                else
+                  cupp(kin) = cupp(kin) - area(i)*dt_by_bigv*wsett(m,k,i)
+                endif
+              endif
+              ! -- lower interface --
+              if(k>kbe(i)+1) then
+                if(wsett(m,k-1,i).le.0.0d0) then
+                  alow(kin) = alow(kin) + area(i)*dt_by_bigv*wsett(m,k-1,i)
+                else
+                  bdia(kin) = bdia(kin) + area(i)*dt_by_bigv*wsett(m,k-1,i)
+                endif
+              endif
+            endif !iwsett(m)==2
          
             !Body source
             rrhs(1,kin)=rrhs(1,kin)+dt*bdy_frc(m,k,i)
@@ -1299,6 +1650,7 @@
                 endif !k>=
               enddo !j
             endif !ihdif/=0
+
           enddo !k=kbe(i)+1,nvrt
 
           call tridag(nvrt,1,ndim,1,alow,bdia,cupp,rrhs,soln,gam)

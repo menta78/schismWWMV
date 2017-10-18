@@ -26,6 +26,8 @@
 !#endif
       use schism_glbl
       use schism_msgp
+      use schism_io
+      use netcdf
       use misc_modules
 
 #ifdef USE_GOTM
@@ -45,6 +47,10 @@
                            & HST2TM1S,CH4T2TM1S,CH41TM1S,SO4T2TM1S,SIT2TM1S,BENSTR1S,CPOP,CPON,CPOC,  &
                            & NH41TM1S,NO31TM1S,HS1TM1S,SI1TM1S,PO41TM1S,PON1TM1S,PON2TM1S,PON3TM1S,POC1TM1S,POC2TM1S,&
                            & POC3TM1S,POP1TM1S,POP2TM1S,POP3TM1S,PSITM1S,BFORMAXS,ISWBENS,DFEEDM1S 
+#endif
+
+#ifdef USE_COSINE
+      USE cosine_mod,only :mS2,mDN,mZ1,mZ2,sS2,sDN,sZ1,sZ2,nstep
 #endif
 
 #ifdef USE_NAPZD
@@ -67,18 +73,24 @@
       USE harm
 #endif
 
+#ifdef USE_FABM
+      USE fabm_schism, only: fabm_schism_init_model, fabm_schism_init_stage2, fabm_schism_init_concentrations, fabm_istart=>istart, fs, fabm_schism_read_horizontal_state_from_netcdf
+      USE fabm_schism, only: fabm_schism_create_output_netcdf
+#endif
+
 #ifdef USE_PETSC
       USE petsc_schism
 #endif
 
       USE hydraulic_structures
-#ifdef USE_SIMPLE_WIND
-      USE CF_VARIABLES, only : INIT_NETCDF_CF_ALLVAR, READ_NETCDF_CF_ALLVAR
+
+#ifdef USE_ICE
+      use ice_module, only: ntr_ice,u_ice,v_ice,ice_tr,delta_ice,sigma11, &
+   &sigma12,sigma22
+      use ice_therm_mod, only: t_oi
+
 #endif
 
-#ifdef SINGLE_NETCDF_OUTPUT
-      USE single_netcdf, only : INIT_NETCDF_SINGLE_OUTPUT
-#endif
       implicit none
 !#ifndef USE_MPIMODULE
       include 'mpif.h'
@@ -101,20 +113,39 @@
       real(rkind) :: double1 !for hotstart.in
 
 !     Misc. arrays
-      integer, allocatable :: ipiv(:)
+      integer, allocatable :: ipiv(:),iwild(:)
       integer, allocatable :: nwild(:),nwild2(:),ibuf1(:,:),ibuf2(:,:)
       real(rkind), allocatable :: akr(:,:),akrp(:),work4(:),z_r2(:),xy_kr(:,:)
       real(rkind), allocatable :: swild(:),swild2(:,:),swild10(:,:)
       real(rkind), allocatable :: swild3(:),rwild(:,:)
       real(rkind), allocatable :: swild4(:,:) !double precision for hotstart.in (only)
       real(rkind), allocatable :: swild99(:,:),swild98(:,:,:) !used for exchange etc (deallocate immediately afterwards)
-!      real(rkind), allocatable :: buf1(:,:),buf2(:,:),buf3(:)
+      real(rkind), allocatable :: buf3(:)
       real(4), allocatable :: swild8(:,:),swild9(:,:) !used in ST & tracer nudging
+
+!     Name list
+!      namelist /HYDRO/ msc2,mdc2,ipre,ics,ihydlg,rearth_pole,rearth_eq,indvel, &
+!     &imm,ibdef,ihot,ihydraulics,izonal5,cpp_lon,cpp_lat,iupwind_mom,ihorcon, &
+!     &hvis_coef0,ishapiro,shapiro0,ihdif,thetai,ibc,ibtp,nrampbc,drampbc, &
+!     &rnday,nramp,dramp,dt,nadv,dtb_min,dtb_max,h0,nchi,dzb_min,dzb_decay, &
+!     &hmin_man,ncor,rlatitude,coricoef,nws,wtiminc,iwind_form,nrampwind, &
+!     &drampwind,iwindoff,ihconsv,isconsv,itur,dfv0,dfh0,h1_pp,h2_pp,vdmax_pp1, &
+!     &vdmax_pp2,vdmin_pp1,vdmin_pp2,tdmin_pp1,tdmin_pp2,mid,stab,xlsc0, &
+!     &ntrs,flag_fib,ibcc_mean,flag_ic,sim_year,sim_month,sim_day,sim_hour, &
+!     &sim_minute,sim_second,itr_met,h_tvd,eps1_tvd_imp,eps2_tvd_imp,ip_weno, &
+!     &courant_weno,epsilon1,epsilon2,epsilon3,ielad_weno,small_elad, &
+!     &inu_tr,step_nu_tr,nspool,ihfskip,iof,iof_ns,nhot,nhot_write,moitn0, &
+!     &mxitn0,rtol0,iflux,inter_mom,h_bcc1,hw_depth,hw_ratio,inu_elev,inu_uv, &
+!     &ihhat,kr_co,rmaxvel,velmin_btrack,btrack_nudge,ibtrack_test,irouse_test, &
+!     &inunfl,ic_elev,inv_atm_bnd,prmsl_ref,s1_mxnbt,s2_mxnbt,iout_sta,nspool_sta, &
+!     &iharind,icou_elfe_wwm,nstep_wwm,hmin_radstress,iwbl,if_source,nramp_ss, &
+!     &dramp_ss,ieos_type,ieos_pres,eos_a,eos_b,slr_rate,rho0,shw,isav,sav_cd,nramp_elev
+
 
 !     Local variables
       type(llist_type),pointer :: llp
       logical :: ltmp,ltmp1,ltmp2,lexist
-      character(len=48) :: inputfile
+      character(len=48) :: inputfile,ar_name(100)
 
       integer :: i,j,k,l,m,mm,im2d,itmp,itmp1,itmp2,izonal5,nadv,ncor, &
                 &istat,icount,indx2,ic_elev, &
@@ -123,11 +154,11 @@
                 &jblock,jface,isd,n1,n2,n3,ndgb,ndgb1,ndgb2,irank, &
                 &iabort,ie,ie2,l0,id,id1,id2,iabort_gb,j1,j2, &
                 &ne_kr,nei_kr,npp,info,num,nz_r2,ip,IHABEG,il, &
-                &ninv,it,kl,noutput_ns,iside,ntrmod,ntr_l
+                &ninv,it,kl,noutput_ns,iside,ntrmod,ntr_l,ncid2
 
       real(rkind) :: cwtmp2,wtmp1,tmp,slam0,sfea0,coricoef,dfv0,dfh0, &
                     &edge_min,edge_max,tmpmin,tmpmax,tmp1,tmp2,tmp3, &
-                    &tmp4,xtmp,ytmp,zdev_max,dotp2,dpmax,eta_m0,rmag,x0,x1, &
+                    &tmp4,tmp5,xtmp,ytmp,zdev_max,dotp2,dpmax,eta_m0,rmag,x0,x1, &
                     &x2,x3,x4,y0,y1,y2,y3,y4,ar1,ar2,ar3,ar4,fc,beta,sphi, &
                     &ubl1,ubl2,ubl3,ubl4,ubl5,ubl6,ubl7,ubl8,xn1, &
                     &xn2,yn1,yn2,xstal,ystal,ae,THAS,THAF,err_max,rr,suma, &
@@ -212,9 +243,10 @@
 
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
-!     Read from param.in; some are needed in domain decomp.
+!     Read from param.nml; some are needed in domain decomp.
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
+!     For new parameters, init them and check after read
       version='description' !not really used
 
 !     Some param. from WWM for schism_msgp
@@ -418,7 +450,7 @@
 !     Wind (nws=3: for conservation check; otherwise same as nws=2)
       call get_param('param.in','nws',1,nws,tmp,stringvalue)
       call get_param('param.in','wtiminc',2,itmp,wtiminc,stringvalue)
-      if(nws<0.or.nws>6) then
+      if(nws<0.or.nws>7) then
         write(errmsg,*)'Unknown nws',nws
         call parallel_abort(errmsg)
       endif
@@ -511,6 +543,7 @@
 !     8: CoSINE
 !     9: Feco
 !    10: TIMOR
+!    11: FABM
 
       !Init. # of tracers in models 1:natrm
       !A tracer model is activated iff ntrs()>0
@@ -571,6 +604,12 @@
 
 !#ifdef USE_NAPZD
 !#endif
+
+#ifdef USE_FABM
+      call fabm_schism_init_model(ntracers=ntrs(11))
+      fabm_istart=sum(ntrs(1:10))+1
+      tr_mname(11)='FBM' !3-char
+#endif
 
       !Total # of tracers (including T,S)
       !The big tracer arrays are: tr_el(ntracers,nvrt,nea2),tr_nd0(ntracers,nvrt,npa)
@@ -639,10 +678,57 @@
       endif
    
       !For implicit transport, read in tolerances for convergence
-      if(itr_met>=3) then
+      if(itr_met==3.or.itr_met==4) then
         call get_param('param.in','eps1_tvd_imp',2,itmp,eps1_tvd_imp,stringvalue)
         call get_param('param.in','eps2_tvd_imp',2,itmp,eps2_tvd_imp,stringvalue)
       endif
+
+      !weno>
+      if(itr_met==4) then !WENO
+        call get_param('param.in','ip_weno',1,ip_weno,tmp,stringvalue)
+        if(ip_weno<0.or.ip_weno>2) then
+          write(errmsg,*)'Illegal ip_weno:',ip_weno
+          call parallel_abort(errmsg)
+        endif
+
+        call get_param('param.in','courant_weno',2,itmp,courant_weno,stringvalue)
+        if(courant_weno<=0) then
+          write(errmsg,*)'Illegal courant_weno:',courant_weno
+          call parallel_abort(errmsg)
+        endif
+
+        call get_param('param.in','epsilon1',2,itmp,epsilon1,stringvalue)
+        if(epsilon1<=0) then
+          write(errmsg,*)'Illegal epsilon1:',epsilon1
+          call parallel_abort(errmsg)
+        endif
+
+        call get_param('param.in','epsilon2',2,itmp,epsilon2,stringvalue)
+        if(epsilon2<=0) then
+          write(errmsg,*)'Illegal epsilon2:',epsilon2
+          call parallel_abort(errmsg)
+        endif
+
+        call get_param('param.in','epsilon3',2,itmp,epsilon3,stringvalue)
+        if(epsilon3<=0) then
+          write(errmsg,*)'Illegal epsilon3:',epsilon3
+          call parallel_abort(errmsg)
+        endif
+
+        call get_param('param.in','ielad_weno',1,ielad_weno,tmp,stringvalue)
+        if(ielad_weno/=0.and.ielad_weno/=1) then
+          write(errmsg,*)'Illegal ielad_weno:',ielad_weno
+          call parallel_abort(errmsg)
+        endif
+
+        call get_param('param.in','small_elad',2,itmp,small_elad,stringvalue)
+        if(small_elad<=0) then
+          write(errmsg,*)'Illegal small_elad:',small_elad
+          call parallel_abort(errmsg)
+        endif
+
+      endif 
+      !<weno
 
 !...  Explicit transport solver cannot handle settling vel. yet
 #if defined USE_SED || defined USE_TIMOR
@@ -667,7 +753,7 @@
         call parallel_abort(errmsg)
       endif
 
-!     Global output parameters (@nodes)
+!     Global output parameters
 !     Make sure the order of optional modules is same during actual output
 !     Array to index into global output file # for modules
 !     indx_out(i,j): i is model id (SED, NAPZD etc); j=1:2 is the start and end indices of each model
@@ -699,342 +785,286 @@
       outfile(22)='vdff.63'
       outfile(23)='kine.63'
       outfile(24)='mixl.63'
-      outfile(25)='zcor.63'
-      outfile(26)='qnon.63'
-      outfile(27)='hvel.64'
-      variable_nm(1)='surface elevation'
-      variable_nm(2)='atmopheric pressure'
-      variable_nm(3)='air temperature'
-      variable_nm(4)='specific humidity'
-      variable_nm(5)='solar radiation'
-      variable_nm(6)='fluxsu'
-      variable_nm(7)='fluxlu'
-      variable_nm(8)='hradu'
-      variable_nm(9)='hradd'
-      variable_nm(10)='total flux'
-      variable_nm(11)='Evaporation rate (kg/m^2/s)'
-      variable_nm(12)='Precipitation rate (kg/m^2/s)'
-      variable_nm(13)='Bottom drag coefficient [-]'
-      variable_nm(14)='wind speed'
-      variable_nm(15)='wind stress (m^2/s^2)'
-      variable_nm(16)='Depth averaged horizontal velocity'
-      variable_nm(17)='vertical velocity'
-      variable_nm(18)='temperature in C'
-      variable_nm(19)='salinity in psu'
-      variable_nm(20)='density anomaly in kg/m^3'
-      variable_nm(21)='eddy diffusivity in m^2/s'
-      variable_nm(22)='eddy viscosity in m^2/s'
-      variable_nm(23)='turbulent kinetic energy'
-      variable_nm(24)='turbulent mixing length'
-      variable_nm(25)='z coordinates'
-      variable_nm(26)='normalized non-hydrostatic pressure'
-      variable_nm(27)='horizontal velocity'
+!      outfile(25)='zcor.63'
+!      outfile(26)='qnon.63'
+      outfile(25)='hvel.64'
+!      variable_nm(1)='surface elevation'
+!      variable_nm(2)='atmopheric pressure'
+!      variable_nm(3)='air temperature'
+!      variable_nm(4)='specific humidity'
+!      variable_nm(5)='solar radiation'
+!      variable_nm(6)='fluxsu'
+!      variable_nm(7)='fluxlu'
+!      variable_nm(8)='hradu'
+!      variable_nm(9)='hradd'
+!      variable_nm(10)='total flux'
+!      variable_nm(11)='Evaporation rate (kg/m^2/s)'
+!      variable_nm(12)='Precipitation rate (kg/m^2/s)'
+!      variable_nm(13)='Bottom drag coefficient [-]'
+!      variable_nm(14)='wind speed'
+!      variable_nm(15)='wind stress (m^2/s^2)'
+!      variable_nm(16)='Depth averaged horizontal velocity'
+!      variable_nm(17)='vertical velocity'
+!      variable_nm(18)='temperature in C'
+!      variable_nm(19)='salinity in psu'
+!      variable_nm(20)='density anomaly in kg/m^3'
+!      variable_nm(21)='eddy diffusivity in m^2/s'
+!      variable_nm(22)='eddy viscosity in m^2/s'
+!      variable_nm(23)='turbulent kinetic energy'
+!      variable_nm(24)='turbulent mixing length'
+!      variable_nm(25)='z coordinates'
+!      variable_nm(26)='normalized non-hydrostatic pressure'
+!      variable_nm(27)='horizontal velocity'
+!
+!      variable_dim(1:13)='2D scalar'
+!      variable_dim(14:16)='2D vector'
+!      variable_dim(17:26)='3D scalar'
+!      variable_dim(27)='3D vector'
 
-      variable_dim(1:13)='2D scalar'
-      variable_dim(14:16)='2D vector'
-      variable_dim(17:26)='3D scalar'
-      variable_dim(27)='3D vector'
+      outfile(26)='hvel.67' !must be consistent when calling the output routine later
+      outfile(27)='vert.69'
+      outfile(28)='temp.70'
+      outfile(29)='salt.70'
 
-      noutput=27 !all Hydro outputs
+      noutput=29 !so far
+
+!      outfile(30)='z0st.66'
+!      outfile(31)='z0eq.66'
+!      outfile(32)='z0cr.66'
+!      outfile(33)='z0sw.66'
+!      outfile(34)='z0wr.66'
+!      outfile(35)='bpgr.65'
+!      outfile(36)='wafo.67'
+!      outfile(37)='bdoc.66'
+!      outfile(38)='bnh4.66'
+!      outfile(39)='bno3.66'
+!      outfile(40)='bpo4.66'
+!      outfile(41)='bcod.66'
+!      outfile(42)='sbdo.66'
+!      outfile(43)='sbsa.66'
+!      outfile(44)='bthk.66'
+!      outfile(45)='bage.66'
+!      outfile(46)='mrsh.66'
+
 #ifdef USE_GEN
-      indx_out(1,1)=noutput+1
-      noutput=noutput+ntrs(3)
-      indx_out(1,2)=noutput
+!      indx_out(1,1)=noutput+1
+!      indx_out(1,2)=noutput
       do i=1,ntrs(3)
         write(ifile_char,'(i03)')i
         ifile_char=adjustl(ifile_char)  !place blanks at end
         ifile_len=len_trim(ifile_char)  !length without trailing blanks
-        itmp=indx_out(1,1)+i-1
-        outfile(itmp)='GEN_'//ifile_char(1:ifile_len)//'.63'
-        variable_nm(itmp)='Generic tracer #'//trim(ifile_char)
-        variable_dim(itmp)='3D scalar'
+        !itmp=indx_out(1,1)+i-1
+        outfile(noutput+i)='GEN_'//ifile_char(1:ifile_len)//'.63'
       enddo !i
+      noutput=noutput+ntrs(3)
 #endif
 
 #ifdef USE_AGE
-      indx_out(2,1)=noutput+1
-      noutput=noutput+ntrs(4)/2
-      indx_out(2,2)=noutput
+!      indx_out(2,1)=noutput+1
+!      indx_out(2,2)=noutput
       do i=1,ntrs(4)/2
         write(ifile_char,'(i03)')i
         ifile_char=adjustl(ifile_char)  !place blanks at end
         ifile_len=len_trim(ifile_char)  !length without trailing blanks
-        itmp=indx_out(2,1)+i-1
-        outfile(itmp)='AGE_'//ifile_char(1:ifile_len)//'.63'
-        variable_nm(itmp)='Age tracer #'//trim(ifile_char)
-        variable_dim(itmp)='3D scalar'
+!        itmp=indx_out(2,1)+i-1
+        outfile(noutput+i)='AGE_'//ifile_char(1:ifile_len)//'.63'
       enddo !i
+      noutput=noutput+ntrs(4)/2
 #endif
 
 #ifdef USE_SED
-      indx_out(3,1)=noutput+1
-      ! depth, d50, taub, z0, qbdl(), bedfrac()
-      noutput=noutput+4+3*ntrs(5) !ntracers Tsinghua group:close !1120:recover
-!      noutput=noutput+6+7*ntrs(5) !ntracers Tsinghua group
-      indx_out(3,2)=noutput
+!      indx_out(3,1)=noutput+1
+!      ! depth, d50, taub, z0, qbdl(), bedfrac()
+!      indx_out(3,2)=noutput
       do i=1,ntrs(5)
         write(ifile_char,'(i03)')i
         ifile_char=adjustl(ifile_char)  !place blanks at end
         ifile_len=len_trim(ifile_char)  !length without trailing blanks
-        itmp=indx_out(3,1)+i-1
+        itmp=noutput+3*i-2 !indx_out(3,1)+3*(i-1)
         outfile(itmp)='SED_'//ifile_char(1:ifile_len)//'.63'
-        variable_nm(itmp)='SED3D tracer #'//trim(ifile_char)
-        variable_dim(itmp)='3D scalar'
+        outfile(itmp+1)='SED_qbdl_'//ifile_char(1:ifile_len)//'.62'
+        outfile(itmp+2)='SED_bfrac_'//ifile_char(1:ifile_len)//'.61'
       enddo !i
+      noutput=noutput+3*ntrs(5)
 
-      do i=1,ntrs(5)
-        write(ifile_char,'(i03)')i
-        ifile_char=adjustl(ifile_char)
-        ifile_len=len_trim(ifile_char)
-        itmp=indx_out(3,1)+ntrs(5)+i-1
-        outfile(itmp)='SED_qbdl_'//ifile_char(1:ifile_len)//'.62'
-        variable_nm(itmp)='SED3D bedload #'//trim(ifile_char)
-        variable_dim(itmp)='2D vector'
-      enddo !i
+      outfile(noutput+1)='SED_depth.61'
+      outfile(noutput+2)='SED_bedd50.61'
+      outfile(noutput+3)='SED_bstress.61'
+      outfile(noutput+4)='SED_brough.61'
 
-      do i=1,ntrs(5)
-        write(ifile_char,'(i03)')i
-        ifile_char=adjustl(ifile_char)
-        ifile_len=len_trim(ifile_char)
-        itmp=indx_out(3,1)+2*ntrs(5)+i-1
-        outfile(itmp)='SED_bfrac_'//ifile_char(1:ifile_len)//'.61'
-        variable_nm(itmp)='SED3D bedfr (top layer) #'//trim(ifile_char)
-        variable_dim(itmp)='2D scalar'
-      enddo !i
-
-      outfile(indx_out(3,1)+3*ntrs(5))='SED_depth.61'
-      variable_nm(indx_out(3,1)+3*ntrs(5))='depth in m'
-      variable_dim(indx_out(3,1)+3*ntrs(5))='2D scalar'
-
-      outfile(indx_out(3,1)+3*ntrs(5)+1)='SED_bedd50.61'
-      variable_nm(indx_out(3,1)+3*ntrs(5)+1)='median grain size (mm)'
-      variable_dim(indx_out(3,1)+3*ntrs(5)+1)='2D scalar'
-
-      outfile(indx_out(3,1)+3*ntrs(5)+2)='SED_bstress.61'
-      variable_nm(indx_out(3,1)+3*ntrs(5)+2)='bottom shear stress (N.m-2)'
-      variable_dim(indx_out(3,1)+3*ntrs(5)+2)='2D scalar'
-
-      outfile(indx_out(3,1)+3*ntrs(5)+3)='SED_brough.61'
-      variable_nm(indx_out(3,1)+3*ntrs(5)+3)='bottom roughness lenght z0 (m)'
-      variable_dim(indx_out(3,1)+3*ntrs(5)+3)='2D scalar'
-
-!Tsinghua group------------------------------------ 1120:close
-!      outfile(indx_out(3,1)+3*ntrs(5)+4)='SED_whvel.64'  !tsinghua-lxn
-!      variable_nm(indx_out(3,1)+3*ntrs(5)+4)='water velocity in horizontal'
-!      variable_dim(indx_out(3,1)+3*ntrs(5)+4)='3D scalar'
-!
-!      outfile(indx_out(3,1)+3*ntrs(5)+5)='SED_wvert.63'
-!      variable_nm(indx_out(3,1)+3*ntrs(5)+5)='water velocity in z direction'
-!      variable_dim(indx_out(3,1)+3*ntrs(5)+5)='3D scalar'
-!
-!      do i=1,ntrs(5)        !tsinghua-lxn
-!        write(ifile_char,'(i03)')i
-!        ifile_char=adjustl(ifile_char)  !place blanks at end
-!        ifile_len=len_trim(ifile_char)  !length without trailing blanks
-!        itmp=indx_out(3,1)+3*ntrs(5)+6+i-1
-!        outfile(itmp)='SED_dhvel_'//ifile_char(1:ifile_len)//'.64'
-!        variable_nm(itmp)='SED horizontal drift velocity #'//trim(ifile_char)
-!        variable_dim(itmp)='3D scalar'
-!      enddo !i
-!
-!      do i=1,ntrs(5)
-!        write(ifile_char,'(i03)')i
-!        ifile_char=adjustl(ifile_char)  !place blanks at end
-!        ifile_len=len_trim(ifile_char)  !length without trailing blanks
-!        itmp=indx_out(3,1)+4*ntrs(5)+6+i-1
-!        outfile(itmp)='SED_dvert_'//ifile_char(1:ifile_len)//'.63'
-!        variable_nm(itmp)='SED z-drift velocity #'//trim(ifile_char)
-!        variable_dim(itmp)='3D scalar'
-!      enddo !i
-!
-!      do i=1,ntrs(5)
-!        write(ifile_char,'(i03)')i
-!        ifile_char=adjustl(ifile_char)  !place blanks at end
-!        ifile_len=len_trim(ifile_char)  !length without trailing blanks
-!        itmp=indx_out(3,1)+5*ntrs(5)+6+i-1
-!        outfile(itmp)='SED_shvel_'//ifile_char(1:ifile_len)//'.64'
-!        variable_nm(itmp)='SED horizontal velocity #'//trim(ifile_char)
-!        variable_dim(itmp)='3D scalar'
-!      enddo !i
-!
-!      do i=1,ntrs(5)
-!        write(ifile_char,'(i03)')i
-!        ifile_char=adjustl(ifile_char)  !place blanks at end
-!        ifile_len=len_trim(ifile_char)  !length without trailing blanks
-!        itmp=indx_out(3,1)+6*ntrs(5)+6+i-1
-!        outfile(itmp)='SED_svert_'//ifile_char(1:ifile_len)//'.63'
-!        variable_nm(itmp)='SED z velocity #'//trim(ifile_char)
-!        variable_dim(itmp)='3D scalar'
-!      enddo !i
-!Tsinghua group------------------------------------
-
+      outfile(noutput+5)='z0st.66'
+      outfile(noutput+6)='z0cr.66'
+      outfile(noutput+7)='z0sw.66'
+      outfile(noutput+8)='z0wr.66'
+      outfile(noutput+9)='bthk.66'
+      outfile(noutput+10)='bage.66'
+      noutput=noutput+10
 #endif /*USE_SED*/
 
 #ifdef USE_ECO
-      indx_out(4,1)=noutput+1
-      noutput=noutput+ntrs(6)
-      indx_out(4,2)=noutput
+!      indx_out(4,1)=noutput+1
+!      indx_out(4,2)=noutput
       do i=1,ntrs(6)
         write(ifile_char,'(i03)')i
         ifile_char=adjustl(ifile_char)  !place blanks at end
         ifile_len=len_trim(ifile_char)  !length without trailing blanks
-        itmp=indx_out(4,1)+i-1
-        outfile(itmp)='ECO_'//ifile_char(1:ifile_len)//'.63'
-        variable_nm(itmp)='EcoSim tracer #'//trim(ifile_char)
-        variable_dim(itmp)='3D scalar'
+!        itmp=indx_out(4,1)+i-1
+        outfile(noutput+i)='ECO_'//ifile_char(1:ifile_len)//'.63'
       enddo !i
+      noutput=noutput+ntrs(6)
 #endif
 
 #ifdef USE_ICM
-      indx_out(5,1)=noutput+1
-      noutput=noutput+ntrs(7)
-      indx_out(5,2)=noutput
+!      indx_out(5,1)=noutput+1
+!      indx_out(5,2)=noutput
       do i=1,ntrs(7)
         write(ifile_char,'(i03)')i
         ifile_char=adjustl(ifile_char)  !place blanks at end
         ifile_len=len_trim(ifile_char)  !length without trailing blanks
-        itmp=indx_out(5,1)+i-1
-        outfile(itmp)='ICM_'//ifile_char(1:ifile_len)//'.63'
-        variable_nm(itmp)='ICM tracer #'//trim(ifile_char)
-        variable_dim(itmp)='3D scalar'
+!        itmp=indx_out(5,1)+i-1
+        outfile(noutput+i)='ICM_'//ifile_char(1:ifile_len)//'.63'
       enddo !i
+      noutput=noutput+ntrs(7)
 
-      if(iPh==1) then
-        noutput=noutput+1
-        indx_out(5,2)=noutput
-        outfile(indx_out(5,2))='PH.63'
-        variable_nm(indx_out(5,2))='ICM variable PH'
-        variable_dim(indx_out(5,2))='3D scalar'
-      endif
-#endif
+!Error: ZG plz check logic. I've commented out the lines
+!      if(iPh==1) then
+!        noutput=noutput+1
+!        indx_out(5,2)=noutput
+!        outfile(indx_out(5,2))='PH.63'
+!!        variable_nm(indx_out(5,2))='ICM variable PH'
+!!        variable_dim(indx_out(5,2))='3D scalar'
+!      endif
 
-#ifdef USE_SED2D
-      noutput=noutput+9
-      indx_out(6,1)=noutput-8
-      indx_out(6,2)=noutput
-
-      itmp=indx_out(6,1)
-      outfile(itmp)='SED2D_depth.61'
-      variable_nm(itmp)='SED2D depth in m'
-      variable_dim(itmp)='2D scalar'
-
-      outfile(itmp+1)='SED2D_cdsed.61'
-      variable_nm(itmp+1)='drag coefficient in sed2d'
-      variable_dim(itmp+1)='2D scalar'
-
-      outfile(itmp+2)='SED2D_cflsed.61'
-      variable_nm(itmp+2)='Courant number in sed2d'
-      variable_dim(itmp+2)='2D scalar'
-
-      outfile(itmp+3)='SED2D_d50.61'
-      variable_nm(itmp+3)='top layer d50'
-      variable_dim(itmp+3)='2D scalar'
-
-      outfile(itmp+4)='SED2D_qtot.62'
-      variable_nm(itmp+4)='total transport in m2.s-1'
-      variable_dim(itmp+4)='2D vector'
-
-      outfile(itmp+5)='SED2D_qsus.62'
-      variable_nm(itmp+5)='suspended transport in m2.s-1'
-      variable_dim(itmp+5)='2D vector'
-
-      outfile(itmp+6)='SED2D_qbdl.62'
-      variable_nm(itmp+6)='bed load transport in m2.s-1'
-      variable_dim(itmp+6)='2D vector'
-
-      outfile(itmp+7)='SED2D_dpdxy.62'
-      variable_nm(itmp+7)='Bottom slope in m.m-1'
-      variable_dim(itmp+7)='2D vector'
-
-      outfile(itmp+8)='SED2D_qav.62'
-      variable_nm(itmp+8)='averaged total transport in m2.s-1'
-      variable_dim(itmp+8)='2D vector'
-#endif
-
-#ifdef USE_WWM
-      noutput=noutput+26 
-      indx_out(7,1)=noutput-25
-      indx_out(7,2)=noutput
-      !Index into out_wwm() for scalar outputs below
-      allocate(indx_wwm_out(24),stat=istat)
-      if(istat/=0) call parallel_abort('MAIN: indx_wwm_out failure')
-!      indx_wwm_out=(/1,2,3,6,7,9,10,11,12,13,18,19,20,23,26,27,28/)
-      icount=0
-      do i=1,28
-        if(i/=7.and.i/=8.and.i/=27.and.i/=28) then
-          icount=icount+1
-          if(icount>24) call parallel_abort('MAIN: indx_wwm_out')
-          indx_wwm_out(icount)=i
-        endif
-      enddo !i
-    
-      indx2=indx_out(7,1)
-      do i=1,26
-        write(ifile_char,'(i03)')i
-        ifile_char=adjustl(ifile_char)  !place blanks at end
-        ifile_len=len_trim(ifile_char)  !length without trailing blanks
-        variable_nm(indx2+i-1)='WWM #'//trim(ifile_char)
-        if(i>24) then !vectors
-          outfile(indx2+i-1)='wwm_'//ifile_char(1:ifile_len)//'.62'
-          variable_dim(indx2+i-1)='2D vector'
-        else
-          outfile(indx2+i-1)='wwm_'//ifile_char(1:ifile_len)//'.61'
-          variable_dim(indx2+i-1)='2D scalar'
-        endif
-      enddo !i
+      outfile(noutput+1)='ICM_BENDOC'
+      outfile(noutput+2)='ICM_SED_BENNH4'
+      outfile(noutput+3)='ICM_SED_BENNO3'
+      outfile(noutput+4)='ICM_BENPO4'
+      outfile(noutput+5)='ICM_SED_BENCOD'
+      outfile(noutput+6)='ICM_sed_BENDO'
+      outfile(noutput+7)='ICM_BENSA'
+      noutput=noutput+7
 #endif
 
 #ifdef USE_COSINE
-      indx_out(8,1)=noutput+1
-      noutput=noutput+ntrs(8)
-      indx_out(8,2)=noutput
+!      indx_out(8,1)=noutput+1
+!      indx_out(8,2)=noutput
       do i=1,ntrs(8)
         write(ifile_char,'(i03)')i
         ifile_char=adjustl(ifile_char)  !place blanks at end
         ifile_len=len_trim(ifile_char)  !length without trailing blanks
-        itmp=indx_out(8,1)+i-1
-        outfile(itmp)='COS_'//ifile_char(1:ifile_len)//'.63'
-        variable_nm(itmp)='CoSINE tracer #'//trim(ifile_char)
-        variable_dim(itmp)='3D scalar'
+!        itmp=indx_out(8,1)+i-1
+        outfile(noutput+i)='COS_'//ifile_char(1:ifile_len)//'.63'
       enddo !i
+      noutput=noutput+ntrs(8)
 #endif
 
 #ifdef USE_FIB
-      indx_out(9,1)=noutput+1
-      noutput=noutput+ntrs(9)
-      indx_out(9,2)=noutput
+!      indx_out(9,1)=noutput+1
+!      indx_out(9,2)=noutput
       do i=1,ntrs(9)
         write(ifile_char,'(i03)')i
         ifile_char=adjustl(ifile_char)  !place blanks at end
         ifile_len=len_trim(ifile_char)  !length without trailing blanks
-        itmp=indx_out(9,1)+i-1
-        outfile(itmp)='FIB_'//ifile_char(1:ifile_len)//'.63'
-        variable_nm(itmp)='Fecal indicator bacteria tracer #'//trim(ifile_char)
-        variable_dim(itmp)='3D scalar'
+!        itmp=indx_out(9,1)+i-1
+        outfile(noutput+i)='FIB_'//ifile_char(1:ifile_len)//'.63'
       enddo !i
+      noutput=noutput+ntrs(9)
 #endif
 
 #ifdef USE_TIMOR
-      indx_out(10,1)=noutput+1
-      noutput=noutput+ntrs(10)
-      indx_out(10,2)=noutput
-      do i=1,ntrs(10)
+!      indx_out(10,1)=noutput+1
+!      noutput=noutput+ntrs(10)
+!      indx_out(10,2)=noutput
+!      do i=1,ntrs(10)
+!        write(ifile_char,'(i03)')i
+!        ifile_char=adjustl(ifile_char)  !place blanks at end
+!        ifile_len=len_trim(ifile_char)  !length without trailing blanks
+!        itmp=indx_out(10,1)+i-1
+!        outfile(itmp)='TMR_'//ifile_char(1:ifile_len)//'.63'
+!!        variable_nm(itmp)='TIMOR tracer #'//trim(ifile_char)
+!!        variable_dim(itmp)='3D scalar'
+!      enddo !i
+#endif
+
+#ifdef USE_FABM
+      do i=1,ntrs(11)
         write(ifile_char,'(i03)')i
         ifile_char=adjustl(ifile_char)  !place blanks at end
         ifile_len=len_trim(ifile_char)  !length without trailing blanks
-        itmp=indx_out(10,1)+i-1
-        outfile(itmp)='TMR_'//ifile_char(1:ifile_len)//'.63'
-        variable_nm(itmp)='TIMOR tracer #'//trim(ifile_char)
-        variable_dim(itmp)='3D scalar'
+        outfile(noutput+i)='FABM_'//ifile_char(1:ifile_len)//'.63'
       enddo !i
+      noutput=noutput+ntrs(11)
 #endif
+
+#ifdef USE_SED2D
+!      indx_out(6,1)=noutput-8
+!      indx_out(6,2)=noutput
+!      itmp=indx_out(6,1)
+
+      outfile(noutput+1)='SED2D_depth.61'
+      outfile(noutput+2)='SED2D_cdsed.61'
+      outfile(noutput+3)='SED2D_cflsed.61'
+      outfile(noutput+4)='SED2D_d50.61'
+      outfile(noutput+5)='SED2D_qtot.62'
+      outfile(noutput+6)='SED2D_qsus.62'
+      outfile(noutput+7)='SED2D_qbdl.62'
+      outfile(noutput+8)='SED2D_dpdxy.62'
+      outfile(noutput+9)='SED2D_qav.62'
+      outfile(noutput+10)='SED2D_z0eq'
+      outfile(noutput+11)='SED2D_z0cr'
+      outfile(noutput+12)='SED2D_z0sw'
+      outfile(noutput+13)='SED2D_z0wr'
+      noutput=noutput+13
+#endif
+
+#ifdef USE_WWM
+      do i=1,28
+        if(i==7.or.i==8) cycle !skip vectors first
+        noutput=noutput+1
+        write(ifile_char,'(i03)')i
+        ifile_char=adjustl(ifile_char)  
+        ifile_len=len_trim(ifile_char) 
+        outfile(noutput)='WWM_'//ifile_char(1:ifile_len)
+      enddo !i
+      !Vectors
+      outfile(noutput+1)='WWM_energy_dir'
+      noutput=noutput+1
+#endif
+
+#ifdef DEBUG
+      outfile(noutput+1)='bpgr'
+      noutput=noutput+1
+#ifdef USE_WWM
+      outfile(noutput+1)='wave_force'
+      noutput=noutput+1
+#endif
+#endif
+
+#ifdef USE_MARSH
+      outfile(noutput+1)='mrsh.66'
+      noutput=noutput+1
+#endif
+
+#ifdef USE_ICE
+      do i=1,ntr_ice
+        write(ifile_char,'(i03)')i
+        ifile_char=adjustl(ifile_char)
+        ifile_len=len_trim(ifile_char)
+        outfile(noutput+i)='ICE_tracer_'//ifile_char(1:ifile_len)
+      enddo !i
+      noutput=noutput+ntr_ice
+ 
+      outfile(noutput+1)='ICE_velocity'
+      outfile(noutput+2)='ICE_strain_rate'
+      noutput=noutput+2
+#endif
+
 
       if(myrank==0) write(16,*)'# of global outputs=',noutput
       if(noutput>mnout) then
         write(errmsg,*)'Increase mnout in schism_glbl to',noutput
         call parallel_abort(errmsg)
       endif
-
 
 !     nspool,ihfskip: output and file spools
       call get_param('param.in','nspool',1,nspool,tmp,stringvalue)
@@ -1060,7 +1090,7 @@
 !        iof(17:26)=0
 !      endif !lm2d
 
-!...  Non-standard outputs at sides, nodes and centroids and whole and half levels
+!...  Non-'standard' outputs at sides, nodes and centroids and whole and half levels
 !...  These outputs share same spool and stack size as standard ones
 !...  Suffix convention:
 !       65: 2D side 
@@ -1070,29 +1100,8 @@
 !       69: 3D element and whole level
 !       70: prism centers (centroid @ half levels)
 
-      noutput_ns=21 !hvel.67,vert.69,temp.70,salt.70 etc
-      allocate(outfile_ns(noutput_ns),iof_ns(noutput_ns),stat=istat)
-      outfile_ns(1)='hvel.67' !must be consistent when calling the output routine later
-      outfile_ns(2)='vert.69'
-      outfile_ns(3)='temp.70'
-      outfile_ns(4)='salt.70'
-      outfile_ns(5)='z0st.66'
-      outfile_ns(6)='z0eq.66'
-      outfile_ns(7)='z0cr.66'
-      outfile_ns(8)='z0sw.66'
-      outfile_ns(9)='z0wr.66'
-      outfile_ns(10)='bpgr.65'
-      outfile_ns(11)='wafo.67'
-      outfile_ns(12)='bdoc.66'
-      outfile_ns(13)='bnh4.66'
-      outfile_ns(14)='bno3.66'
-      outfile_ns(15)='bpo4.66'
-      outfile_ns(16)='bcod.66'
-      outfile_ns(17)='sbdo.66'
-      outfile_ns(18)='sbsa.66'
-      outfile_ns(19)='bthk.66'
-      outfile_ns(20)='bage.66'
-      outfile_ns(21)='mrsh.66'
+!      noutput_ns=21 !hvel.67,vert.69,temp.70,salt.70 etc
+!      allocate(outfile_ns(noutput_ns),iof_ns(noutput_ns),stat=istat)
 
       !varnm_ns is not used at the moment except for noting purpose
       !varnm_ns(1)='3D horizontal vel. at sides and whole levels'
@@ -1116,13 +1125,13 @@
       !varnm_ns(19)='SED: total bed layer thickness (m)'
       !varnm_ns(20)='SED: total bed layer age (sec)'
 
-      do i=1,noutput_ns
-        call get_param('param.in',trim(adjustl(outfile_ns(i))),1,iof_ns(i),tmp,stringvalue)
-        if(iof_ns(i)/=0.and.iof_ns(i)/=1) then
-          write(errmsg,*)'Unknown output_ns option',i,iof_ns(i),outfile_ns(i)
-          call parallel_abort(errmsg)
-        endif
-      enddo !i=1,noutput_ns
+!      do i=1,noutput_ns
+!        call get_param('param.in',trim(adjustl(outfile_ns(i))),1,iof_ns(i),tmp,stringvalue)
+!        if(iof_ns(i)/=0.and.iof_ns(i)/=1) then
+!          write(errmsg,*)'Unknown output_ns option',i,iof_ns(i),outfile_ns(i)
+!          call parallel_abort(errmsg)
+!        endif
+!      enddo !i=1,noutput_ns
 
 !...  input information about hot start output
 !...
@@ -1134,7 +1143,7 @@
         call parallel_abort(errmsg)
       endif
 
-!...  JCG solver parameters
+!...  JCG/PETSc solver parameters
 !     moitn0: output interval; mxitn0: max iterations; rtol0: relative tolerance
       call get_param('param.in','slvr_output_spool',1,moitn0,tmp,stringvalue)
       call get_param('param.in','mxitn',1,mxitn0,tmp,stringvalue)
@@ -1297,6 +1306,7 @@
         call parallel_abort(errmsg)
       endif
 
+
 !     write mode; not used really
 !      call get_param('param.in','iwrite',1,iwrite,tmp,stringvalue)
 
@@ -1309,11 +1319,11 @@
 
 !     Elev. b.c. ramp option (=0: ramp up from eta=0; =1: from eta2 before
 !     the time loop, after the hotstart loop)
-!      call get_param('param.in','nramp_elev',1,nramp_elev,tmp,stringvalue)
-!      if(nramp_elev/=0.and.nramp_elev/=1) then
-!        write(errmsg,*)'Illegal nramp_elev:',nramp_elev
-!        call parallel_abort(errmsg)
-!      endif
+      call get_param('param.in','nramp_elev',1,nramp_elev,tmp,stringvalue)
+      if(nramp_elev/=0.and.nramp_elev/=1) then
+        write(errmsg,*)'Illegal nramp_elev:',nramp_elev
+        call parallel_abort(errmsg)
+      endif
 
 !     Inverse barometric effects on elev. b.c.
       call get_param('param.in','inv_atm_bnd',1,inv_atm_bnd,tmp,stringvalue)
@@ -1424,6 +1434,12 @@
         call get_param('param.in','sav_cd',2,itmp,sav_cd,stringvalue)
         if(sav_cd<0) call parallel_abort('INIT: sav_cd<0')
       endif
+
+!     Ice
+#ifdef USE_ICE
+      call get_param('param.in','nstep_ice',1,nstep_ice,tmp,stringvalue)
+      if(nstep_ice<=0) call parallel_abort('INIT: nstep_ice<=0')
+#endif
 
 !...  TWO-PHASE-MIXTURE TSINGHUA GROUP------------------
 !      Two_phase_mix=0 !1120:close
@@ -1605,7 +1621,8 @@
           & prho(nvrt,npa),q2(nvrt,npa),xl(nvrt,npa),xlmin2(npa), &
           & uu2(nvrt,npa),vv2(nvrt,npa),ww2(nvrt,npa),bdef(npa),bdef1(npa),bdef2(npa),dfh(nvrt,npa), &
           & bdy_frc(ntracers,nvrt,nea),flx_sf(ntracers,nea),flx_bt(ntracers,nea), &
-          & xlon_el(nea),ylat_el(nea),albedo(npa),flux_adv_vface(nvrt,ntracers,nea),wsett(ntracers),stat=istat)
+          & xlon_el(nea),ylat_el(nea),albedo(npa),flux_adv_vface(nvrt,ntracers,nea), &
+          &wsett(ntracers,nvrt,nea),iwsett(ntracers),stat=istat)
       if(istat/=0) call parallel_abort('MAIN: dynamical arrays allocation failure')
 !'
 
@@ -1639,7 +1656,7 @@
 !         &  tnd_nu1(nvrt,npa),snd_nu1(nvrt,npa),tnd_nu2(nvrt,npa),snd_nu2(nvrt,npa),tnd_nu(nvrt,npa),snd_nu(nvrt,npa), &
          &  diffmax(npa),diffmin(npa),dfq1(nvrt,npa),dfq2(nvrt,npa), & 
 !          Note: swild, swild2, swild10 will be re-dimensioned (larger dimension) later
-         &  nwild(nea+12+natrm),nwild2(ne_global),swild(nsa+nvrt+12+ntracers),swild2(nvrt,12),swild10(max(3,nvrt),12), &
+         &  nwild(nea+12+natrm),nwild2(ns_global),swild(nsa+nvrt+12+ntracers),swild2(nvrt,12),swild10(max(3,nvrt),12), &
          &  swild3(50+ntracers),swild4(nvrt,1+ntracers),swild8(nvrt,2),&
          &  iwater_type(npa),rho_mean(nvrt,nea),erho(nvrt,nea),& 
          & surf_t1(npa),surf_t2(npa),surf_t(npa),etaic(npa),sav_alpha(npa), &
@@ -1726,6 +1743,11 @@
      allocate(sink0(npa),fraction0(npa),kk10(npa),kk20(npa))
 #endif
 
+#ifdef USE_ICE
+      allocate(tau_oi(2,npa),fresh_wa_flux(npa),net_heat_flux(npa),lhas_ice(npa),stat=istat)
+      if(istat/=0) call parallel_abort('INIT: ice allocation failure')
+#endif
+
 !     Non-hydrostatic arrays
 !     Keep qnon for the time being due to hotstart
       allocate(qnon(nvrt,npa),stat=istat)
@@ -1778,7 +1800,7 @@
 !      tsel=0; trel=0
       tr_el=0
       timer_ns=0
-      wsett=0 !settling vel.
+      iwsett=0; wsett=0 !settling vel.
 
 !Tsinghua group
 #ifdef USE_SED 
@@ -1869,6 +1891,17 @@
 !      endif !ics
 
 !...  Finish off some remaining geometric calcualtions
+!      !weno>
+      if (itr_met==4) then !WENO
+        call set_isbe !identify boundary elements
+        call quadpts !get coordinates of quadrature points on each side
+        call weno1_coef !also needed for 3rd order weno for adaptive accuracy
+        if(ip_weno==2) call weno2_coef
+        !write diagnostic files
+        if(nproc==1.and.ipre/=0) call weno_diag
+      endif
+      !<weno
+
 !...  Local  coord. of 4 vertices of a quad
       ixi_n=(/-1,1,1,-1/)
       iet_n=(/-1,-1,1,1/)
@@ -2167,6 +2200,32 @@
         close(32)
         lreadll=.true. 
       endif 
+#endif
+
+#ifdef USE_SIMPLE_WIND
+     if(nws==5) then
+       allocate(cf_i(npa),cf_j(npa),cf_x2(npa),cf_x1(npa),cf_y2(npa), &
+     &cf_y1(npa),cf_denom(npa),stat=istat)
+       if(istat/=0) call parallel_abort('INIT: STORM_SURGE allocation failure')
+!'     read interpolation weights from interp_atmo.gr3 created with external routine
+!      1 314 62  0.00232  0.09108 -0.07610  0.16515  0.00832
+       if(myrank==0) WRITE(16,*)'Reading interp_atmo.gr3 for ', np_global, ' nodes'
+       open(32,file='interp_atmo.gr3',status='old')
+       read(32,*)
+        do i=1,np_global
+          read(32,*)itmp,j,k,tmp1,tmp2,tmp3,tmp4,tmp5
+          if(ipgl(itmp)%rank==myrank) then
+             cf_i(ipgl(itmp)%id)=j
+             cf_j(ipgl(itmp)%id)=k
+             cf_x1(ipgl(itmp)%id)=tmp1
+             cf_x2(ipgl(itmp)%id)=tmp2
+             cf_y1(ipgl(itmp)%id)=tmp3
+             cf_y2(ipgl(itmp)%id)=tmp4
+             cf_denom(ipgl(itmp)%id)=tmp5
+          end if
+        enddo
+        close(32)
+      endif       
 #endif
 
 !...  Classify interior/exterior bnd node and calculate edge angles (for WWM only)
@@ -3083,13 +3142,6 @@
         if(istat/=0) call parallel_abort('MAIN: failed to alloc. (71)')
       endif !nws=4
 
-#ifdef USE_SIMPLE_WIND
-      if(nws==5.or.nws==6) then
-        allocate(rwild(npa,3),stat=istat)
-        if(istat/=0) call parallel_abort('MAIN: failed to alloc. (72)')
-      endif !nws
-#endif
-
 !     Heat and salt conservation flags
       if(ihconsv/=0) then
         if(myrank==0) then
@@ -3492,9 +3544,9 @@
       enddo !k
 
 !     SAV inputs: sav_*.gr3
-      sav_alpha=0 !=D*Nv*Cdv/2; init
-      sav_h=0 !not used at 2D sides
-      sav_nv=0 !# of stems per m^2
+      sav_alpha=0 !=D*Nv*Cdv/2; init; D is diameter; Cdv is form drag (sav_cd)
+      sav_h=0 !veg height; not used at 2D sides
+      sav_nv=0 !Nv: # of stems per m^2
       if(isav==1) then
         !\lambda=D*Nv [1/m]
         open(10,file='sav_D.gr3',status='old')
@@ -4274,8 +4326,17 @@
 
 #ifdef USE_SIMPLE_WIND
       if(nws==5.or.nws==6) then
-        CALL INIT_NETCDF_CF_ALLVAR(nws,sim_year,sim_month,sim_day,sim_hour,sim_minute,sim_second)
-        CALL READ_NETCDF_CF_ALLVAR(time, windx, windy, pr)
+        itmp1=1
+        wtime1=0
+        wtime2=wtiminc 
+        if(nws==5) then 
+          CALL READ_REC_ATMO_FD(itmp1,   windx1, windy1, pr1)
+          CALL READ_REC_ATMO_FD(itmp1+1, windx2, windy2, pr2)
+        endif
+        if(nws==6)  then
+          CALL READ_REC_ATMO_FEM(itmp1,   windx1, windy1, pr1)
+          CALL READ_REC_ATMO_FEM(itmp1+1, windx2, windy2, pr2)
+        endif
       endif !5|6
 #endif
 
@@ -4313,7 +4374,9 @@
 #ifdef USE_ICM 
       if(myrank==0) write(16,*)'Reading ICM parameters'
       call read_icm_param  ! ICM parameter 
+      if(myrank==0) write(16,*)'done read_icm_param'
       call read_icm_param2 ! spatially varying parameter
+      if(myrank==0) write(16,*)'done read_icm_param2'
       call WQinput(0.d0)   ! time varying input
 
       !VIMS surface temperature mode added by YC
@@ -4592,6 +4655,11 @@
 !          case(3) ! Oil spill
 !            call parallel_abort('Oil spill model under consruction')
 
+#ifdef USE_FABM
+      call fabm_schism_init_stage2()
+      call fabm_schism_create_output_netcdf()
+#endif
+
 #ifdef USE_NAPZD
       ! NAPZD Spitz
       if(myrank==0) write(16,*)'reading inputs from NAPZD model'
@@ -4780,8 +4848,12 @@
 #ifdef USE_ECO
             call bio_init !init. tr_nd
 #else
+#ifdef USE_FABM
+            call fabm_schism_init_concentrations()
+#else
             write(errmsg,*)'INIT: type 0 i.c.:',mm
             call parallel_abort(errmsg)
+#endif
 #endif
 
 !#ifdef USE_TIMOR
@@ -4898,6 +4970,13 @@
 #endif 
 #endif /*USE_SED2D*/
 
+#ifdef USE_ICE
+      if(lhas_quad) call parallel_abort('init: no quads for ice')
+      if(.not.lreadll) call parallel_abort('init: ice needs hgrid.ll')
+      call ice_init
+      if(myrank==0) write(16,*)'done init ice...'
+#endif
+
       if(myrank==0) write(16,*)'done initializing cold start'
       
 !-------------------------------------------------------------------------------
@@ -4907,6 +4986,262 @@
 !-------------------------------------------------------------------------------
       time=0.d0
       if(ihot/=0) then
+
+        if(1==1) then
+!+++++++++++++++++++++++++++++++++++++++++++++
+        allocate(buf3(ns_global),stat=istat)
+        if(istat/=0) call parallel_abort('Init: alloc(9.1)')
+
+        j=nf90_open('hotstart.nc',OR(NF90_NETCDF4,NF90_NOWRITE),ncid2)
+        if(j/=NF90_NOERR) call parallel_abort('init: hotstart.nc not found')
+
+!'      Sanity check dims
+        nwild=-999 !init
+        j=nf90_inq_dimid(ncid2,'node',mm)
+        j=nf90_inquire_dimension(ncid2,mm,len=nwild(1))
+        j=nf90_inq_dimid(ncid2,'elem',mm)
+        j=nf90_inquire_dimension(ncid2,mm,len=nwild(2))
+        j=nf90_inq_dimid(ncid2,'side',mm)
+        j=nf90_inquire_dimension(ncid2,mm,len=nwild(3))
+        j=nf90_inq_dimid(ncid2,'nVert',mm)
+        j=nf90_inquire_dimension(ncid2,mm,len=nwild(4))
+        j=nf90_inq_dimid(ncid2,'ntracers',mm)
+        j=nf90_inquire_dimension(ncid2,mm,len=nwild(5))
+        if(nwild(1)/=np_global.or.nwild(2)/=ne_global.or.nwild(3)/=ns_global.or. &
+     &nwild(4)/=nvrt.or.nwild(5)/=ntracers) then
+          write(errmsg,*)'init: nc dim mismatch,',nwild(1:5),np_global,ne_global,ns_global,nvrt,ntracers
+          call parallel_abort(errmsg)
+        endif
+
+        j=nf90_inq_varid(ncid2, "time",mm)
+        if(j/=NF90_NOERR) call parallel_abort('init: nc time1')
+        j=nf90_get_var(ncid2,mm,time);
+        if(j/=NF90_NOERR) call parallel_abort('init: nc time2')
+        j=nf90_inq_varid(ncid2, "iths",mm)
+        if(j/=NF90_NOERR) call parallel_abort('init: nc iths1')
+        j=nf90_get_var(ncid2,mm,iths)
+        if(j/=NF90_NOERR) call parallel_abort('init: nc iths2')
+        j=nf90_inq_varid(ncid2, "ifile",mm)
+        if(j/=NF90_NOERR) call parallel_abort('init: nc ifile1')
+        j=nf90_get_var(ncid2,mm,ifile);
+        if(j/=NF90_NOERR) call parallel_abort('init: nc ifile2')
+
+        ! Element data
+        j=nf90_inq_varid(ncid2, "idry_e",mm)
+        if(j/=NF90_NOERR) call parallel_abort('init: nc idry_e')
+        j=nf90_get_var(ncid2,mm,nwild2,(/1/),(/ne_global/))
+        if(j/=NF90_NOERR) call parallel_abort('init: nc idry_e2')
+        do i=1,ne_global
+          if(iegl(i)%rank==myrank) then
+            ie=iegl(i)%id
+            idry_e(ie)=nwild2(i)
+          endif
+        enddo !i
+
+!        allocate(swild98(ntracers,nvrt,ne_global),swild99(nvrt,ns_global),stat=istat)
+!        if(istat/=0) call parallel_abort('Init: alloc(9.1)')
+!        swild99(nvrt,ns_global)=0 !touch memory
+        j=nf90_inq_varid(ncid2, "we",mm)
+        if(j/=NF90_NOERR) call parallel_abort('init: nc we')
+        do k=1,nvrt
+          j=nf90_get_var(ncid2,mm,buf3(1:ne_global),(/k,1/),(/1,ne_global/))
+          if(j/=NF90_NOERR) call parallel_abort('init: nc we2')
+          do i=1,ne_global
+            if(iegl(i)%rank==myrank) then
+              ie=iegl(i)%id
+              we(k,ie)=buf3(i) !swild99(:,i)
+            endif
+          enddo !i
+        enddo !k
+
+        j=nf90_inq_varid(ncid2, "tr_el",mm)
+        if(j/=NF90_NOERR) call parallel_abort('init: nc tr_el')
+        do k=1,nvrt   
+          do m=1,ntracers
+            j=nf90_get_var(ncid2,mm,buf3(1:ne_global),(/m,k,1/),(/1,1,ne_global/))
+            if(j/=NF90_NOERR) call parallel_abort('init: nc tr_el2')
+            do i=1,ne_global
+              if(iegl(i)%rank==myrank) then
+                ie=iegl(i)%id
+                tr_el(m,k,ie)=buf3(i)
+              endif
+            enddo !i
+          enddo !m
+        enddo !k
+
+        !Debug: dump
+!        if(myrank==0) then
+!          write(88,*)'Elem data:'
+!          write(88,*)nwild2(1:ne_global)
+!          write(88,*)swild99(:,1:ne_global)
+!          write(88,*)swild98(:,:,1:ne_global)
+!        endif
+
+        ! Side data
+        j=nf90_inq_varid(ncid2, "idry_s",mm)
+        if(j/=NF90_NOERR) call parallel_abort('init: nc idry_s')
+        j=nf90_get_var(ncid2,mm,nwild2,(/1/),(/ns_global/))
+        if(j/=NF90_NOERR) call parallel_abort('init: nc idry_s2')
+        do i=1,ns_global
+          if(isgl(i)%rank==myrank) then
+            iside=isgl(i)%id
+            idry_s(iside)=nwild2(i)
+          endif
+        enddo !i
+
+        j=nf90_inq_varid(ncid2, "su2",mm)
+        if(j/=NF90_NOERR) call parallel_abort('init: nc su2')
+        do k=1,nvrt
+          j=nf90_get_var(ncid2,mm,buf3(1:ns_global),(/k,1/),(/1,ns_global/))
+          if(j/=NF90_NOERR) call parallel_abort('init: nc su2b')
+          do i=1,ns_global
+            if(isgl(i)%rank==myrank) then
+              iside=isgl(i)%id
+              su2(k,iside)=buf3(i)
+            endif
+          enddo !i
+        enddo !k
+
+        !Debug: dump
+!        if(myrank==0) then
+!          write(88,*)'side data:'
+!          write(88,*)nwild2(1:ns_global)
+!          write(88,*)swild99(:,1:ns_global)
+!        endif
+
+        j=nf90_inq_varid(ncid2, "sv2",mm)
+        if(j/=NF90_NOERR) call parallel_abort('init: nc sv2')
+        do k=1,nvrt
+          j=nf90_get_var(ncid2,mm,buf3(1:ns_global),(/k,1/),(/1,ns_global/))
+          if(j/=NF90_NOERR) call parallel_abort('init: nc sv2b')
+          do i=1,ns_global
+            if(isgl(i)%rank==myrank) then
+              iside=isgl(i)%id
+              sv2(k,iside)=buf3(i)
+            endif
+          enddo !i
+        enddo !k
+
+        !Debug: dump
+!        if(myrank==0) then
+!          write(88,*)swild99(:,1:ns_global)
+!        endif
+
+        ! Node data
+        j=nf90_inq_varid(ncid2, "tr_nd",mm)
+        if(j/=NF90_NOERR) call parallel_abort('init: nc tr_nd')
+        do k=1,nvrt
+          do m=1,ntracers
+            j=nf90_get_var(ncid2,mm,buf3(1:np_global),(/m,k,1/),(/1,1,np_global/))
+            if(j/=NF90_NOERR) call parallel_abort('init: nc tr_nd2')
+            do i=1,np_global
+              if(ipgl(i)%rank==myrank) then
+                ip=ipgl(i)%id
+                tr_nd(m,k,ip)=buf3(i)
+              endif
+            enddo !i
+          enddo !m
+        enddo !k
+
+        !Debug: dump
+!        if(myrank==0) then
+!          write(88,*)'Node data:'
+!          write(88,*)swild98(:,:,1:np_global)
+!        endif
+
+        j=nf90_inq_varid(ncid2, "tr_nd0",mm)
+        if(j/=NF90_NOERR) call parallel_abort('init: nc tr_nd0')
+        do k=1,nvrt
+          do m=1,ntracers
+            j=nf90_get_var(ncid2,mm,buf3(1:np_global),(/m,k,1/),(/1,1,np_global/))
+            if(j/=NF90_NOERR) call parallel_abort('init: nc tr_nd0b')
+            do i=1,np_global
+              if(ipgl(i)%rank==myrank) then
+                ip=ipgl(i)%id
+                tr_nd0(m,k,ip)=buf3(i)
+              endif
+            enddo !i
+          enddo !m
+        enddo !k
+
+        !Debug: dump
+!        if(myrank==0) then
+!          write(88,*)swild98(:,:,1:np_global)
+!        endif
+
+        j=nf90_inq_varid(ncid2, "idry",mm)
+        if(j/=NF90_NOERR) call parallel_abort('init: nc idry')
+        j=nf90_get_var(ncid2,mm,nwild2,(/1/),(/np_global/))
+        if(j/=NF90_NOERR) call parallel_abort('init: nc idry2')
+        j=nf90_inq_varid(ncid2, "eta2",mm);
+        if(j/=NF90_NOERR) call parallel_abort('init: nc eta2')
+        j=nf90_get_var(ncid2,mm,buf3(1:np_global),(/1/),(/np_global/))
+        if(j/=NF90_NOERR) call parallel_abort('init: nc eta2b')
+        do i=1,np_global
+          if(ipgl(i)%rank==myrank) then
+            ip=ipgl(i)%id
+            eta2(ip)=buf3(i)
+            idry(ip)=nwild2(i)
+          endif
+        enddo !i
+
+        !Debug: dump
+!        if(myrank==0) then
+!          write(88,*)nwild2(1:np_global)
+!          write(88,*)swild99(1,1:np_global)
+!        endif
+
+        ar_name(1:6)=(/'q2  ','xl  ','dfv ','dfh ','dfq1','dfq2'/)
+        do m=1,6 !# of 2D node arrays
+          j=nf90_inq_varid(ncid2,trim(adjustl(ar_name(m))),mm)
+          if(j/=NF90_NOERR) call parallel_abort('init: nc node1')
+
+          do k=1,nvrt
+            j=nf90_get_var(ncid2,mm,buf3(1:np_global),(/k,1/),(/1,np_global/))
+            if(j/=NF90_NOERR) call parallel_abort('init: nc node2')
+            do i=1,np_global
+              if(ipgl(i)%rank==myrank) then
+                ip=ipgl(i)%id
+                if(m==1) then
+                  q2(k,ip)=buf3(i)
+                else if(m==2) then
+                  xl(k,ip)=buf3(i)
+                else if(m==3) then
+                  dfv(k,ip)=buf3(i)
+                else if(m==4) then
+                  dfh(k,ip)=buf3(i)
+                else if(m==5) then
+                  dfq1(k,ip)=buf3(i)
+                else if(m==6) then
+                  dfq2(k,ip)=buf3(i)
+                endif
+              endif !ipgl
+            enddo !i
+          enddo !k
+        enddo !m
+
+        qnon=0
+
+!        write(12,*)'elem after hot'
+!        do i=1,nea
+!          write(12,*)ielg(i),tr_el(:,nvrt,i),idry_e(i)
+!        enddo !
+!        write(12,*)'side after hot'
+!        do i=1,nsa
+!          write(12,*)'u',islg(i),su2(:,i)
+!          write(12,*)'v',islg(i),sv2(:,i)
+!        enddo !
+!        write(12,*)'node after hot'
+!        do i=1,npa
+!          write(12,*)iplg(i),eta2(i),dfv(:,i)
+!        enddo !
+!        call parallel_finalize
+!        stop
+!+++++++++++++++++++++++++++++++++++++++++++++
+        endif !1==
+
+        if(1==2) then
+!+++++++++++++++++++++++++++++++++++++++++++++
         open(36,file='hotstart.in',form='unformatted',status='old')
         read(36) double1,iths,ifile
         time=double1
@@ -4940,6 +5275,7 @@
           endif
         enddo !i=1,ns_global
 
+
         ! Node data 
         deallocate(swild4)
         allocate(swild4(nvrt,2*ntracers+7))
@@ -4965,6 +5301,8 @@
             qnon(:,ip)=swild4(:,2*ntracers+7)
           endif
         enddo !i=1,np_global
+!+++++++++++++++++++++++++++++++++++++++++++++
+        endif !1==
 
 #ifdef USE_ICM
         !temportary fix, need to write wqc in hotstart, ZG
@@ -4976,185 +5314,456 @@
           enddo
         enddo
 
-        do i=1,ne_global       
-          read(36) iegb,swild3(1:40)
-          if(iegl(iegb)%rank==myrank) then
-            ie=iegl(iegb)%id
-            sed_BENDO(ie)=swild3(1)
-            CTEMP(ie)=swild3(2)
-            BBM(ie)=swild3(3)
-            CPOS(ie)=swild3(4)
-            PO4T2TM1S(ie)=swild3(5)
-            NH4T2TM1S(ie)=swild3(6)
-            NO3T2TM1S(ie)=swild3(7)
-            HST2TM1S(ie)=swild3(8)
-            CH4T2TM1S(ie)=swild3(9)
-            CH41TM1S(ie)=swild3(10)
-            SO4T2TM1S(ie)=swild3(11)
-            SIT2TM1S(ie)=swild3(12)
-            BENSTR1S(ie)=swild3(13)
-            CPOP(ie,1)=swild3(14)
-            CPOP(ie,2)=swild3(15)
-            CPOP(ie,3)=swild3(16)
-            CPON(ie,1)=swild3(17)
-            CPON(ie,2)=swild3(18)
-            CPON(ie,3)=swild3(19)
-            CPOC(ie,1)=swild3(20)
-            CPOC(ie,2)=swild3(21)
-            CPOC(ie,3)=swild3(22)
-            NH41TM1S(ie)=swild3(23)
-            NO31TM1S(ie)=swild3(24)
-            HS1TM1S(ie)=swild3(25)
-            SI1TM1S(ie)=swild3(26)
-            PO41TM1S(ie)=swild3(27)
-            PON1TM1S(ie)=swild3(28)
-            PON2TM1S(ie)=swild3(29)
-            PON3TM1S(ie)=swild3(30)
-            POC1TM1S(ie)=swild3(31)
-            POC2TM1S(ie)=swild3(32)
-            POC3TM1S(ie)=swild3(33)
-            POP1TM1S(ie)=swild3(34)
-            POP2TM1S(ie)=swild3(35)
-            POP3TM1S(ie)=swild3(36)
-            PSITM1S(ie)=swild3(37)
-            BFORMAXS(ie)=swild3(38)
-            ISWBENS(ie)=swild3(39)
-            DFEEDM1S(ie)=swild3(40)
+        ar_name(1:31)=(/'sed_BENDO','CTEMP','BBM','CPOS','PO4T2TM1S', &
+     &'NH4T2TM1S','NO3T2TM1S','HST2TM1S','CH4T2TM1S','CH41TM1S','SO4T2TM1S', &
+     &'SIT2TM1S','BENSTR1S','NH41TM1S','NO31TM1S','HS1TM1S','SI1TM1S','PO41TM1S', &
+     &'PON1TM1S','PON2TM1S','PON3TM1S','POC1TM1S','POC2TM1S','POC3TM1S','POP1TM1S', &
+     &'POP2TM1S','POP3TM1S','PSITM1S','BFORMAXS','ISWBENS','DFEEDM1S'/)
+!'
+        do k=1,31 !# of 1D arrays
+          j=nf90_inq_varid(ncid2,trim(adjustl(ar_name(k))),mm)
+          if(j/=NF90_NOERR) call parallel_abort('init: nc ICM1')
+          j=nf90_get_var(ncid2,mm,buf3(1:ne_global),(/1/),(/ne_global/))
+          if(j/=NF90_NOERR) call parallel_abort('init: nc ICM2')
+          do i=1,ne_global
+            if(iegl(i)%rank==myrank) then
+              ie=iegl(i)%id
+              if(k==1) then
+                sed_BENDO(ie)=buf3(i)
+              else if(k==2) then
+                CTEMP(ie)=buf3(i)
+              else if(k==3) then
+                BBM(ie)=buf3(i)
+              else if(k==4) then
+                CPOS(ie)=buf3(i)
+              else if(k==5) then
+                PO4T2TM1S(ie)=buf3(i)
+              else if(k==6) then
+                NH4T2TM1S(ie)=buf3(i)
+              else if(k==7) then
+                NO3T2TM1S(ie)=buf3(i)
+              else if(k==8) then
+                HST2TM1S(ie)=buf3(i)
+              else if(k==9) then
+                CH4T2TM1S(ie)=buf3(i)
+              else if(k==10) then
+                CH41TM1S(ie)=buf3(i)
+              else if(k==11) then
+                SO4T2TM1S(ie)=buf3(i)
+              else if(k==12) then
+                SIT2TM1S(ie)=buf3(i)
+              else if(k==13) then
+                BENSTR1S(ie)=buf3(i)
+              else if(k==14) then
+                NH41TM1S(ie)=buf3(i)
+              else if(k==15) then
+                NO31TM1S(ie)=buf3(i)
+              else if(k==16) then
+                HS1TM1S(ie)=buf3(i)
+              else if(k==17) then
+                SI1TM1S(ie)=buf3(i)
+              else if(k==18) then
+                PO41TM1S(ie)=buf3(i)
+              else if(k==19) then
+                PON1TM1S(ie)=buf3(i)
+              else if(k==20) then
+                PON2TM1S(ie)=buf3(i)
+              else if(k==21) then
+                PON3TM1S(ie)=buf3(i)
+              else if(k==22) then
+                POC1TM1S(ie)=buf3(i)
+              else if(k==23) then
+                POC2TM1S(ie)=buf3(i)
+              else if(k==24) then
+                POC3TM1S(ie)=buf3(i)
+              else if(k==25) then
+                POP1TM1S(ie)=buf3(i)
+              else if(k==26) then
+                POP2TM1S(ie)=buf3(i)
+              else if(k==27) then
+                POP3TM1S(ie)=buf3(i)
+              else if(k==28) then
+                PSITM1S(ie)=buf3(i)
+              else if(k==29) then
+                BFORMAXS(ie)=buf3(i)
+              else if(k==30) then
+                ISWBENS(ie)=buf3(i)
+              else if(k==31) then
+                DFEEDM1S(ie)=buf3(i)
+              endif
+            endif !iegl
+          enddo !i
+        enddo !k=1,31
 
-            !write(12,*)'ICM:',iegb,swild3(1:40)
-          endif
-        enddo !i
+        ar_name(1:3)=(/'CPOP','CPON','CPOC'/)
+        do k=1,3 !# of 2D arrays
+          j=nf90_inq_varid(ncid2,trim(adjustl(ar_name(k))),mm)
+          if(j/=NF90_NOERR) call parallel_abort('init: nc ICM3')
+          do m=1,3
+            j=nf90_get_var(ncid2,mm,buf3(1:ne_global),(/m,1/),(/1,ne_global/))
+            if(j/=NF90_NOERR) call parallel_abort('init: nc ICM4')
+            do i=1,ne_global
+              if(iegl(i)%rank==myrank) then
+                ie=iegl(i)%id
+                if(k==1) then
+                  CPOP(ie,m)=buf3(i)
+                else (k==2) then
+                  CPON(ie,m)=buf3(i)
+                else (k==3) then
+                  CPOC(ie,m)=buf3(i)
+                endif
+              endif !iegl
+            enddo !i
+          enddo !m
+        enddo !k
+
+!        do i=1,ne_global       
+!          read(36) iegb,swild3(1:40)
+!          if(iegl(iegb)%rank==myrank) then
+!            ie=iegl(iegb)%id
+!            sed_BENDO(ie)=swild3(1)
+!            CTEMP(ie)=swild3(2)
+!            BBM(ie)=swild3(3)
+!            CPOS(ie)=swild3(4)
+!            PO4T2TM1S(ie)=swild3(5)
+!            NH4T2TM1S(ie)=swild3(6)
+!            NO3T2TM1S(ie)=swild3(7)
+!            HST2TM1S(ie)=swild3(8)
+!            CH4T2TM1S(ie)=swild3(9)
+!            CH41TM1S(ie)=swild3(10)
+!            SO4T2TM1S(ie)=swild3(11)
+!            SIT2TM1S(ie)=swild3(12)
+!            BENSTR1S(ie)=swild3(13)
+!            CPOP(ie,1)=swild3(14)
+!            CPOP(ie,2)=swild3(15)
+!            CPOP(ie,3)=swild3(16)
+!            CPON(ie,1)=swild3(17)
+!            CPON(ie,2)=swild3(18)
+!            CPON(ie,3)=swild3(19)
+!            CPOC(ie,1)=swild3(20)
+!            CPOC(ie,2)=swild3(21)
+!            CPOC(ie,3)=swild3(22)
+!            NH41TM1S(ie)=swild3(23)
+!            NO31TM1S(ie)=swild3(24)
+!            HS1TM1S(ie)=swild3(25)
+!            SI1TM1S(ie)=swild3(26)
+!            PO41TM1S(ie)=swild3(27)
+!            PON1TM1S(ie)=swild3(28)
+!            PON2TM1S(ie)=swild3(29)
+!            PON3TM1S(ie)=swild3(30)
+!            POC1TM1S(ie)=swild3(31)
+!            POC2TM1S(ie)=swild3(32)
+!            POC3TM1S(ie)=swild3(33)
+!            POP1TM1S(ie)=swild3(34)
+!            POP2TM1S(ie)=swild3(35)
+!            POP3TM1S(ie)=swild3(36)
+!            PSITM1S(ie)=swild3(37)
+!            BFORMAXS(ie)=swild3(38)
+!            ISWBENS(ie)=swild3(39)
+!            DFEEDM1S(ie)=swild3(40)
+!
+!            !write(12,*)'ICM:',iegb,swild3(1:40)
+!          endif
+!        enddo !i
+#endif
+
+#ifdef USE_COSINE
+        ar_name(1:4)=(/'COS_mS2','COS_mDN','COS_mZ1','COS_mZ2'/)
+        do k=1,4 !# of 3D arrays
+          j=nf90_inq_varid(ncid2,trim(adjustl(ar_name(k))),mm)
+          if(j/=NF90_NOERR) call parallel_abort('init: nc COS1')
+
+          do k=1,nvrt
+            do m=1,7
+              j=nf90_get_var(ncid2,mm,buf3(1:ne_global),(/m,k,1/),(/1,1,ne_global/))
+              if(j/=NF90_NOERR) call parallel_abort('init: nc COS2')
+              do i=1,ne_global
+                if(iegl(i)%rank==myrank) then
+                  ie=iegl(i)%id
+                  if(k==1) then
+                    mS2(m,k,ie)=buf3(i)
+                  else if(k==2) then
+                    mDN(m,k,ie)=buf3(i)
+                  else if(k==3) then
+                    mZ1(m,k,ie)=buf3(i)
+                  else if(k==4) then
+                    mZ2(m,k,ie)=buf3(i)
+                  endif
+                endif !iegl
+              enddo !i
+            enddo !m
+          enddo !k
+
+        ar_name(1:5)=(/'COS_sS2','COS_sDN','COS_sZ1','COS_sZ2','COS_nstep'/)
+!'
+        do k=1,5 !# of 2D arrays
+          j=nf90_inq_varid(ncid2,trim(adjustl(ar_name(k))),mm)
+          if(j/=NF90_NOERR) call parallel_abort('init: nc COS3')
+
+          do k=1,nvrt
+            j=nf90_get_var(ncid2,mm,buf3(1:ne_global),(/k,1/),(/1,ne_global/))
+            if(j/=NF90_NOERR) call parallel_abort('init: nc COS4')
+            do i=1,ne_global
+              if(iegl(i)%rank==myrank) then
+                ie=iegl(i)%id
+                if(k==1) then
+                  sS2(k,ie)=buf3(i)
+                else if(k==2) then
+                  sDN(k,ie)=buf3(i)
+                else if(k==3) then
+                  sZ1(k,ie)=buf3(i)
+                else if(k==4) then
+                  sZ2(k,ie)=buf3(i)
+                else if(k==5) then
+                  nstep(k,ie)=nint(buf3(i))
+                endif
+              endif !iegl
+            enddo !i
+          enddo !k
+
+!        if(allocated(swild4)) deallocate(swild4)
+!        allocate(swild4(32,nvrt),iwild(nvrt),stat=istat)
+!        if(istat/=0) call parallel_abort('failed in alloc. iwild')
+!        do i=1,ne_global
+!          read(36)iegb,((swild4(l,j),l=1,32),iwild(j),j=1,nvrt)
+!          if(iegl(iegb)%rank==myrank) then
+!            ie=iegl(iegb)%id
+!            do j=1,7
+!              mS2(j,:,ie)=swild4(4*j-3,:)
+!              mDN(j,:,ie)=swild4(4*j-2,:)
+!              mZ1(j,:,ie)=swild4(4*j-1,:)
+!              mZ2(j,:,ie)=swild4(4*j,:)
+!            enddo !j
+!            sS2(:,ie)=swild4(29,:)
+!            sDN(:,ie)=swild4(30,:)
+!            sZ1(:,ie)=swild4(31,:)
+!            sZ2(:,ie)=swild4(32,:)
+!            nstep(:,ie)=iwild(:)
+!          endif
+!        enddo !i
+!        deallocate(iwild)
 #endif
 
 #ifdef USE_SED2D 
+        j=nf90_inq_varid(ncid2,"SED2D_dp",mm);
+        if(j/=NF90_NOERR) call parallel_abort('init: nc SED2D')
+        j=nf90_get_var(ncid2,mm,buf3(1:np_global),(/1/),(/np_global/))
+        if(j/=NF90_NOERR) call parallel_abort('init: nc SED2D2')
         do i=1,np_global
-          read(36) ipgb,double1
-          if(ipgl(ipgb)%rank==myrank) then
-            ip=ipgl(ipgb)%id
-            dp(ip)=double1
+          if(ipgl(i)%rank==myrank) then
+            ip=ipgl(i)%id
+            dp(ip)=buf3(i)
           endif
         enddo !i
+
+!        do i=1,np_global
+!          read(36) ipgb,double1
+!          if(ipgl(ipgb)%rank==myrank) then
+!            ip=ipgl(ipgb)%id
+!            dp(ip)=double1
+!          endif
+!        enddo !i
 #endif
 
 #ifdef USE_SED
+        j=nf90_inq_varid(ncid2,"SED3D_dp",mm);
+        if(j/=NF90_NOERR) call parallel_abort('init: nc SED3D_dp')
+        j=nf90_get_var(ncid2,mm,buf3(1:np_global),(/1/),(/np_global/))
+        if(j/=NF90_NOERR) call parallel_abort('init: nc SED3D_dp2')
         do i=1,np_global
-          read(36) ipgb,double1
-          read(36) ipgb,tmp1
-          if(ipgl(ipgb)%rank==myrank) then
-            ip=ipgl(ipgb)%id
-            dp(ip)=double1
-            rough_p(ip)=tmp1
+          if(ipgl(i)%rank==myrank) then
+            ip=ipgl(i)%id
+            dp(ip)=buf3(i)
           endif
         enddo !i
 
-        deallocate(swild4)
-        allocate(swild4(Nbed,ntrs(5)),swild99(Nbed,MBEDP),stat=istat)
-        if(istat/=0) call parallel_abort('MAIN: alloc failure (55)')
-        do i=1,ne_global
-          read(36) iegb,swild4,swild99
-          if(iegl(iegb)%rank==myrank) then
-            ie=iegl(iegb)%id
-            bed_frac(:,ie,:)=swild4
-            bed(:,ie,:)=swild99
+        j=nf90_inq_varid(ncid2,"SED3D_rough",mm);
+        if(j/=NF90_NOERR) call parallel_abort('init: nc SED3D_rough')
+        j=nf90_get_var(ncid2,mm,buf3(1:np_global),(/1/),(/np_global/))
+        if(j/=NF90_NOERR) call parallel_abort('init: nc SED3D_rough2')
+        do i=1,np_global
+          if(ipgl(i)%rank==myrank) then
+            ip=ipgl(i)%id
+            rough_p(ip)=buf3(i)
           endif
         enddo !i
-        deallocate(swild99)
+
+        j=nf90_inq_varid(ncid2,"SED3D_bed",mm)
+        if(j/=NF90_NOERR) call parallel_abort('init: nc SED3D_bed0')
+        do k=1,Nbed
+          do m=1,MBEDP
+            j=nf90_get_var(ncid2,mm,buf3(1:ne_global),(/m,k,1/),(/1,1,ne_global/))
+            if(j/=NF90_NOERR) call parallel_abort('init: nc SED3D_bed')
+            do i=1,ne_global
+              if(iegl(i)%rank==myrank) then
+                ie=iegl(i)%id
+                bed(k,ie,m)=buf3(i)
+              endif !iegl
+            enddo !i
+          enddo !m
+        enddo !k
+
+        j=nf90_inq_varid(ncid2,"SED3D_bedfrac",mm)
+        if(j/=NF90_NOERR) call parallel_abort('init: nc SED3D_bedfrac')
+        do k=1,Nbed
+          do m=1,ntrs(5)
+            j=nf90_get_var(ncid2,mm,buf3(1:ne_global),(/m,k,1/),(/1,1,ne_global/))
+            if(j/=NF90_NOERR) call parallel_abort('init: nc bedfrac')
+            do i=1,ne_global
+              if(iegl(i)%rank==myrank) then
+                ie=iegl(i)%id
+                bed_frac(k,ie,m)=buf3(i)
+              endif !iegl
+            enddo !i
+          enddo !m
+        enddo !k
+
+!        do i=1,np_global
+!          read(36) ipgb,double1
+!          read(36) ipgb,tmp1
+!          if(ipgl(ipgb)%rank==myrank) then
+!            ip=ipgl(ipgb)%id
+!            dp(ip)=double1
+!            rough_p(ip)=tmp1
+!          endif
+!        enddo !i
+!
+!        deallocate(swild4)
+!        allocate(swild4(Nbed,ntrs(5)),swild99(Nbed,MBEDP),stat=istat)
+!        if(istat/=0) call parallel_abort('MAIN: alloc failure (55)')
+!        do i=1,ne_global
+!          read(36) iegb,swild4,swild99
+!          if(iegl(iegb)%rank==myrank) then
+!            ie=iegl(iegb)%id
+!            bed_frac(:,ie,:)=swild4
+!            bed(:,ie,:)=swild99
+!          endif
+!        enddo !i
+!        deallocate(swild99)
 
 #endif /*USE_SED*/
 
 #ifdef USE_MARSH
-        call parallel_abort('INIT: no hotstart with MARSH yet')
+        j=nf90_inq_varid(ncid2, "marsh_flag",mm)
+        if(j/=NF90_NOERR) call parallel_abort('init: nc marsh_flag')
+        j=nf90_get_var(ncid2,mm,nwild2,(/1/),(/ne_global/))
+        if(j/=NF90_NOERR) call parallel_abort('init: nc marsh_flag2')
         do i=1,ne_global
-          read(36) iegb,itmp1
-          if(iegl(iegb)%rank==myrank) then
-            ie=iegl(iegb)%id
-            imarsh(ie)=itmp1
+          if(iegl(i)%rank==myrank) then
+            ie=iegl(i)%id
+            imarsh(ie)=nwild2(i)
           endif
         enddo !i
+
+!        do i=1,ne_global
+!          read(36) iegb,itmp1
+!          if(iegl(iegb)%rank==myrank) then
+!            ie=iegl(iegb)%id
+!            imarsh(ie)=itmp1
+!          endif
+!        enddo !i
 #endif /*USE_MARSH*/
 
+#ifdef USE_ICE
+        j=nf90_inq_varid(ncid2,"ice_free_flag",mm)
+        if(j/=NF90_NOERR) call parallel_abort('init: nc ice_free_flag')
+        j=nf90_get_var(ncid2,mm,itmp)
+        if(j/=NF90_NOERR) call parallel_abort('init: nc ice_free_flag2')
+        if(itmp==0) then
+          lice_free_gb=.false.
+        else
+          lice_free_gb=.true.
+        endif
+        if(myrank==0) write(16,*)'hotstart with lice_free_gb=',lice_free_gb
+
+        ar_name(1:5)=(/'ice_surface_T','ice_water_flux','ice_heat_flux','ice_velocity_x','ice_velocity_y'/)
+        do k=1,5 !# of 1D node arrays
+          j=nf90_inq_varid(ncid2,trim(adjustl(ar_name(k))),mm)
+          if(j/=NF90_NOERR) call parallel_abort('init: nc ICE1')
+
+          j=nf90_get_var(ncid2,mm,buf3(1:np_global),(/1/),(/np_global/))
+          if(j/=NF90_NOERR) call parallel_abort('init: nc ICE2')
+          do i=1,np_global
+            if(ipgl(i)%rank==myrank) then
+              ip=ipgl(i)%id
+              if(k==1) then
+                t_oi(ip)=buf3(i)
+              else if(k==2) then
+                fresh_wa_flux(ip)=buf3(i)
+              else if(k==3) then
+                net_heat_flux(ip)=buf3(i)
+              else if(k==4) then
+                u_ice(ip)=buf3(i)
+              else if(k==5) then
+                v_ice(ip)=buf3(i)
+              endif
+            endif !ipgl
+          enddo !i
+        enddo !k
+
+        ar_name(1:3)=(/'ice_sigma11','ice_sigma12','ice_sigma22'/)
+        do k=1,3 !# of 1D elem arrays
+          j=nf90_inq_varid(ncid2,trim(adjustl(ar_name(k))),mm)
+          if(j/=NF90_NOERR) call parallel_abort('init: nc ICE3')
+
+          j=nf90_get_var(ncid2,mm,buf3(1:ne_global),(/1/),(/ne_global/))
+          if(j/=NF90_NOERR) call parallel_abort('init: nc ICE4')
+          do i=1,ne_global
+            if(iegl(i)%rank==myrank) then
+              ie=iegl(i)%id
+              if(k==1) then
+                sigma11(ie)=buf3(i)
+              else if(k==2) then
+                sigma12(ie)=buf3(i)
+              else if(k==3) then
+                sigma22(ie)=buf3(i)
+              endif
+            endif !ipgl
+          enddo !i
+        enddo !k
+
+        j=nf90_inq_varid(ncid2,"ice_ocean_stress",mm)
+        if(j/=NF90_NOERR) call parallel_abort('init: nc oi_stress')
+        do m=1,2
+          j=nf90_get_var(ncid2,mm,buf3(1:np_global),(/m,1/),(/1,np_global/))
+          if(j/=NF90_NOERR) call parallel_abort('init: nc oi_stress2')
+          do i=1,np_global
+            if(ipgl(i)%rank==myrank) then
+              ip=ipgl(i)%id
+              tau_oi(m,ip)=buf3(i)
+            endif !iegl
+          enddo !i
+        enddo !m
+
+        j=nf90_inq_varid(ncid2,"ice_tracers",mm)
+        if(j/=NF90_NOERR) call parallel_abort('init: nc ice_tracers')
+        do m=1,ntr_ice
+          j=nf90_get_var(ncid2,mm,buf3(1:np_global),(/m,1/),(/1,np_global/))
+          if(j/=NF90_NOERR) call parallel_abort('init: nc ice_tracers2')
+          do i=1,np_global
+            if(ipgl(i)%rank==myrank) then
+              ip=ipgl(i)%id
+              ice_tr(m,ip)=buf3(i)
+            endif !iegl
+          enddo !i
+        enddo !m
+#endif /*USE_ICE*/
+
 #ifdef USE_HA
-!...
-!......HOT START INFORMATION FOR HARMONIC ANALYSIS
-!......Adapted from ADCIRC
-!...
-        IF(iharind.EQ.1) THEN
-          IHABEG=ITHAS+NHAINC
-!...
-!.......IF HARMONIC ANALYSIS HAS NOT BEGUN, COLD START THE HARMONIC ANALYSIS
-!...
-          IF(iths.LT.IHABEG) THEN
-            ICHA=0
-            CALL HACOLDS(HAFREQ)
-            IF(NHAGE.EQ.1) CALL HACOLDSEG(np)
-            IF(NHAGV.EQ.1) CALL HACOLDSVG(np)
-            IF (CHARMV) THEN
-              ELAV  =0.D0
-              XVELAV=0.D0
-              YVELAV=0.D0
-              ELVA  =0.D0
-              XVELVA=0.D0
-              YVELVA=0.D0
-!              DO I=1,np
-!                ELAV(I)=0.D0
-!                XVELAV(I)=0.D0
-!                YVELAV(I)=0.D0
-!                ELVA(I)=0.D0
-!                XVELVA(I)=0.D0
-!                YVELVA(I)=0.D0
-!              END DO
-            ENDIF   !   charmv
-          ENDIF
-
-!...
-!........IF HARMONIC ANALYSIS HAS ALREADY BEGUN, READ IN HOT START
-!........HARMONIC ANALYSIS, MEAN AND SQUARE INFO
-!...
-          IF(iths.GT.ITHAS) READ(36) ICHA
-          IF(iths.GE.IHABEG) THEN
-            CALL HAHOTS(0,0,np_global,0,0,NHAGE,NHAGV,36,myrank)
-            IF(NHAGE.EQ.1) CALL HAHOTSEG(np_global,36,myrank)
-            IF(NHAGV.EQ.1) CALL HAHOTSVG(np_global,36,myrank)
-          ENDIF
-
-!..Read in Means and Squares
-
-          IF(CHARMV) THEN
-            IF((FMV.NE.0.).AND.(iths.GT.ITMV)) THEN
-              READ(36) NTSTEPS
-              IF(NHAGE.EQ.1) THEN
-                DO I=1,np_global
-                  READ(36) tmp1
-                  READ(36) tmp2
-                  if (ipgl(i)%rank==myrank) then	!for augmented region
-                    il = ipgl(i)%id
-                    ELAV(il)=tmp1
-                    ELVA(il)=tmp2
-                  endif
-                ENDDO
-              ENDIF
-              IF(NHAGV.EQ.1) THEN
-                DO I=1,np_global
-                  READ(36) tmp1
-                  READ(36) tmp2
-                  READ(36) tmp3
-                  READ(36) tmp4
-                  if (ipgl(i)%rank==myrank) then	!for augmented region
-                    il = ipgl(i)%id
-                    XVELAV(il) = tmp1
-                    YVELAV(il) = tmp2
-                    XVELVA(il) = tmp3
-                    YVELVA(il) = tmp4
-                  endif
-                ENDDO
-              ENDIF
-            ENDIF
-          ENDIF   !  charmv
-        ENDIF    !HARIND
+        call parallel_abort('init: hot option for HA diabled')
 #endif /*USE_HA*/
 
         ! Close hotstart file
-        close(36)
+!        close(36)
+
+        deallocate(buf3)
+        j=nf90_close(ncid2)
+        if(j/=NF90_NOERR) call parallel_abort('init: nc close')
+
+#ifdef USE_FABM
+        call fabm_schism_read_horizontal_state_from_netcdf('fabm_schism_hotstart.nc',time=time)
+!'
+#endif
 
         if(itur==3.or.itur==5) then !Tsinghua group:0822+itur==5
 !$OMP parallel do default(shared) private(i,j)
@@ -5302,14 +5911,6 @@
           enddo !i
         endif !nws=4
 
-#ifdef USE_SIMPLE_WIND
-!IVICA
-        if(nws==5.or.nws==6) then
-          CALL INIT_NETCDF_CF_ALLVAR(nws,sim_year,sim_month,sim_day,sim_hour,sim_minute,sim_second)
-          CALL READ_NETCDF_CF_ALLVAR(time, windx, windy, pr)
-        endif !5|6
-#endif
-
         if(nws>=2.and.nws<=3) then
           ninv=time/wtiminc
           wtime1=ninv*wtiminc 
@@ -5337,6 +5938,23 @@
             read(23,*)tmp,fluxsu00,srad00
           endif !nws==3
         endif !nws
+
+#ifdef USE_SIMPLE_WIND
+        if(nws==5.or.nws==6) then
+          ninv=time/wtiminc
+          wtime1=ninv*wtiminc
+          wtime2=(ninv+1)*wtiminc
+          itmp1=floor(time/wtiminc)+1
+          if(nws==5) then
+             CALL READ_REC_ATMO_FD(itmp1,   windx1, windy1, pr1)
+             CALL READ_REC_ATMO_FD(itmp1+1, windx2, windy2, pr2)
+          endif
+          if(nws==6) then 
+             CALL READ_REC_ATMO_FEM(itmp1,   windx1, windy1, pr1)
+             CALL READ_REC_ATMO_FEM(itmp1+1, windx2, windy2, pr2)
+          endif
+        endif !5|6
+#endif
 
 !       read ICM parameters 
 #ifdef USE_ICM 
@@ -5576,27 +6194,19 @@
 
 !     Open global output files and write header data
       if(ihot<=1) ifile=1 !reset output file #
-      write(ifile_char,'(i12)') ifile !convert ifile to a string
-      ifile_char=adjustl(ifile_char)  !place blanks at end
-      ifile_len=len_trim(ifile_char)  !length without trailing blanks
-      fgb=ifile_char(1:ifile_len)//'_0000'; lfgb=len_trim(fgb);
-      write(fgb(lfgb-3:lfgb),'(i4.4)') myrank
-      do i=1,noutput
-        ichan(i)=100+i !output channel #
-        if(iof(i)==1) then
-          open(ichan(i),file='outputs/'//(fgb(1:lfgb)//'_'//outfile(i)),status='replace',form="unformatted",access="stream")
-        endif
-      enddo !i
+      call fill_nc_header(0)
+!      write(ifile_char,'(i12)') ifile !convert ifile to a string
+!      ifile_char=adjustl(ifile_char)  !place blanks at end
+!      ifile_len=len_trim(ifile_char)  !length without trailing blanks
+!      fgb=ifile_char(1:ifile_len)//'_0000'; lfgb=len_trim(fgb);
+!      write(fgb(lfgb-3:lfgb),'(i4.4)') myrank
+!      do i=1,noutput
+!        ichan(i)=100+i !output channel #
+!        if(iof(i)==1) then
+!          open(ichan(i),file='outputs/'//(fgb(1:lfgb)//'_'//outfile(i)),status='replace',form="unformatted",access="stream")
+!        endif
+!      enddo !i
 
-!      if(iwrite==0) then !one global output
-!      call write_header0(iths,iths)
-!  elseif(iwrite==1) then !each processor output a separate file
-!    call write_ggtbls
-!      call write_header1
-!  elseif(iwrite==2) then !separate files with sequential unformatted
-!    call write_ggtbls
-!    call write_header2(nt,iths,iths)
-!  endif
 
 !     Write local to global mapping and header info for combining scripts
       fdb='local_to_global_0000'
@@ -5604,9 +6214,9 @@
       write(fdb(lfdb-3:lfdb),'(i4.4)') myrank
       open(10,file='outputs/'//fdb,status='replace')
 
-!     header info (except ivs, i23d, variable_nm, and variable_dim; the 1st two can be inferred from output names and 
+!     header info (except ivs, i23d; the 1st two can be inferred from output names and 
 !     last two are not important)
-      write(10,'(1000(1x,i10))')ne_global,np_global,nvrt,nproc,ntrs(:) !global info
+      write(10,'(1000(1x,i10))')ns_global,ne_global,np_global,nvrt,nproc,ntracers,ntrs(:) !global info
 !     local to global mapping      
       write(10,*)'local to global mapping:'
       write(10,*)ne
@@ -5624,27 +6234,23 @@
 
       write(10,*)'Header:'
       write(10,'(a)')data_format,version,start_time
-      write(10,*)nrec,real(dt*nspool),nspool,nvrt,kz,real(h0),real(h_s),real(h_c),real(theta_b),real(theta_f)
+      write(10,*)nrec,real(dt*nspool),nspool,nvrt,kz,real(h0),real(h_s),real(h_c),real(theta_b),real(theta_f),ics
       write(10,*)(real(ztot(k)),k=1,kz-1),(real(sigma(k)),k=1,nvrt-kz+1)
+      write(10,*)np,ne
       if(ics==1) then
-        write(10,*)np,ne
         do m=1,np
           write(10,*)real(xnd(m)),real(ynd(m)),real(dp00(m)),kbp00(m)
         enddo !m
-        do m=1,ne
-          write(10,*)i34(m),(elnode(mm,m),mm=1,i34(m))
-        enddo !m
 !     &(i34(m),(elnode(mm,m),mm=1,i34(m)),m=1,ne)
       else !lat/lon
-        write(10,*)np,ne
         do m=1,np
           write(10,*)real(xlon(m)/pi*180),real(ylat(m)/pi*180),real(dp00(m)),kbp00(m)
         enddo !m
-        do m=1,ne
-          write(10,*)i34(m),(elnode(mm,m),mm=1,i34(m))
-        enddo !m
 !     &(i34(m),(elnode(mm,m),mm=1,i34(m)),m=1,ne)
       endif !ics
+      do m=1,ne
+        write(10,*)i34(m),(elnode(mm,m),mm=1,i34(m))
+      enddo !m
 
       close(10)
       

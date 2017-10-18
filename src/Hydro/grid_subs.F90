@@ -525,6 +525,7 @@ subroutine aquire_hgrid(full_aquire)
 !#endif
   use schism_glbl
   use schism_msgp
+  use schism_io
   implicit none
 !#ifndef USE_MPIMODULE
   include 'mpif.h'

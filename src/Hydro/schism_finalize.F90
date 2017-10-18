@@ -15,9 +15,14 @@
       subroutine schism_finalize
       use schism_glbl
       use schism_msgp
+      use schism_io
       USE hydraulic_structures
 #ifdef USE_HA
       USE harm
+#endif
+
+#ifdef USE_FABM
+      USE fabm_schism, only: fabm_schism_close_output_netcdf
 #endif
 
 #ifdef USE_PETSC
@@ -142,5 +147,9 @@
 #ifdef USE_WWM
       call TERMINATE_WWM
 #endif /*USE_WWM*/
+
+#ifdef USE_FABM
+      call fabm_schism_close_output_netcdf()
+#endif
 
       end subroutine schism_finalize
