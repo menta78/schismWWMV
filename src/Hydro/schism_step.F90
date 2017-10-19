@@ -7953,12 +7953,12 @@
           it_char=adjustl(it_char); lit=len_trim(it_char)
           noutput=noutput+1
           if(iof(noutput)==1) call writeout_nc(id_out_var(noutput+4), &
-     &'WWM_'//it_char(1:lit),1,1,npa,outwwm(:,i))
+     &'WWM_'//it_char(1:lit),1,1,npa,dble(out_wwm(:,i)))
         enddo !i
 
         !Deal with vectors
         if(iof(noutput+1)==1) call writeout_nc(id_out_var(noutput+5), &
-     &'WWM_energy_dir',1,1,npa,outwwm(:,8),outwwm(:,7))
+     &'WWM_energy_dir',1,1,npa,dble(out_wwm(:,8)),dble(out_wwm(:,7)))
         noutput=noutput+1
 #endif
 
