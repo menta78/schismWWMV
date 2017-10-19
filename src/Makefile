@@ -48,7 +48,7 @@ ifeq ($(findstring GNU Fortran,$(shell $(FCP) --version)),GNU Fortran)
   $(print Here)
   MODULEOUTDIR = -J
 else
-  ifeq ($(ENV),DKRZ) ##please edit here, Eli
+  ifeq ($(ENV),DKRZold) ##please edit here, Eli
     MODULEOUTDIR = -qmoddir=
   else
     MODULEOUTDIR = -module 
@@ -78,7 +78,7 @@ endif
 # Derived compiler flags
 ###########
 
-ifeq ($(ENV),DKRZ)
+ifeq ($(ENV),DKRZold)
   IBMCPP = -WF,
 else
   IBMCPP =
@@ -101,14 +101,14 @@ endif
 
 #Search path
 VPATH = Core/ Driver/ Hydro/ EcoSim/ COSINE/ Sediment/ Sed2d/ \
-        WWMIII/ ICM/ TIMOR/ FIB/
+        WWMIII/ ICM/ TIMOR/ FIB/ Ice/ Fabm/
 
 ifdef FUJITSU
   PPFLAGS := $(PPFLAGS) $(IBMCPP)-DFUJITSU
 endif
 
 #Cores
-OBJS = schism_glbl.o schism_msgp.o misc_modules.o schism_driver.o
+OBJS = schism_glbl.o schism_msgp.o misc_modules.o schism_io.o schism_driver.o
 
 ifdef USE_PETSC
   PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_PETSC
@@ -119,6 +119,11 @@ ifdef USE_PETSC
 else
   PETSCLIBS =
   PETSCMOD =
+endif
+
+ifdef USE_FABM
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_FABM
+  OBJS := $(OBJS) fabm_schism.o
 endif
 
 ifdef USE_PREC_EVAP
@@ -247,6 +252,12 @@ OBJS := $(OBJS) wwm_datapl.o wwm_petscpool.o  wwm_petsc_seriell.o wwm_petsc_para
          wwm_jacobi.o wwm_coupl_shyfem.o wwm_coupl_selfe.o wwm_coupl_timor.o wwm_main.o wwm_export_ww3.o
 endif
 
+ifdef USE_ICE
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_ICE
+  OBJS := $(OBJS) ice_module.o ice_therm_mod.o ice_init.o ice_step.o ice_evp.o ice_mevp.o \
+                  ice_fct.o ice_thermodynamics.o
+endif
+
 ifdef USE_MARSH
   PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_MARSH
 endif
@@ -261,7 +272,7 @@ endif
 #Remaining Hydro
 OBJS := $(OBJS) grid_subs.o hydraulic_structures.o schism_init.o \
         schism_step.o schism_finalize.o bktrk_subs.o solver_subs.o \
-        io_subs.o misc_subs.o transport_TVD.o transport_TVD_imp.o \
+        misc_subs.o transport_TVD.o transport_TVD_imp.o \
         sflux_9c.o lap.o single_netcdf.o
 
 ifdef USE_SIMPLE_WIND
