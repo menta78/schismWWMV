@@ -829,7 +829,7 @@
 
        USE DATAPOOL, ONLY : FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, FRINTF, COFRM4, CG, WK, &
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, EMEAN, FMEAN, TH, DEP, &
-     &                      DELTH => DDIR, &
+     &                      DELTH => DDIR, CONST_ECMWF, &
      &                      G => G9, &
      &                      ZPI => PI2, &
      &                      EPSMIN => SMALL, &
@@ -840,7 +840,6 @@
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
       INTEGER, INTENT(IN)              :: IPP, IG
-      REAL(rkind),PARAMETER            :: CONST = -2.0*0.076/G
       REAL(rkind),DIMENSION(NANG,NFRE) :: F,FL,SL
       REAL(rkind),DIMENSION(NANG,NFRE) :: SSBF, DSSBF
       INTEGER                          :: M, K
@@ -852,7 +851,7 @@
         IF(DEP(IPP).LT.999) THEN
           ARG = 2.* DEP(IPP)*WK(M,IPP)!TFAK(INDEP(IJ),M)
           ARG = MIN(ARG,50.)
-          SBO = CONST*WK(M,IPP)/SINH(ARG)
+          SBO = CONST_ECMWF*WK(M,IPP)/SINH(ARG)
 !          SBO(IJ) = CONST*TFAK(INDEP(IJ),M)/SINH(ARG)
         ENDIF
 

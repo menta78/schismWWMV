@@ -131,6 +131,7 @@
          REAL(rkind), PARAMETER             :: TPI       = PI2
          REAL(rkind), PARAMETER             :: INVTPI    = INVPI2
          REAL(rkind), PARAMETER             :: G9        = 9.806_rkind
+         REAL(rkind), PARAMETER             :: CONST_ECMWF = -2.0*0.076/G9
 
          REAL(rkind)                        :: DMIN      = 0.01_rkind
 
