@@ -875,6 +875,23 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+     SUBROUTINE CONVERT_WWM_VS_VD(IP, VS, VD, PHI_R, DPHIDN_R)
+     USE DATAPOOL
+     IMPLICIT NONE
+     INTEGER, intent(in) :: IP
+     REAL(rkind), intent(out) :: VS(NSPEC), VD(NSPEC)
+     REAL(rkind), intent(in) :: PHI_R(NUMSIG,NUMDIR), DPHIDN_R(NUMSIG,NUMDIR)
+     INTEGER :: IS, ID
+     DO IS=1,NUMSIG
+       DO ID=1,NUMDIR
+          VS(ID + (IS-1) * NUMDIR) = PHI_R(IS,ID) * CG(IS,IP)
+          VD(ID + (IS-1) * NUMDIR) = DPHIDN_R(IS,ID)
+       END DO
+     END DO
+     END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
      SUBROUTINE ONED2TWOD(AC1D,WALOC)
          USE DATAPOOL
          IMPLICIT NONE
