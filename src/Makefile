@@ -237,7 +237,7 @@ ifdef USE_OIL
 endif
 
 ifdef USE_WWM
-  PPFLAGS := $(PPFLAGS) -DUSE_WWM -DNCDF -DST42 -DWWM_SOLVER # -DDEBUG_SOURCE_TERM -DDEBUG_SOLVER -DDEBUG 
+PPFLAGS := $(PPFLAGS) -DUSE_WWM -DNCDF -DST42 -DWWM_SOLVER # -DDEBUG_SOURCE_TERM -DDEBUG_SOLVER -DDEBUG 
 OBJS := $(OBJS) wwm_datapl.o wwm_petscpool.o  wwm_petsc_seriell.o wwm_petsc_parallel.o \
          wwm_petsc_block.o wwm_petsc_controller.o wwm_aux.o wwm_aux_parall.o wwm_mjdv2.o wwm_blasaux.o wwm_sparskit.o \
          wwm_wind.o wwm_breaking.o wwm_friction.o wwm_cycle3.o \
@@ -315,26 +315,9 @@ pschism: $(EXEC) o/$(config)/.dummy
 all: pschism utility
 
 
-PARMETISDIR := ./ParMetis-3.1-Sep2010
-ifeq ($(ENV),CORI)
-    PARMETISDIR := ./ParMetis-3.1-Sep2010.cray
-endif
-ifeq ($(ENV),CORI2)
-    PARMETISDIR := ./ParMetis-3.1-Sep2010.cray
-endif
-
 # This is the main executable target
-$(EXEC): $(CONFIG_OBJS) $(PARMETISDIR)/parmetis.a $(PARMETISDIR)/metis.a
+$(EXEC): $(CONFIG_OBJS)
 	$(FLD) $(FLDFLAGS) $(CONFIG_OBJS) $(LIBS) ${MODULEOUTDIR}. -I. -o $@
-
-
-$(PARMETISDIR)/%.a:
-	+$(MAKE) --directory=$(PARMETISDIR)
-
-.PHONY: parmetis
-parmetis:
-	+$(MAKE) clean --directory=$(PARMETISDIR)
-	+$(MAKE) --directory=$(PARMETISDIR)
 
 
 .PHONY: depend

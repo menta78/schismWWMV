@@ -1289,7 +1289,7 @@
           ENDIF
 
           SATURATION2=TANH(10*(((BTH(K,M)/SSDSBR)**0.5)-SDSBR2))
-          COSWIND=(COSTH(K)*COS(THWNEW(IPP))+SINTH(K)*SIN(THWNEW(IPP)))   ! �vérifier K ?
+          COSWIND=(COSTH(K)*COS(THWNEW(IPP))+SINTH(K)*SIN(THWNEW(IPP)))   ! vérifier K ?
           DTURB=-2.*SIG(M)*XK(M)*FACTURB*COSWIND  ! Theory -> stress direction
           P0=SSDSP ! -0.5*SSDSC3*(1-TANH(W*USTAR*XK(M)/SIG(M)-0.1))  ! for SDSC3=1 this is vdW et al. 
 

@@ -88,9 +88,9 @@
 #ifndef SCHISM
 # ifndef PDLIB
 #  ifdef USE_SINGLE
-      serfwe   integer,parameter :: rkind = 4
+      integer,parameter :: rkind = 4
 #  else
-      werwe   integer,parameter :: rkind = 8      ! Default real datatype
+      integer,parameter :: rkind = 8      ! Default real datatype
 #  endif
 # endif
 #endif

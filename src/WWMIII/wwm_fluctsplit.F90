@@ -1107,8 +1107,8 @@
                 THETA_L(:,IE) = ZERO
               END IF
               ST(NI)          = ST(NI) + THETA_L(:,IE)
-              THETA_H         = (ONETHIRD+DT4AI/(TWO*TRIA(IE)) * KELEM(:,IE) ) * FT ! LAX
-!              THETA_H = (ONETHIRD+TWOTHIRD*KELEM(:,IE)/SUM(MAX(ZERO,KELEM(:,IE))))*FT  ! CENTRAL
+!              THETA_H         = (ONETHIRD+DT4AI/(TWO*TRIA(IE)) * KELEM(:,IE) ) * FT ! LAX
+              THETA_H = (ONETHIRD+TWOTHIRD*KELEM(:,IE)/SUM(MAX(ZERO,KELEM(:,IE))))*FT  ! CENTRAL
               THETA_ACE(:,IE) = THETA_H-THETA_L(:,IE)
               PP(NI) =  PP(NI) + MAX(ZERO, -THETA_ACE(:,IE)) * DTSI(NI)
               PM(NI) =  PM(NI) + MIN(ZERO, -THETA_ACE(:,IE)) * DTSI(NI)
