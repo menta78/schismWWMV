@@ -110,7 +110,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE ST4_POST (IP, WALOC, SSINE, DSSINE, SSDS, DSSDS, SSINL)
+      SUBROUTINE ST4_POST (IP, WALOC)
         USE DATAPOOL
         USE W3SRC4MD
         IMPLICIT NONE
@@ -118,9 +118,9 @@
         INTEGER, INTENT(IN)        :: IP
         REAL(rkind), INTENT(IN)    :: WALOC(NUMSIG,NUMDIR)
        
-        REAL(rkind), INTENT(OUT)   :: SSINE(NUMSIG,NUMDIR),DSSINE(NUMSIG,NUMDIR)
-        REAL(rkind), INTENT(OUT)   :: SSDS(NUMSIG,NUMDIR),DSSDS(NUMSIG,NUMDIR)
-        REAL(rkind), INTENT(OUT)   :: SSINL(NUMSIG,NUMDIR)
+        REAL(rkind)                :: SSINE(NUMSIG,NUMDIR),DSSINE(NUMSIG,NUMDIR)
+        REAL(rkind)                :: SSDS(NUMSIG,NUMDIR),DSSDS(NUMSIG,NUMDIR)
+        REAL(rkind)                :: SSINL(NUMSIG,NUMDIR)
 
         INTEGER                    :: IS, ID, IK, ITH, ITH2, IS0
 
@@ -134,7 +134,7 @@
         REAL(rkind)                :: WHITECAP(1:4), SUMWALOC, FPM
         REAL(rkind)                :: PHIAW, CHARN, PHINL, PHIBBL, TAUWIX, TAUWIY, TAUWNX, TAUWNY
         REAL(rkind)                :: FACTOR, FACTOR2, MWXFINISH, MWYFINISH, EFINISH, DIFF
-        REAL(rkind)                :: A1BAND, PHIOC, HSTOT
+        REAL(rkind)                :: A1BAND, PHIOC, HSTOT, PIBBL, FAGE
 
         DO IS = 1, NUMSIG
           DO ID = 1, NUMDIR
@@ -169,9 +169,26 @@
         CALL W3SDS4(AWW3,WK(:,IP),CG(:,IP),UFRIC(IP),USTDIR(IP),DEP(IP),SSDS_WW3,DSSDS_WW3,BRLAMBDA,WHITECAP)
         CALL CONVERT_VS_VD_WWM(IP,SSDS_WW3,DSSDS_WW3,SSDS,DSSDS)
 !
-! missing high freq. tail contribution -> 2do
+! Resio & Perrie ... scaling ...
+! FFXFA = 0. and the below is total crap ... 
 !
+        FAGE   = FFXFA*TANH(0.3*U10ABS*FMEANWS*TPI/G9)
+        FH1    = (FFXFM+FAGE) * FMEAN1
 
+        FH2    = FFXPM / USTAR
+        FHIGH  = MIN ( SIG(NK) , MAX ( FH1 , FH2 ) )
+        NKH    = MAX ( 2 , MIN ( NKH1 ,                           &
+                 INT ( FACTI2 + FACTI1*LOG(MAX(1.E-7,FHIGH)) ) ) )
+!
+! Add tail
+!
+        FACHF  = 5.
+        FACHFA = XFR**(-FACHF-2)
+        DO IK=NKH+1, NK
+          DO ITH=1, NTH
+            AWW3(ITH+(IK-1)*NTH) = AWW3(ITH+(IK-2)*NTH) * FACHFA + 0. ! Adding a magic zero without a comment ... 
+            END DO
+          END DO
 !
 ! adding the fluxes from waves to ocean ...
 !
@@ -201,6 +218,7 @@
         HSTOT = HSTOT + SPEC(IS) * FACTOR
         END DO
       END DO
+
       WHITECAP(3)=4.*SQRT(WHITECAP(3))
       HSTOT=4.*SQRT(HSTOT)
       TAUWIX= TAUWIX+ TAUWX * DRAT *DT
@@ -215,11 +233,11 @@
       EFINISH  = 0.
       MWXFINISH  = 0.
       MWYFINISH  = 0.
-      DO IK=1, NK
+      DO IK = 1, NK
         EBAND = 0.
         A1BAND = 0.
         B1BAND = 0.
-        DO ITH=1, NTH
+        DO ITH = 1, NTH
           DIFF   = SPECINIT(ITH+(IK-1)*NTH)-SPEC(ITH+(IK-1)*NTH)
           EBAND  = EBAND + DIFF
           A1BAND = A1BAND + DIFF*ECOS(ITH)
@@ -230,7 +248,7 @@
         MWYFINISH = MWYFINISH  + B1BAND * DDEN(IK) / CG(IK,IP) * WK(IK,IP)/SIG(IK)
       END DO
 !
-! Transformation in momentum flux in m^2 / s^2 
+!     Transformation in momentum flux in m^2 / s^2 
 !
       TAUOX = (G9*MWXFINISH+TAUWIX-TAUBBL(1))/DT4S
       TAUOY = (G9*MWYFINISH+TAUWIY-TAUBBL(2))/DT4S
@@ -239,7 +257,7 @@
       TAUWNX = TAUWNX/DT4S
       TAUWNY = TAUWNY/DT4S
 !
-! Transformation in wave energy flux in W/m^2=kg / s^3 
+!     Transformation in wave energy flux in W/m^2=kg / s^3 
 !
       PHIOC = DWAT*G9*(EFINISH+PHIAW-PHIBBL)/DT4S
       PHIAW = DWAT*G9*PHIAW /DT4S
