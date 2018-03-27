@@ -162,7 +162,9 @@
       INTEGER, ALLOCATABLE           :: IKTAB(:,:)
       INTEGER, ALLOCATABLE           :: SATINDICES(:,:)
       LOGICAL, ALLOCATABLE           :: LLWS(:)
-      REAL(rkind)                    :: SSDSC(1:9)
+      REAL(rkind)                    :: SSDSC(9)
+      REAL(rkind)                    :: FXFM3, FFXFA, FFXFM, FXFMAGE, FFXFI, FXINCUT, FFXFD, FXDSCUT, FFXPM, FXPM3 
+
       REAL(rkind), ALLOCATABLE       :: SIG(:),SIG2(:), DDEN(:)
       REAL(rkind), ALLOCATABLE       :: DDEN2(:), DSII(:)
       REAL(rkind), ALLOCATABLE       :: DSIP(:), TH(:), ESIN(:)
@@ -367,7 +369,6 @@
         SSINTHP    = SINTHP
         SSWELLFPAR = SWELLFPAR
 
-!        TTAUWSHELTER = 1.0_rkind
         TTAUWSHELTER = TAUWSHELTER
         ZZ0RAT       = Z0RAT
 
@@ -377,12 +378,11 @@
         SSDSC5 = SDSC5
         SSDSC6 = SDSC6
 
-!        WHITECAPWIDTH = 0.8_rkind
-
         SSDSCUM = SDSCUM
         SSDSDTH = SDSDTH
         SSDSCOS = SDSCOS
 
+        SSDSC      = ZERO
         SSDSC(1)   = SSDSC1
         SSDSC(2)   = SSDSC2
         SSDSC(3)   = SSDSCUM
@@ -391,7 +391,16 @@
         SSDSC(6)   = SSDSC6
         SSDSC(7)   = WHITECAPWIDTH
 
-        
+        FXFM3   = 2.5_rkind
+        FXFMAGE = ZERO
+        FXINCUT = ZERO
+        FXDSCUT = ZERO
+        FXPM3   = 4._rkind
+        FFXFM   = FXFM3 * PI2
+        FFXFA   = FXFMAGE * PI2
+        FFXFI   = FXINCUT * PI2
+        FFXFD   = FXDSCUT * PI2
+        FFXPM   = FXPM3 * G9 / 28.
 
         SDSNTH  = MIN(NINT(SSDSDTH/(DTH*RADDEG)),NTH/2-1)
         DELAB   = (ABMAX-ABMIN)/MyREAL(SIZEFWTABLE)

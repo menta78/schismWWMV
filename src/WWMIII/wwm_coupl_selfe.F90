@@ -1,7 +1,7 @@
 #include "wwm_functions.h"
 #ifdef SCHISM
 !**********************************************************************
-!*                                                                    *
+!*  THis routine for RADFLAG=VOR (3D vortex formulation)
 !**********************************************************************
       SUBROUTINE STOKES_STRESS_INTEGRAL_SCHISM
         USE DATAPOOL
@@ -50,23 +50,26 @@
               eJPress_loc=eJPress_loc + eJPress
               eUint=eUint + eLoc*COSTH(ID)
               eVint=eVint + eLoc*SINTH(ID)
-            END DO
-            DO IL = KBP(IP), NVRT
-              ZZETA = ZETA(IL,IP)-ZETA(KBP(IP),IP) !from bottom; 'z+D'
-              eFrac=ZZETA/eDep
+            END DO !ID
+
+            if(idry(IP)==0) then
+              DO IL = KBP(IP), NVRT
+                ZZETA = ZETA(IL,IP)-ZETA(KBP(IP),IP) !from bottom; 'z+D'
+                eFrac=ZZETA/eDep
 ! Need some better understanding of vertical levels in SCHISM  
 ! for putting those correction terms.
-!              eHeight=z_w_loc(k)-z_w_loc(k-1)
-!              eFracB=eHeight/eDep
-!              eSinc=SINH(kD*eFracB)/(kD*eFracB)
-!              eQuot1=eSinc*DCOSH(2*kD*eFrac)/eSinhkd2
-              eQuot1=DCOSH(2*kD*eFrac)/eSinhkd2
-              eProd=eSigma*eWkReal*eQuot1
+!                eHeight=z_w_loc(k)-z_w_loc(k-1)
+!                eFracB=eHeight/eDep
+!                eSinc=SINH(kD*eFracB)/(kD*eFracB)
+!                eQuot1=eSinc*DCOSH(2*kD*eFrac)/eSinhkd2
+                eQuot1=COSH(2*kD*eFrac)/eSinhkd2
+                eProd=eSigma*eWkReal*eQuot1
 !YJZ: error
-              eUSTOKES_loc(IL)=eUSTOKES_loc(IL) + eUint*eProd
-              eVSTOKES_loc(IL)=eVSTOKES_loc(IL) + eVint*eProd
-            ENDDO
-          END DO
+                eUSTOKES_loc(IL)=eUSTOKES_loc(IL) + eUint*eProd
+                eVSTOKES_loc(IL)=eVSTOKES_loc(IL) + eVint*eProd
+              ENDDO !IL
+            endif !idry
+          END DO !IS
           !STOKES_X(:,IP)=eUSTOKES_loc
           !STOKES_Y(:,IP)=eVSTOKES_loc
           STOKES_VEL(1,:,IP)=eUSTOKES_loc
@@ -76,7 +79,7 @@
 
       END SUBROUTINE STOKES_STRESS_INTEGRAL_SCHISM
 !**********************************************************************
-!*                                                                    *
+!*   This routine for RADFLAG=LON (Longuet-Higgin)
 !**********************************************************************
       SUBROUTINE RADIATION_STRESS_SCHISM
         USE DATAPOOL
