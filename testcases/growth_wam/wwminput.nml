@@ -53,7 +53,7 @@
  /
  &INIT
  LHOTR   = F,
- LINID   = T,
+ LINID   = F,
  INITSTYLE       =           1
  /
  &BOUC
