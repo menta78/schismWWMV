@@ -173,7 +173,7 @@
  EXPORT_WALV_DELTC       =  0.000000000000000E+000
  /
  &ENGS
- ISOURCE =           1,
+ ISOURCE =           2,
  MESNL   =           1,
  MESIN   =           1,
  IFRIC   =           1,
@@ -185,7 +185,7 @@
  IBREAK  =           1,
  ALPBJ   =   1.00000000000000     ,
  BRHD    =  0.700000000000000     ,
- LMAXETOT        = T,
+ LMAXETOT        =   F,
  MESDS   =           1,
  MESTR   =           1,
  TRICO   =   1.00000000000000     ,
@@ -247,8 +247,8 @@
  FXDSCUT =  0.000000000000000E+000
  /
  &NUMS
- ICOMP   =           0,
- AMETHOD =           0,
+ ICOMP   =           3,
+ AMETHOD =           7,
  SMETHOD =           1,
  DMETHOD =           0,
  IMPL_GEOADVECT  = T,
@@ -262,7 +262,7 @@
  LFILTERSIG      = F,
  MAXCFLSIG       =   1.00000000000000     ,
  LSIGBOUND       = F,
- MELIM   =           3,
+ MELIM   =           2,
  LIMFAK  =  0.100000000000000     ,
  LDIFR   = F,
  IDIFFR  =           1,

@@ -259,9 +259,11 @@
                DO IS = 1, NUMSIG
                  DO ID = 1, NUMDIR
                    NEWDAC = PHI(IS,ID) * DT4A / (ONE-DT4A*MIN(ZERO,DPHIDN(IS,ID)))
-                   RATIO  = ONE/MIN(ONE,ABS(NEWDAC/MAXDAC(IS)))
-                   PHI    = RATIO * PHI
-                   DPHIDN = RATIO * DPHIDN
+                   IF (ABS(NEWDAC) .GT. THR) THEN
+                     RATIO  = ONE/MIN(ONE,ABS(NEWDAC/MAXDAC(IS)))
+                     PHI    = RATIO * PHI
+                     DPHIDN = RATIO * DPHIDN
+                   ENDIF
                  END DO
                END DO
              ENDIF
@@ -301,6 +303,7 @@
              MAXDAC(IS) = USFM*DELFL(IS)/PI2/SPSIG(IS)
            ELSE IF (ISOURCE .EQ. 3) THEN ! Roland, 2018
              USFM       = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+             WRITE(*,*) PHILMAXDAC, USFM, DELFL(IS), SPSIG(IS)
              MAXDAC(IS) = MAX(PHILMAXDAC,USFM*DELFL(IS)/PI2/SPSIG(IS))
            END IF
          END DO
