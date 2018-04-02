@@ -57,22 +57,25 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE ECMWF_POST(IP,WALOC)
+      SUBROUTINE ECMWF_POST(IP,WALOCOLD,WALOC)
          USE DATAPOOL
          IMPLICIT NONE
          INTEGER, INTENT(IN)           :: IP
-         REAL(rkind), INTENT(INOUT)    :: WALOC(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(OUT)      :: WALOC(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(IN)       :: WALOCOLD(NUMSIG,NUMDIR)
          INTEGER                       :: IS, ID
          REAL(rkind)                   :: VEC2RAD, FPM
          REAL(rkind)                   :: PHI(NUMSIG,NUMDIR)
-         REAL(rkind)                :: FL3(NUMDIR,NUMSIG), FL(NUMDIR,NUMSIG), SL(NUMDIR,NUMSIG)
+         REAL(rkind)                   :: FL3(NUMDIR,NUMSIG), FL(NUMDIR,NUMSIG), SL(NUMDIR,NUMSIG)
+
          THWOLD(IP) = THWNEW(IP)
          THWNEW(IP) = VEC2RAD(WINDXY(IP,1),WINDXY(IP,2))
          U10NEW(IP) = MAX(TWO,SQRT(WINDXY(IP,1)**2+WINDXY(IP,2)**2)) * WINDFAC
-         Z0NEW(IP) = Z0OLD(IP)
+         Z0NEW(IP)  = Z0OLD(IP)
+
          DO IS = 1, NUMSIG
            DO ID = 1, NUMDIR
-             FL3(ID,IS) =  WALOC(IS,ID) * PI2 * SPSIG(IS)
+             FL3(ID,IS) =  WALOCOLD(IS,ID) * PI2 * SPSIG(IS)
            END DO
          END DO
          CALL WAM_POST (IP, FL3)
@@ -81,7 +84,6 @@
              WALOC(IS,ID) = FL3(ID,IS) / PI2 / SPSIG(IS)
            END DO
          END DO
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

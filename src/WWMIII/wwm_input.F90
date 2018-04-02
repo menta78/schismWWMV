@@ -1431,6 +1431,7 @@
            MESTR = 0
            MESBR = 0
            MESBF = 0
+           MEVEG = 0
            MELIM = 0
 
          END IF

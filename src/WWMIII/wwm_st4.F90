@@ -117,7 +117,8 @@
         IMPLICIT NONE
        
         INTEGER, INTENT(IN)        :: IP
-        REAL(rkind), INTENT(INOUT) :: WALOCOLD(NUMSIG,NUMDIR), WALOC(NUMSIG,NUMDIR)
+        REAL(rkind), INTENT(IN)    :: WALOCOLD(NUMSIG,NUMDIR)
+        REAL(rkind), INTENT(OUT)   :: WALOC(NUMSIG,NUMDIR)
        
         REAL(rkind)                :: SSINE(NUMSIG,NUMDIR),DSSINE(NUMSIG,NUMDIR)
         REAL(rkind)                :: SSDS(NUMSIG,NUMDIR),DSSDS(NUMSIG,NUMDIR)
@@ -137,11 +138,11 @@
         REAL(rkind)                :: WHITECAP(1:4), SUMWALOC, FPM, FH1, FH2, TAUBBL(2)
         REAL(rkind)                :: PHIAW, CHARN, PHINL, PHIBBL, TAUWIX, TAUWIY, TAUWNX, TAUWNY, TAUOX, TAUOY
         REAL(rkind)                :: FACTOR, FACTOR2, MWXFINISH, MWYFINISH, EFINISH, DIFF, CONST2, TEMP2
-        REAL(rkind)                :: A1BAND, PHIOC, HSTOT, PIBBL, FAGE, FHIGH, FACTI2, FACTI1, FACHFA
+        REAL(rkind)                :: A1BAND, PHIOC, HSTOT, PIBBL, FAGE, FHIGH, FACHFA
 
         DO IS = 1, NUMSIG
           DO ID = 1, NUMDIR
-            AWW3(ID + (IS-1) * NUMDIR) = WALOC(IS,ID) * CG(IS,IP)
+            AWW3(ID + (IS-1) * NUMDIR)    = WALOC(IS,ID) * CG(IS,IP)
             AWW3OLD(ID + (IS-1) * NUMDIR) = WALOCOLD(IS,ID) * CG(IS,IP) 
           END DO
         END DO
@@ -187,6 +188,8 @@
         FH1    = (FFXFM+FAGE) * FMEAN1
         FH2    = FFXPM / UFRIC(IP) 
         FHIGH  = MIN ( SIG(NK) , MAX ( FH1 , FH2 ) )
+        NKH    = MIN ( NK , INT(FACTI2+FACTI1*LOG(MAX(1.E-7,FHIGH))) )
+        NKH1   = MIN ( NK , NKH+1 )
         NKH    = MAX ( 2 , MIN ( NKH1 , INT ( FACTI2 + FACTI1*LOG(MAX(1.E-7_rkind,FHIGH)) ) ) )
 !
 ! Add tail
@@ -234,6 +237,7 @@
         TAUWIY      = ZERO
         TAUWNX      = ZERO
         TAUWNY      = ZERO
+        HSTOT       = ZERO
        
         DO IK = 1, NK
           FACTOR  = DDEN(IK)/CG(IK,IP)    
@@ -297,6 +301,13 @@
         PHIAW = RHOW*G9*PHIAW /DT4S
         PHINL = RHOW*G9*PHINL /DT4S
         PHIBBL= RHOW*G9*PHIBBL/DT4S
+
+#ifdef SCHISM
+        OUTT_INTPAR(IP,32) = TAUOX  ! x-component of the wave-ocean momentum flux (tauox in m2.s-2)
+        OUTT_INTPAR(IP,33) = TAUOX  ! y-component of the wave-ocean momentum flux (tauoy in m2.s-2) 
+        OUTT_INTPAR(IP,34) = PHIOC  ! Wave-to-ocean TKE flux (phioc in W.m-2)
+        OUTT_INTPAR(IP,35) = PHIBBL ! phibbl / wave_phibbl : Energy flux due to bottom friction (phioc in W.m-2)
+#endif
 
       END SUBROUTINE
 !**********************************************************************

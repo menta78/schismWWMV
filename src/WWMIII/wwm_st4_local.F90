@@ -151,6 +151,7 @@
       INTEGER,        PARAMETER      :: FAC_KD2 = 1000
       REAL(rkind),    PARAMETER      ::KDMAX=200000.
       REAL(rkind),    PARAMETER      :: kappa = 0.40       !Von Karman's constant
+      REAL(rkind)                    :: FACTI1, FACTI2
 !
 !     WWM FIELD INSERT ...
 !
@@ -441,6 +442,9 @@
         ELSE
           CALL READ_INSIN4
         END IF
+
+        FACTI1 = 1. / LOG(XFR)
+        FACTI2 = 1. - LOG(PI2*FR1) * FACTI1
 
       END SUBROUTINE
 !**********************************************************************

@@ -13,7 +13,7 @@
       REAL(rkind)              :: PHI(NUMSIG,NUMDIR), DPHIDN(NUMSIG,NUMDIR)
       REAL(rkind)              :: SSLIM(NUMSIG,NUMDIR), SSBRL(NUMSIG,NUMDIR)
 
-      REAL(rkind)              :: NEWDAC, MAXDAC
+      REAL(rkind)              :: NEWDAC, MAXDAC(NUMSIG)
 
       INTEGER       :: IS, ID
 
@@ -26,20 +26,20 @@
         END DO
       END DO
 
-      IF (MELIM .EQ. 1) THEN
+      IF (MELIM .GT. 0) THEN
         CALL GET_MAXDAC(IP,MAXDAC)
         CALL ACTION_LIMITER_LOCAL(MAXDAC,WACOLD,WACNEW,SSLIM)
       ENDIF
 
       IF (LMAXETOT) CALL BREAKING_LIMITER_LOCAL(IP,WACNEW,SSBRL)
 
-      CALL POST_INTEGRATION(IP,WACOLD,WACNEW)
+!      CALL POST_INTEGRATION(IP,WACOLD,WACNEW)
 
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE COMPUTE_PHI_DPHI(IP,WALOC,DSSBF,PHI,DPHIDN)
+      SUBROUTINE COMPUTE_PHI_DPHI(IP,WALOC,PHI,DPHIDN)
       USE DATAPOOL
       IMPLICIT NONE
       INTEGER, INTENT(IN)      :: IP
@@ -97,7 +97,7 @@
 
 !      WRITE(*,*) 'SUMS', SUM(PHI), SUM(DPHIDN)
 !
-      IF (MELIM .EQ. 2) THEN
+      IF (MELIM .GT. 0) THEN
         CALL GET_MAXDAC(IP,MAXDAC)
         DO ID = 1, NUMDIR
           DO IS = 1, NUMSIG
@@ -182,7 +182,8 @@
          IMPLICIT NONE
 
          INTEGER, INTENT(IN)       :: IP
-         REAL(rkind),INTENT(INOUT) :: WACNEW(NUMSIG,NUMDIR), WACOLD(NUMSIG,NUMDIR)
+         REAL(rkind),INTENT(IN)    :: WACOLD(NUMSIG,NUMDIR)
+         REAL(rkind),INTENT(OUT)   :: WACNEW(NUMSIG,NUMDIR)
 
          IF (ISOURCE == 1) THEN
            CALL ST4_POST(IP,WACOLD, WACNEW)
@@ -199,7 +200,7 @@
          INTEGER :: IP
          REAL(rkind) :: WACOLD(NUMSIG,NUMDIR), WACNEW(NUMSIG,NUMDIR)
          REAL(rkind) :: SSLIM(NUMSIG,NUMDIR), SSBRL(NUMSIG,NUMDIR)
-         REAL(rkind) :: MAXDAC
+         REAL(rkind) :: MAXDAC(NUMSIG)
 
          DO IP = 1, MNP
            IF (IOBDP(IP) .GT. 0) THEN ! H .gt. DMIN
@@ -249,11 +250,11 @@
              DPHIDN = ZERO
              WACOLD = AC2(:,:,IP)
              IF (LSOUBOUND  .AND. IOBP(IP) .NE. 2) THEN ! CALL ALWAYS
-               CALL COMPUTE_PHI_DPHI(IP,WACOLD,SSINL,SSINE,DSSINE,SSDS,DSSDS,SSNL3,DSSNL3,SSNL4,DSSNL4,SSBR,DSSBR,SSBRL,SSBF,DSSBF,PHI,DPHIDN)
+               CALL COMPUTE_PHI_DPHI(IP,WACOLD,PHI,DPHIDN)
              ELSE IF (IOBP(IP) .EQ. 0 .AND. .NOT. LSOUBOUND) THEN ! CALL ONLY FOR NON BOUNDARY POINTS
-               CALL COMPUTE_PHI_DPHI(IP,WACOLD,SSINL,SSINE,DSSINE,SSDS,DSSDS,SSNL3,DSSNL3,SSNL4,DSSNL4,SSBR,DSSBR,SSBRL,SSBF,DSSBF,PHI,DPHIDN)
+               CALL COMPUTE_PHI_DPHI(IP,WACOLD,PHI,DPHIDN)
              ENDIF
-             IF (MELIM .EQ. 2) THEN
+             IF (MELIM .GT. 0) THEN
                CALL GET_MAXDAC(IP,MAXDAC)
                DO IS = 1, NUMSIG
                  DO ID = 1, NUMDIR
@@ -293,16 +294,14 @@
 
          DO IS = 1, NUMSIG
            PHILMAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)*WK(IS,IP)*WK(IS,IP)*CG(IS,IP)) ! Phillips limiter following Komen et al. 
-           IF (ISOURCE .EQ. 1) THEN 
-             USFM   = UFRIC(IP)*MAX(FMEANWS(IP),FMEAN(IP)) ! Limiter from Hersbach & Janssen 
-             MAXDAC(IS) = MAX(PHILMAXDAC,USFM*DELFL(IS)/PI2/SPSIG(IS)) 
-             !MAXDAC(IS) = PHILMAXDAC
-           ELSE IF (ISOURCE .EQ. 2) THEN
-             USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+           IF (ISOURCE .EQ. 1) THEN  ! Phillips 
+             MAXDAC(IS) = PHILMAXDAC
+           ELSE IF (ISOURCE .EQ. 2) THEN ! Hersbach & Janssen 
+             USFM       = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+             MAXDAC(IS) = USFM*DELFL(IS)/PI2/SPSIG(IS)
+           ELSE IF (ISOURCE .EQ. 3) THEN ! Roland, 2018
+             USFM       = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
              MAXDAC(IS) = MAX(PHILMAXDAC,USFM*DELFL(IS)/PI2/SPSIG(IS))
-             !MAXDAC(IS) = PHILMAXDAC
-           ELSE IF (ISOURCE .EQ. 3) THEN
-              MAXDAC(IS) = PHILMAXDAC
            END IF
          END DO
 
@@ -352,10 +351,8 @@
         DO IP = 1, NP_RES
           ACOLDLOC = ACOLD(:,:,IP)
           ACNEWLOC = ACNEW(:,:,IP)
-          IF (MELIM .EQ. 1) THEN
-            CALL GET_MAXDAC(IP,MAXDAC)
-            CALL ACTION_LIMITER_LOCAL(MAXDAC,ACOLDLOC,ACNEWLOC,SSLIM)
-          ENDIF
+          CALL GET_MAXDAC(IP,MAXDAC)
+          CALL ACTION_LIMITER_LOCAL(MAXDAC,ACOLDLOC,ACNEWLOC,SSLIM)
           ACNEW(:,:,IP) = ACNEWLOC
         ENDDO
 
