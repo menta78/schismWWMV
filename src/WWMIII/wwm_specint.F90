@@ -259,11 +259,8 @@
                DO IS = 1, NUMSIG
                  DO ID = 1, NUMDIR
                    NEWDAC = PHI(IS,ID) * DT4A / (ONE-DT4A*MIN(ZERO,DPHIDN(IS,ID)))
-                   IF (ABS(NEWDAC) .GT. THR) THEN
-                     RATIO  = ONE/MIN(ONE,ABS(NEWDAC/MAXDAC(IS)))
-                     PHI    = RATIO * PHI
-                     DPHIDN = RATIO * DPHIDN
-                   ENDIF
+                   RATIO  = NEWDAC/MAXDAC(IS)
+                   IF (RATIO .GT. ONE) PHI = ONE/RATIO * PHI
                  END DO
                END DO
              ENDIF
