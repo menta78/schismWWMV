@@ -2557,18 +2557,18 @@
       CALL I5B_EXCHANGE_P4D_WWM(LocalColor, ACtest1)
       CALL EXCHANGE_P4D_WWM(ACtest2)
       !
-      CALL I5B_TOTAL_COHERENCY_ERROR_NPRES(ACret, Lerror)
+      CALL I5B_TOTAL_COHERENCY_ERROR_NPRES(NUMSIG, ACret, Lerror)
       WRITE(740+myrank,*) 'ACret   NP_RES cohenrency error=', Lerror
-      CALL I5B_TOTAL_COHERENCY_ERROR_NPRES(ACtest1, Lerror)
+      CALL I5B_TOTAL_COHERENCY_ERROR_NPRES(NUMSIG, ACtest1, Lerror)
       WRITE(740+myrank,*) 'ACtest1 NP_RES cohenrency error=', Lerror
-      CALL I5B_TOTAL_COHERENCY_ERROR_NPRES(ACtest2, Lerror)
+      CALL I5B_TOTAL_COHERENCY_ERROR_NPRES(NUMSIG, ACtest2, Lerror)
       WRITE(740+myrank,*) 'ACtest2 NP_RES cohenrency error=', Lerror
       !
-      CALL I5B_TOTAL_COHERENCY_ERROR(ACret, Lerror)
+      CALL I5B_TOTAL_COHERENCY_ERROR(NUMSIG, ACret, Lerror)
       WRITE(740+myrank,*) 'ACret   MNP coherency error=', Lerror
-      CALL I5B_TOTAL_COHERENCY_ERROR(ACtest1, Lerror)
+      CALL I5B_TOTAL_COHERENCY_ERROR(NUMSIG, ACtest1, Lerror)
       WRITE(740+myrank,*) 'ACtest1 MNP coherency error=', Lerror
-      CALL I5B_TOTAL_COHERENCY_ERROR(ACtest2, Lerror)
+      CALL I5B_TOTAL_COHERENCY_ERROR(NUMSIG, ACtest2, Lerror)
       WRITE(740+myrank,*) 'ACtest2 MNP coherency error=', Lerror
       !
       FLUSH(740+myrank)

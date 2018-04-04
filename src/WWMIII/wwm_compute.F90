@@ -283,7 +283,10 @@
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE COMPUTE_IMPLICIT'
 #endif
-
+#ifdef DEBUG_COHERENCY_FLUCT
+        CALL PRINT_COHERENCY_ERROR(AC2, "After evaluation")
+      CALL Print_SumAC2("Sums after loop")
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

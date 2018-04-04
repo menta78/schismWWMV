@@ -515,6 +515,19 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE PRINT_COHERENCY_ERROR(ACw, string)
+      USE DATAPOOL
+      IMPLICIT NONE
+      character(*), intent(in) :: string
+      REAL(rkind), intent(in) :: ACw(NUMSIG, NUMDIR, MNP)
+      REAL(rkind) Lerror
+      CALL I5B_TOTAL_COHERENCY_ERROR(NUMSIG, ACw, Lerror)
+      WRITE(740+myrank,*) 'Coherency error=', Lerror, ' at ', string
+      FLUSH(740+myrank)
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
       SUBROUTINE I5B_TOTAL_COHERENCY_ERROR(NUMSIGeffect, ACw, Lerror)
       USE DATAPOOL
       implicit none
