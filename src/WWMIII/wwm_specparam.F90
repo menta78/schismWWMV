@@ -589,8 +589,7 @@
           CALL SET_WIND( IP, WIND10, WINDTH )
           CALL W3SPR4 ( AWW3, CG(:,IP), WK(:,IP), EMEAN(IP), FMEAN(IP), FMEAN1, WNMEAN, AMAX, WIND10, WINDTH, UFRIC(IP), USTDIR(IP), TAUWX(IP), TAUWY(IP), CD(IP), Z0(IP), ALPHA_CH(IP), LLWS, FMEANWS(IP))
           HS = 4.0_rkind * SQRT(EMEAN(IP))
-        END IF
-        IF (ISOURCE .eq. 2) THEN
+        ELSE IF (ISOURCE .eq. 2) THEN
           DO IS = 1, NUMSIG
             JAC = PI2 * SPSIG(IS)
             DO ID = 1, NUMDIR
