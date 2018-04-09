@@ -139,7 +139,6 @@
       REAL(rkind)                    :: DELAB
       REAL(rkind),    PARAMETER      :: UMAX    = 50.
       REAL(rkind),    PARAMETER      :: TAUWMAX = 2.2361 !SQRT(5.)
-!      REAL(rkind),    PARAMETER      :: ABMIN = 0.3
       REAL(rkind),    PARAMETER      :: ABMIN = -1.0 ! new value in the w3src4md
       REAL(rkind),    PARAMETER      :: ABMAX = 8.
       REAL(rkind), parameter         :: nu_air=1.4E-5_rkind
@@ -149,7 +148,7 @@
       INTEGER,    PARAMETER          :: NKHI=100
       REAL(rkind),    PARAMETER      :: FAC_KD1=1.01, KHSMAX=2., KHMAX=2.
       INTEGER,        PARAMETER      :: FAC_KD2 = 1000
-      REAL(rkind),    PARAMETER      ::KDMAX=200000.
+      REAL(rkind),    PARAMETER      :: KDMAX=200000.
       REAL(rkind),    PARAMETER      :: kappa = 0.40       !Von Karman's constant
       REAL(rkind)                    :: FACTI1, FACTI2
 !
@@ -197,7 +196,7 @@
       CONTAINS
 
 !/ ------------------------------------------------------------------- /
-      SUBROUTINE PREPARE_ARDHUIN
+      SUBROUTINE PREPARE_ST4
 
         USE DATAPOOL
 
@@ -332,9 +331,8 @@
 !        SSWELLF(6) = 0._rkind
 !        SSWELLF(7) = 0._rkind
 
-        AALPHA = ALPHA0
-!        BBETA  = 1.54_rkind ! 1.54 for ECMWF
-        BBETA  = BETAMAX ! 1.52 as in WaveWatch III trunk
+        AALPHA  = ALPHA0
+        BBETA   = BETAMAX ! 1.52 as in WaveWatch III trunk
         ZZALP   = ZALP
         ZZWND   = ZWND
 
@@ -880,12 +878,13 @@
 !
       TAUW = SQRT(TAUWX**2+TAUWY**2)
      
-      Z0=ZERO
+      Z0     = ZERO
       CALL CALC_USTAR(U,TAUW,USTAR,Z0,CHARN) 
       UNZ    = MAX ( 0.01_rkind , U )
       CD     = (USTAR/UNZ)**2
-      USDIR = UDIR
+      USDIR  = UDIR
       END SUBROUTINE
+!
 !/ ------------------------------------------------------------------- /
       SUBROUTINE W3SIN4 (IP, A, CG, K, U, USTAR, DRAT, AS, USDIR, Z0, CD, TAUWX, TAUWY, TAUWNX, TAUWNY, S, D, LLWS, BRLAMBDA)
 !/                  +------------------------------------+

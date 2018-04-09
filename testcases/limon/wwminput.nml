@@ -61,7 +61,7 @@
 
 &BOUC          
  LBCSE          = .F.,               
- LBCWA          = .T.,               
+ LBCWA          = .F.,               
  LBCSP          = .F.,               
  LINHOM         = .F.,               
  LBSP1D         = .F.,               
@@ -117,7 +117,7 @@
  ENDTC          = '19980901.010000', 
  LINTERWD       = .T.,               
  WDIR           = 90.,               
- WVEL           = 0.0,              
+ WVEL           = 30.0,              
  CWINDX         = 0.000000000000000E+000, 
  CWINDY         = 0.000000000000000E+000, 
  FILEWIND       = 'wind.dat',        
@@ -173,7 +173,7 @@
 /
 
 &ENGS          
- ISOURCE        = 1,                 
+ ISOURCE        = 2,                 
  MESNL          = 1,                 
  MESIN          = 1,                 
  IFRIC          = 1,                 
@@ -250,10 +250,10 @@
 /
 
 &NUMS          
- ICOMP          = 0,                 
- AMETHOD        = 1,                 
- SMETHOD        = 0,                 
- DMETHOD        = 0,                 
+ ICOMP          = 3,                 
+ AMETHOD        = 7,                 
+ SMETHOD        = 1,                 
+ DMETHOD        = 1,                 
  IMPL_GEOADVECT = .T.,               
  LITERSPLIT     = .F.,               
  LFILTERTH      = .F.,               

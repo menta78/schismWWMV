@@ -773,16 +773,37 @@
       INTEGER ITMP
       DTMP = (MAIN%TMJD-BND_TIME_ALL_FILES(1,1)) * DAY2SEC
       ITMP  = 0
+	  
+      WRITE(DBG%FHNDL,*)'NUM_NETCDF_FILES_BND =,',NUM_NETCDF_FILES_BND
+	  
       DO IFILE = 1, NUM_NETCDF_FILES_BND
         ITMP = ITMP + NDT_BND_FILE(IFILE)
         IF (ITMP .GT. INT(DTMP/SEBO%DELT)) EXIT
       END DO
+	  
+      WRITE(DBG%FHNDL,*)'IFILE =,',IFILE
+	  
       ITMP = SUM(NDT_BND_FILE(1:IFILE-1))
       IT   = NINT(DTMP/SEBO%DELT) - ITMP + 1
       IF (IT .GT. NDT_BND_FILE(IFILE)) THEN
         IFILE = IFILE + 1
         IT    = 1
       ENDIF
+      END SUBROUTINE
+!**********************************************************************
+!*    T. Guerin: Equivalent of COMPUTE_IFILE_IT for WW3 binary files  *
+!**********************************************************************
+      SUBROUTINE COMPUTE_IT(IT)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, INTENT(OUT) :: IT
+      REAL(rkind) :: DTMP
+      INTEGER ITMP
+
+      DTMP = (MAIN%TMJD-BND_TIME_ALL_FILES(1,1)) * DAY2SEC
+      IT   = NINT(DTMP/SEBO%DELT) + 1
+      IF (LBINTER) IT = IT + 1
+
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -906,17 +927,17 @@
             !CALL READSPEC2D
             CALL WWM_ABORT('No inhomogenous 2d spectra boundary cond. available in WWM Format')
           END IF
-          IF (IBOUNDFORMAT == 3) THEN ! WW3
+          IF (IBOUNDFORMAT == 2) THEN ! WW3 KM
             CALL GET_BINARY_WW3_SPECTRA(WBACOUT)
           END IF
-          IF (IBOUNDFORMAT == 4) THEN ! WWM WBAC netcdf
+          IF (IBOUNDFORMAT == 3) THEN ! WWM WBAC netcdf
 #ifdef NCDF
             CALL READ_NETCDF_BOUNDARY_WBAC(WBACOUT)
 #else
             CALL WWM_ABORT('compile with netcdf for IBOUNDFORMAT=4')
 #endif
           END IF
-          IF (IBOUNDFORMAT == 5) THEN ! WWM WBAC netcdf
+          IF (IBOUNDFORMAT == 4) THEN ! WWM WBAC netcdf
 #ifdef GRIB_API_ECMWF
             CALL READ_GRIB_WAM_BOUNDARY_WBAC(WBACOUT)
 #else
@@ -932,10 +953,11 @@
             WRITE(STAT%FHNDL,'("+TRACE...",A)') '2d Spectra is given as Wave Boundary Condition'
             IF (IBOUNDFORMAT == 1) THEN
               CALL READSPEC2D(LFIRSTREAD)
-            ELSE IF (IBOUNDFORMAT == 3) THEN
+            ELSE IF (IBOUNDFORMAT == 2) THEN !KM
               CALL GET_BINARY_WW3_SPECTRA(WBACOUT) 
             END IF
-            CALL SPECTRUM_INT(WBACOUT(:,:,1))
+!AR: check what is goin on there ...
+            !CALL SPECTRUM_INT(WBACOUT(:,:,1)) !KM
           END IF ! LBSP1D .OR. LBSP2D
         END IF ! LINHOM
       ENDIF ! LBCSP
@@ -2024,7 +2046,9 @@
       REAL(rkind) :: XP_WWM,YP_WWM
       INTEGER     :: IFILE, IT
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'Begin GETWW3SPECTRA'
-      CALL COMPUTE_IFILE_IT(IFILE, IT)
+      !CALL COMPUTE_IFILE_IT(IFILE, IT)
+      CALL COMPUTE_IT(IT)
+      write(DBG%FHNDL,*)'IT',IT
 !
 ! Read spectra in file
 !

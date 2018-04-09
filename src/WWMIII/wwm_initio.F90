@@ -738,7 +738,7 @@
 #if defined ST41 || defined ST42
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT ARDHUIN et al.'
         FLUSH(STAT%FHNDL)
-        CALL PREPARE_ARDHUIN
+        CALL PREPARE_ST4
 #else
         CALL WWM_ABORT('For PREPARE_ARDHUIN, you need ST42 to be selected')
 #endif
