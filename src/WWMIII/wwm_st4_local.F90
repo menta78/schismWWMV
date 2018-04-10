@@ -946,6 +946,12 @@
 !
 ! 1.  Preparations
 !
+      !JDM: Initializing values to zero, they shouldn't be used unless
+      !set in another place, but seems to solve some bugs with certain
+      !compilers. 
+      DSTAB =0.
+      STRESSSTAB =0. 
+      STRESSSTABN =0.
 !
 ! 1.a  estimation of surface roughness parameters
 !
@@ -1366,8 +1372,7 @@
             DO IK=1,NK-1
               DIFF1=0.
               DIFF2=0.
-              IF(SIG(IK)  < SIGTAB(IKL,ID) .AND.                        &
-     &           SIG(IK+1)>=SIGTAB(IKL,ID)) THEN
+              IF(SIG(IK)<SIGTAB(IKL,ID) .AND. SIG(IK+1)>=SIGTAB(IKL,ID)) THEN
                 DIFF1=SIGTAB(IKL,ID)-SIG(IK)   ! seeks the indices of the upper boundary
                 DIFF2=SIG(IK+1)-SIGTAB(IKL,ID)! the indices of lower boudary = IK
                 IF (DIFF1<DIFF2) THEN
