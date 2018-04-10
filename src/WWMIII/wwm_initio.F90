@@ -522,6 +522,7 @@
 #ifdef ST42
       USE W3SRC4MD
 #endif
+      USE W3SRC6MD
       IMPLICIT NONE
       INTEGER        :: I, J
 
@@ -742,6 +743,10 @@
 #else
         CALL WWM_ABORT('For PREPARE_ARDHUIN, you need ST42 to be selected')
 #endif
+      ELSE IF (ISOURCE == 4) THEN
+        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'INIT ST6'
+        FLUSH(STAT%FHNDL)
+        CALL PREPARE_ST6
       ENDIF
       
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'SET THE INITIAL WAVE BOUNDARY CONDITION'

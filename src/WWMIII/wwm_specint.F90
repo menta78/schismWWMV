@@ -293,14 +293,13 @@
 
          DO IS = 1, NUMSIG
            PHILMAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)*WK(IS,IP)*WK(IS,IP)*CG(IS,IP)) ! Phillips limiter following Komen et al. 
-           IF (ISOURCE .EQ. 1) THEN  ! Phillips 
+           IF (MELIM .EQ. 1) THEN  ! Phillips 
              MAXDAC(IS) = PHILMAXDAC
-           ELSE IF (ISOURCE .EQ. 2) THEN ! Hersbach & Janssen 
+           ELSE IF (MELIM .EQ. 2) THEN ! Hersbach & Janssen 
              USFM       = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
              MAXDAC(IS) = USFM*DELFL(IS)/PI2/SPSIG(IS)
-           ELSE IF (ISOURCE .EQ. 3) THEN ! Roland, 2018
+           ELSE IF (MELIM .EQ. 3) THEN ! Roland, 2018
              USFM       = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
-             WRITE(*,*) PHILMAXDAC, USFM, DELFL(IS), SPSIG(IS)
              MAXDAC(IS) = MAX(PHILMAXDAC,USFM*DELFL(IS)/PI2/SPSIG(IS))
            END IF
          END DO
