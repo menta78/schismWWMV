@@ -87,12 +87,12 @@
       REAL(rkind)                    ::  FTE, FTF, DTH, FACHF
       REAL(rkind)                    ::  FXFM3, FFXFA, FFXFM, FXFMAGE, FFXFI, FXINCUT, FFXFD, FXDSCUT, FFXPM, FXPM3
 
-      REAL(rkind), PARAMETER         :: SIN6A0 = 1._rkind 
+      REAL(rkind), PARAMETER         :: SIN6A0 = 4.8
       LOGICAL,     PARAMETER         :: SDS6ET = .TRUE.
-      REAL(rkind), PARAMETER         :: SDS6A1 = 1._rkind
-      REAL(rkind), PARAMETER         :: SDS6A2 = 1._rkind
-      REAL(rkind), PARAMETER         :: SDS6P1 = 1._rkind
-      REAL(rkind), PARAMETER         :: SDS6P2 = 1._rkind
+      REAL(rkind), PARAMETER         :: SDS6A1 = 3.74E-7_rkind 
+      REAL(rkind), PARAMETER         :: SDS6A2 = 5.24E-6_rkind
+      REAL(rkind), PARAMETER         :: SDS6P1 = 4._rkind
+      REAL(rkind), PARAMETER         :: SDS6P2 = 4._rkind
 
       CONTAINS
 
@@ -112,23 +112,22 @@
         MSPEC = NSPEC
 
         ALLOCATE(SIG(0:NUMSIG+1), SIG2(NSPEC), DSIP(0:NUMSIG+1), TH(NUMDIR), stat=istat)
-        write(*,*) istat
-        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 1')
+        IF (istat/=0) CALL WWM_ABORT('wwm_st6, allocate error 1')
         SIG = ZERO
         SIG2 = ZERO
         DSIP = ZERO
         TH   = ZERO
         ALLOCATE(ESIN(MSPEC+MTH), ECOS(MSPEC+MTH), EC2(MSPEC+MTH), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 2')
+        IF (istat/=0) CALL WWM_ABORT('wwm_st6, allocate error 2')
         ESIN = ZERO
         ECOS = ZERO
         EC2  = ZERO
         ALLOCATE(ES2(MSPEC+MTH),ESC(MSPEC+MTH), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 3')
+        IF (istat/=0) CALL WWM_ABORT('wwm_st6, allocate error 3')
         ES2 = ZERO
         ESC = ZERO
         ALLOCATE(DSII(NUMSIG), DDEN(NUMSIG), DDEN2(NSPEC), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 4')
+        IF (istat/=0) CALL WWM_ABORT('wwm_st6, allocate error 4')
         DSII = ZERO
         DDEN = ZERO
         DDEN2 = ZERO

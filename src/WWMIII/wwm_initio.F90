@@ -1126,7 +1126,7 @@
 
          ENDIF
 
-         IF (MESTR == 6) CALL GRAD_CG_K 
+!         IF (MESTR == 6) CALL GRAD_CG_K 
 !         WRITE(740+myrank,*) 'End of INITIATE_WAVE_PARAMETER'
 !         FLUSH(740+myrank)
 

@@ -574,21 +574,21 @@
       FRM5 = ZERO 
       COFRM4 = ZERO
 
-      IF (ISOURCE == 2) THEN ! AR: I think this is obsolete must check ...
-        ALLOCATE(TH(NUMDIR), stat=istat)
-        th = zero
-        DELTH = PI2/REAL(NUMDIR)
-        DELTR = DELTH*REARTH
-        DO ID=1,NUMDIR
-          IF (LSTAG) THEN
-            TH(ID) = REAL(ID-1)*DELTH
-          ELSE
-            TH(ID) = REAL(ID-1)*DELTH + 0.5*DELTH
-          ENDIF
-          COSTH(ID) = COS(TH(ID))
-          SINTH(ID) = SIN(TH(ID))
-        ENDDO
-      END IF
+      IF (ISOURCE == 2) THEN
+      ALLOCATE(TH(NUMDIR), stat=istat)
+      th = zero
+      DELTH = PI2/REAL(NUMDIR)
+      DELTR = DELTH*REARTH
+      DO ID=1,NUMDIR
+        IF (LSTAG) THEN
+          TH(ID) = REAL(ID-1)*DELTH
+        ELSE
+          TH(ID) = REAL(ID-1)*DELTH + 0.5*DELTH
+        ENDIF
+        COSTH(ID) = COS(TH(ID))
+        SINTH(ID) = SIN(TH(ID))
+      ENDDO
+      ENDIF
       
       CO1 = 0.5*(FRATIO-1.)*DELTH
       DFIM(1)= CO1*FR(1)

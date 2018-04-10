@@ -10,16 +10,18 @@
          REAL(rkind)  :: LAMM2, LAMP2
          REAL(rkind)  :: DELTH3, DELTH4
          REAL(rkind)  :: CIDP, WIDP, WIDP1, CIDM, WIDM, WIDM1
-         REAL(rkind)  :: WISP, WISP1, WISM, WISM1
+         REAL(rkind)  :: WISP, WISP1, WISM, WISM1, NLPROP
 
-         LAMBDANL4 = 0.25_rkind
+         SNL4C1     = ONE / (G9**4)
+         LAMBDANL4  = 0.25_rkind
          IF (ISOURCE .EQ. 1) THEN
-           SNL4C1   =2.78E7_rkind/G9**4._rkind 
+           NLPROP   = 2.78E7_rkind
          ELSE
-           SNL4C1   =2.5E7_rkind/G9**4._rkind
+           NLPROP   = 2.5E7_rkind
          ENDIF
-         SNL4CS1  = 5.5_rkind 
-         SNL4CS2  = 6._rkind/7._rkind 
+         SNL4C1   =  NLPROP / (G9**4)
+         SNL4CS1  =  5.5_rkind 
+         SNL4CS2  =  6._rkind/7._rkind 
          SNL4CS3  = -1.25_rkind 
 !
 !     *** set values for the nonlinear four-wave interactions ***
@@ -133,18 +135,6 @@
        DAL2 = ONE / (ONE - LAMBDANL4)**4
        DAL3 = TWO * DAL1 * DAL2
 
-       SNL4C1  = ONE / (G9**4)
-
-       IF (ISOURCE .EQ. 1) THEN
-         SNL4C2 = 2.5E7
-       ELSE
-         SNL4C2 = 2.78E7
-       END IF
-
-       SNL4CS1 = 5.5_rkind
-       SNL4CS2 = 6._rkind/7._rkind
-       SNL4CS3 = -1.25_rkind
-
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -240,22 +230,22 @@
      &               AWG7 * UE(IS+ISM ,ID+IDM1) +       &
      &               AWG8 * UE(IS+ISM ,ID+IDM )
 !
-               SA1A   = E00 * ( EP1*DAL1 + EM1*DAL2 ) * SNL4C2 
-               SA1B   = SA1A - EP1*EM1*DAL3 * SNL4C2 
-               SA2A   = E00 * ( EP2*DAL1 + EM2*DAL2 ) * SNL4C2
-               SA2B   = SA2A - EP2*EM2*DAL3 * SNL4C2
+               SA1A   = E00 * ( EP1*DAL1 + EM1*DAL2 ) 
+               SA1B   = SA1A - EP1*EM1*DAL3 
+               SA2A   = E00 * ( EP2*DAL1 + EM2*DAL2 ) 
+               SA2B   = SA2A - EP2*EM2*DAL3 
                FACTOR = CONS * AF11(IS) * E00
 
                SA1(IS,ID) = FACTOR*SA1B
                SA2(IS,ID) = FACTOR*SA2B
 
                DA1C(IS,ID) = CONS * AF11(IS) * ( SA1A + SA1B )
-               DA1P(IS,ID) = FACTOR * ( DAL1*E00 - DAL3*EM1 ) * SNL4C2
-               DA1M(IS,ID) = FACTOR * ( DAL2*E00 - DAL3*EP1 ) * SNL4C2
+               DA1P(IS,ID) = FACTOR * ( DAL1*E00 - DAL3*EM1 ) 
+               DA1M(IS,ID) = FACTOR * ( DAL2*E00 - DAL3*EP1 ) 
 
                DA2C(IS,ID) = CONS * AF11(IS) * ( SA2A + SA2B )
-               DA2P(IS,ID) = FACTOR * ( DAL1*E00 - DAL3*EM2 ) * SNL4C2
-               DA2M(IS,ID) = FACTOR * ( DAL2*E00 - DAL3*EP2 ) * SNL4C2
+               DA2P(IS,ID) = FACTOR * ( DAL1*E00 - DAL3*EM2 ) 
+               DA2M(IS,ID) = FACTOR * ( DAL2*E00 - DAL3*EP2 ) 
 
             END DO
          END DO

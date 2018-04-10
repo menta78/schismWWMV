@@ -212,7 +212,6 @@
         MSPEC = NSPEC
 
         ALLOCATE(SIG(0:NUMSIG+1), SIG2(NSPEC), DSIP(0:NUMSIG+1), TH(NUMDIR), stat=istat)
-        write(*,*) istat
         IF (istat/=0) CALL WWM_ABORT('wwm_ardhuin_new, allocate error 1')
         SIG = ZERO
         SIG2 = ZERO
