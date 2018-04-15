@@ -2888,17 +2888,17 @@
 !       IN THE FOLLOWING U10 IS ESTIMATED ASSUMING EVERYTHING IS
 !       BASED ON U*
 !
-!      Print *, 'UFRIC=', UFRIC
-!      Print *, 'XKAPPA=', XKAPPA
-!      Print *, ' Z0NEW=', Z0NEW
+      Print *, 'UFRIC=', UFRIC
+      Print *, 'XKAPPA=', XKAPPA
+      Print *, ' Z0NEW=', Z0NEW
       U10 = UFRIC/XKAPPA*LOG(10./Z0NEW)
-!      Print *, 'U10=', U10
+      Print *, 'U10=', U10
       C_D = A+B*U10
       DC_DDU = B
       SIG_CONV = 1. + 0.5*U10/C_D*DC_DDU
-      write(*,'(A20,6F20.10)') 'TEST', SIG_CONV, BG_GUST, UFRIC, XKAPPA, WSTAR, U10
       SIG_N = MIN(0.5, SIG_CONV * (BG_GUST*UFRIC**3+ 0.5*XKAPPA*WSTAR**3)**ONETHIRD /U10 )
       END SUBROUTINE WSIGSTAR_LOCAL
+
       SUBROUTINE NLWEIGT
 
 ! ----------------------------------------------------------------------

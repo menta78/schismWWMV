@@ -173,7 +173,7 @@
  EXPORT_WALV_DELTC       =  0.000000000000000E+000
  /
  &ENGS
- ISOURCE =           4,
+ ISOURCE =           2,
  MESNL   =           1,
  MESIN   =           1,
  IFRIC   =           1,
