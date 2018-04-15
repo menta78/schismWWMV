@@ -180,7 +180,7 @@
 ! Resio & Perrie ... scaling ...
 !
        FAGE   = FFXFA*TANH(0.3*WIND10*FMEANWS(IP)*PI2/G9)
-       FH1    = (FFXFM+FAGE) * FMEAN1
+       FH1    = (FFXFM+FAGE) * FMEAN(IP)
        FH2    = FFXPM / UFRIC(IP) 
        FHIGH  = MIN ( SIG(NK) , MAX ( FH1 , FH2 ) )
        NKH    = MIN ( NK , INT(FACTI2+FACTI1*LOG(MAX(1.E-7,FHIGH))) )
@@ -201,7 +201,7 @@
 !
         DO IS = 1, NUMSIG
           DO ID = 1, NUMDIR
-            WALOC(IS,ID) = AWW3(ID + (IS-1) * NUMDIR) * CG(IS,IP)
+            WALOC(IS,ID) = AWW3(ID + (IS-1) * NUMDIR) / CG(IS,IP)
           END DO
         END DO
         CALL CONVERT_VS_VD_WWM(IP, SSINE_WW3, DSSINE_WW3, SSINE, DSSINE)
