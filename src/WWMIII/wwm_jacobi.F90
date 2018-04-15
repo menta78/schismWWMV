@@ -746,9 +746,9 @@
 
       IF (LMAXETOT) CALL BREAKING_LIMITER_LOCAL(IP,AC2,SSBRL) 
 
-!      DO IP = 1, NP_RES
-!        CALL POST_INTEGRATION(IP,AC2(:,:,IP),AC2(:,:,IP) )
-!      ENDDO
+      DO IP = 1, NP_RES
+        CALL POST_INTEGRATION(IP,AC2(:,:,IP),AC2(:,:,IP))
+      ENDDO
 
       WRITE(STAT%FHNDL,*) 'Jacobi nbIter=', nbIter
 #ifdef DEBUG
