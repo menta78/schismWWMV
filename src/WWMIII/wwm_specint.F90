@@ -296,10 +296,10 @@
            IF (MELIM .EQ. 1) THEN  ! Phillips 
              MAXDAC(IS) = PHILMAXDAC
            ELSE IF (MELIM .EQ. 2) THEN ! Hersbach & Janssen 
-             USFM       = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+             USFM       = UFRIC(IP)*MAX(FMEANWS(IP),FMEAN(IP))
              MAXDAC(IS) = USFM*DELFL(IS)/PI2/SPSIG(IS)
            ELSE IF (MELIM .EQ. 3) THEN ! Roland, 2018
-             USFM       = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+             USFM       = UFRIC(IP)*MAX(FMEANWS(IP),FMEAN(IP))
              MAXDAC(IS) = MAX(PHILMAXDAC,USFM*DELFL(IS)/PI2/SPSIG(IS))
            END IF
          END DO
