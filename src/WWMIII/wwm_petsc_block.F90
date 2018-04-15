@@ -2094,7 +2094,7 @@
       SUBROUTINE calcALL
         use datapool, only: NUMSIG, NUMDIR, MNP, INE, ONESIXTH, ONETHIRD
         use datapool, only : IOBPD, IOBWB, DEP, DMIN, CCON, IE_CELL, I_DIAG, DT4S
-        use datapool, only : TRIA, LBCWA, LBCSP, LINHOM, IWBMNP, COFRM4, USNEW
+        use datapool, only : TRIA, LBCWA, LBCSP, LINHOM, IWBMNP, COFRM4
         use datapool, only : IWBNDLC, WBAC, SI, ICOMP, SMETHOD, FMEAN, FMEANWS
         use datapool, only : PHIA, DPHIDNA, DT4A, MAXMNECON, AC2, RKIND
         use datapool, only : TWO, RKIND, iplg, exchange_p2d, lsourceswam
@@ -2202,7 +2202,7 @@
                   GTEMP1 = MAX((1.-DT4A*DPHIDNA(ISS,IDD,IP)),1.)
                   GTEMP2 = PHIA(IP,ISS,IDD)/GTEMP1
                   DELFL  = COFRM4(ISS)*DT4S
-                  USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+                  USFM   = UFRIC(IP)*MAX(FMEANWS(IP),FMEAN(IP))
                   FLHAB  = ABS(GTEMP2*DT4S)
                   FLHAB  = MIN(FLHAB,USFM*DELFL)/DT4S
                   value  = -SIGN(FLHAB,GTEMP2)*SI(IP) ! Add source term to the right hand side
@@ -2327,7 +2327,7 @@
                   GTEMP1 = MAX((1.-DT4A*DPHIDNA(ISS,IDD,IP)),1.)
                   GTEMP2 = PHIA(IP,ISS,IDD)/GTEMP1
                   DELFL  = COFRM4(ISS)*DT4S
-                  USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+                  USFM   = UFRIC(IP)*MAX(FMEANWS(IP),FMEAN(IP))
                   FLHAB  = ABS(GTEMP2*DT4S)
                   FLHAB  = MIN(FLHAB,USFM*DELFL)/DT4S
                   value  = SIGN(FLHAB,GTEMP2)*DT4A*SI(IP) ! Add source term to the right hand side
