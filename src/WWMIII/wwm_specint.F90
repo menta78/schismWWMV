@@ -2,43 +2,6 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SEMI_IMPLICIT_INTEGRATION(IP,DT,WACOLD,WACNEW)
-      USE DATAPOOL
-      IMPLICIT NONE
-      INTEGER, INTENT(IN) :: IP
-      REAL(rkind), INTENT(IN) :: DT
-      REAL(rkind), INTENT(IN)  :: WACOLD(NUMSIG,NUMDIR)
-      REAL(rkind), INTENT(OUT) :: WACNEW(NUMSIG,NUMDIR)
-
-      REAL(rkind)              :: PHI(NUMSIG,NUMDIR), DPHIDN(NUMSIG,NUMDIR)
-      REAL(rkind)              :: SSLIM(NUMSIG,NUMDIR), SSBRL(NUMSIG,NUMDIR)
-
-      REAL(rkind)              :: NEWDAC, MAXDAC(NUMSIG)
-
-      INTEGER       :: IS, ID
-
-      CALL COMPUTE_PHI_DPHI(IP,WACOLD,PHI,DPHIDN)
-
-      DO IS = 1, NUMSIG
-        DO ID = 1, NUMDIR
-          NEWDAC = PHI(IS,ID) * DT / (ONE-DT*MIN(ZERO,DPHIDN(IS,ID)))
-          WACNEW(IS,ID) = MAX( ZERO, WACOLD(IS,ID) + NEWDAC )
-        END DO
-      END DO
-
-      IF (MELIM .GT. 0) THEN
-        CALL GET_MAXDAC(IP,MAXDAC)
-        CALL ACTION_LIMITER_LOCAL(MAXDAC,WACOLD,WACNEW,SSLIM)
-      ENDIF
-
-      IF (LMAXETOT) CALL BREAKING_LIMITER_LOCAL(IP,WACNEW,SSBRL)
-
-!      CALL POST_INTEGRATION(IP,WACOLD,WACNEW)
-
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
       SUBROUTINE COMPUTE_PHI_DPHI(IP,WALOC,PHI,DPHIDN)
       USE DATAPOOL
       IMPLICIT NONE
@@ -94,8 +57,6 @@
 #endif/
 !
       IF (ISHALLOW(IP) .EQ. 1) CALL SHALLOW_WATER(IP, WALOC, PHI, DPHIDN, SSBR, DSSBR, SSBF, DSSBF, SSNL3, DSSNL3)
-
-!      WRITE(*,*) 'SUMS', SUM(PHI), SUM(DPHIDN)
 !
       IF (MELIM .GT. 0) THEN
         CALL GET_MAXDAC(IP,MAXDAC)
@@ -103,8 +64,7 @@
           DO IS = 1, NUMSIG
             NEWDAC = PHI(IS,ID) * DT4A / (ONE-DT4A*MIN(ZERO,DPHIDN(IS,ID)))
             RATIO  = ONE/MAX(ONE,ABS(NEWDAC/MAXDAC(IS)))
-!            WRITE(*,*) IS, ID, RATIO, MAXDAC(IS), NEWDAC, PHI(IS,ID), DPHIDN(IS,ID), SUM(PHI), SUM(DPHIDN)
-            PHI(IS,ID)    = RATIO * PHI(IS,ID)
+            PHI(IS,ID) = RATIO * PHI(IS,ID)
           END DO
         END DO
       ENDIF
@@ -161,22 +121,6 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE CONVERT_VS_WWM_TO_WW3(IP, VS_WWM, VS_WW3)
-      USE DATAPOOL
-      IMPLICIT NONE
-      integer IP
-      REAL(rkind), intent(in) :: VS_WWM(NUMSIG,NUMDIR)
-      REAL(rkind), intent(out) :: VS_WW3(NUMSIG,NUMDIR)
-      INTEGER ID,IS
-      DO ID=1,NUMDIR
-        DO IS=1,NUMSIG
-          VS_WW3(IS,ID) = CG(IS,IP) * VS_WWM(IS,ID)
-        END DO
-      END DO
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
       SUBROUTINE POST_INTEGRATION(IP,WACOLD,WACNEW)
          USE DATAPOOL
          IMPLICIT NONE
@@ -189,7 +133,12 @@
            CALL ST4_POST(IP,WACOLD, WACNEW)
          ELSE IF (ISOURCE == 2) THEN
            CALL ECMWF_POST(IP, WACOLD, WACNEW)
+         ELSE IF (ISOURCE == 3) THEN
+           ! Cycle does not has that 
+         ELSE IF (ISOURCE == 4) THEN
+           CALL ST6_POST(IP,WACOLD, WACNEW)
          ENDIF
+           
       END SUBROUTINE POST_INTEGRATION
 !**********************************************************************
 !*                                                                    *
@@ -260,7 +209,7 @@
                  DO ID = 1, NUMDIR
                    NEWDAC = PHI(IS,ID) * DT4A / (ONE-DT4A*MIN(ZERO,DPHIDN(IS,ID)))
                    RATIO  = NEWDAC/MAXDAC(IS)
-                   IF (RATIO .GT. ONE) PHI = ONE/RATIO * PHI
+                   IF (ABS(RATIO) .GT. ONE) PHI = ONE/RATIO * PHI
                  END DO
                END DO
              ENDIF
@@ -279,6 +228,43 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
+      SUBROUTINE SEMI_IMPLICIT_INTEGRATION(IP,DT,WACOLD,WACNEW)
+      USE DATAPOOL
+      IMPLICIT NONE
+      INTEGER, INTENT(IN) :: IP
+      REAL(rkind), INTENT(IN) :: DT
+      REAL(rkind), INTENT(IN)  :: WACOLD(NUMSIG,NUMDIR)
+      REAL(rkind), INTENT(OUT) :: WACNEW(NUMSIG,NUMDIR)
+
+      REAL(rkind)              :: PHI(NUMSIG,NUMDIR), DPHIDN(NUMSIG,NUMDIR)
+      REAL(rkind)              :: SSLIM(NUMSIG,NUMDIR), SSBRL(NUMSIG,NUMDIR)
+
+      REAL(rkind)              :: NEWDAC, MAXDAC(NUMSIG)
+
+      INTEGER       :: IS, ID
+
+      CALL COMPUTE_PHI_DPHI(IP,WACOLD,PHI,DPHIDN)
+
+      DO IS = 1, NUMSIG
+        DO ID = 1, NUMDIR
+          NEWDAC = PHI(IS,ID) * DT / (ONE-DT*MIN(ZERO,DPHIDN(IS,ID)))
+          WACNEW(IS,ID) = MAX( ZERO, WACOLD(IS,ID) + NEWDAC )
+        END DO
+      END DO
+
+      IF (MELIM .GT. 0) THEN
+        CALL GET_MAXDAC(IP,MAXDAC)
+        CALL ACTION_LIMITER_LOCAL(MAXDAC,WACOLD,WACNEW,SSLIM)
+      ENDIF
+
+      IF (LMAXETOT) CALL BREAKING_LIMITER_LOCAL(IP,WACNEW,SSBRL)
+
+      CALL POST_INTEGRATION(IP,WACOLD,WACNEW)
+
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
          SUBROUTINE GET_MAXDAC(IP,MAXDAC)
          USE DATAPOOL
          IMPLICIT NONE
@@ -293,9 +279,9 @@
 
          DO IS = 1, NUMSIG
            PHILMAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)*WK(IS,IP)*WK(IS,IP)*CG(IS,IP)) ! Phillips limiter following Komen et al. 
-           IF (MELIM .EQ. 1) THEN  ! Phillips 
+           IF (MELIM .EQ. 1) THEN  ! Phillips, Komen et al. 1981
              MAXDAC(IS) = PHILMAXDAC
-           ELSE IF (MELIM .EQ. 2) THEN ! Hersbach & Janssen 
+           ELSE IF (MELIM .EQ. 2) THEN ! Hersbach & Janssen 1998
              USFM       = UFRIC(IP)*MAX(FMEANWS(IP),FMEAN(IP))
              MAXDAC(IS) = USFM*DELFL(IS)/PI2/SPSIG(IS)
            ELSE IF (MELIM .EQ. 3) THEN ! Roland, 2018
@@ -458,6 +444,38 @@
            END IF
          END DO
          END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE CONVERT_VS_WWM_TO_WW3(IP, VS_WWM, VS_WW3)
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer IP
+      REAL(rkind), intent(in) :: VS_WWM(NUMSIG,NUMDIR)
+      REAL(rkind), intent(out) :: VS_WW3(NUMSIG,NUMDIR)
+      INTEGER ID,IS
+      DO ID=1,NUMDIR
+        DO IS=1,NUMSIG
+          VS_WW3(IS,ID) = VS_WWM(IS,ID) * CG(IS,IP)
+        END DO
+      END DO
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE CONVERT_VS_WW3_TO_WWM(IP, VS_WWM, VS_WW3)
+      USE DATAPOOL
+      IMPLICIT NONE
+      integer IP
+      REAL(rkind), intent(in) :: VS_WWM(NUMSIG,NUMDIR)
+      REAL(rkind), intent(out) :: VS_WW3(NUMSIG,NUMDIR)
+      INTEGER ID,IS
+      DO ID=1,NUMDIR
+        DO IS=1,NUMSIG
+          VS_WW3(IS,ID) = VS_WWM(IS,ID) / CG(IS,IP)
+        END DO
+      END DO
+      END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************

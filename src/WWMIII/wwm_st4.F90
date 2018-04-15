@@ -111,7 +111,7 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE ST4_POST (IP, WALOCOLD, WALOC)
-!Now here quite some memory and indexing overhead ... will consolidate this after validation study ... now it fits our work in WW3 
+
         USE DATAPOOL
         USE W3SRC4MD
         IMPLICIT NONE
@@ -172,7 +172,7 @@
 !
 ! dissipation 
 !
-        CALL W3SDS4(AWW3,WK(:,IP),CG(:,IP),UFRIC(IP),USTDIR(IP),DEP(IP),SSDS_WW3,DSSDS_WW3,BRLAMBDA,WHITECAP)
+       CALL W3SDS4(AWW3,WK(:,IP),CG(:,IP),UFRIC(IP),USTDIR(IP),DEP(IP),SSDS_WW3,DSSDS_WW3,BRLAMBDA,WHITECAP)
 !
 ! snl4
 !
@@ -196,7 +196,7 @@
 !
         FACHF  = 5.
         FACHFA = XFR**(-FACHF-2)
-        DO IK=NKH+1, NK
+        DO IK=NKH+1,NK
           DO ITH=1, NTH
             AWW3(ITH+(IK-1)*NTH) = AWW3(ITH+(IK-2)*NTH) * FACHFA + 0. ! Adding a magic zero without a comment ... 
           END DO
@@ -206,9 +206,10 @@
 !
         DO IS = 1, NUMSIG
           DO ID = 1, NUMDIR
-            WALOC(IS,ID) = AWW3(ID + (IS-1) * NUMDIR) * CG(IS,IP)
+            WALOC(IS,ID) = AWW3(ID + (IS-1) * NUMDIR) / CG(IS,IP)
           END DO
         END DO
+        WALOC = WALOC
         CALL CONVERT_VS_VD_WWM(IP, SSINE_WW3, DSSINE_WW3, SSINE, DSSINE)
         CALL CONVERT_VS_VD_WWM(IP, SSDS_WW3, DSSDS_WW3, SSDS, DSSDS)
         IF (MESNL .GT. 0)  CALL CONVERT_WWM_VS_VD(IP, SSNL4_WW3, DSSNL4_WW3, SSNL4, DSSNL4)

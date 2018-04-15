@@ -641,12 +641,6 @@
 #endif
             eSum=eSum/ASPAR_DIAG
 
-            IF (MELIM .EQ. 1) THEN
-              CALL GET_MAXDAC(IP,MAXDAC)
-              CALL ACTION_LIMITER_LOCAL(MAXDAC,AC1(:,:,IP),ESUM,SSLIM)
-            ENDIF
-            IF (LMAXETOT) CALL BREAKING_LIMITER_LOCAL(IP,ESUM,SSBRL)
-
             IF (BLOCK_GAUSS_SEIDEL) THEN
               AC2(:,:,IP)=eSum
             ELSE
@@ -686,7 +680,7 @@
           END IF!test
         END DO!IP
 
-!        WRITE(*,*) SIZE(LCONVERGED), COUNT(LCONVERGED .eqv. .TRUE.)
+!        WRITE(STAT%FHNDL,*) SIZE(LCONVERGED), COUNT(LCONVERGED .eqv. .TRUE.)
 #ifdef DEBUG
         WRITE(STAT%FHNDL,*) 'sumESUM=', sumESUM
 #endif
@@ -747,21 +741,23 @@
             EXIT
           END IF
         END IF
+
       END DO
-      WRITE(STAT%FHNDL,*) 'nbIter=', nbIter
+
+      IF (LMAXETOT) CALL BREAKING_LIMITER_LOCAL(IP,AC2,SSBRL) 
+
+!      DO IP = 1, NP_RES
+!        CALL POST_INTEGRATION(IP,AC2(:,:,IP),AC2(:,:,IP) )
+!      ENDDO
+
+      WRITE(STAT%FHNDL,*) 'Jacobi nbIter=', nbIter
 #ifdef DEBUG
       CALL LOCAL_NODE_PRINT(20506, "After Jacobi Iteration")
 #endif
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME4)
-#endif
       AC2 = MAX(ZERO, AC2) ! Make sure there is no negative energy left ... 
-
-#ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME5)
-#endif
-
-#ifdef TIMINGS
 # ifdef MPI_PARALL_GRID
       IF (myrank == 0) THEN
 # endif
@@ -812,7 +808,7 @@
       CALL GET_BLOCAL(IP, ACin1, BLOC)
 !
       BSIDE =     eVal * (PHI - MIN(ZERO,DPHIDN) * Acin2(:,:,IP))
-      DIAG  =   - eVal * MIN(ZERO,DPHIDN) ! AR: The minus put the DHPIDN on the left side of the equation as diagonal contributions with the right sign ... it inverts the sign ... however this is wrong now for IBREAK = 2 the SWAN stuff 
+      DIAG  =   - eVal * MIN(ZERO,DPHIDN)  
 !
 #ifdef DEBUG_SOURCE_TERM
       WRITE(STAT%FHNDL,'(I10,10G20.10,A40)') IP, SUM(ACin1), SUM(ACin2), SUM(PHI), SUM(DPHIDN), SUM(BSIDE), SUM(DIAG), SUM(BLOC), eval, 'GET_BSIDE_DIAG'
