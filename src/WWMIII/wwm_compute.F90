@@ -99,7 +99,6 @@
 #ifdef DEBUG
          CALL Print_SumAC2("Before COMPUTE_SOURCES")
 #endif
-         AC1 = AC2
          IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES
 #ifdef DEBUG
          CALL Print_SumAC2(" After COMPUTE_SOURCES")

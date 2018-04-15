@@ -986,8 +986,6 @@
 !        WRITE(740+myrank,*) 'DSII=', DSII(IK)
         END DO
 
-
-        
       UORB = 2*SQRT(UORB)                  ! significant orbital amplitude
       AORB1 = 2*AORB**(1-0.5*SSWELLF(6))   ! half the significant wave height ... if SWELLF(6)=1
       RE = 4*UORB*AORB1 / NU_AIR           ! Reynolds number 
@@ -1800,7 +1798,6 @@
 2000  NOFILE=.TRUE.
       GOTO 800
 2001  CONTINUE 
-      RETURN
 !/T 9000 FORMAT (' TEST TABU_HFT2, K, L, I, UST, ALPHA, LEVTAIL, TAUHFT2(K,L,I) :',(3I4,4F10.5))    
       END SUBROUTINE TABU_TAUHF2
 

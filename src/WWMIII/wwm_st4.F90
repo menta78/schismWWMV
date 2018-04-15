@@ -140,6 +140,10 @@
         REAL(rkind)                :: FACTOR, FACTOR2, MWXFINISH, MWYFINISH, EFINISH, DIFF, CONST2, TEMP2
         REAL(rkind)                :: A1BAND, PHIOC, HSTOT, PIBBL, FAGE, FHIGH, FACHFA
 
+
+!        IF (MINVAL(WALOC) .LT. 0) STOP 'POST 1' 
+!        IF (MINVAL(WALOCOLD) .LT. 0) STOP 'POST 2'
+
         DO IS = 1, NUMSIG
           DO ID = 1, NUMDIR
             AWW3(ID + (IS-1) * NUMDIR)    = WALOC(IS,ID) * CG(IS,IP)
@@ -309,6 +313,8 @@
         OUTT_INTPAR(IP,34) = PHIOC  ! Wave-to-ocean TKE flux (phioc in W.m-2)
         OUTT_INTPAR(IP,35) = PHIBBL ! phibbl / wave_phibbl : Energy flux due to bottom friction (phioc in W.m-2)
 #endif
+
+!        IF (MINVAL(WALOC) .LT. 0) STOP 'POST 3'
 
       END SUBROUTINE
 !**********************************************************************

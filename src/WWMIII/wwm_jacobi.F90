@@ -576,7 +576,6 @@
 #ifdef TIMINGS
       CALL WAV_MY_WTIME(TIME2)
 #endif
-      !
       IF (ASPAR_LOCAL_LEVEL .eq. 0) THEN
         CALL ADD_FREQ_DIR_TO_ASPAR_COMP_CADS(ASPAR_JAC)
 #ifdef DEBUG
@@ -605,13 +604,13 @@
 
       DO
         is_converged(1) = 0
-        JDX=0
+        JDX = 0
 #ifdef DEBUG_ITERATION_LOOP
         FieldOut1 = 0
 #endif
 #ifdef DEBUG
         WRITE(STAT%FHNDL,*) 'Before iteration sum(AC2)=', sum(abs(AC2))
-        sumESUM=0
+        sumESUM = 0
 #endif
         nbPassive = 0
        
@@ -642,15 +641,15 @@
             eSum=eSum/ASPAR_DIAG
 
             IF (BLOCK_GAUSS_SEIDEL) THEN
-              AC2(:,:,IP)=eSum
+              AC2(:,:,IP) = max(zero,eSum)
             ELSE
-              U_JACOBI(:,:,IP)=eSum
+              U_JACOBI(:,:,IP) = max(zero,eSum)
             END IF
 
             IF (JGS_CHKCONV) THEN
               Sum_new = sum(eSum)
               if (Sum_new .gt. thr8) then
-                DiffNew=sum(abs(WALOC - eSum))
+                DiffNew = sum(abs(WALOC - eSum))
                 p_is_converged = DiffNew/Sum_new
               else
                 p_is_converged = zero
@@ -747,7 +746,7 @@
       IF (LMAXETOT) CALL BREAKING_LIMITER_LOCAL(IP,AC2,SSBRL) 
 
       DO IP = 1, NP_RES
-        CALL POST_INTEGRATION(IP,AC2(:,:,IP),AC2(:,:,IP))
+        CALL POST_INTEGRATION(IP,AC1(:,:,IP),AC2(:,:,IP))
       ENDDO
 
       WRITE(STAT%FHNDL,*) 'Jacobi nbIter=', nbIter
