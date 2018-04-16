@@ -941,10 +941,10 @@
 !
       IF (TAU .GT. TAU_TOT) THEN
          OVERSHOT    = .FALSE.
-         RTAU        = ERR / 90.
-         DRTAU       = 2.0
-         SIGN_NEW    = INT(SIGN(1.0,ERR))
-         UCINV10Hz   = 1.0 - (U10 * CINV10Hz)
+         RTAU        = ERR / 90.0_rkind
+         DRTAU       = 2.0_rkind
+         SIGN_NEW    = INT(SIGN(1.0_rkind,ERR))
+         UCINV10Hz   = 1.0_rkind - (U10 * CINV10Hz)
 !
 !/T6          WRITE (NDST,270) IDTIME, U10
 !/T6          WRITE (NDST,271) 
@@ -962,7 +962,7 @@
             ERR      = (TAU-TAU_TOT) / TAU_TOT   
 !
             SIGN_OLD = SIGN_NEW
-            SIGN_NEW = INT(SIGN(1.0, ERR))
+            SIGN_NEW = INT(SIGN(1.0_rkind, ERR))
 !        --- Slow down DRTAU when overshot. -------------------------- /
             IF (SIGN_NEW .NE. SIGN_OLD) OVERSHOT = .TRUE.
             IF (OVERSHOT) DRTAU = MAX(0.5*(1.0+DRTAU),1.00010)
