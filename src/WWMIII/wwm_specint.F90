@@ -33,7 +33,6 @@
 
       IF (LMAXETOT) CALL BREAKING_LIMITER_LOCAL(IP,WACNEW,SSBRL)
 
-      WACOLD = WACNEW
       CALL POST_INTEGRATION(IP,WACOLD,WACNEW)
 
 !      WRITE(*,'(A20,10F20.10)') 'AFTER POST', SUM(WACOLD), SUM(WACNEW)
@@ -188,13 +187,11 @@
          REAL(rkind),INTENT(IN)    :: WACOLD(NUMSIG,NUMDIR)
          REAL(rkind),INTENT(OUT)   :: WACNEW(NUMSIG,NUMDIR)
 
-         WACNEW = ZERO
          IF (ISOURCE == 1) THEN
            CALL ST4_POST(IP,WACOLD, WACNEW)
          ELSE IF (ISOURCE == 2) THEN
-           CALL ECMWF_POST(IP, WACOLD, WACNEW)
+           CALL ECMWF_POST(IP, WACNEW)
          ELSE IF (ISOURCE == 3) THEN
-           WACNEW = WACOLD
          ELSE IF (ISOURCE == 4) THEN
            CALL ST6_POST(IP,WACOLD, WACNEW)
          ENDIF
@@ -297,13 +294,13 @@
 
          DO IS = 1, NUMSIG
            PHILMAXDAC = 0.0081*LIMFAK/(TWO*SPSIG(IS)*WK(IS,IP)*WK(IS,IP)*WK(IS,IP)*CG(IS,IP)) ! Phillips limiter following Komen et al. 
-           IF (MELIM .EQ. 1) THEN  ! Phillips 
+           IF (ISOURCE .EQ. 3) THEN  ! Phillips 
              MAXDAC(IS) = PHILMAXDAC
-           ELSE IF (MELIM .EQ. 2) THEN ! Hersbach & Janssen 
+           ELSE IF (ISOURCE .EQ. 2) THEN ! Hersbach & Janssen 
              USFM       = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
              MAXDAC(IS) = USFM*DELFL(IS)/PI2/SPSIG(IS)
-           ELSE IF (MELIM .EQ. 3) THEN ! Roland, 2018
-             USFM       = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+           ELSE IF (ISOURCE .EQ. 1 .OR. ISOURCE .EQ. 4) THEN ! Roland, 2018
+             USFM       = UFRIC(IP)*MAX(FMEANWS(IP),FMEAN(IP))
              MAXDAC(IS) = MAX(PHILMAXDAC,USFM*DELFL(IS)/PI2/SPSIG(IS))
            END IF
          END DO
