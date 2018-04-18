@@ -142,7 +142,7 @@
           IF ( BETA2 .LT. ONE - SMALL) THEN
             SURFA0  = - ( ALPBJ / PI) *  QB * SME / BETA2
           ELSE
-            SURFA0  = - (ALPBJ/PI) * SME
+            SURFA0  = - (ALPBJ/PI) * SME * BETA2
           END IF
         ELSE
           SURFA0 = ZERO
@@ -154,7 +154,7 @@
             WS   = (ALPBJ / PI) *  QB * SME / BETA2
             SbrD = WS * (ONE - QB) / (BETA2 - QB)
           ELSE
-            WS   = (ALPBJ/PI) * SME
+            WS   = (ALPBJ/PI) * SME 
             SbrD = ZERO 
           END IF
           SURFA0 = SbrD ! right hand side is positive to balance left hand side underelax by SbrD ! explicit schemes cannot works since this term is positive!!!
@@ -180,21 +180,6 @@
           SURFA0 = ZERO
           SURFA1 = ZERO
         ENDIF
-      ELSEIF (IBREAK == 4) THEN ! WW3 SDBC1 formulation adapting Battjes & Janssen ! AR: What is this? 
-        SDBC1 = 0.25_rkind * BJALFA
-        CALL MEAN_PARAMETER_BDCONS(WALOC,HS,TM01,TM02)
-        FMEANloc = TWO * PI / TM01
-        IF (( BETA2 .GT. THR) .AND. ( ABS( BETA2 - QB ) .GT. THR) ) THEN
-           IF ( BETA2 .LT. ONE) THEN
-              CBJ = SDBC1 * QB * FMEANloc / BETA2
-           ELSE
-              CBJ = SDBC1 * FMEANloc
-           END IF
-        ELSE
-           CBJ = ZERO
-        ENDIF
-        SURFA1 = CBJ
-        SURFA0 = CBJ
       ENDIF
 !
 #ifdef DEBUG

@@ -173,7 +173,7 @@
  EXPORT_WALV_DELTC       =  0.000000000000000E+000
  /
  &ENGS
- ISOURCE =           1,
+ ISOURCE =           4,
  MESNL   =           1,
  MESIN   =           1,
  IFRIC   =           1,
@@ -247,8 +247,8 @@
  FXDSCUT =  0.000000000000000E+000
  /
  &NUMS
- ICOMP   =           0,
- AMETHOD =           1,
+ ICOMP   =           3,
+ AMETHOD =           7,
  SMETHOD =           1,
  DMETHOD =           0,
  IMPL_GEOADVECT  = T,
