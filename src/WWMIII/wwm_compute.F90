@@ -155,11 +155,13 @@
 #ifdef TIMINGS
         CALL WAV_MY_WTIME(TIME1)
 #endif
+
         CALL COMPUTE_DIFFRACTION
 
 #ifdef TIMINGS
         CALL WAV_MY_WTIME(TIME2)
 #endif
+
         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION
         IF (FMETHOD .GT. 0) CALL COMPUTE_FREQUENCY
         IF (DMETHOD .GT. 0) CALL COMPUTE_DIRECTION
@@ -168,6 +170,7 @@
 #ifdef TIMINGS
         CALL WAV_MY_WTIME(TIME3)
 #endif
+
         IF (SMETHOD .GT. 0) CALL COMPUTE_SOURCES 
 
 #ifdef TIMINGS
@@ -263,6 +266,8 @@
           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 4')
         ENDIF
 
+        IF (LMAXETOT) CALL BREAKING_LIMITER_GLOBAL
+
 #ifdef TIMINGS
         CALL WAV_MY_WTIME(TIME5)
 #endif
@@ -276,8 +281,8 @@
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE COMPUTE_IMPLICIT'
 #endif
 #ifdef DEBUG_COHERENCY_FLUCT
-       CALL PRINT_COHERENCY_ERROR(AC2, "After evaluation")
-       CALL Print_SumAC2("Sums after loop")
+        CALL PRINT_COHERENCY_ERROR(AC2, "After evaluation")
+      CALL Print_SumAC2("Sums after loop")
 #endif
       END SUBROUTINE
 !**********************************************************************
@@ -327,6 +332,7 @@
 
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE_SOURCES_EXP'
         FLUSH(STAT%FHNDL)
+
       END SUBROUTINE COMPUTE_SOURCES
 !**********************************************************************
 !*                                                                    *
@@ -353,8 +359,10 @@
            CALL PROPTHETA(IP,CAD)
            CALL PROPSIGMA(IP,CAS)
            TMPCAD(IP)    = MAXVAL(ABS(CAD))
+! 0.5 since the directional and frequency intergration is split in two parts .... no of course not. Why should it be so, u solve 2 times a 1d equation and this has just the normal cfl 
            TMPCFLCAD(IP) = TMPCAD(IP)*MAIN%DELT/DDIR
            TMPCAS(IP)    = MAXVAL(ABS(CAS))
+! absolute max. value ... lies on the secure side ... to do ...
            TMPCFLCAS(IP) = TMPCAS(IP)*MAIN%DELT/MINVAL(DS_INCR)
            CFL_CASD(1,IP)=TMPCAS(IP)
            CFL_CASD(2,IP)=TMPCAD(IP)

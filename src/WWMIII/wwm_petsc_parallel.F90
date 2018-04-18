@@ -416,7 +416,7 @@
                XIMP = 1.0
                DELT5 = XIMP*DELT
                DELFL = COFRM4(ISS)*DELT
-               USFM  = UFRIC(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+               USFM  = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
                TEMP  = USFM*DELFL!/PI2/SPSIG(IS)
                FLHAB  = ABS(GTEMP2*DT4S)
                FLHAB  = MIN(FLHAB,TEMP)/DT4S
