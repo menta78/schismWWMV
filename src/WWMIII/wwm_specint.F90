@@ -218,7 +218,6 @@
              ELSE
                WACNEW = WACOLD
              ENDIF 
-             IF (LMAXETOT) CALL BREAKING_LIMITER_LOCAL(IP,WACNEW,SSBRL)
              AC2(:,:,IP) = WACNEW
            ELSE
              AC2(:,:,IP) = ZERO

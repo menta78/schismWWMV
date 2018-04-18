@@ -61,7 +61,7 @@
 
 &BOUC          
  LBCSE          = .F.,               
- LBCWA          = .F.,               
+ LBCWA          = .T.,               
  LBCSP          = .F.,               
  LINHOM         = .F.,               
  LBSP1D         = .F.,               
@@ -253,7 +253,7 @@
  ICOMP          = 3,                 
  AMETHOD        = 7,                 
  SMETHOD        = 1,                 
- DMETHOD        = 1,                 
+ DMETHOD        = 2,                 
  IMPL_GEOADVECT = .T.,               
  LITERSPLIT     = .F.,               
  LFILTERTH      = .F.,               
