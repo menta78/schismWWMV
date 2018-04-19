@@ -66,7 +66,16 @@ for (my $iLine=0; $iLine<$nbLine; $iLine++)
     my @K=split("=", $eLine);
     if (scalar(@K) <= 1)
     {
-	print OUT $eLine."\n";
+	my @K3=split(" ", $eLine);
+	my $WePrint=1;
+	if (scalar(@K3) eq 1) {
+	    if ($K3[0] eq ",") {
+		$WePrint=0;
+	    }
+	}
+	if ($WePrint eq 1) {
+	    print OUT $eLine."\n";
+	}
     }
     else
     {
