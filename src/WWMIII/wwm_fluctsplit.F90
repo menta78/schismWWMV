@@ -1354,7 +1354,7 @@
              IF (IOBWB(IP) .EQ. 1) THEN
                GTEMP2 = PHIA(IS,ID,IP)/MAX((ONE-DT4A*DPHIDNA(IS,ID,IP)),ONE)
                DELFL  = COFRM4(IS)*DT4S
-               USFM   = UFRIC(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+               USFM   = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
                FLHAB  = ABS(GTEMP2*DT4S)
                FLHAB  = MIN(FLHAB,USFM*DELFL)/DT4S
                B(IP)             = B(IP)+SIGN(FLHAB,GTEMP2)*DT4S*SI(IP) 
@@ -1556,7 +1556,7 @@
                XIMP = 1.0
                DELT5 = XIMP*DELT
                DELFL = COFRM4(IS)*DELT
-               USFM  = UFRIC(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+               USFM  = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
                TEMP  = USFM*DELFL!/PI2/SPSIG(IS)
                FLHAB  = ABS(GTEMP2*DT4S)
                FLHAB  = MIN(FLHAB,TEMP)/DT4S

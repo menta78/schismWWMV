@@ -271,7 +271,7 @@
 !              *F*      - SPECTRUM.
 !              *IJS*    - INDEX OF FIRST GRIDPOINT
 !              *IJL*    - INDEX OF LAST GRIDPOINT
-!              *UFRIC*  - FRICTION VELOCITY
+!              *USNEW*  - FRICTION VELOCITY
 !              *THWNEW* - WIND DIRECTION
 !              *EM*     - MEAN WAVE ENERGY (OUTPUT)
 !              *FM*     - MEAN WAVE FREQUENCY (OUTPUT)
@@ -614,7 +614,7 @@
       USE DATAPOOL, ONLY : MNP, FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, FRINTF, COFRM4, CG, WK, &
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, EMEAN, FMEAN, TH, RKIND, DELU, &
      &                      JUMAX, DT4S, FRM5, IPHYS, LOUTWAM, CD, UFRIC, ALPHA_CH, Z0, ITEST, LCFLX,&
-     &                      THWOLD, THWNEW, Z0OLD, Z0NEW, ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW, U10NEW, UFRIC, &
+     &                      THWOLD, THWNEW, Z0OLD, Z0NEW, ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW, U10NEW, USNEW, &
      &                      U10OLD, FMEANWS, USOLD, TAUW, ZERO, MESIN, MESDS, MESNL, &
      &                      DELTH => DDIR, &
      &                      G => G9, &
@@ -655,12 +655,12 @@
       JU=MIN(JUMAX, MAX(NINT(XJ),1))
       ILEV=1
       IF (MESIN .GT. 0) THEN
-        CALL AIRSEA_LOCAL (IPP, U10NEW(IPP), TAUW(IPP), UFRIC(IPP), Z0NEW(IPP),ILEV)
-        CALL SINPUT_LOCAL (IPP, FL3, FL, THWNEW(IPP), UFRIC(IPP), Z0NEW(IPP), ROAIRN(IPP), ZIDLNEW(IPP), SL, XLLWS, SSIN, DSSIN)
+        CALL AIRSEA_LOCAL (IPP, U10NEW(IPP), TAUW(IPP), USNEW(IPP), Z0NEW(IPP),ILEV)
+        CALL SINPUT_LOCAL (IPP, FL3, FL, THWNEW(IPP), USNEW(IPP), Z0NEW(IPP), ROAIRN(IPP), ZIDLNEW(IPP), SL, XLLWS, SSIN, DSSIN)
         CALL FEMEANWS_LOCAL(IPP,FL3,EMEANWS,FMEANWS(IPP),XLLWS)
         CALL FRCUTINDEX_LOCAL(IPP, FMEAN(IPP), FMEANWS(IPP), MIJ)
-        CALL STRESSO_LOCAL (IPP, FL3, THWNEW(IPP), UFRIC(IPP), Z0NEW(IPP), ROAIRN(IPP), TAUW(IPP), TAUWLF, PHIWA, PHIAWDIAG, PHIAWUNR, SL, MIJ, LCFLX)
-        CALL AIRSEA_LOCAL (IPP, U10NEW(IPP), TAUW(IPP), UFRIC(IPP), Z0NEW(IPP), ILEV)
+        CALL STRESSO_LOCAL (IPP, FL3, THWNEW(IPP), USNEW(IPP), Z0NEW(IPP), ROAIRN(IPP), TAUW(IPP), TAUWLF, PHIWA, PHIAWDIAG, PHIAWUNR, SL, MIJ, LCFLX)
+        CALL AIRSEA_LOCAL (IPP, U10NEW(IPP), TAUW(IPP), USNEW(IPP), Z0NEW(IPP), ILEV)
       ENDIF
       IF (MESNL .GT. 0) CALL SNONLIN_LOCAL (IPP, FL3, FL, SL, AKMEAN, SSNL4, DSSNL4)
       IF (MESDS .GT. 0) CALL SDISSIP_LOCAL (IPP, FL3 ,FL, SL, F1MEAN, XKMEAN, PHIOC, TAUWD, MIJ, SSDS, DSSDS)
@@ -681,7 +681,7 @@
        USE DATAPOOL, ONLY : MNP, FR, WETAIL, FRTAIL, WP1TAIL, ISHALLO, FRINTF, COFRM4, CG, WK, &
      &                      DFIM, DFIMOFR, DFFR, DFFR2, WK, RKIND, EMEAN, FMEAN, TH, RKIND, DELU, &
      &                      JUMAX, DT4S, FRM5, IPHYS, LOUTWAM, CD, UFRIC, ALPHA_CH, Z0, ITEST, LCFLX,&
-     &                      THWOLD, THWNEW, Z0OLD, Z0NEW, ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW, U10NEW, UFRIC, &
+     &                      THWOLD, THWNEW, Z0OLD, Z0NEW, ROAIRO, ROAIRN, ZIDLOLD, ZIDLNEW, U10NEW, USNEW, &
      &                      U10OLD, FMEANWS, USOLD, TAUW, &
      &                      DELTH => DDIR, &
      &                      G => G9, &
@@ -739,6 +739,7 @@
         FCONST(M) = 0.
         TEMP(M) = TEMP2(M)*GADIAG
       ENDDO
+
       DO K=1,NANG
         GADIAG = FL3(K,MIJ)
         DO M=1,NFRE
@@ -750,14 +751,14 @@
       ENDDO
  
       IF(IPHYS.EQ.0) THEN
-        CALL SINPUT_LOCAL (IPP, FL3, FL, THWNEW(IPP), UFRIC(IPP), Z0NEW(IPP), ROAIRN(IPP), WSTAR, SL, XLLWS, SSIN, DSSIN)
+        CALL SINPUT_LOCAL (IPP, FL3, FL, THWNEW(IPP), USNEW(IPP), Z0NEW(IPP), ROAIRN(IPP), WSTAR, SL, XLLWS, SSIN, DSSIN)
 !BUG ALARM  ... in the orignial code u have ther ZIDLNEW which is not used in sinput instead wstar is passed ...
       ELSE
-        CALL SINPUT_ARD_LOCAL (IPP, FL3, FL, THWNEW(IPP), UFRIC(IPP), Z0NEW(IPP), ROAIRN(IPP), ZIDLNEW(IPP), SL, XLLWS, SSIN, DSSDS)
+        CALL SINPUT_ARD_LOCAL (IPP, FL3, FL, THWNEW(IPP), USNEW(IPP), Z0NEW(IPP), ROAIRN(IPP), ZIDLNEW(IPP), SL, XLLWS, SSIN, DSSDS)
       ENDIF
 
-      CALL STRESSO_LOCAL (IPP, FL3, THWNEW(IPP), UFRIC(IPP), Z0NEW(IPP), ROAIRN(IPP), TAUW(IPP), TAUWLF, PHIWA,PHIAWDIAG, PHIAWUNR, SL, MIJ,LCFLX)
-      CALL AIRSEA_LOCAL (IPP, U10NEW(IPP), TAUW(IPP), UFRIC(IPP), Z0NEW(IPP),ILEV)
+      CALL STRESSO_LOCAL (IPP, FL3, THWNEW(IPP), USNEW(IPP), Z0NEW(IPP), ROAIRN(IPP), TAUW(IPP), TAUWLF, PHIWA,PHIAWDIAG, PHIAWUNR, SL, MIJ,LCFLX)
+      CALL AIRSEA_LOCAL (IPP, U10NEW(IPP), TAUW(IPP), USNEW(IPP), Z0NEW(IPP),ILEV)
 
       IF(IPHYS.EQ.0) THEN
         CALL SDISSIP_LOCAL (IPP, FL3 ,FL, SL, F1MEAN, XKMEAN, PHIOC, TAUWD, MIJ, SSDS, DSSDS)
@@ -765,20 +766,20 @@
         CALL SDISS_ARDH_VEC_LOCAL (IPP, FL3 ,FL, SL, F1MEAN, XKMEAN,PHIOC, TAUWD, MIJ, SSDS, DSSDS)
       ENDIF
 
-      TAU       = ROAIRN(IPP)*UFRIC(IPP)**2
-      XN        = ROAIRN(IPP)*UFRIC(IPP)**3
+      TAU        = ROAIRN(IPP)*USNEW(IPP)**2
+      XN         = ROAIRN(IPP)*USNEW(IPP)**3
       PHIDIAG    = PHIAWDIAG+PHIAWUNR
       PHIEPS = (PHIOC-PHIDIAG)/XN 
       PHIAW  = (PHIWA+PHIAWUNR)/XN
       TAUOC  = (TAU-TAUWLF-TAUWD)/TAU
-      USOLD(IPP) = UFRIC(IPP)
-      Z0OLD(IPP) = Z0NEW(IPP)
-      ROAIRO(IPP) = ROAIRN(IPP)
+      USOLD(IPP)   = USNEW(IPP)
+      Z0OLD(IPP)   = Z0NEW(IPP)
+      ROAIRO(IPP)  = ROAIRN(IPP)
       ZIDLOLD(IPP) = ZIDLNEW(IPP)
-      UFRIC(IPP) = UFRIC(IPP)
+      UFRIC(IPP) = USNEW(IPP)
       Z0(IPP)    = Z0NEW(IPP)
-      CD(IPP)   = (UFRIC(IPP)/U10NEW(IPP))**2
-      ALPHA_CH(IPP) = G*Z0NEW(IPP)/UFRIC(IPP)**2
+      CD(IPP)    = (USNEW(IPP)/U10NEW(IPP))**2
+      ALPHA_CH(IPP) = G*Z0NEW(IPP)/USNEW(IPP)**2
 
       END SUBROUTINE WAM_POST 
       SUBROUTINE SBOTTOM_LOCAL (IPP, F, FL, IG, SL, SSBF, DSSBF)
@@ -926,7 +927,7 @@
       !USE YOWMPP   , ONLY : NINF     ,NSUP
       !USE YOWPARAM , ONLY : NANG     ,NFRE
       !USE YOWSHAL  , ONLY : TFAK     ,INDEP, TCGOND
-      !USE YOWSPEC  , ONLY : U10NEW, THWNEW, UFRIC
+      !USE YOWSPEC  , ONLY : U10NEW, THWNEW, USNEW
       !USE YOWSTAT  , ONLY : ISHALLO
       !USE YOWTEST  , ONLY : IU06     ,ITEST
       !USE PARKIND1  ,ONLY : JPIM     ,JPRB
@@ -936,7 +937,7 @@
      &                DFIM, DFIMOFR, DFFR, DFFR2, WK, ZALP, IAB, &
      &                IUSTAR, IALPHA, USTARM, TAUT, ONETHIRD, RKIND, ONE, &
      &                DELUST, DELALP, BETAMAX, XKAPPA, IDAMPING, TAUWSHELTER, &
-     &                FRATIO, EMEAN, UFRIC, THWNEW, DEGRAD, LCFLX, NUMSIG, NUMDIR, &
+     &                FRATIO, EMEAN, USNEW, THWNEW, DEGRAD, LCFLX, NUMSIG, NUMDIR, &
      &                SINTH, COSTH, &
      &                ROWATER => RHOW, &
      &                ROAIR => RHOA, &
@@ -1054,7 +1055,7 @@
       END DO
       ALFAMEAN = (XKMEAN**2)*EMEAN(IPP)
       FACTOR = TMP00     *F1MEAN*(ALFAMEAN*ALFAMEAN)
-      FACTURB = TMP01*UFRIC(IPP)*UFRIC(IPP)
+      FACTURB = TMP01*USNEW(IPP)*USNEW(IPP)
       WNMEAN2 = MAX( 1.E-10 , XKMEAN  )
       IF (ISHALLO.EQ.0) THEN
         DO M=1, NFRE
@@ -1546,7 +1547,7 @@
       IF (LOUTWAM) WRITE(111119,*) '------- FINISHED DISSIPATION -------' 
 
       END SUBROUTINE SDISSIP_LOCAL
-      SUBROUTINE SINPUT_ARD_LOCAL (IPP,F,FL,THWNEW,UFRIC,Z0NEW,&
+      SUBROUTINE SINPUT_ARD_LOCAL (IPP,F,FL,THWNEW,USNEW,Z0NEW,&
      &                  ROAIRN,WSTAR,SL,XLLWS,SSIN,DSSIN)
 ! ----------------------------------------------------------------------
 
@@ -1594,7 +1595,7 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *SINPUT (F, FL, IJS, IJL, THWNEW, UFRIC, Z0NEW,
+!     *CALL* *SINPUT (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
 !    &                   ROAIRN,WSTAR, SL, XLLWS)
 !            *F* - SPECTRUM.
 !           *FL* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
@@ -1603,7 +1604,7 @@
 !       *THWNEW* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
 !                  NOTATION (POINTING ANGLE OF WIND VECTOR,
 !                  CLOCKWISE FROM NORTH).
-!        *UFRIC* - NEW FRICTION VELOCITY IN M/S.
+!        *USNEW* - NEW FRICTION VELOCITY IN M/S.
 !        *Z0NEW* - ROUGHNESS LENGTH IN M.
 !       *ROAIRN* - AIR DENSITY IN KG/M3
 !        *WSTAR* - FREE CONVECTION VELOCITY SCALE (M/S).
@@ -1682,7 +1683,7 @@
       !REAL(KIND=JPRB) :: ZHOOK_HANDLE
       REAL(rkind), DIMENSION(NANG) :: PP
       REAL(rkind), DIMENSION(NFRE) :: FAC, CONST, SIG, CONSTF
-      REAL(rkind) :: THWNEW, UFRIC, Z0NEW, ROAIRN, WSTAR
+      REAL(rkind) :: THWNEW, USNEW, Z0NEW, ROAIRN, WSTAR
       REAL(rkind) :: TAUX, TAUY, TAUPX,TAUPY,USTP,USDIRP
       REAL(rkind) :: Z0VIS, Z0NOZ, FWW
       REAL(rkind) :: PVISC, PTURB
@@ -1725,7 +1726,7 @@
       ENDDO
 
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
-      CALL WSIGSTAR_LOCAL (IPP, UFRIC, Z0NEW, WSTAR, SIG_N)
+      CALL WSIGSTAR_LOCAL (IPP, USNEW, Z0NEW, WSTAR, SIG_N)
 
 ! ----------------------------------------------------------------------
 ! computation of Uorb and Aorb
@@ -1746,7 +1747,7 @@
 
       UORBT = 2*SQRT(UORBT)  ! this is the significant orbital amplitude
       AORB = 2*SQRT(AORB)
-      Z0VIS = 0.1*NU_AIR/MAX(UFRIC,0.0001)
+      Z0VIS = 0.1*NU_AIR/MAX(USNEW,0.0001)
       Z0NOZ = max(Z0VIS,0.04*Z0NEW)
       ZORB = AORB/Z0NOZ
       IF (UORBT.NE.ZERO) THEN
@@ -1765,8 +1766,8 @@
 
       XSTRESS=ZERO
       YSTRESS=ZERO
-      TAUX=(UFRIC**2)*SIN(THWNEW)
-      TAUY=(UFRIC**2)*COS(THWNEW)
+      TAUX=(USNEW**2)*SIN(THWNEW)
+      TAUY=(USNEW**2)*COS(THWNEW)
 
 !*    2. LOOP OVER FREQUENCIES.
 !        ----------------------
@@ -1889,7 +1890,7 @@
 
       RETURN
       END SUBROUTINE SINPUT_ARD_LOCAL
-      SUBROUTINE SINPUT_LOCAL (IPP, F, FL, THWNEW, UFRIC, Z0NEW, &
+      SUBROUTINE SINPUT_LOCAL (IPP, F, FL, THWNEW, USNEW, Z0NEW, &
      &                   ROAIRN, WSTAR, SL, XLLWS, SSIN, DSSIN)
 ! ----------------------------------------------------------------------
 
@@ -1934,7 +1935,7 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *SINPUT (F, FL, IJS, IJL, THWNEW, UFRIC, Z0NEW,
+!     *CALL* *SINPUT (F, FL, IJS, IJL, THWNEW, USNEW, Z0NEW,
 !    &                   ROAIRN,WSTAR, SL, XLLWS)
 !            *F* - SPECTRUM.
 !           *FL* - DIAGONAL MATRIX OF FUNCTIONAL DERIVATIVE.
@@ -1943,7 +1944,7 @@
 !       *THWNEW* - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
 !                  NOTATION (POINTING ANGLE OF WIND VECTOR,
 !                  CLOCKWISE FROM NORTH).
-!        *UFRIC* - NEW FRICTION VELOCITY IN M/S.
+!        *USNEW* - NEW FRICTION VELOCITY IN M/S.
 !        *Z0NEW* - ROUGHNESS LENGTH IN M.
 !       *ROAIRN* - AIR DENSITY IN KG/M3
 !        *WSTAR* - FREE CONVECTION VELOCITY SCALE (M/S).
@@ -2007,7 +2008,7 @@
 
       REAL(rkind),DIMENSION(NANG,NFRE),intent(in) :: F
       REAL(rkind),DIMENSION(NANG,NFRE),intent(out) :: FL, SL
-      REAL(rkind) :: THWNEW, UFRIC, Z0NEW, ROAIRN, ZIDLNEW, WSTAR
+      REAL(rkind) :: THWNEW, USNEW, Z0NEW, ROAIRN, ZIDLNEW, WSTAR
  
       REAL(rkind),DIMENSION(NANG,NFRE) :: SSIN, DSSIN
 
@@ -2057,10 +2058,10 @@
 
 
 !     ESTIMATE THE STANDARD DEVIATION OF GUSTINESS.
-      CALL WSIGSTAR_LOCAL (IPP, UFRIC, Z0NEW, WSTAR, SIG_N)
+      CALL WSIGSTAR_LOCAL (IPP, USNEW, Z0NEW, WSTAR, SIG_N)
 
-      USP = UFRIC*(1.+SIG_N)
-      USM = UFRIC*(1.-SIG_N)
+      USP = USNEW*(1.+SIG_N)
+      USM = USNEW*(1.-SIG_N)
 
       EPSIL = ROAIRN*RWINV
 ! ----------------------------------------------------------------------
@@ -2494,7 +2495,7 @@
       FL = FL + DSSNL4
       SL = SL + SSNL4
       END SUBROUTINE SNONLIN_LOCAL
-      SUBROUTINE STRESSO_LOCAL (IPP, F, THWNEW, UFRIC, Z0NEW, &
+      SUBROUTINE STRESSO_LOCAL (IPP, F, THWNEW, USNEW, Z0NEW, &
      &                    ROAIRN, TAUW, TAUWLF, PHIAW, &
      &                    PHIAWDIAG, PHIAWUNR, SL, & 
      &                    MIJ, LCFLX)
@@ -2519,7 +2520,7 @@
 !**   INTERFACE.
 !     ----------
 
-!       *CALL* *STRESSO (F, IJS, IJL, THWNEW, UFRIC, Z0NEW,
+!       *CALL* *STRESSO (F, IJS, IJL, THWNEW, USNEW, Z0NEW,
 !                        ROAIRN, TAUW, TAUWLF, PHIAW,
 !                        PHIAWDIAG, PHIAWUNR, SL, 
 !                        MIJ, LCFLX)*
@@ -2529,7 +2530,7 @@
 !         *THWNEW*      - WIND DIRECTION IN RADIANS IN OCEANOGRAPHIC
 !                         NOTATION (POINTING ANGLE OF WIND VECTOR,
 !                         CLOCKWISE FROM NORTH).
-!         *UFRIC*       - NEW FRICTION VELOCITY IN M/S.
+!         *USNEW*       - NEW FRICTION VELOCITY IN M/S.
 !         *Z0NEW*       - ROUGHNESS LENGTH IN M.
 !         *ROAIRN*      - AIR DENSITY IN KG/M3.
 !         *TAUW*        - WAVE STRESS IN (M/S)**2
@@ -2601,7 +2602,7 @@
       INTEGER, INTENT(IN) :: IPP
       REAL(rkind),DIMENSION(NANG,NFRE), intent(in) :: F
       REAL(rkind),DIMENSION(NANG,NFRE), intent(inout) :: SL
-      REAL(rkind) :: THWNEW, UFRIC, Z0NEW, ROAIRN, TAUW, &
+      REAL(rkind) :: THWNEW, USNEW, Z0NEW, ROAIRN, TAUW, &
      &                           TAUX, TAUY, TAUPX, TAUPY, USDIRP, &
      &                           TAUWLF, PHIAW, PHIAWDIAG, &
      &                           PHIAWUNR
@@ -2713,8 +2714,8 @@
       IF (IPHYS.EQ.0) THEN
         USDIRP=THWNEW
       ELSE
-        TAUX=(UFRIC**2)*SIN(THWNEW)
-        TAUY=(UFRIC**2)*COS(THWNEW)
+        TAUX=(USNEW**2)*SIN(THWNEW)
+        TAUY=(USNEW**2)*COS(THWNEW)
         TAUPX=TAUX-ABS(TAUWSHELTER)*XSTRESS
         TAUPY=TAUY-ABS(TAUWSHELTER)*YSTRESS
         USDIRP=ATAN2(TAUPX,TAUPY)
@@ -2736,7 +2737,7 @@
 
       IF (TAUWSHELTER.LE.0.) THEN
 !        Print *, 'Stresso_Local, step 6.2a'
-        UST   = MAX(UFRIC,0.000001)
+        UST   = MAX(USNEW,0.000001)
         UST2 = UST**2
         XI    = UST / DELUST
         XI    = MIN(REAL(IUSTAR),XI)
@@ -2763,7 +2764,7 @@
         IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111116,'(A10,4F20.10)') 'T3', CONST0, TEMP1, UST2, TAU1
       ELSE
 !        Print *, 'Stresso_Local, step 6.2b'
-        UST   = MAX(UFRIC,0.000001)
+        UST   = MAX(USNEW,0.000001)
         UST2 = UST**2
         XI    = UST / DELUST
         XI    = MIN(REAL(IUSTAR),XI)
@@ -2819,13 +2820,13 @@
         CONST = BETAM*ZPI**3*FR(NFRE)**4/G*DELTH
 
         CONSTPHI     = CONST*ROAIRN
-        PHIAWUNR = CONSTPHI*UFRIC**2*TEMP2
+        PHIAWUNR = CONSTPHI*USNEW**2*TEMP2
       ENDIF
 !      Print *, 'Stresso_Local, step 8'
 
       IF (LOUTWAM .AND. IPP == TESTNODE) WRITE(111116,*) '------- END OF STRESSO ---------'
       END SUBROUTINE STRESSO_LOCAL
-      SUBROUTINE WSIGSTAR_LOCAL (IPP, UFRIC, Z0NEW, WSTAR, SIG_N)
+      SUBROUTINE WSIGSTAR_LOCAL (IPP, USNEW, Z0NEW, WSTAR, SIG_N)
 ! ----------------------------------------------------------------------
 
 !**** *WSIGSTAR* - COMPUTATION OF STANDARD DEVIATION OF USTAR.
@@ -2838,10 +2839,10 @@
 !**   INTERFACE.
 !     ----------
 
-!     *CALL* *WSIGSTAR (IJS, IJL, UFRIC, Z0NEW, WSTAR, SIG_N)
+!     *CALL* *WSIGSTAR (IJS, IJL, USNEW, Z0NEW, WSTAR, SIG_N)
 !             *IJS*   - INDEX OF FIRST GRIDPOINT.
 !             *IJL*   - INDEX OF LAST GRIDPOINT.
-!             *UFRIC* - NEW FRICTION VELOCITY IN M/S.
+!             *USNEW* - NEW FRICTION VELOCITY IN M/S.
 !             *Z0NEW* - ROUGHNESS LENGTH IN M.
 !             *WSTAR* - FREE CONVECTION VELOCITY SCALE (M/S).
 !             *SIG_N* - ESTINATED STANDARD DEVIATION OF USTAR.
@@ -2876,7 +2877,7 @@
       USE DATAPOOL, ONLY : XKAPPA, RKIND, ONETHIRD
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: IPP
-      REAL(rkind), intent(in) :: WSTAR, Z0NEW, UFRIC
+      REAL(rkind), intent(in) :: WSTAR, Z0NEW, USNEW
       REAL(rkind), intent(out) :: SIG_N
       REAL, PARAMETER :: A = 0.8/1000.
       REAL, PARAMETER :: B = 0.08/1000.
@@ -2888,17 +2889,17 @@
 !       IN THE FOLLOWING U10 IS ESTIMATED ASSUMING EVERYTHING IS
 !       BASED ON U*
 !
-      Print *, 'UFRIC=', UFRIC
-      Print *, 'XKAPPA=', XKAPPA
-      Print *, ' Z0NEW=', Z0NEW
-      U10 = UFRIC/XKAPPA*LOG(10./Z0NEW)
-      Print *, 'U10=', U10
+!      Print *, 'USNEW=', USNEW
+!      Print *, 'XKAPPA=', XKAPPA
+!      Print *, ' Z0NEW=', Z0NEW
+      U10 = USNEW/XKAPPA*LOG(10./Z0NEW)
+!      Print *, 'U10=', U10
       C_D = A+B*U10
       DC_DDU = B
       SIG_CONV = 1. + 0.5*U10/C_D*DC_DDU
-      SIG_N = MIN(0.5, SIG_CONV * (BG_GUST*UFRIC**3+ 0.5*XKAPPA*WSTAR**3)**ONETHIRD /U10 )
+      SIG_N = MIN(0.5, SIG_CONV * &
+     &   (BG_GUST*USNEW**3+ 0.5*XKAPPA*WSTAR**3)**ONETHIRD /U10 )
       END SUBROUTINE WSIGSTAR_LOCAL
-
       SUBROUTINE NLWEIGT
 
 ! ----------------------------------------------------------------------

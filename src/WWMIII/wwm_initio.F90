@@ -334,11 +334,12 @@
          Z0NEW = ZERO 
          ROAIRO = 1.2250000238 
          ROAIRN = 1.2250000238 
-         ALLOCATE( ZIDLOLD(MNP), ZIDLNEW(MNP), U10NEW(MNP), stat=istat)
+         ALLOCATE( ZIDLOLD(MNP), ZIDLNEW(MNP), U10NEW(MNP), USNEW(MNP), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32d')
          ZIDLOLD = ZERO
          ZIDLNEW = ZERO
          U10NEW = ZERO
+         USNEW = ZERO
          ALLOCATE( FCONST(MNP,NUMSIG), stat=istat)
          IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 32e')
          FCONST = 1

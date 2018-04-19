@@ -44,7 +44,7 @@
  LSLOP   = F,
  SLMAX   =  0.200000000000000     ,
  LVAR1D  = F,
- LOPTSIG = T,
+ LOPTSIG = F,
  CART2LATLON     = F,
  LATLON2CART     = F,
  APPLY_DXP_CORR  = F,
@@ -173,7 +173,7 @@
  EXPORT_WALV_DELTC       =  0.000000000000000E+000
  /
  &ENGS
- ISOURCE =           1,
+ ISOURCE =           4,
  MESNL   =           1,
  MESIN   =           1,
  IFRIC   =           1,
@@ -262,7 +262,7 @@
  LFILTERSIG      = F,
  MAXCFLSIG       =   1.00000000000000     ,
  LSIGBOUND       = F,
- MELIM   =       1,
+ MELIM   =       2,
  LIMFAK  =  0.100000000000000     ,
  LDIFR   = F,
  IDIFFR  =           1,

@@ -61,7 +61,7 @@
 
 &BOUC          
  LBCSE          = .F.,               
- LBCWA          = .F.,               
+ LBCWA          = .T.,               
  LBCSP          = .F.,               
  LINHOM         = .F.,               
  LBSP1D         = .F.,               
@@ -173,7 +173,7 @@
 /
 
 &ENGS          
- ISOURCE        = 2,                 
+ ISOURCE        = 4,                 
  MESNL          = 1,                 
  MESIN          = 1,                 
  IFRIC          = 1,                 
@@ -253,7 +253,7 @@
  ICOMP          = 3,                 
  AMETHOD        = 7,                 
  SMETHOD        = 1,                 
- DMETHOD        = 1,                 
+ DMETHOD        = 2,                 
  IMPL_GEOADVECT = .T.,               
  LITERSPLIT     = .F.,               
  LFILTERTH      = .F.,               
@@ -307,6 +307,7 @@
  JGS_DIFF_SOLVERTHR = 1.E-6,             
  LCONV          = .F.,               
  LCHKCONV       = .T.,               
+ PMIN           = 1.
  NQSITER        = 1,                 
  QSCONV1        = 0.970000028610229, 
  QSCONV2        = 0.970000028610229, 
