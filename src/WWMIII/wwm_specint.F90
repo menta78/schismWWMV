@@ -106,7 +106,7 @@
             NEWDAC = PHI(IS,ID) * DT4A / (ONE-DT4A*MIN(ZERO,DPHIDN(IS,ID)))
             RATIO  = ONE/MAX(ONE,ABS(NEWDAC/MAXDAC(IS)))
 !            WRITE(*,*) IS, ID, RATIO, MAXDAC(IS), NEWDAC, PHI(IS,ID), DPHIDN(IS,ID), SUM(PHI), SUM(DPHIDN)
-            PHI(IS,ID)    = RATIO * PHI(IS,ID)
+            PHI(IS,ID) = RATIO * PHI(IS,ID)
           END DO
         END DO
       ENDIF
@@ -253,16 +253,6 @@
                CALL COMPUTE_PHI_DPHI(IP,WACOLD,PHI,DPHIDN)
              ELSE IF (IOBP(IP) .EQ. 0 .AND. .NOT. LSOUBOUND) THEN ! CALL ONLY FOR NON BOUNDARY POINTS
                CALL COMPUTE_PHI_DPHI(IP,WACOLD,PHI,DPHIDN)
-             ENDIF
-             IF (MELIM .GT. 0) THEN
-               CALL GET_MAXDAC(IP,MAXDAC)
-               DO IS = 1, NUMSIG
-                 DO ID = 1, NUMDIR
-                   NEWDAC = PHI(IS,ID) * DT4A / (ONE-DT4A*MIN(ZERO,DPHIDN(IS,ID)))
-                   RATIO  = NEWDAC/MAXDAC(IS)
-                   IF (RATIO .GT. ONE) PHI = ONE/RATIO * PHI
-                 END DO
-               END DO
              ENDIF
              PHIA(:,:,IP)    = PHI   
              DPHIDNA(:,:,IP) = DPHIDN
