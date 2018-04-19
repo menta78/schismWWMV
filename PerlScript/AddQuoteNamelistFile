@@ -82,6 +82,16 @@ for (my $iLine=0; $iLine<$nbLine; $iLine++)
 	print OUT $K[0]." = ";
 	my $str=$K[1];
 	my @P=split(",", $str);
+	my $IsStringTime=0;
+	my @CSL=split(" ", $K[0]);
+	if (scalar(@CSL) eq 1) {
+	    my $strRed=$CSL[0];
+	    print "K0=".$K[0]." strRed=".$strRed."\n";
+	    if ($strRed eq "BEGTC" || $strRed eq "ENDTC")
+	    {
+		$IsStringTime=1;
+	    }
+	}
 	for (my $iP=0; $iP<scalar(@P); $iP++)
 	{
 	    my $strB=$P[$iP];
@@ -108,7 +118,7 @@ for (my $iLine=0; $iLine<$nbLine; $iLine++)
 		    $strBred=$strBred.$O[$iO];
 		}
 	    }
-	    if ($IsString eq 1)
+	    if ($IsString eq 1 || $IsStringTime eq 1)
 	    {
 		print OUT "\"".$strBred."\"";
 	    }
