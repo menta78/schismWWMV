@@ -1,89 +1,11 @@
 #include "wwm_functions.h"
 #ifdef SCHISM
 !**********************************************************************
-!*  THis routine for RADFLAG=VOR (3D vortex formulation)
+!*   This routine is for RADFLAG=LON (Longuet-Higgins)
 !**********************************************************************
-      SUBROUTINE STOKES_STRESS_INTEGRAL_SCHISM
+      SUBROUTINE RADIATION_STRESS_SCHISM_NOT_VOR
         USE DATAPOOL
-        use schism_glbl, only: iplg,errmsg,hmin_radstress,kbp
-        USE schism_msgp
-        implicit none
-        integer     :: IP, k, ID, IS, IL
-        real(rkind) :: eF1, eF2, eDelta, TheInt, eDep, eHeight
-        real(rkind) :: eFrac, eFracB, eQuot
-        real(rkind) :: eQuot1, eScal
-        real(rkind) :: eOmega, eMult, kD, eSinc
-        real(rkind) :: USTOKESpart, VSTOKESpart, eJPress
-        real(rkind) :: eWk, eSigma, eLoc, eSinhkd, eSinh2kd, eSinhkd2
-        real(rkind) :: PTAIL_ARR, CETAIL, CKTAIL
-        logical     :: DoTail
-        real(rkind) :: eWkReal
-        real(rkind) :: SumHeight
-        real(rkind) :: eJPress_loc, eProd, eUint, eVint
-        real(rkind) :: eUSTOKES_loc(NVRT), eVSTOKES_loc(NVRT)
-        real(rkind) :: ZZETA
-        REAL(rkind) :: tmp,TMP_X,TMP_Y,SINT,COST
-        REAL(rkind) :: HS,ETOT,SME01,SME10,KME01,KMWAM,KMWAM2
-        REAL(rkind) :: WALOC(NUMSIG,NUMDIR) 
- 
-        DO IP=1,MNP
-          tmp=max(DEP8(IP)+ETA2(IP),hmin_radstress)
-          eDep=tmp
-!!!          eDep=SHYFZETA(NLEV(IP),MNP)
-          eUSTOKES_loc=0
-          eVSTOKES_loc=0
-          eJpress_loc=0
-          DO IS=1,NUMSIG
-            eMult=SPSIG(IS)*DDIR*DS_INCR(IS)
-            eWk=WK(IS,IP)
-            kD=MIN(KDMAX, eWk*eDep)
-            eWkReal=kD/eDep
-            eSinh2kd=DSINH(2*kD)
-            eSinhkd=DSINH(kD)
-            eSinhkd2=eSinhkd**2
-            eSigma=SPSIG(IS)
-            eUint=0
-            eVint=0
-            DO ID=1,NUMDIR
-              eLoc=AC2(IS,ID,IP)*eMult
-              eJPress=G9*(kD/eSinh2kd)*(1/eDep) * eLoc
-              eJPress_loc=eJPress_loc + eJPress
-              eUint=eUint + eLoc*COSTH(ID)
-              eVint=eVint + eLoc*SINTH(ID)
-            END DO !ID
-
-            if(idry(IP)==0) then
-              DO IL = KBP(IP), NVRT
-                ZZETA = ZETA(IL,IP)-ZETA(KBP(IP),IP) !from bottom; 'z+D'
-                eFrac=ZZETA/eDep
-! Need some better understanding of vertical levels in SCHISM  
-! for putting those correction terms.
-!                eHeight=z_w_loc(k)-z_w_loc(k-1)
-!                eFracB=eHeight/eDep
-!                eSinc=SINH(kD*eFracB)/(kD*eFracB)
-!                eQuot1=eSinc*DCOSH(2*kD*eFrac)/eSinhkd2
-                eQuot1=COSH(2*kD*eFrac)/eSinhkd2
-                eProd=eSigma*eWkReal*eQuot1
-!YJZ: error
-                eUSTOKES_loc(IL)=eUSTOKES_loc(IL) + eUint*eProd
-                eVSTOKES_loc(IL)=eVSTOKES_loc(IL) + eVint*eProd
-              ENDDO !IL
-            endif !idry
-          END DO !IS
-          !STOKES_X(:,IP)=eUSTOKES_loc
-          !STOKES_Y(:,IP)=eVSTOKES_loc
-          STOKES_VEL(1,:,IP)=eUSTOKES_loc
-          STOKES_VEL(2,:,IP)=eVSTOKES_loc
-          JPRESS(IP)=eJPress_loc
-        ENDDO ! IP
-
-      END SUBROUTINE STOKES_STRESS_INTEGRAL_SCHISM
-!**********************************************************************
-!*   This routine for RADFLAG=LON (Longuet-Higgin)
-!**********************************************************************
-      SUBROUTINE RADIATION_STRESS_SCHISM
-        USE DATAPOOL
-        use schism_glbl, only: iplg,errmsg,hmin_radstress,kbp,wwave_force,idry
+        use schism_glbl, only: iplg,errmsg,hmin_radstress,kbp,wwave_force,idry,idry_s,shorewafo
         USE schism_msgp !, only : myrank,parallel_abort
         IMPLICIT NONE
 
@@ -325,8 +247,495 @@
           endif
         enddo !IS
 
-      END SUBROUTINE RADIATION_STRESS_SCHISM
-#endif /*SCHISM*/
+      END SUBROUTINE RADIATION_STRESS_SCHISM_NOT_VOR
+
+!**********************************************************************
+!*  This routine is for RADFLAG=VOR (3D vortex formulation), called by
+!   wwm_main
+!   Main outputs: STOKES_VEL, JPRESS
+!**********************************************************************
+      SUBROUTINE STOKES_STRESS_INTEGRAL_SCHISM
+        USE DATAPOOL
+        use schism_glbl, only: iplg,errmsg,hmin_radstress,kbp
+        USE schism_msgp
+        implicit none
+        integer     :: IP, k, ID, IS, IL
+        real(rkind) :: eDep, eHeight, eFrac, eFracB
+        real(rkind) :: eQuot1, eMult, kD, eSinc, eWkReal
+        real(rkind) :: eWk, eSigma, eLoc, eSinhkd, eSinh2kd, eSinhkd2
+        real(rkind) :: eJPress, eJPress_loc, eProd, eUint, eVint
+        real(rkind) :: eUSTOKES_loc(NVRT), eVSTOKES_loc(NVRT)
+        real(rkind) :: ZZETA
+ 
+        DO IP = 1,MNP
+          if(IDRY(IP) == 1) CYCLE 
+
+          ! Total water depth at the node
+          eDep = max(DEP8(IP)+ETA2(IP),hmin_radstress)
+          !eDep=SHYFZETA(NLEV(IP),MNP)
+          ! Initialization of the local Stokes drift and J variables
+          eUSTOKES_loc = 0.d0
+          eVSTOKES_loc = 0.d0
+          eJPress_loc  = 0.d0
+
+          ! Loop on the frequencies
+          DO IS = 1,NUMSIG
+            eMult = SPSIG(IS)*DDIR*DS_INCR(IS)
+            eWk = WK(IS,IP)
+            kD = MIN(KDMAX, eWk*eDep)
+            eWkReal = kD/eDep
+            eSinh2kd = DSINH(2.d0*kD)
+            eSinhkd = DSINH(kD)
+            eSinhkd2 = eSinhkd**2.d0
+            eSigma = SPSIG(IS)
+            eUint = 0.d0
+            eVint = 0.d0
+            ! Loop on the directions
+            DO ID = 1,NUMDIR
+              eLoc = AC2(IS,ID,IP)*eMult
+              eJPress = G9*(kD/eSinh2kd)*(1.d0/eDep)*eLoc
+              eJPress_loc = eJPress_loc + eJPress
+              eUint = eUint + eLoc*COSTH(ID)
+              eVint = eVint + eLoc*SINTH(ID)
+            ENDDO !NUMDIR
+
+            ! Loop on the vertical nodes
+            DO IL = KBP(IP), NVRT
+              ZZETA = ZETA(IL,IP)-ZETA(KBP(IP),IP) !from bottom; 'z+D'
+              eFrac = ZZETA/eDep
+! Need some better understanding of vertical levels in SCHISM  
+! for putting those correction terms.
+!              eHeight = z_w_loc(k)-z_w_loc(k-1)
+!              eFracB = eHeight/eDep
+!              eSinc = SINH(kD*eFracB)/(kD*eFracB)
+!              eQuot1 = eSinc*DCOSH(2*kD*eFrac)/eSinhkd2
+              eQuot1 = DCOSH(2.d0*kD*eFrac)/eSinhkd2
+              eProd = eSigma*eWkReal*eQuot1
+!YJZ: error
+              eUSTOKES_loc(IL) = eUSTOKES_loc(IL) + eUint*eProd
+              eVSTOKES_loc(IL) = eVSTOKES_loc(IL) + eVint*eProd
+            ENDDO !NVRT
+          ENDDO !NUMSIG
+
+          ! Storing Stokes drift and J term variables
+          STOKES_VEL(1,:,IP) = eUSTOKES_loc
+          STOKES_VEL(2,:,IP) = eVSTOKES_loc
+          JPRESS(IP) = eJPress_loc
+        ENDDO !IP=1,MNP
+
+        call exchange_p3d_2(STOKES_VEL) ! T. Guerin
+        call exchange_p2d(JPRESS)       ! T. Guerin
+
+      END SUBROUTINE STOKES_STRESS_INTEGRAL_SCHISM
+
+!**********************************************************************
+!*  This routine is used with RADFLAG=VOR (3D vortex formulation, after Bennis et al., 2011)
+!*  It computes the conservative terms: terms A1 and B1 from Eq. (11) and (12) respectively
+!*  The vertical Stokes drift velocity at the nodes and the horizontal Stokes velocities 
+!*  at sides are set as inout since these are required later on in schism_step.F90 
+!*  (hence this routine is called from there).
+!**********************************************************************
+      SUBROUTINE COMPUTE_CONSERVATIVE_VF_TERMS_SCHISM(nvrt2,npa2,nsa2,stokes_w_nd,stokes_vel_sd)
+        USE DATAPOOL
+        use schism_glbl, only: iplg,errmsg,kbp,kbs,kbe,nvrt,ns,nsa,np,npa,ne,nea,idry_s,idry_e, &
+                             & isdel,indel,elnode,elside,i34,area,dldxy,dr_dxy,cori,zs,su2,sv2
+        USE schism_msgp
+        implicit none
+!Error: inout vars not init'ed?
+        integer, intent(in) :: nvrt2,npa2,nsa2 !for dimensioning
+        !real(rkind), intent(inout) :: stokes_w_nd(nvrt,npa), stokes_vel_sd(2,nvrt,nsa)
+        real(rkind), intent(out) :: stokes_w_nd(nvrt2,npa2), stokes_vel_sd(2,nvrt,nsa)
+
+        integer     :: IP, ID, IS, IE, isd, k, j, l, n1, n2, n3, icount
+        real(rkind) :: tmp0, tmp1, tmp2, ztmp, ubar, vbar, dhdx, dhdy
+        real(rkind) :: stokes_w(nvrt2,npa2), stokes_w_sd(nvrt2,nsa2), ws_tmp1(nvrt2,nsa2), ws_tmp2(nvrt2,nsa2)
+
+!...    Pressure term (grad(J))
+        do IS = 1,ns !resident
+          if(idry_s(IS) == 1) cycle
+
+          ! Wet side
+          icount = 0 
+          tmp1 = 0; tmp2 = 0
+          do l = 1,2 !elements
+            IE = isdel(l,IS)
+            if(ie /= 0) then
+              if(idry_e(IE) == 0) then
+                icount = icount + 1
+                tmp1 = tmp1 + dot_product(JPRESS(elnode(1:3,IE)),dldxy(1:3,1,IE)) !in eframe
+                tmp2 = tmp2 + dot_product(JPRESS(elnode(1:3,IE)),dldxy(1:3,2,IE))
+              endif
+            endif 
+          enddo !l
+
+          ! Averaging the values from the two surrounding elements
+          if(icount > 2) call parallel_abort('Pressure term: icount>2')
+          if(icount == 2) then
+            tmp1 = tmp1/2.d0
+            tmp2 = tmp2/2.d0
+          endif
+
+          ! Updating the wave forces
+          do k = kbs(IS),nvrt
+            WWAVE_FORCE(1,k,IS) = WWAVE_FORCE(1,k,IS) - tmp1
+            WWAVE_FORCE(2,k,IS) = WWAVE_FORCE(2,k,IS) - tmp2
+          enddo
+        enddo !IS=1,ns
+!KM: Why do we need to exchange if we loop over the residents only?
+        ! Exchange between ghost regions
+        call exchange_s3d_2(WWAVE_FORCE) 
+
+
+!...    Stokes vel. at side (in pframe if ics=2)
+        ! The average of the values from vertically adjacent nodes is taken
+        stokes_vel_sd=0.d0
+        do IS = 1,nsa
+          if(idry_s(IS) == 0) then
+            n1 = isidenode(1,IS); n2 = isidenode(2,IS)
+            do k = kbs(IS),nvrt
+              stokes_vel_sd(1,k,IS) = (stokes_vel(1,k,n1) + stokes_vel(1,k,n2))/2.d0
+              stokes_vel_sd(2,k,IS) = (stokes_vel(2,k,n1) + stokes_vel(2,k,n2))/2.d0
+            enddo
+          endif
+        enddo !nsa
+        ! Exchange between ghost regions
+        call exchange_s3d_2(stokes_vel_sd)
+
+ 
+!...    Contribution from the terms with Coriolis force and the spatial derivative of u
+        call hgrad_nodes(2,0,nvrt,npa,nsa,uu2,dr_dxy)
+        do IS = 1,ns
+          if(idry_s(IS) == 0) then
+            do k = kbs(IS),nvrt
+               ! f*v_s-du/dy*v_s
+               WWAVE_FORCE(1,k,IS) = WWAVE_FORCE(1,k,IS) + (cori(IS) - dr_dxy(2,k,IS))*stokes_vel_sd(2,k,IS)
+               ! -f*u_s+du/dy*u_s
+               WWAVE_FORCE(2,k,IS) = WWAVE_FORCE(2,k,IS) + (-cori(IS) + dr_dxy(2,k,IS))*stokes_vel_sd(1,k,IS)
+            enddo
+          endif
+        enddo !IS=1,ns
+!KM: Why do we need to exchange if we loop over the residents only?
+        ! Exchange between ghost regions
+        call exchange_s3d_2(WWAVE_FORCE)
+
+
+!...    Contribution from the terms with spatial derivative of v
+        call hgrad_nodes(2,0,nvrt,npa,nsa,vv2,dr_dxy)
+        do IS = 1,ns
+          if(idry_s(IS) == 0) then
+            do k = kbs(IS),nvrt
+               ! dv/dx*v_s
+               WWAVE_FORCE(1,k,IS) = WWAVE_FORCE(1,k,IS) + dr_dxy(1,k,IS)* &
+     & (STOKES_VEL(2,k,isidenode(1,IS)) + STOKES_VEL(2,k,isidenode(2,IS)))/2.d0
+               ! -dv/dx*u_s
+               WWAVE_FORCE(2,k,IS) = WWAVE_FORCE(2,k,IS) - dr_dxy(1,k,IS)* &
+     & (STOKES_VEL(1,k,isidenode(1,IS)) + STOKES_VEL(1,k,isidenode(2,IS)))/2.d0
+            enddo !k
+          endif
+        enddo !IS
+        ! Exchange between ghost regions
+        call exchange_s3d_2(WWAVE_FORCE)
+
+!...    Compute bottom Stokes z-vel. at elements
+        stokes_w = 0.d0
+        do IE = 1,nea
+           if(idry_e(IE) == 1) cycle
+           n1 = elnode(1,IE)
+           n2 = elnode(2,IE)
+           n3 = elnode(3,IE)
+           if(kbe(IE) == 0) then
+             write(errmsg,*)'Error: kbe(i) == 0'
+             call parallel_abort(errmsg)
+           endif
+
+           ubar = (STOKES_VEL(1,max(kbp(n1),kbe(IE)),n1) + STOKES_VEL(1,max(kbp(n2),kbe(IE)),n2) &
+               & + STOKES_VEL(1,max(kbp(n3),kbe(IE)),n3))/3.d0 !average bottom stokes-x-vel
+           vbar = (STOKES_VEL(2,max(kbp(n1),kbe(IE)),n1) + STOKES_VEL(2,max(kbp(n2),kbe(IE)),n2) &
+               & + STOKES_VEL(2,max(kbp(n3),kbe(IE)),n3))/3.d0 !average bottom stokes-y-vel
+           dhdx = DEP8(n1)*dldxy(1,1,IE) + DEP8(n2)*dldxy(2,1,IE) + DEP8(n3)*dldxy(3,1,IE) !eframe
+           dhdy = DEP8(n1)*dldxy(1,2,IE) + DEP8(n2)*dldxy(2,2,IE) + DEP8(n3)*dldxy(3,2,IE)
+           stokes_w(kbe(IE),IE) = -dhdx*ubar - dhdy*vbar
+        enddo !IE=1,nea
+        ! Exchange between ghost regions
+        call exchange_e3dw(stokes_w)
+
+!...    Compute bottom Stokes z-vel. at nodes
+        stokes_w_nd = 0.d0
+        do IP = 1,np !residents only
+           if(idry(IP) == 1) cycle
+
+           !Bottom Stokes z-vel.
+           tmp0 = 0.d0
+           do j = 1,nne(IP)
+              ie = indel(j,IP)
+              stokes_w_nd(kbp(IP),IP) = stokes_w_nd(kbp(IP),IP) + stokes_w(kbe(ie),ie)*area(ie)
+              tmp0 = tmp0 + area(ie)
+           enddo !j
+           stokes_w_nd(kbp(IP),IP) = stokes_w_nd(kbp(IP),IP)/tmp0
+        enddo !IP
+
+!...    Compute horizontal gradient of Stokes x and y-vel. (to compute Stokes z-vel.)
+        ws_tmp1 = 0.d0; ws_tmp2 = 0.d0
+        call hgrad_nodes(2,0,nvrt,npa,nsa,STOKES_VEL(1,:,:),dr_dxy)
+        ws_tmp1(:,:) = dr_dxy(1,:,:)
+        call hgrad_nodes(2,0,nvrt,npa,nsa,STOKES_VEL(2,:,:),dr_dxy)
+        ws_tmp2(:,:) = dr_dxy(2,:,:)
+
+!...    Compute side Stokes z-vel. at all levels: stokes_w_sd(nvrt,nsa)
+        stokes_w_sd = 0.d0
+        do IS = 1,ns !residents only
+          if(idry_s(IS) == 1) cycle
+          n1 = isidenode(1,IS)
+          n2 = isidenode(2,IS)
+
+          !Bottom Stokes z-vel.
+          stokes_w_sd(kbs(IS),IS) = (stokes_w_nd(max(kbs(IS),kbp(n1)),n1)+stokes_w_nd(max(kbs(IS),kbp(n2)),n2))/2.d0
+
+          !Stokes z-vel. at all levels
+          do k = kbs(IS)+1,nvrt
+            ztmp = zs(k,IS)-zs(k-1,IS)
+            stokes_w_sd(k,IS) = stokes_w_sd(k-1,IS) &
+                             & -(ws_tmp1(k,IS)+ws_tmp1(k-1,IS))/2.d0*ztmp &
+                             & -(ws_tmp2(k,IS)+ws_tmp2(k-1,IS))/2.d0*ztmp
+            !ws_tmp* are divergence of horizontal vel
+          enddo
+        enddo !IS
+
+!...    Compute Stokes z-vel. at elements and all levels
+        do IE = 1,ne
+          if(idry_e(IE) == 1) cycle
+          do k = kbe(IE)+1,nvrt
+            stokes_w(k,IE) = 0.d0
+            do j = 1,i34(IE)
+              isd = elside(j,IE)
+              stokes_w(k,IE) = stokes_w(k,IE) + stokes_w_sd(max(k,kbs(isd)),isd)/i34(IE)
+            enddo !j
+          enddo !k
+        enddo !IE
+
+!...    Adding term -w_s*(du/dz,dv/dz) to the wave forces
+        do IS = 1,ns
+          if(idry_s(IS) == 1) cycle
+          tmp1 = 0.d0
+          tmp2 = 0.d0
+          do k = kbs(IS),nvrt
+            if (k == kbs(IS)) then
+              ztmp = zs(k+1,IS) - zs(k,IS)
+!              if(ztmp <= 0.d0) call parallel_abort('ztmp <= 0')
+              tmp1 = su2(k+1,IS) - su2(k,IS)
+              tmp2 = sv2(k+1,IS) - sv2(k,IS)
+
+            elseif (k == nvrt) then
+              ztmp = zs(k,IS)-zs(k-1,IS)
+!              if(ztmp <= 0.d0) call parallel_abort('ztmp <= 0')
+              tmp1 = su2(k,IS) - su2(k-1,IS)
+              tmp2 = sv2(k,IS) - sv2(k-1,IS)
+
+            else
+              ztmp = zs(k+1,IS) - zs(k-1,IS)
+!              if(ztmp <= 0.d0) call parallel_abort('ztmp <= 0')
+              tmp1 = su2(k+1,IS) - su2(k-1,IS)
+              tmp2 = sv2(k+1,IS) - sv2(k-1,IS)
+            endif
+
+            if(ztmp <= 0.d0) call parallel_abort('ztmp <= 0')
+            WWAVE_FORCE(1,k,IS) = WWAVE_FORCE(1,k,IS) - stokes_w_sd(k,IS)*tmp1/ztmp
+            WWAVE_FORCE(2,k,IS) = WWAVE_FORCE(2,k,IS) - stokes_w_sd(k,IS)*tmp2/ztmp
+
+          enddo !k
+        enddo !IS=1,ns
+        ! Exchange between ghost regions
+        call exchange_s3d_2(WWAVE_FORCE)
+
+      END SUBROUTINE COMPUTE_CONSERVATIVE_VF_TERMS_SCHISM
+
+!**********************************************************************
+!*   Compute the non-conservative terms due to depth-induced breaking (term Fb from Eq. (11) and (12))
+!**********************************************************************
+      SUBROUTINE COMPUTE_BREAKING_VF_TERMS_SCHISM
+        USE DATAPOOL
+        USE schism_glbl, only: iplg,errmsg,kbp,kbs,kbe,nvrt,ns,nsa,np,npa,ne,nea,idry_s,idry_e, &
+                             & isidenode,isbs,i34,dps,dldxy,dr_dxy,h0,out_wwm,zs
+        USE schism_msgp 
+        IMPLICIT NONE
+
+        integer     :: IS, isd, k, j, l, n1, n2, n3, icount
+        real(rkind) :: eta_tmp, tmp0, htot, sum1
+        real(rkind) :: swild(ns)
+
+        ! Compute sink of momentum due to wave breaking 
+        do IS = 1,ns !resident
+          ! Check if dry segment or open bnd segment
+          if(idry_s(IS) == 1 .or. isbs(IS) > 0) cycle
+
+          n1 = isidenode(1,IS); n2 = isidenode(2,IS)
+          eta_tmp = (eta2(n1) + eta2(n2))/2.d0
+          !Consider using zs()
+          htot = max(h0,dps(IS)+eta_tmp)
+         
+          if(kbs(IS)+1 == nvrt) then !2D
+
+            ! Breaking acceleration: average between the two adjacent nodes
+            WWAVE_FORCE(1,:,IS) = WWAVE_FORCE(1,:,IS) - (SBR(1,isidenode(1,IS)) + SBR(1,isidenode(2,IS)))/2.d0/htot
+            WWAVE_FORCE(2,:,IS) = WWAVE_FORCE(2,:,IS) - (SBR(2,isidenode(1,IS)) + SBR(2,isidenode(2,IS)))/2.d0/htot
+
+          else !3D
+
+            ! Threshold on Hs
+            tmp0 = (out_wwm(isidenode(1,IS),1) + out_wwm(isidenode(2,IS),1))/2.d0 !Hs
+            if(tmp0 <= 0.05d0) cycle
+            if(tmp0/htot < 0.1d0) cycle
+
+            ! Vertical distribution function of qdm (due to wave breaking)
+            swild = 0.d0
+            do k = kbs(IS),nvrt
+              ! Homogeneous vertical distribution
+!              swild(k)=1.d0
+
+              ! All qdm injected in the surface layer
+!              if (k == nvrt) then
+!                swild(k)=1.d0
+!              else
+!                swild(k)=0.d0
+!              endif
+
+              ! Profile 1
+              swild(k) = cosh((dps(IS)+zs(k,IS))/(0.2d0*tmp0))
+
+              ! Profile 2
+!              swild(k) = 1.d0 - dtanh(((eta_tmp-zs(k,j))/(0.2d0*tmp0))**2.d0)
+
+              ! Profile 3
+!              swild(k) = 1.d0 - dtanh(((eta_tmp-zs(k,j))/(0.2d0*tmp0))**4.d0)
+            enddo !nvrt
+ 
+            ! Integral of the vertical distribution function
+            sum1 = 0
+            do k = kbs(IS),nvrt-1
+              sum1 = sum1 + (swild(k+1) + swild(k))/2.d0*(zs(k+1,IS) - zs(k,IS))
+            enddo !nvrt-1
+            if(sum1 == 0) call parallel_abort('STEP: integral=0')
+
+            do k = kbs(IS),nvrt
+              ! Breaking acceleration
+              WWAVE_FORCE(1,k,IS) = WWAVE_FORCE(1,k,IS) - swild(k)/sum1*(SBR(1,isidenode(1,IS)) + SBR(1,isidenode(2,IS)))/2.d0
+              WWAVE_FORCE(2,k,IS) = WWAVE_FORCE(2,k,IS) - swild(k)/sum1*(SBR(2,isidenode(1,IS)) + SBR(2,isidenode(2,IS)))/2.d0
+            enddo
+          endif !2D/3D
+        enddo !IS=1,ns
+!KM: Why do we need to exchange if we loop over the residents only?
+        ! Exchange between ghost regions
+        call exchange_s3d_2(WWAVE_FORCE)
+
+      END SUBROUTINE COMPUTE_BREAKING_VF_TERMS_SCHISM
+
+!**********************************************************************
+!*   This routine fixes the wave forces to balance barotropic gradient at the shoreline
+!*   to avoid spurious cross-shore flow
+!**********************************************************************
+      SUBROUTINE SHORELINE_WAVE_FORCES(nvrt2,nsa2)
+        USE DATAPOOL
+        use schism_glbl, only: iplg,errmsg,hmin_radstress,kbp,wwave_force,idry,idry_s,idry_e, &
+                             & isdel,elnode,i34,dldxy,ns,nsa,grav,thetai,eta1,eta2
+        USE schism_msgp 
+        IMPLICIT NONE
+
+        integer, intent(in) :: nvrt2,nsa2 !for dimensioning
+
+        INTEGER      :: IP,IS,INODE_1,INODE_2,IELEM
+        REAL(rkind)  :: TMP_X,TMP_Y,BPGR(2) !(2,nvrt2,nsa2)
+
+!... 	Initialisation
+!        BPGR = 0
+
+!... 	Loop on the resident sides
+        do IS = 1,ns
+          if(idry_s(IS) == 1) cycle
+
+          ! Adjacent nodes index
+          INODE_1 = isidenode(1,IS) ! Side node #1
+          INODE_2 = isidenode(2,IS) ! Side node #2
+          if(idry(INODE_1) == 1 .OR. idry(INODE_2) == 1) cycle  
+
+          ! Sides we are not interested in
+          if(isdel(1,IS) == 0 .OR. isdel(2,IS) == 0) cycle ! Boundaries  
+          if(idry_e(isdel(1,IS)) == 0 .AND. idry_e(isdel(2,IS)) == 0) cycle ! Case where both adjacent elements are wet    
+          if(idry_e(isdel(1,IS)) == 1 .AND. idry_e(isdel(2,IS)) == 1) cycle ! Case where both adjacent elements are dry (should never occur anyway)
+          if(isbnd(1,INODE_1) == 1 .OR. isbnd(1,INODE_2) == 1) cycle ! Case where the side touches open boundaries
+
+          ! Reinitializing the wave force
+          WWAVE_FORCE(:,:,IS) = 0
+
+          ! We are left with sides that belong to one dry element and one wet element
+          ! We store the wet element index for future use
+          if(idry_e(isdel(1,IS)) == 0 .AND. idry_e(isdel(2,IS)) == 1) then 
+            IELEM = isdel(1,IS)
+          elseif(idry_e(isdel(2,IS)) == 0 .AND. idry_e(isdel(1,IS)) == 1) then 
+            IELEM = isdel(2,IS)
+          else
+            cycle
+          endif
+
+          ! We compute the barotropic gradient at the shoreline (only the wet element is used)
+          BPGR=0
+          do IP = 1,i34(IELEM)
+            ! x and y-components of grad(eta)
+            TMP_X = (1-thetai)*eta1(elnode(IP,IELEM))*dldxy(IP,1,IELEM) + thetai*eta2(elnode(IP,IELEM))*dldxy(IP,1,IELEM)
+            TMP_Y = (1-thetai)*eta1(elnode(IP,IELEM))*dldxy(IP,2,IELEM) + thetai*eta2(elnode(IP,IELEM))*dldxy(IP,2,IELEM)
+            ! Barotropic gradient = g*grad(eta)
+!            BPGR(1,:,IS) = BPGR(1,:,IS) + grav*TMP_X
+!            BPGR(2,:,IS) = BPGR(2,:,IS) + grav*TMP_Y
+            BPGR(1)=BPGR(1)+grav*TMP_X
+            BPGR(2)=BPGR(2)+grav*TMP_Y
+          enddo !IP
+
+          ! Overwriting wave forces
+          !WWAVE_FORCE(:,:,IS) = BPGR(:,:,IS)
+          WWAVE_FORCE(1,:,IS) = BPGR(1)
+          WWAVE_FORCE(2,:,IS) = BPGR(2)
+        enddo !IS
+
+        ! Debug
+        !if(myrank==0) write(16,*)'done recomputing wave forces at shoreline...'
+
+      END SUBROUTINE SHORELINE_WAVE_FORCES
+
+!**********************************************************************
+!*   This routine fixes the wave forces to 0 at the shoreline - not used
+!anywhere
+!**********************************************************************
+      SUBROUTINE SHORELINE_WAVE_FORCES_ZERO
+        USE DATAPOOL
+        use schism_glbl, only: iplg,errmsg,hmin_radstress,kbp,wwave_force,idry,idry_s,idry_e,isdel,isbnd,ns
+        USE schism_msgp 
+        IMPLICIT NONE
+
+        INTEGER :: IS,INODE_1,INODE_2
+
+!... 	Loop on the resident sides
+        do IS = 1,ns
+          if(idry_s(IS) == 1) cycle
+
+          ! Adjacent nodes index
+          INODE_1 = isidenode(1,IS) ! Side node #1
+          INODE_2 = isidenode(2,IS) ! Side node #2
+          if(idry(INODE_1) == 1 .OR. idry(INODE_2) == 1) cycle  
+
+          ! Sides in which we are not interested in
+          if(idry_e(isdel(1,IS)) == 0 .AND. idry_e(isdel(2,IS)) == 0) cycle        ! Case where both adjacent elements are wet    
+          if(idry_e(isdel(1,IS)) == 1 .AND. idry_e(isdel(2,IS)) == 1) cycle        ! Case where both adjacent elements are dry (should never occur anyway)
+          if(isdel(1,IS) == 0 .OR. isdel(2,IS) == 0) cycle ! Boundaries  
+          if(isbnd(1,INODE_1) == 1 .OR. isbnd(1,INODE_2) == 1) cycle ! Case where the side belongs to boundaries
+
+          ! Reinitializing the wave force
+          WWAVE_FORCE(:,:,IS) = 0
+        enddo !IS
+
+        ! Debug
+        !if(myrank==0) write(16,*)'done recomputing wave forces at shoreline...'
+
+      END SUBROUTINE SHORELINE_WAVE_FORCES_ZERO
+#endif
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************

@@ -297,7 +297,7 @@
            IF (RADFLAG == 'VOR') THEN
              CALL STOKES_STRESS_INTEGRAL_SCHISM
            ELSE
-             CALL RADIATION_STRESS_SCHISM
+             CALL RADIATION_STRESS_SCHISM_NOT_VOR
            ENDIF
          END IF 
 ! end modif AD

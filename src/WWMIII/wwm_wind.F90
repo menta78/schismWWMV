@@ -2789,6 +2789,8 @@
       !
       WRITE(STAT%FHNDL,*) 'n=', n
       FLUSH(STAT%FHNDL)
+      WRITE(STAT%FHNDL,*) 'eShortName=', eShortName
+      FLUSH(STAT%FHNDL)
       WRITE(STAT%FHNDL,*) 'GRIB_TYPE=', GRIB_TYPE
       FLUSH(STAT%FHNDL)
       WeFound=.FALSE.;
