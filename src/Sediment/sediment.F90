@@ -709,7 +709,8 @@
 ! - If first time step of deposit, then store deposit material in
 ! temporary array, dep_mass.
                 IF (eros_mss<depo_mss) THEN
-                  IF(time>bed(top,i,iaged)+1.1d0*dt.and.bed(top,i,ithck)>newlayer_thick) THEN
+                  !IF(time>bed(top,i,iaged)+1.1d0*dt.and.bed(top,i,ithck)>newlayer_thick) THEN
+                  IF(bed(top,i,ithck)>newlayer_thick) THEN !171027
                     dep_mass(i,ised)=depo_mss-eros_mss !>0 !kg/m/m
                   ENDIF
                   bed(top,i,iaged)=time

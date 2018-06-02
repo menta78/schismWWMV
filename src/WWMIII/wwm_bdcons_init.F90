@@ -54,7 +54,6 @@
               y2 = - DYP2
               IP =   I3
             END IF
-!AR: MDS please check if the new thr can pose a problem ...
             IF (abs(iobp(ip)) .eq. 1) THEN
               eDet1 = THR-x1*EVY+y1*EVX
               eDet2 = THR+x2*EVY-y2*EVX
@@ -352,7 +351,6 @@
 # ifdef MPI_PARALL_GRID
       IF (myrank == 0) THEN
 # endif
-        write(*,*) IOBPOUT%FHNDL, IOBPOUT%FNAME
         DO IP = 1, NP_TOTAL
           WRITE(IOBPOUT%FHNDL,*) IP, IOBPtotal(IP), 'TEST'
         END DO

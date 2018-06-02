@@ -32,6 +32,7 @@
       integer, parameter :: PIPE        = 4  !< pipe flow -- right now just circular orifice
       integer, parameter :: RADIAL      = 5  !< radial gate -- simplified form of HEC-RAS formula with default exponents
       integer, parameter :: RADIAL_RH   = 6  !< radial gate -- simplified form of HEC-RAS formula with default exponents
+      integer, parameter :: WEIR_PIPE   = 7  !< compound structure with culvert flow through an overtoppable barrier
 
 !---- Constants for ts_unitradia
       integer, parameter :: TS_DISABLED       = -1
@@ -60,6 +61,7 @@
       integer     :: downnode               !< downstream reference node
       integer     :: npair
       logical     :: install = .true.      !< at the moment this is redundant with an array in the main code
+      type(hydraulic_structure), pointer  :: substruct => null()   !< pointer to a subordinate structure. Used for compound type like WEIR_PIPE
       end type
 
       type (hydraulic_structure), allocatable,dimension(:), target, save :: structures
@@ -133,6 +135,16 @@
             structures(iblock)%struct_type = PIPE
             read(31,*)structures(iblock)%elev, structures(iblock)%width
             read(31,*)structures(iblock)%coef, structures(iblock)%op_down, structures(iblock)%op_up
+          case("weir_culvert")
+            structures(iblock)%struct_type = WEIR_PIPE
+            allocate(structures(iblock)%substruct)
+            ! read in weir params
+            read(31,*)structures(iblock)%elev, structures(iblock)%width
+            read(31,*)structures(iblock)%coef, structures(iblock)%op_down, structures(iblock)%op_up
+            ! read in pipe params
+            read(31,*)structures(iblock)%substruct%nduplicate
+            read(31,*)structures(iblock)%substruct%elev, structures(iblock)%substruct%width
+            read(31,*)structures(iblock)%substruct%coef, structures(iblock)%substruct%op_down, structures(iblock)%substruct%op_up
           case default
 	    write(errmsg,*)"Structure type code not recognized for hydraulic structure ",structures(iblock)%struct_name
             call parallel_abort(errmsg)
@@ -210,6 +222,13 @@
               read(fort_unit,*)ttt,install,&
                              structures(istruct)%nduplicate, structures(istruct)%op_down, structures(istruct)%op_up, &
                              structures(istruct)%elev,structures(istruct)%width, structures(istruct)%height
+            case(WEIR_PIPE)
+              read(fort_unit,*)ttt,install,&
+                               structures(istruct)%nduplicate,structures(istruct)%op_down, structures(istruct)%op_up, &
+                               structures(istruct)%elev,structures(istruct)%width, &
+                               structures(istruct)%substruct%nduplicate,structures(istruct)%substruct%op_down, structures(istruct)%substruct%op_up, &
+                               structures(istruct)%substruct%elev,structures(istruct)%substruct%width
+
             case default
 	      write(errmsg,*)"Structure type code not recognized for hydraulic structure ",structures(istruct)%struct_name
               call parallel_abort(errmsg)
@@ -249,6 +268,8 @@
       real(rkind) :: max_elev, min_elev, dratio, attenuation
       real(rkind) :: tailw_depth,headw_energy_head
       real(rkind) :: coef_matching_factor
+      logical :: main_struct_dry 
+      type(hydraulic_structure), pointer :: substruct
 
 !todo: consider whether orifice and weir need different code ... unsubmerged weir-like transition has to be handled by orifice
 !todo: depth_flow being floored to struct.height is weird for weirs, and ruins the attenuation (can create NaNs)
@@ -280,8 +301,11 @@
         depth_flow = min(struct%height,max_elev - struct%elev)
         if (depth_flow <= 0.D0 .or. op == 0.d0)then
           flow = 0.d0
-	  return
-         end if
+          main_struct_dry = .true.                      ! The substruct could still be wet
+	  if (.not. associated(struct%substruct)) return  ! If there is no substruct bail
+        else
+          main_struct_dry = .false.
+        end if
       end if
 
       select case(struct%struct_type)
@@ -296,6 +320,7 @@
         area = depth_flow*struct%width
         diff = min(max_elev - struct%elev, max_elev - min_elev)
         flow = signed_coef*area*sqrt2g*sqrt(diff)       ! m² * sqrt(m)/s * sqrt(m)  = m³/s
+        flow = flow*dble(struct%nduplicate)*op
       case(WEIR)
         area = struct%width*depth_flow
         flow = signed_coef*area*sqrt2g*sqrt(depth_flow)
@@ -304,7 +329,7 @@
           attenuation = (1.d0 - (dratio)**expon)**3.85d-1
           flow = flow*attenuation
         end if 
-
+        flow = flow*dble(struct%nduplicate)*op
       case(PIPE)
         ! todo: basically orifice with no treatment of partially submerged case with tailwater > invert
         ! todo: need an assert that guarantees height is big when not explicitly set
@@ -319,6 +344,50 @@
         end if
         diff = min(max_elev - struct%elev, max_elev - min_elev)
         flow = signed_coef*area*sqrt2g*sqrt(diff)        
+        flow = flow*dble(struct%nduplicate)*op
+      case(WEIR_PIPE)
+        ! weir part of flow is the "main" structure. skip if it is dry 
+        ! todo: test that this is the same as WEIR for pipe with zero radius
+        if (main_struct_dry)then
+            flow = 0.d0
+        else
+            area = struct%width*depth_flow
+            flow = signed_coef*area*sqrt2g*sqrt(depth_flow)
+            if (min_elev > struct%elev) then
+              dratio = (min_elev - struct%elev)/depth_flow
+              attenuation = (1.d0 - (dratio)**expon)**3.85d-1
+              flow = flow*attenuation
+            end if 
+        end if
+        flow = flow*dble(struct%nduplicate)*op
+
+        ! pipe data is contained in struct%substruct
+        substruct => struct%substruct
+        signed_coef  = sign(substruct%coef,elev_up-elev_down)
+        if (signed_coef > 0.d0) then
+          ! flow is up to down
+          op = substruct%op_down
+        else
+          ! down to up
+          op = substruct%op_up
+        end if
+        depth_flow = min(substruct%height,max_elev - substruct%elev)
+        if (depth_flow <= 0.D0 .or. op == 0.d0)then
+          flow = flow + 0.d0   ! no contribution from substruct
+	  return
+        end if
+
+        radius = substruct%width
+        if (depth_flow < 2.d0*radius) then
+!         partial flow
+          angle=acos(1.-depth_flow/radius) 
+          area = radius**2*angle-radius*(radius-depth_flow)*sin(angle)
+        else
+!         full flow
+          area = radius*radius*pi
+        end if
+        diff = min(max_elev - substruct%elev, max_elev - min_elev)
+        flow = flow + signed_coef*area*sqrt2g*sqrt(diff)*dble(substruct%nduplicate)*op
 
       case(RADIAL)
         headw_energy_head = max_elev - struct%elev
@@ -328,6 +397,7 @@
         if (submerge_ratio < PART_SUBMERGE) then
 	    ! free flow
             flow = signed_coef*sqrt2g*area*sqrt(headw_energy_head)
+            flow = flow*dble(struct%nduplicate)*op
         else if (submerge_ratio < FULL_SUBMERGE) then
             ! partially submerged (transitional) flow
             ! matches free case at PART_SUBMERGE and transitions linearly to submerged
@@ -337,10 +407,12 @@
             ! now weigh the two so that the flow makes a linear transition
             subfrac = (submerge_ratio-PART_SUBMERGE)/(FULL_SUBMERGE - PART_SUBMERGE)
             flow = ((1.d0 - subfrac)*coef_matching_factor + subfrac)*flow
+            flow = flow*dble(struct%nduplicate)*op
         else 
             ! fully submerged flow uses orifice equational
             diff = max_elev-min_elev
             flow = signed_coef*area*sqrt2g*sqrt(diff)
+            flow = flow*dble(struct%nduplicate)*op
         end if
 
       case(RADIAL_RH)
@@ -351,13 +423,14 @@
         signed_coef = signed_coef+sign(relheight*struct%coef_lin,elev_up-elev_down)
         diff = max_elev-min_elev
         flow = signed_coef*area*sqrt2g*sqrt(diff)
+        flow = flow*dble(struct%nduplicate)*op
       case default
 	write(errmsg,*)"Structure type code not recognized for hydraulic structure #",struct%struct_name
         call parallel_abort(errmsg)
       end select
 
 !-----Adjust due to gate scheduling and number of duplicate devices
-      flow = flow*dble(struct%nduplicate)*op
+
       return
       end subroutine calc_struc_flow
 
@@ -393,8 +466,17 @@
       end subroutine init_hydraulic_structures
 
       subroutine finalize_hydraulic_structures
+      implicit none
+      integer :: istruct
       if (nhtblocks > 0)then
+
         if (allocated(structures))then
+            ! first deallocate substructures
+            do istruct =1,nhtblocks
+                if (associated(structures(istruct)%substruct))then
+                    deallocate(structures(istruct)%substruct)
+                end if
+            end do
           deallocate(structures)
         end if
       end if

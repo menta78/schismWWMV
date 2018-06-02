@@ -1409,11 +1409,7 @@ end subroutine inter_btrack
         endif
 
 !       Nudge intersect (xin,yin), and update starting pt
-        if(ihydlg/=0) then
-          eps=4.03e-2
-        else
-          eps=1.e-2 !100*small2
-        endif
+        eps=1.e-2 !100*small2
         if(ics==1) then
           xctr3=xctr(nel); yctr3=yctr(nel)
         else !lat/lon

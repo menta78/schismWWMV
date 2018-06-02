@@ -3635,9 +3635,7 @@
       DT4AI = DT4A/ITER_MAX
 
       DO IT = 1, ITER_MAX
-        write(*,*) it, iter_max
         DO IP = 1, MNP
-          write(*,*) ip 
           ST = ZERO
           DO I = 1, CCON(IP)
 ! get element and the position of IP in the element index

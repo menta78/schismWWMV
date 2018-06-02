@@ -1,4 +1,4 @@
-(1) Compile Utility/Particle_Tracking/ptrack2.f90; instructions for model set-up are in the header
+(1) Compile Utility/Particle_Tracking/ptrack*.f90; instructions for model set-up are in the header
 (2) set up and run! 
 (3) For visualization of particle.pth, use xmvis6 or plot_oil.m (different output formats)
 

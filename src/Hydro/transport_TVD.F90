@@ -69,7 +69,7 @@
 
       real(rkind) :: psumtr(ntr),delta_tr(ntr),adv_tr(ntr),dtb_min3(ne), &
      &alow(nvrt),bdia(nvrt),cupp(nvrt),rrhs(ntr,nvrt),soln(ntr,nvrt),gam(nvrt), &
-     &swild(max(3,nvrt)),swild4(3,2),trel_tmp_outside(ntr)
+     &swild(max(3,nvrt)),swild4(3,2),trel_tmp_outside(ntr),surf_vol(ntr)
       integer :: nwild(2)
 
       integer :: istat,i,j,k,l,khh2,ie,n1,n2,n3,isd,isd0,isd1,isd2,isd3,j0, &
@@ -78,7 +78,7 @@
                  &ndo,ind1,ind2,nd1,nd2,ibio
       real(rkind) :: vnor1,vnor2,xcon,ycon,zcon,dot1,sum1,tmp,cwtmp,toth, &
                      &time_r,psum,rat,dtbl,dtb,vj,bigv,av_df,av_dz,hdif_tmp, &
-                     &av_h,difnum,cwtmp2,dtb_by_bigv
+                     &av_h,difnum,cwtmp2,dtb_by_bigv,vol
 
       real(rkind) :: ref_flux
       logical     :: same_sign, is_land
@@ -219,6 +219,7 @@
       it_sub=0
       time_r=dt !time remaining
       difnum_max_l=0 !max. diffusion number reached by this process (check stability)
+      surf_vol(:)=0 !sum of surface fluxes for conservation check
 !$OMP end single
       loop11: do
 !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -756,13 +757,6 @@
             tmp=area(i)*dtb_by_bigv*av_df/av_dz
             cupp(kin)=cupp(kin)-tmp
             bdia(kin)=bdia(kin)+tmp
-
-!#ifdef USE_TIMOR
-!              !Sink vel.
-!              !Error: need to differentiate tracer index
-!              cupp(kin)=cupp(kin)-area(i)*sum(wsink(1,k,elnode(1:3,i)))/3.d0*dtb_by_bigv !wsink>=0
-!
-!#endif /*USE_TIMOR*/
           endif !k<nvrt
 
           if(k>kbe(i)+1) then
@@ -777,25 +771,16 @@
             tmp=area(i)*dtb_by_bigv*av_df/av_dz
             alow(kin)=alow(kin)-tmp
             bdia(kin)=bdia(kin)+tmp
-
-!#ifdef USE_TIMOR
-!            if(imod==1) then
-!              !Sink vel.
-!              !Error: need to differentiate tracer index
-!
-!              bdia(kin)=bdia(kin)+area(i)*sum(wsink(1,k-1,elnode(1:3,i)))/3.d0*dtb_by_bigv !wsink>=0
-!
-!            endif
-!#endif /*USE_TIMOR*/
           endif !k>kbe(i)+1
 
 !         Advective flux
 !         Strike out \hat{S}^- (see above)
-          psumtr(1:ntr)=0 !sum of modified fluxes at all inflow bnds 
+!          psumtr(1:ntr)=0 !sum of modified fluxes at all inflow bnds 
 !          delta_tr(1:ntr)=0 !sum of tracer fluxes at all inflow bnds
 !         Alternative mass conservative form for the advection part (Eq. C32); contribute to rrhs
           adv_tr(1:ntr)=trel_tmp(1:ntr,k,i) 
 
+!         2 vertical faces
 #ifdef DEBUG
           if(ntr>1) then; if(flux_mod_vface(1,k,i)*flux_mod_vface(2,k,i)<0) then
             write(errmsg,*)'Left out vertical flux (0):',i,k,flux_mod_vface(1:2,k,i)
@@ -809,30 +794,55 @@
           enddo !jj
 #endif
 
-          if(k/=nvrt.and.flux_mod_vface(1,k,i)<0) then !all flux_mod(:) same sign
+          !Upper face
+          if(flux_mod_vface(1,k,i)<0) then !all flux_mod(:) same sign; inflow
             if(ltvd.and.iupwind_e(i)==0) then !TVD for all tracers
               do jj=1,ntr
-                psumtr(jj)=psumtr(jj)+abs(flux_mod_vface(jj,k,i))
-                adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_vface(k,1,i))*(trel_tmp(jj,k+1,i)-trel_tmp(jj,k,i))
+!                psumtr(jj)=psumtr(jj)+abs(flux_mod_vface(jj,k,i))
+                adv_tr(jj)=adv_tr(jj)-dtb_by_bigv*flux_adv_vface(k,1,i)*trel_tmp(jj,min(nvrt,k+1),i)
               enddo !jj
             else !upwind
-              tmp=abs(flux_mod_vface(1,k,i))*dtb_by_bigv !flux_mod(:) all same for upwind
-              cupp(kin)=cupp(kin)-tmp
-              bdia(kin)=bdia(kin)+tmp
+              tmp=flux_mod_vface(1,k,i)*dtb_by_bigv !flux_mod(:) all same for upwind
+              if(k==nvrt) then !downwind
+                bdia(kin)=bdia(kin)+tmp
+              else !upwind
+                cupp(kin)=cupp(kin)+tmp
+              endif
             endif
-          endif
-          if(k-1/=kbe(i).and.flux_mod_vface(1,k-1,i)>0) then
+          else !outflow
             if(ltvd.and.iupwind_e(i)==0) then !TVD for all tracers
               do jj=1,ntr
-                psumtr(jj)=psumtr(jj)+abs(flux_mod_vface(jj,k-1,i))
-                adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_vface(k-1,1,i))*(trel_tmp(jj,k-1,i)-trel_tmp(jj,k,i))
+                adv_tr(jj)=adv_tr(jj)-dtb_by_bigv*flux_adv_vface(k,1,i)*trel_tmp(jj,k,i)
               enddo !jj
             else !upwind
-              tmp=abs(flux_mod_vface(1,k-1,i))*dtb_by_bigv
-              alow(kin)=alow(kin)-tmp
+              tmp=flux_mod_vface(1,k,i)*dtb_by_bigv !flux_mod(:) all same for upwind
               bdia(kin)=bdia(kin)+tmp
             endif
-          endif
+          endif !flux_mod_vface
+
+          !Lower face: note that Q_j=-flux_mod_vface!
+          if(k-1/=kbe(i)) then
+            if(flux_mod_vface(1,k-1,i)>0) then !inflow
+              if(ltvd.and.iupwind_e(i)==0) then !TVD for all tracers
+                do jj=1,ntr
+!                  psumtr(jj)=psumtr(jj)+abs(flux_mod_vface(jj,k-1,i))
+                  adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*flux_adv_vface(k-1,1,i)*trel_tmp(jj,k-1,i)
+                enddo !jj
+              else !upwind
+                tmp=flux_mod_vface(1,k-1,i)*dtb_by_bigv
+                alow(kin)=alow(kin)-tmp
+              endif
+            else !outflow
+              if(ltvd.and.iupwind_e(i)==0) then !TVD for all tracers
+                do jj=1,ntr
+                  adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*flux_adv_vface(k-1,1,i)*trel_tmp(jj,k,i)
+                enddo !jj
+              else !upwind
+                tmp=flux_mod_vface(1,k-1,i)*dtb_by_bigv
+                bdia(kin)=bdia(kin)-tmp
+              endif
+            endif !in/out
+          endif !k-1/=kbe(i)
 
 !         Additional terms in adv_tr (Eq. C32)
           if(ltvd) then !for upwind prism, up_rat_vface=0
@@ -916,10 +926,14 @@
                 endif
 #endif
 
-                psumtr(jj)=psumtr(jj)+abs(flux_mod_hface(jj,k,jsj))
-                adv_tr(jj)=adv_tr(jj)+dtb_by_bigv*abs(flux_adv_hface(k,jsj))*(trel_tmp_outside(jj)-trel_tmp(jj,k,i))
+                !psumtr(jj)=psumtr(jj)+abs(flux_mod_hface(jj,k,jsj))
+                adv_tr(jj)=adv_tr(jj)-dtb_by_bigv*ssign(j,i)*flux_adv_hface(k,jsj)*trel_tmp_outside(jj)
               enddo !jj
-            endif !inflow
+            else !outflow
+              do jj=1,ntr
+                adv_tr(jj)=adv_tr(jj)-dtb_by_bigv*ssign(j,i)*flux_adv_hface(k,jsj)*trel_tmp(jj,k,i)
+              enddo !jj
+            endif !in/out
 
             if(ltvd.and.k>=kbs(jsj)+1) then !for upwind prism, up_rat_hface=0
               do jj=1,ntr
@@ -931,12 +945,12 @@
 
 !         Check Courant number
 !new11
-          do jj=1,ntr
-            if(1-dtb_by_bigv*psumtr(jj)<0) then
-              write(errmsg,*)'Courant # condition violated:',i,k,1-dtb_by_bigv*psumtr(jj),jj
-              call parallel_abort(errmsg)
-            endif
-          enddo !jj
+!          do jj=1,ntr
+!            if(1-dtb_by_bigv*psumtr(jj)<0) then
+!              write(errmsg,*)'Courant # condition violated:',i,k,1-dtb_by_bigv*psumtr(jj),jj
+!              call parallel_abort(errmsg)
+!            endif
+!          enddo !jj
 !new11
 
           rrhs(1:ntr,kin)=adv_tr(1:ntr)
@@ -1024,6 +1038,20 @@
 !$OMP end master
 !$OMP barrier
 
+#ifdef DEBUG
+!surface contrinution to conservation
+      do i=1,ne
+        do j=1,ntr
+          if(iupwind_e(i)/=0) then !upwind; implicit
+            tmp=tr_el(j,nvrt,i)
+          else
+            tmp=trel_tmp(j,nvrt,i)
+          endif
+          surf_vol(j)=surf_vol(j)+dtb*flux_adv_vface(nvrt,1,i)*tmp
+        enddo !j
+      enddo !i
+#endif
+
       if(time_r<1.e-8) exit loop11
 !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
        end do loop11
@@ -1051,6 +1079,22 @@
 !#endif /*DEBUG*/
       if(myrank==0) write(17,*)it,it_sub
       
+#ifdef DEBUG
+!debug conservation 
+      psumtr=surf_vol !0
+      do i=1,ne
+        if(idry_e(i)==1) cycle
+
+        do k=kbe(i)+1,nvrt
+          vol=(ze(k,i)-ze(k-1,i))*area(i)
+          psumtr(1:ntr)=psumtr(1:ntr)+vol*tr_el(1:ntr,k,i)
+        enddo !k
+      enddo !i=1,ne
+      call mpi_allreduce(psumtr,adv_tr,ntr,rtype,MPI_SUM,comm,ierr)
+      if(myrank==0) write(25,*)real(time_stamp/86400),adv_tr(1:ntr), &
+     &' ; after itr=2'
+#endif
+
 !     Deallocate
       deallocate(trel_tmp,flux_adv_hface,flux_mod_hface,flux_mod_vface,&
      &           up_rat_hface, up_rat_vface)
