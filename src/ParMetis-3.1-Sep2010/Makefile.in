@@ -4,7 +4,7 @@ CC = mpicc
 
 
 # What optimization level to use
-OPTFLAGS = -O2 
+OPTFLAGS = -O2 -D_Float128=__float128
 
 # Include directories for the compiler
 INCDIR =
