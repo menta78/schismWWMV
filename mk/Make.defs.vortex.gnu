@@ -32,48 +32,45 @@
 ################################################################################
 
 ################################################################################
-## Environment for TACC/Stampede
-## Some modules are loaded at start-up thru .modules
+## Environment for vortex cluster of College of William and Mary
 #################################################################################
-ENV = ARON
-
-################################################################################
-# Environment 
-################################################################################
-FCS = ifort
-FCP = mpif90 #MPI compiler
-FLD = $(FCP)
-# MPI vserion (1 or 2)
-PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
-##########################################################################################
-############################ DEBUG + DEVELOPEMENT
-##########################################################################################
-#  FCPFLAGS = $(PPFLAGS) -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn all,nounused -gen-interfaces 
-#  FLDFLAGS = -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces 
-##########################################################################################
-############################ PERFORMANCE SAVE OPTIMIZATION
-##########################################################################################
-#  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback -assume byterecl
-#  FLDFLAGS = -O1 -g -traceback -assume byterecl
-##########################################################################################
-############################ AGGRESSIVE OPTIMIZATION
-##########################################################################################
-  FCPFLAGS = $(PPFLAGS) -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl 
-  FLDFLAGS = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl
-##########################################################################################
-#####Libraries
-#From my own dir
-MTSLIBS = -L$(METIS_PATH)/lib -lparmetis -lmetis 
-#From Harry's dir
-#MTSLIBS = -L/work/01555/harryw/ParMetis-3.1-64bit/ -lparmetis -lmetis
-
-CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff 
-CDFMOD  = -I$(NETCDF_INCDIR) # modules for netcdf
+ENV = VORTEX
 
 ################################################################################
 # Alternate executable name if you do not want the default. 
 ################################################################################
-EXEC   := ~/bin/pschism_$(ENV)
+EXEC   := pschism_$(ENV)_GNU
+
+################################################################################
+# COMPILERS
+################################################################################
+
+FCP = mpif90 -ffree-line-length-none
+FCS = gfortran
+FLD = $(FCP)
+# MPI vserion (1 or 2) 
+PPFLAGS := $(PPFLAGS) -DMPIVERSION=2 #-DUSE_WRAP
+
+#Check bound
+#FCPFLAGS = $(PPFLAGS) -fast -tp piledriver -m64 -Mbounds -Msave -Bstatic 
+#EXEC := $(EXEC)_Mbounds_Msave
+
+#-Wuninitialized to print out uninit'ed variables during compilation
+#FCPFLAGS = $(PPFLAGS) -O2 -static -static-libgfortran -Wuninitialized -fbounds-check
+
+#Normal pure MPI
+FCPFLAGS = $(PPFLAGS) -O2 -static -static-libgfortran -finit-local-zero
+FLDFLAGS = -O2 
+
+#hybrid (de-activated)
+#FCPFLAGS = $(PPFLAGS) -O2 -static -static-libgfortran -finit-local-zero -fopenmp
+#FLDFLAGS = -O2 -fopenmp
+#EXEC := $(EXEC)_OMP
+
+#####Libraries
+MTSLIBS = -L./ParMetis-3.1-Sep2010 -lparmetis -lmetis
+CDFLIBS = -L$(NETCDF)/lib -lnetcdf
+CDFMOD = -I$(NETCDF)/include # modules for netcdf
 
 ################################################################################
 # Algorithm preference flags.
@@ -85,9 +82,15 @@ EXEC   := ~/bin/pschism_$(ENV)
 include ../mk/include_modules
 
 # Don't comment out the follow ifdef
+# Note: currently GOTM4 may give reasonable results only with k-omega
 ifdef USE_GOTM
-  GTMMOD =  -I/home1/01621/zhangy/selfe/trunk/src/GOTM3.2.5/modules/IFORT #modules
-  GTMLIBS = -L/home1/01621/zhangy/selfe/trunk/src/GOTM3.2.5/lib/IFORT -lturbulence_prod -lutil_prod
+  #Following for GOTM4
+  #GTMMOD =  -I/sciclone/home04/yinglong/SELFE/svn/trunk/src/GOTM4.0/modules/PGF90/ #modules
+  #GTMLIBS = -L/sciclone/home04/yinglong/SELFE/svn/trunk/src/GOTM4.0/lib/PGF90/ -lturbulence_prod -lutil_prod
+
+  #Following for GOTM3
+  GTMMOD =  -I/sciclone/home04/yinglong/gotm-3.2.5/modules/PGF90/ #modules
+  GTMLIBS = -L/sciclone/home04/yinglong/gotm-3.2.5/lib/PGF90/ -lturbulence_prod -lutil_prod
 else
   GTMMOD =
   GTMLIBS =
@@ -98,11 +101,6 @@ endif
 # Add -DNO_TR_15581 like below for allocatable array problem in sflux_subs.F90
 # PPFLAGS := $(PPFLAGS) -DNO_TR_15581
 
-# For openMPI compiler, search for "USE_OPEN64" below for compiler flags
-# USE_OPEN64 = no
-
 # Obsolete flags: use USE_WRAP flag to avoid problems in ParMetis lib (calling C from FORTRAN)
 # PPFLAGS := $(PPFLAGS) -DUSE_WRAP 
 
-#Temporary fix for Stampede cluster; leave it on
-# PPFLAGS := $(PPFLAGS) -DSTAMPEDE

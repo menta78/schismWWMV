@@ -32,48 +32,42 @@
 ################################################################################
 
 ################################################################################
-## Environment for TACC/Stampede
-## Some modules are loaded at start-up thru .modules
+## Environment for NASA/Knights Landing 
 #################################################################################
-ENV = ARON
-
-################################################################################
-# Environment 
-################################################################################
-FCS = ifort
-FCP = mpif90 #MPI compiler
-FLD = $(FCP)
-# MPI vserion (1 or 2)
-PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
-##########################################################################################
-############################ DEBUG + DEVELOPEMENT
-##########################################################################################
-#  FCPFLAGS = $(PPFLAGS) -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn all,nounused -gen-interfaces 
-#  FLDFLAGS = -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces 
-##########################################################################################
-############################ PERFORMANCE SAVE OPTIMIZATION
-##########################################################################################
-#  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback -assume byterecl
-#  FLDFLAGS = -O1 -g -traceback -assume byterecl
-##########################################################################################
-############################ AGGRESSIVE OPTIMIZATION
-##########################################################################################
-  FCPFLAGS = $(PPFLAGS) -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl 
-  FLDFLAGS = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl
-##########################################################################################
-#####Libraries
-#From my own dir
-MTSLIBS = -L$(METIS_PATH)/lib -lparmetis -lmetis 
-#From Harry's dir
-#MTSLIBS = -L/work/01555/harryw/ParMetis-3.1-64bit/ -lparmetis -lmetis
-
-CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff 
-CDFMOD  = -I$(NETCDF_INCDIR) # modules for netcdf
+ENV = PLEIADES_KNL
 
 ################################################################################
 # Alternate executable name if you do not want the default. 
 ################################################################################
-EXEC   := ~/bin/pschism_$(ENV)
+EXEC   := pschism_$(ENV)
+
+################################################################################
+# COMPILERS
+################################################################################
+
+FCP = mpiifort
+FCS = ifort
+FLD = $(FCP)
+PPFLAGS := $(PPFLAGS) -DMPIVERSION=1
+
+#FCPFLAGS = $(PPFLAGS) -O2 -CB -g -traceback -mcmodel=medium  -Bstatic -assume byterecl -ipo -axCORE-AVX2 -xSSE4.2 
+#Normal
+FCPFLAGS = $(PPFLAGS) -g -O2 -align array64byte -no-prec-div -mcmodel=medium  -Bstatic -assume byterecl -ipo -xMIC-AVX512
+FLDFLAGS = -g -O2 -align array64byte -no-prec-div -mcmodel=medium -shared-intel -ipo -xMIC-AVX512 #for final linking of object files
+
+#Hybrid (de-activated)
+#FCPFLAGS = $(PPFLAGS) -g -O2 -no-prec-div -mcmodel=medium  -Bstatic -assume byterecl -ipo -axCORE-AVX2 -xSSE4.2 -qopenmp
+#FLDFLAGS = -g -O2 -no-prec-div -mcmodel=medium -shared-intel -ipo -axCORE-AVX2 -xSSE4.2 -qopenmp -lmpi #for final linking of object files
+##without -O for Inspector
+#FCPFLAGS = $(PPFLAGS) -g -no-prec-div -mcmodel=medium  -Bstatic -assume byterecl -ipo -axCORE-AVX2 -xSSE4.2 -qopenmp
+#FLDFLAGS = -g -no-prec-div -mcmodel=medium -shared-intel -ipo -axCORE-AVX2 -xSSE4.2 -qopenmp -lmpi #for final linking of object files
+
+#EXEC := $(EXEC)_OMP
+
+#Libraries
+MTSLIBS = -L/nasa/parmetis/3.1.1/lib/ -lparmetis -lmetis
+CDFLIBS = -L/nasa/netcdf/4.4.1_serial/lib/ -lnetcdf -lnetcdff
+CDFMOD = -I/nasa/netcdf/4.4.1_serial/include/ # modules for netcdf
 
 ################################################################################
 # Algorithm preference flags.
@@ -86,23 +80,18 @@ include ../mk/include_modules
 
 # Don't comment out the follow ifdef
 ifdef USE_GOTM
-  GTMMOD =  -I/home1/01621/zhangy/selfe/trunk/src/GOTM3.2.5/modules/IFORT #modules
-  GTMLIBS = -L/home1/01621/zhangy/selfe/trunk/src/GOTM3.2.5/lib/IFORT -lturbulence_prod -lutil_prod
+  GTMMOD =  -I/home3/yjzhang/GOTM_Intel64/modules/IFORT/ #modules
+  GTMLIBS = -L/home3/yjzhang/GOTM_Intel64/lib/IFORT/ -lturbulence_prod -lutil_prod
 else
   GTMMOD =
   GTMLIBS =
 endif
 
-######### Specialty compiler flags and workarounds
 
+######### Specialty compiler flags and workarounds
 # Add -DNO_TR_15581 like below for allocatable array problem in sflux_subs.F90
 # PPFLAGS := $(PPFLAGS) -DNO_TR_15581
-
-# For openMPI compiler, search for "USE_OPEN64" below for compiler flags
-# USE_OPEN64 = no
 
 # Obsolete flags: use USE_WRAP flag to avoid problems in ParMetis lib (calling C from FORTRAN)
 # PPFLAGS := $(PPFLAGS) -DUSE_WRAP 
 
-#Temporary fix for Stampede cluster; leave it on
-# PPFLAGS := $(PPFLAGS) -DSTAMPEDE

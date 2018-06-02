@@ -31,49 +31,28 @@
 #   MTSLIBS: Flags for linking ParMeTiS/MeTiS libaries
 ################################################################################
 
-################################################################################
-## Environment for TACC/Stampede
-## Some modules are loaded at start-up thru .modules
-#################################################################################
-ENV = ARON
-
-################################################################################
-# Environment 
-################################################################################
-FCS = ifort
-FCP = mpif90 #MPI compiler
-FLD = $(FCP)
-# MPI vserion (1 or 2)
-PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
-##########################################################################################
-############################ DEBUG + DEVELOPEMENT
-##########################################################################################
-#  FCPFLAGS = $(PPFLAGS) -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn all,nounused -gen-interfaces 
-#  FLDFLAGS = -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces 
-##########################################################################################
-############################ PERFORMANCE SAVE OPTIMIZATION
-##########################################################################################
-#  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback -assume byterecl
-#  FLDFLAGS = -O1 -g -traceback -assume byterecl
-##########################################################################################
-############################ AGGRESSIVE OPTIMIZATION
-##########################################################################################
-  FCPFLAGS = $(PPFLAGS) -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl 
-  FLDFLAGS = -g -traceback -O1 -axSSE4.2 -unroll-aggressive -assume byterecl
-##########################################################################################
-#####Libraries
-#From my own dir
-MTSLIBS = -L$(METIS_PATH)/lib -lparmetis -lmetis 
-#From Harry's dir
-#MTSLIBS = -L/work/01555/harryw/ParMetis-3.1-64bit/ -lparmetis -lmetis
-
-CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff 
-CDFMOD  = -I$(NETCDF_INCDIR) # modules for netcdf
+ENV = LNEC_WS_GNU
 
 ################################################################################
 # Alternate executable name if you do not want the default. 
 ################################################################################
-EXEC   := ~/bin/pschism_$(ENV)
+EXEC   := pschism_$(ENV)
+
+################################################################################
+# Environment 
+################################################################################
+
+FCP = /usr/lib64/openmpi/bin/mpif90
+FLD = $(FCP)
+# MPI vserion (1 or 2)
+PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
+#-CB is much slower to compile
+FCPFLAGS = $(PPFLAGS) -O2 -Bstatic -ffree-line-length-none #MPI code
+FLDFLAGS = -O2 #for final linking of object files
+#####Libraries
+MTSLIBS = -L/home/share/binec/AAzevedo/SELFE_DEV/ParMetis-3.1-Sep2010 -lparmetis -lmetis -L/usr/lib64/openmpi/lib -lmpi -lmpi_f90
+CDFLIBS = -L/usr/lib64 -lnetcdf -lnetcdff
+CDFMOD = -I/usr/include -I/usr/lib64/gfortran/modules # modules for netcdf
 
 ################################################################################
 # Algorithm preference flags.
@@ -81,17 +60,17 @@ EXEC   := ~/bin/pschism_$(ENV)
 ################################################################################
 
 # -DSCHISM is always on and is defined elsewhere
-
 include ../mk/include_modules
 
 # Don't comment out the follow ifdef
 ifdef USE_GOTM
-  GTMMOD =  -I/home1/01621/zhangy/selfe/trunk/src/GOTM3.2.5/modules/IFORT #modules
-  GTMLIBS = -L/home1/01621/zhangy/selfe/trunk/src/GOTM3.2.5/lib/IFORT -lturbulence_prod -lutil_prod
+   GTMMOD =  -I/home/yinglong/GOTM/gotm-3.2.5/TSUNAMI/modules/IFORT/ #modules
+   GTMLIBS = -L/home/yinglong/GOTM/gotm-3.2.5/TSUNAMI/lib/IFORT/ -lturbulence_prod  -lutil_prod
 else
-  GTMMOD =
-  GTMLIBS =
+   GTMMOD =
+   GTMLIBS =
 endif
+
 
 ######### Specialty compiler flags and workarounds
 
@@ -99,10 +78,10 @@ endif
 # PPFLAGS := $(PPFLAGS) -DNO_TR_15581
 
 # For openMPI compiler, search for "USE_OPEN64" below for compiler flags
-# USE_OPEN64 = no
+USE_OPEN64 = no
 
 # Obsolete flags: use USE_WRAP flag to avoid problems in ParMetis lib (calling C from FORTRAN)
 # PPFLAGS := $(PPFLAGS) -DUSE_WRAP 
 
-#Temporary fix for Stampede cluster; leave it on
-# PPFLAGS := $(PPFLAGS) -DSTAMPEDE
+
+
