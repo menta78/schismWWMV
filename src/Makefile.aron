@@ -337,7 +337,7 @@ ifeq ($(ENV),CORI2)
 endif
 
 # This is the main executable target
-$(EXEC): $(CONFIG_OBJS) $(PARMETISDIR)/parmetis.a $(PARMETISDIR)/metis.a
+$(EXEC): $(CONFIG_OBJS) 
 	$(FLD) $(FLDFLAGS) $(CONFIG_OBJS) $(LIBS) ${MODULEOUTDIR}. -I. -o $@
 
 

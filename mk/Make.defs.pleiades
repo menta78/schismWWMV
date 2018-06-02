@@ -37,27 +37,42 @@
 ENV = PLEIADES
 
 ################################################################################
-# Environment 
+# Alternate executable name if you do not want the default. 
+################################################################################
+EXEC   := pschism_$(ENV)
+
+################################################################################
+# COMPILERS
 ################################################################################
 
 FCP = ifort
 FCS = ifort
 FLD = $(FCP)
 PPFLAGS := $(PPFLAGS) -DMPIVERSION=1
-#FCPFLAGS = $(PPFLAGS) -O2 -mcmodel=medium  -Bstatic -assume byterecl -ipo -axAVX -xSSE4.1 -vec-report2
-#FLDFLAGS = -O2 -mcmodel=medium -shared-intel -ipo -axAVX -xSSE4.1 -lmpi #for final linking of object files
 
-FCPFLAGS = $(PPFLAGS) -O2 -mcmodel=medium  -Bstatic -assume byterecl -ipo -axCORE-AVX2 -xSSE4.2 
-FLDFLAGS = -O2 -mcmodel=medium -shared-intel -ipo -axCORE-AVX2 -xSSE4.2 -lmpi #for final linking of object files
+#FCPFLAGS = $(PPFLAGS) -O2 -CB -g -traceback -mcmodel=medium  -Bstatic -assume byterecl -ipo -axCORE-AVX2 -xSSE4.2 
+#Normal
+#FCPFLAGS = $(PPFLAGS) -g -O2 -no-prec-div -mcmodel=medium  -Bstatic -assume byterecl -ipo -axCORE-AVX2 -xSSE4.2 
+#FLDFLAGS = -g -O2 -no-prec-div -mcmodel=medium -shared-intel -ipo -axCORE-AVX2 -xSSE4.2 -lmpi #for final linking of object files
+#Note: use of either of these options, -xCORE-AVX512 or -axCORE-AVX512, could either improve or degrade performance of your code. 
+#Be sure to check performance with and without these flags before using them for production runs
+FCPFLAGS = $(PPFLAGS) -O3 -no-prec-div -mcmodel=medium  -Bstatic -assume byterecl -ipo -axCORE-AVX512 -xSSE4.2
+FLDFLAGS = -O3 -no-prec-div -mcmodel=medium -shared-intel -ipo -axCORE-AVX512 -xSSE4.2 -lmpi #for final linking of object files
+
+#Hybrid 
+#FCPFLAGS = $(PPFLAGS) -g -O2 -no-prec-div -mcmodel=medium  -Bstatic -assume byterecl -ipo -axCORE-AVX2 -xSSE4.2 -qopenmp
+#FLDFLAGS = -g -O2 -no-prec-div -mcmodel=medium -shared-intel -ipo -axCORE-AVX2 -xSSE4.2 -qopenmp -lmpi #for final linking of object files
+##without -O for Inspector
+#FCPFLAGS = $(PPFLAGS) -g -no-prec-div -mcmodel=medium  -Bstatic -assume byterecl -ipo -axCORE-AVX2 -xSSE4.2 -qopenmp
+#FLDFLAGS = -g -no-prec-div -mcmodel=medium -shared-intel -ipo -axCORE-AVX2 -xSSE4.2 -qopenmp -lmpi #for final linking of object files
+
+#EXEC := $(EXEC)_OMP
+
 #Libraries
 MTSLIBS = -L./ParMetis-3.1-Sep2010/ -lparmetis -lmetis
-CDFLIBS = -L/nasa/netcdf/3.6.0/intel/lib -lnetcdf
-CDFMOD = -I/nasa/netcdf/3.6.0/intel/include/ # modules for netcdf
-
-################################################################################
-# Alternate executable name if you do not want the default. 
-################################################################################
-EXEC   := pschism_$(ENV)
+##SLES12
+CDFLIBS = -L/nasa/netcdf/4.4.1.1_serial/lib -lnetcdf -lnetcdff 
+CDFMOD = -I/nasa/netcdf/4.4.1.1_serial/include/ # modules for netcdf
 
 ################################################################################
 # Algorithm preference flags.
@@ -66,22 +81,7 @@ EXEC   := pschism_$(ENV)
 
 # -DSCHISM is always on and is defined elsewhere
 
-# Precip/evaporation model
-# USE_PREC_EVAP = yes
-# EXEC := $(EXEC)_EVAP
-
-# MM5 in heat exchange model
-# USE_MM5 = yes
-# EXEC := $(EXEC)_MM5
-
-# TVD limiter options (set as one of these: SB, VL, OS, MM)
-# No default and so these 2 lines should NOT be commented out!
- TVD_LIM = SB
- EXEC := $(EXEC)_$(TVD_LIM)
-
-# GOTM turbulence closure model
-# USE_GOTM = yes
-# EXEC := $(EXEC)_GOTM
+include ../mk/include_modules
 
 # Don't comment out the follow ifdef
 ifdef USE_GOTM
@@ -91,71 +91,6 @@ else
   GTMMOD =
   GTMLIBS =
 endif
-
-# Wind wave model WWM
-# USE_WWM = yes
-# EXEC := $(EXEC)_WWM
-
-# Harmonic analysis tool
-# USE_HA = yes
-# EXEC := $(EXEC)_HA
-
-#####Tracer models
-# Generic (user defined) tracer model
-# USE_GEN = yes
-# EXEC := $(EXEC)_GEN
-
-# Age
-# USE_AGE = yes
-# EXEC := $(EXEC)_AGE
-
-# Sediment model (3D)
-# USE_SED = yes
-# EXEC := $(EXEC)_SED
-
-# Ecological model (EcoSim)
-# USE_ECO = yes
-# EXEC := $(EXEC)_ECO
-
-# CE-QUAL-ICM
-# USE_ICM = yes
-# EXEC := $(EXEC)_ICM
-
-# CoSINE
-# USE_COSINE = yes
-# EXEC := $(EXEC)_COS
-
-# Fecal Indicator bacteria model
-# USE_FIB = yes
-# EXEC := $(EXEC)_FIB
-
-# Oil spill model (not active)
-# USE_OIL = yes
-# EXEC := $(EXEC)_OIL
-
-# Ecological model - NAPZD Spitz (unavailable)
-# USE_NAPZD = yes
-# EXEC := $(EXEC)_NAPZD
-
-# TIMOR (not active yet)
-# USE_TIMOR = yes
-# EXEC := $(EXEC)_TIMOR
-
-####End of tracer models
-
-# Sediment model (2D)
-# USE_SED2D = yes
-# EXEC := $(EXEC)_SED2D
-
-#########  Compiler configuration related flags
-
-# Include a timer
-# USE_TIMER = yes
-# EXEC := $(EXEC)_TIMER
-
-# Debug mode (more time consuming)
-# USE_DEBUG = yes
-# EXEC := $(EXEC)_DEBUG
 
 
 ######### Specialty compiler flags and workarounds

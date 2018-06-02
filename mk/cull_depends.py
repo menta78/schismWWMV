@@ -26,5 +26,5 @@ if __name__ == "__main__":
     outfile = sys.argv[2]
     targets = [pth.splitext(x)[0] for x in sys.argv[3].split()]
     #print "targets: %s" %targets
-    print "Culling dependencies"
+    print("Culling dependencies")
     cull_depends(infile,outfile,targets)

@@ -31,49 +31,41 @@
 #   MTSLIBS: Flags for linking ParMeTiS/MeTiS libaries
 ################################################################################
 
-################################################################################
-## Environment for TACC/Stampede
-## Some modules are loaded at start-up thru .modules
-#################################################################################
-ENV = ARON
+
+ENV = aron.gnu.mpich
 
 ################################################################################
-# Environment 
+# Environment for Ubuntu with GNU compilers and mpich
+#
+# Packages requirement: gfortran, gcc, libnetcdf-dev, mpich2, libcr-dev
+# which can be installed with the command below:
+# "sudo apt-get install gfortran gcc libnetcdf-dev mpich2 libcr-dev"
+#
+# Tests are passed on Ubuntu 12.04 64bit and Ubuntu 14.04 64bit
+#
+# Note: use /usr/bin/mpirun.mpich2 (Ubuntu 12.04) or /usr/bin/mpirun.mpich (Ubuntu 14.04)
+#       to run compiled SCHISM executable
 ################################################################################
 
-FCP = mpif90 #MPI compiler
+FCS = gfortran
+FCP = mpif90 
 FLD = $(FCP)
-# MPI vserion (1 or 2)
-PPFLAGS := $(PPFLAGS) -DMPIVERSION=2 -ffree-line-length-none
-##########################################################################################
-############################ DEBUG + DEVELOPEMENT
-##########################################################################################
-#  FCPFLAGS = $(PPFLAGS) -O1 -g -fbacktrace  -fcheck=all -Wall  
-#  FLDFLAGS = -O1 -g -fbacktrace -fcheck=all -Wall  
-##########################################################################################
-############################ PERFORMANCE SAVE OPTIMIZATION
-##########################################################################################
-  FCPFLAGS = $(PPFLAGS) -O1 -g -fbacktrace 
-  FLDFLAGS = -O1 -g -fbacktrace 
-##########################################################################################
-############################ AGGRESSIVE OPTIMIZATION
-##########################################################################################
-#  FCPFLAGS = $(PPFLAGS) -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl 
-#  FLDFLAGS = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
-##########################################################################################
-#####Libraries
-#From my own dir
-MTSLIBS = -L$(METIS_PATH)/lib -lparmetis -lmetis 
-#From Harry's dir
-#MTSLIBS = -L/work/01555/harryw/ParMetis-3.1-64bit/ -lparmetis -lmetis
+# MPI vserion (1 or 2) 
+PPFLAGS := $(PPFLAGS) -DMPIVERSION=2 #-DUSE_WRAP
+OPTFLAGS = -O2
+FCPFLAGS = $(PPFLAGS) $(OPTFLAGS) -static -static-libgfortran -ffree-line-length-none #-g -fbacktrace #-finit-real=nan -fbounds-check #MPI code
+FLDFLAGS = $(OPTFLAGS) #for final linking of object files
 
-CDFLIBS = -L$(NETCDF_LIBDIR) -lnetcdf -lnetcdff
-CDFMOD  = -I$(NETCDF_INCDIR) # modules for netcdf
+#####Libraries
+#MTSLIBS = -L/usr/lib/ -lparmetis -lmetis
+MTSLIBS = -L./ParMetis-3.1-Sep2010 -lparmetis -lmetis
+CDFLIBS = -L/home/aron/opt/netcdf_gfortran/lib/ -lnetcdf -lnetcdff
+CDFMOD = -I/home/aron/opt/netcdf_gfortran/include/ # modules for netcdf
 
 ################################################################################
 # Alternate executable name if you do not want the default. 
 ################################################################################
-EXEC   := ~/bin/pschism_$(ENV)
+#EXEC   := othername.ex
 
 ################################################################################
 # Algorithm preference flags.
@@ -81,98 +73,28 @@ EXEC   := ~/bin/pschism_$(ENV)
 ################################################################################
 
 # -DSCHISM is always on and is defined elsewhere
-
-# Precip/evaporation model
-# USE_PREC_EVAP = yes
-# PPFLAGS := $(PPFLAGS) -DPREC_EVAP 
-# EXEC := $(EXEC)_EVAP
-
-# MM5 in heat exchange model
-# USE_MM5 = yes
-# PPFLAGS := $(PPFLAGS) -DMM5
-# EXEC := $(EXEC)_MM5
-
-# TVD limiter options (set as one of these: SB, VL, OS, MM)
-# No default and so these 2 lines should NOT be commented out!
- TVD_LIM = SB
- EXEC := $(EXEC)_$(TVD_LIM)
-
-# GOTM turbulence closure model
-# USE_GOTM = yes
-# EXEC := $(EXEC)_GOTM
+include ../mk/include_modules
 
 # Don't comment out the follow ifdef
+# Note: currently GOTM4 may give reasonable results only with k-omega
 ifdef USE_GOTM
-  GTMMOD =  -I/home1/01621/zhangy/selfe/trunk/src/GOTM3.2.5/modules/IFORT #modules
-  GTMLIBS = -L/home1/01621/zhangy/selfe/trunk/src/GOTM3.2.5/lib/IFORT -lturbulence_prod -lutil_prod
+  #Following for GOTM4
+  #GTMMOD =  -I/sciclone/home04/yinglong/SELFE/svn/trunk/src/GOTM4.0/modules/PGF90/ #modules
+  #GTMLIBS = -L/sciclone/home04/yinglong/SELFE/svn/trunk/src/GOTM4.0/lib/PGF90/ -lturbulence_prod -lutil_prod
+
+  #Following for GOTM3
+  GTMMOD =  -I/sciclone/home04/yinglong/gotm-3.2.5/modules/PGF90/ #modules
+  GTMLIBS = -L/sciclone/home04/yinglong/gotm-3.2.5/lib/PGF90/ -lturbulence_prod -lutil_prod
 else
   GTMMOD =
   GTMLIBS =
 endif
 
-# Wind wave model WWM
-# USE_WWM = yes
-# EXEC := $(EXEC)_WWM
-
-# TIMOR (not active)
-# USE_TIMOR = yes
-# EXEC := $(EXEC)_TIMOR
-
-# Harmonic analysis tool
-# USE_HA = yes
-# EXEC := $(EXEC)_HA
-
-#Tracer models
-# Generic (user defined) tracer model
-# USE_GEN = yes
-# EXEC := $(EXEC)_GEN
-
-# Age
-# USE_AGE = yes
-# EXEC := $(EXEC)_AGE
-
-# Sediment model (3D)
-# USE_SED = yes
-# EXEC := $(EXEC)_SED
-# Ecological model (EcoSim)
-# USE_ECO = yes
-# EXEC := $(EXEC)_ECO
-
-# CE-QUAL-ICM
-# USE_ICM = yes
-# EXEC := $(EXEC)_ICM
-
-# Oil spill model (not active)
-# USE_OIL = yes
-# EXEC := $(EXEC)_OIL
-####End of tracer models
-
-# Sediment model (2D)
-# USE_SED2D = yes
-# EXEC := $(EXEC)_SED2D
-
-# Oil spill model (not active)
-# USE_OIL = yes
-# EXEC := $(EXEC)_OIL
-
-#########  Compiler configuration related flags
-
-# Include a timer
-# USE_TIMER = yes
-# EXEC := $(EXEC)_TIMER
-
-# Debug mode (more time consuming)
-# USE_DEBUG = yes
-# EXEC := $(EXEC)_DEBUG
-
 
 ######### Specialty compiler flags and workarounds
-
 # Add -DNO_TR_15581 like below for allocatable array problem in sflux_subs.F90
 # PPFLAGS := $(PPFLAGS) -DNO_TR_15581
 
 # Obsolete flags: use USE_WRAP flag to avoid problems in ParMetis lib (calling C from FORTRAN)
 # PPFLAGS := $(PPFLAGS) -DUSE_WRAP 
 
-#Temporary fix for Stampede cluster; leave it on
-# PPFLAGS := $(PPFLAGS) -DSTAMPEDE
