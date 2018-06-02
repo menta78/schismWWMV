@@ -41,7 +41,7 @@ ENV = ARON
 # Environment 
 ################################################################################
 
-FCP = mpif90 #MPI compiler
+FCP = mpiifort #MPI compiler
 FLD = $(FCP)
 # MPI vserion (1 or 2)
 PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
