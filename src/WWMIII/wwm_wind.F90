@@ -532,9 +532,11 @@
       integer ncid, iret, var_id
       integer mnp_dims, four_dims
       integer IP, IPglob, iPROC, NP_RESloc, IPloc
-      WRITE(STAT%FHNDL,*) 'minval(CF_IX)=', minval(CF_IX)
-      WRITE(STAT%FHNDL,*) 'minval(CF_IY)=', minval(CF_IY)
-      WRITE(STAT%FHNDL,*) 'minval(CF_COEFF)=', minval(CF_COEFF)
+      IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+        WRITE(STAT%FHNDL,*) 'minval(CF_IX)=', minval(CF_IX)
+        WRITE(STAT%FHNDL,*) 'minval(CF_IY)=', minval(CF_IY)
+        WRITE(STAT%FHNDL,*) 'minval(CF_COEFF)=', minval(CF_COEFF)
+      END IF
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND .eqv. .TRUE.) THEN
         IF (myrank .eq. 0) THEN
@@ -556,16 +558,14 @@
           END DO
           DO iPROC=2,nproc
             NP_RESloc=ListNP_RES(iPROC)
-            WRITE(STAT%FHNDL,*) ' iPROC=', iPROC, ' NP_RES_loc=', NP_RESloc 
+            IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+              WRITE(STAT%FHNDL,*) ' iPROC=', iPROC, ' NP_RES_loc=', NP_RESloc
+            END IF
             allocate(CF_IX_loc(NP_RESloc), CF_IY_loc(NP_RESloc), CF_COEFF_loc(4,NP_RESloc), stat=istat)
             IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 52')
-            WRITE(STAT%FHNDL,*) 'Step 1'
             CALL MPI_RECV(CF_IX_loc, NP_RESloc, itype, iProc-1, 611, comm, istatus, ierr)
-            WRITE(STAT%FHNDL,*) 'Step 2'
             CALL MPI_RECV(CF_IY_loc, NP_RESloc, itype, iProc-1, 612, comm, istatus, ierr)
-            WRITE(STAT%FHNDL,*) 'Step 3'
             CALL MPI_RECV(CF_COEFF_loc, 4*NP_RESloc, rtype, iProc-1, 613, comm, istatus, ierr)
-            WRITE(STAT%FHNDL,*) 'Step 4'
             DO IPloc=1,NP_RESloc
               IPglob=ListIPLG(IPloc + ListFirstMNP(iProc))
               CF_IX_GLOBAL(IPglob)=CF_IX_loc(IPloc)
@@ -576,13 +576,9 @@
           END DO
           deallocate(ListFirstMNP)
         ELSE
-          WRITE(STAT%FHNDL,*) ' NP_RES=', NP_RES
           CALL MPI_SEND(CF_IX, NP_RES, itype, 0, 611, comm, ierr)
-          WRITE(STAT%FHNDL,*) 'Step 1'
           CALL MPI_SEND(CF_IY, NP_RES, itype, 0, 612, comm, ierr)
-          WRITE(STAT%FHNDL,*) 'Step 2'
           CALL MPI_SEND(CF_COEFF, 4*NP_RES, rtype, 0, 613, comm, ierr)
-          WRITE(STAT%FHNDL,*) 'Step 3'
         END IF
       ELSE
         allocate(CF_IX_GLOBAL(np_total), CF_IY_GLOBAL(np_total), CF_COEFF_GLOBAL(4,np_total), stat=istat)
@@ -627,9 +623,11 @@
         !
         ! Now writing the data
         !
-        WRITE(STAT%FHNDL,*) 'minval(CF_IX_GLOBAL)=', minval(CF_IX_GLOBAL)
-        WRITE(STAT%FHNDL,*) 'minval(CF_IY_GLOBAL)=', minval(CF_IY_GLOBAL)
-        WRITE(STAT%FHNDL,*) 'minval(CF_COEFF_GLOBAL)=', minval(CF_COEFF_GLOBAL)
+        IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+          WRITE(STAT%FHNDL,*) 'minval(CF_IX_GLOBAL)=', minval(CF_IX_GLOBAL)
+          WRITE(STAT%FHNDL,*) 'minval(CF_IY_GLOBAL)=', minval(CF_IY_GLOBAL)
+          WRITE(STAT%FHNDL,*) 'minval(CF_COEFF_GLOBAL)=', minval(CF_COEFF_GLOBAL)
+        END IF
         !
         iret=nf90_open(TRIM(FileSave), NF90_WRITE, ncid)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, iret)
@@ -2551,8 +2549,10 @@
       integer nx_dim, ny_dim, iX, iY
       call grib_get(eGrib,"numberOfPointsAlongAParallel", nx_dim)
       call grib_get(eGrib,"numberOfPointsAlongAMeridian", ny_dim)
-      WRITE(STAT%FHNDL, *) 'nx_dim=', nx_dim
-      WRITE(STAT%FHNDL, *) 'ny_dim=', ny_dim
+      IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+        WRITE(STAT%FHNDL, *) 'nx_dim=', nx_dim
+        WRITE(STAT%FHNDL, *) 'ny_dim=', ny_dim
+      END IF
       TheInfo % nx_dim = nx_dim
       TheInfo % ny_dim = ny_dim
       allocate(TheInfo % LON(nx_dim, ny_dim), TheInfo % LAT(nx_dim, ny_dim), stat=istat)
@@ -2743,8 +2743,10 @@
       !
       call grib_get(eGrib,"Nx", nx_dim)
       call grib_get(eGrib,"Ny", ny_dim)
-      WRITE(STAT%FHNDL, *) 'nx_dim = ', nx_dim
-      WRITE(STAT%FHNDL, *) 'ny_dim = ', ny_dim
+      IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+         WRITE(STAT%FHNDL, *) 'nx_dim = ', nx_dim
+         WRITE(STAT%FHNDL, *) 'ny_dim = ', ny_dim
+      END IF
       TheInfo % nx_dim = nx_dim
       TheInfo % ny_dim = ny_dim
       allocate(TheInfo % LON(nx_dim, ny_dim), TheInfo % LAT(nx_dim, ny_dim), stat=istat)
@@ -2780,25 +2782,31 @@
       integer, allocatable :: igrib(:)
       character(len=100) eShortName
       !
-      WRITE(STAT%FHNDL,*) 'TheFile=', TheFile
-      FLUSH(STAT%FHNDL)
+      IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+         WRITE(STAT%FHNDL,*) 'TheFile=', TheFile
+         FLUSH(STAT%FHNDL)
+      END IF
       CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(TheFile))
       CALL GRIB_OPEN_FILE(ifile, TRIM(TheFile), 'r')
       call grib_count_in_file(ifile,n)
       allocate(igrib(n))
       !
-      WRITE(STAT%FHNDL,*) 'n=', n
-      FLUSH(STAT%FHNDL)
-      WRITE(STAT%FHNDL,*) 'eShortName=', eShortName
-      FLUSH(STAT%FHNDL)
-      WRITE(STAT%FHNDL,*) 'GRIB_TYPE=', GRIB_TYPE
-      FLUSH(STAT%FHNDL)
+      IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+         WRITE(STAT%FHNDL,*) 'n=', n
+         FLUSH(STAT%FHNDL)
+         WRITE(STAT%FHNDL,*) 'eShortName=', eShortName
+         FLUSH(STAT%FHNDL)
+         WRITE(STAT%FHNDL,*) 'GRIB_TYPE=', GRIB_TYPE
+         FLUSH(STAT%FHNDL)
+      END IF
       WeFound=.FALSE.;
       DO i=1,n
         call grib_new_from_file(ifile, igrib(i))
         call grib_get(igrib(i), 'shortName', eShortName)
-        WRITE(STAT%FHNDL,*) 'i=', i, ' WeFound=', WeFound
-        FLUSH(STAT%FHNDL)
+        IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+           WRITE(STAT%FHNDL,*) 'i=', i, ' WeFound=', WeFound
+           FLUSH(STAT%FHNDL)
+        END IF
         IF ((TRIM(eShortName) .eq. shortName).and.(WeFound .eqv. .FALSE.)) THEN
           IF (GRIB_TYPE .eq. 1) THEN
             CALL READ_GRID_INFO_FROM_GRIB_TYPE1(TheInfo, igrib(i))
@@ -2813,13 +2821,17 @@
         END IF
         call grib_release(igrib(i))
       END DO
-      WRITE(STAT%FHNDL,*) 'After loop'
-      FLUSH(STAT%FHNDL)
+      IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+         WRITE(STAT%FHNDL,*) 'After loop'
+         FLUSH(STAT%FHNDL)
+      END IF
       IF (WeFound .eqv. .FALSE.) THEN
         Print *, 'Failed to find the wind variable in the grib file'
         CALL WWM_ABORT("Wind has not been found in grib file")          
       END IF
-      WRITE(STAT%FHNDL, *) 'WeFound=', WeFound
+      IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+         WRITE(STAT%FHNDL, *) 'WeFound=', WeFound
+      END IF
       CALL GRIB_CLOSE_FILE(ifile)
       deallocate(igrib)
       END SUBROUTINE
