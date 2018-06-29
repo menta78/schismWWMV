@@ -112,7 +112,7 @@
 
 #ifdef TIMINGS
          CALL WAV_MY_WTIME(TIME7)
-         IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+         IF (PrintLOG) THEN
            WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----SIMPLE SPLITTING SCHEME-----'
            WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'DIFFRACTION                      ', TIME3-TIME2
            WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'SOURCES                          ', TIME7-TIME6
@@ -123,7 +123,7 @@
            WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
          END IF
 #endif
-         IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+         IF (PrintLOG) THEN
            WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE COMPUTE_SIMPLE_EXPLICIT'
            FLUSH(STAT%FHNDL)
          END IF
@@ -185,7 +185,7 @@
 !
 #ifdef TIMINGS
         CALL WAV_MY_WTIME(TIME6)
-        IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+        IF (PrintLOG) THEN
           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----IMPLICIT SPLITTING SCHEME-----'
           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'DIFFRACTION                      ', TIME2-TIME1
           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS ADVEKTION            ', TIME6-TIME5
@@ -279,7 +279,7 @@
         CALL WAV_MY_WTIME(TIME5)
 #endif
 #ifdef TIMINGS
-        IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+        IF (PrintLOG) THEN
           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----IMPLICIT -----'
           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'DIFFRACTION                      ', TIME2-TIME1
           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'CPU TIMINGS SOLVER               ', TIME5-TIME4

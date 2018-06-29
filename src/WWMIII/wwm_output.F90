@@ -7,14 +7,14 @@
       USE DATAPOOL
       IMPLICIT NONE
       REAL(rkind), INTENT(IN) :: TIME
-      IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+      IF (PrintLOG) THEN
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4,L5)') 'WRITING OUTPUT INTERNAL TIME', RTIME, MAIN%TMJD, OUT_HISTORY%TMJD-1.E-8, OUT_HISTORY%EMJD, (MAIN%TMJD .GE. OUT_HISTORY%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_HISTORY%EMJD)
       END IF
       !
       ! The history output
       !
       IF ( (MAIN%TMJD .GE. OUT_HISTORY%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_HISTORY%EMJD+1.E-8)) THEN
-        IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+        IF (PrintLOG) THEN
           WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'WRITING OUTPUT INTERNAL TIME', RTIME, MAIN%TMJD, OUT_HISTORY%TMJD-1.E-8, OUT_HISTORY%EMJD
         END IF
         CALL OUTPUT_HISTORY( TIME )
@@ -24,7 +24,7 @@
       ! The station output
       !
       IF ( (MAIN%TMJD .GE. OUT_STATION%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_STATION%EMJD+1.E-8)) THEN
-        IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+        IF (PrintLOG) THEN
           WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)')  'WRITING OUTPUT INTERNAL TIME', RTIME, MAIN%TMJD, OUT_STATION%TMJD-1.E-8, OUT_STATION%EMJD
         END IF
         CALL OUTPUT_STATION
@@ -35,7 +35,7 @@
       !
       IF (LHOTF) THEN
         IF ( (MAIN%TMJD .GE. HOTF%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. HOTF%EMJD+1.E-8)) THEN
-          IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+          IF (PrintLOG) THEN
             WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'WRITING HOTFILE INTERNAL TIME', RTIME
             FLUSH(STAT%FHNDL)
           END IF
@@ -47,7 +47,8 @@
       ! The wavewatch III exports
       !
       IF (LEXPORT_BOUC_MOD_OUT) THEN
-        IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+        IF (PrintLOG) THEN
+          WRITE(STAT%FHNDL,*) 'Before call to EXPORT_BOUC_WW3_FORMAT'
           FLUSH(STAT%FHNDL)
         END IF
         IF ( (MAIN%TMJD .GE. OUT_BOUC_WW3%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_BOUC_WW3%EMJD+1.E-8)) THEN
@@ -73,7 +74,7 @@
           OUT_WALV_WW3%TMJD = OUT_WALV_WW3%TMJD + OUT_WALV_WW3%DELT*SEC2DAY
         END IF
       END IF
-      IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+      IF (PrintLOG) THEN
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'After specific model output'
         FLUSH(STAT%FHNDL)
       END IF
@@ -88,7 +89,7 @@
 !        Print *, '2: OUT_BOUC % TMJD=', OUT_BOUC % TMJD, ' OUT_BOUC % EMJD=', OUT_BOUC%EMJD
         IF ( (MAIN%TMJD .GE. OUT_BOUC%TMJD-1.E-8) .AND. (MAIN%TMJD .LE. OUT_BOUC%EMJD+1.E-8)) THEN
 !          Print *, '3: OUT_BOUC % TMJD=', OUT_BOUC % TMJD
-          IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+          IF (PrintLOG) THEN
             WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'WRITING OUTPUT INTERNAL TIME', RTIME, MAIN%TMJD, OUT_BOUC%TMJD-1.E-8, OUT_BOUC%EMJD
           END IF
           CALL WRITE_NETCDF_BOUNDARY
@@ -100,7 +101,7 @@
         CALL WWM_ABORT('Need netcdf for the boundary output')
 #endif
       END IF
-      IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+      IF (PrintLOG) THEN
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'After boundary output'
         FLUSH(STAT%FHNDL)
       END IF
@@ -114,7 +115,7 @@
         CALL WWM_ABORT('Need netcdf for the nesting output')
 #endif
       END IF
-      IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+      IF (PrintLOG) THEN
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'After nesting operation'
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH GENERAL_OUTPUT'
         FLUSH(STAT%FHNDL)
@@ -136,7 +137,7 @@
         CALL WWM_ABORT('For History in netcdf, need netcdf!')
 #endif
       END IF
-      IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+      IF (PrintLOG) THEN
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY'
         FLUSH(STAT%FHNDL)
       END IF
@@ -150,7 +151,7 @@
       CHARACTER(LEN=15)   :: CTIME
       CALL MJD2CT(MAIN%TMJD, CTIME)
       IF ((DIMMODE .GT. 1) .and. LOUTS) THEN
-        IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+        IF (PrintLOG) THEN
           WRITE(STAT%FHNDL,*) 'WRITING STATION OUTPUT'
         END IF
         SELECT CASE (VAROUT_STATION%IOUTP)
@@ -168,7 +169,7 @@
             CALL WWM_ABORT('WRONG NO STATION OUTPUT SPECIFIED')
         END SELECT
       END IF
-      IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+      IF (PrintLOG) THEN
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY STATION'        
         FLUSH(STAT%FHNDL)
       END IF
@@ -289,13 +290,13 @@
              END IF
              IF (LCFL) OPEN(OUT%FHNDL+10, FILE  = 'cflcxy.bin'  , FORM = 'UNFORMATTED')
            END IF
-           IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+           IF (PrintLOG) THEN
              WRITE(STAT%FHNDL,*) 'sum(OUTT_GLOBAL(:,1))=', sum(OUTT_GLOBAL(:,1))
            END IF
            WRITE(OUT%FHNDL+1)  SNGL(TIME)
            !WRITE(OUT%FHNDL+1)  (SNGL(FORCE_GLOBAL(IP,1)), SNGL(FORCE_GLOBAL(IP,2)), SNGL(OUTT_GLOBAL(IP,1))  , IP = 1, NP_GLOBAL)
            WRITE(OUT%FHNDL+1)  (SNGL(OUTT_GLOBAL(IP,7)), SNGL(OUTT_GLOBAL(IP,8)), SNGL(OUTT_GLOBAL(IP,1))  , IP = 1, NP_GLOBAL)
-           CALL FLUSH(OUT%FHNDL+1)
+           FLUSH(OUT%FHNDL+1)
            WRITE(OUT%FHNDL+2)  SNGL(TIME)
            !WRITE(OUT%FHNDL+2)  (SNGL(CURR_GLOBAL(IP,1)), SNGL(CURR_GLOBAL(IP,2)), SNGL(ZETA_SETUP(IP)), IP = 1, NP_GLOBAL)
            WRITE(OUT%FHNDL+2)  (SNGL(CURR_GLOBAL(IP,1)), SNGL(CURR_GLOBAL(IP,2)), SNGL(CURR_GLOBAL(IP,3)), IP = 1, NP_GLOBAL)
@@ -412,11 +413,11 @@
          
 !$OMP END MASTER
 #endif
-         IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
-            WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH XFN_HISTORY'
-            FLUSH(STAT%FHNDL)
+         IF (PrintLOG) THEN
+           WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH XFN_HISTORY'
+           FLUSH(STAT%FHNDL)
          END IF
-        LINIT_OUTPUT=.FALSE.
+         LINIT_OUTPUT=.FALSE.
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -734,7 +735,7 @@
 #ifdef MPI_PARALL_GRID
       END IF
 #endif
-      IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+      IF (PrintLOG) THEN
         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_STE'
         FLUSH(STAT%FHNDL)
       END IF
@@ -1883,14 +1884,14 @@
           CALL MPI_SEND(eVect,3,rtype, 0, 190, comm, ierr)
         ENDIF
       ENDIF
-      IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+      IF (PrintLOG) THEN
         WRITE(STAT%FHNDL,110) TRIM(eStr), MinV, MaxV, AvgV
       END IF
 # else
       MinV=minval(OUTT)
       MaxV=maxval(OUTT)
       AvgV=sum(OUTT)/MNP
-      IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+      IF (PrintLOG) THEN
          WRITE(STAT%FHNDL,110) TRIM(eStr), MinV, MaxV, AvgV
       END IF
 # endif
@@ -2085,7 +2086,7 @@
           IsInitDone = .FALSE.
         ENDIF
       ENDIF
-      IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+      IF (PrintLOG) THEN
          WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH OUTPUT_HISTORY_NC'
          FLUSH(STAT%FHNDL)
       END IF

@@ -718,8 +718,7 @@
 !
 ! The termination criterions several can be chosen
 !
-!        Print *, 'LOGLEVEL=', LOGLEVEL
-        IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+        IF (PrintLOG) THEN
           WRITE(STAT%FHNDL,'(A10,4I10,E30.20,F10.5)') 'solver', nbiter, nbPassive, is_converged(1), np_total-is_converged(1), p_is_converged, pmin
         END IF
         !

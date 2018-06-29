@@ -497,7 +497,7 @@
       character(len=*), intent(in) :: string
       real(rkind) :: Lsum(NUMSIG,NUMDIR)
       CALL TOTAL_SUMMATION_AC(AC2, Lsum)
-      IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+      IF (PrintLOG) THEN
         WRITE(STAT%FHNDL,*) 'sum(AC2)=', sum(Lsum),' at step:', TRIM(string)
       END IF
       END SUBROUTINE

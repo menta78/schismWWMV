@@ -778,7 +778,9 @@
      &      ListBEGTC, ListDELTC, ListUNITC, ListENDTC,                 &
      &      ListIGRIDTYPE, ListFILEGRID, ListFILEBOUND,                 &
      &      ListPrefix, L_HOTFILE, L_BOUC_PARAM, L_BOUC_SPEC
-     
+!
+!    *** Estimate various timings ...
+!
          READ( INP%FHNDL,  NML = PROC)
          wwm_print_namelist(PROC)
          FLUSH(CHK%FHNDL)
@@ -797,6 +799,12 @@
            END IF
          END IF
 #endif
+         PrintLOG=.FALSE.
+         IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+           PrintLOG=.TRUE.
+         END IF
+
+         
          READ( INP%FHNDL,  NML = COUPL)
          wwm_print_namelist(COUPL)
          FLUSH(CHK%FHNDL)

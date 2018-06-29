@@ -96,6 +96,7 @@
 #endif
 
         integer :: LOGLEVEL = 2
+        LOGICAL :: PrintLOG
         
          INTEGER    :: NP_TOTAL, NE_TOTAL
 #ifdef MPI_PARALL_GRID
