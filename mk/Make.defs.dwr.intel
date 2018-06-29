@@ -44,21 +44,21 @@
 ENV = mrsblapp.intel
 
 FLS = ifort
-FCP = mpif90
+FCP = mpif90 -f90=ifort
 FLD = $(FCP)
 
 # MPI vserion (1 or 2) 
 PPFLAGS    := $(PPFLAGS) -DMPIVERSION=2 #-DUSE_WRAP
 
-FCPFLAGS = $(PPFLAGS) -O2 -Bstatic -assume byterecl  #MPI code
+FCPFLAGS = $(PPFLAGS) -cpp -O2 -Bstatic -assume byterecl  #MPI code
 FLDFLAGS = -O2 -limf -i-static #for final linking of object files
 
 #FCPFLAGS    = $(PPFLAGS) -O2 -ffree-line-length-0
 #FLDFLAGS    = -O2 #for final linking of object files
 
-MTSLIBS     = -L./ParMetis-3.1-Sep2010  -lparmetis -lmetis
-CDFLIBS     = ${NETCDF_LIB}  -lhdf5_hl ${HDF5_LIB} 
-CDFMOD      = ${NETCDF_INC} ${HDF5_INC}
+MTSLIBS     =  -L./ParMetis-3.1-Sep2010  -lparmetis -lmetis
+CDFLIBS     = -L$N${NETCDF_FORTRAN_DIR}/lib -lnetcdff -L${NETCDF_C_DIR}/lib -lnetcdf -L${HDF5_DIR}/lib -lhdf5_hl
+CDFMOD      = -I${NETCDF_FORTRAN_DIR}/include
 USE_OPEN64 := TRUE
 
 ################################################################################
@@ -66,7 +66,7 @@ USE_OPEN64 := TRUE
 # any extension you might want
 ################################################################################
 
-#EXEC   := othername.ex
+EXEC   := schism_v5.6
 
 
 ################################################################################
@@ -75,77 +75,22 @@ USE_OPEN64 := TRUE
 ################################################################################
 
 # -DSCHISM is always on and is defined elsewhere
+include ../mk/include_modules
 
-# Precip/evaporation model
-# PPFLAGS := $(PPFLAGS) -DPREC_EVAP 
-# EXEC := $(EXEC)_EVAP
+# Don't comment out the follow ifdef
+# Note: currently GOTM4 may give reasonable results only with k-omega
+ifdef USE_GOTM
+  #Following for GOTM4
+  #GTMMOD =  -I/sciclone/home04/yinglong/SELFE/svn/trunk/src/GOTM4.0/modules/PGF90/ #modules
+  #GTMLIBS = -L/sciclone/home04/yinglong/SELFE/svn/trunk/src/GOTM4.0/lib/PGF90/ -lturbulence_prod -lutil_prod
 
-# MM5 in heat exchange model
-# PPFLAGS := $(PPFLAGS) -DMM5
-# EXEC := $(EXEC)_MM5
-
-# TVD limiter options (set as one of these: SB, VL, OS, MM)
-# No default and so these 2 lines should NOT be commented out!
- TVD_LIM = SB
- EXEC := $(EXEC)_$(TVD_LIM)
-
-# GOTM turbulence closure model
-# GOTM = yes
-
-# Wind wave model WWM
-# WWM = yes
-# EXEC := $(EXEC)_WWM
-
-# Harmonic analysis tool
-# HA = yes
-# EXEC := $(EXEC)_HA
-
-#####Tracer models
-# Generic (user defined) tracer model
-# USE_GEN = yes
-# EXEC := $(EXEC)_GEN
-
-# Age
-# USE_AGE = yes
-# EXEC := $(EXEC)_AGE
-
-# Sediment model (3D)
-# USE_SED = yes
-# EXEC := $(EXEC)_SED
-
-# Ecological model (EcoSim)
-# USE_ECO = yes
-# EXEC := $(EXEC)_ECO
-
-# CE-QUAL-ICM
-# USE_ICM = yes
-# EXEC := $(EXEC)_ICM
-
-# Oil spill model (not active)
-# USE_OIL = yes
-# EXEC := $(EXEC)_OIL
-
-# Ecological model - NAPZD Spitz (unavailable)
-# USE_NAPZD = yes
-# EXEC := $(EXEC)_NAPZD
-
-# TIMOR (not active yet)
-# USE_TIMOR = yes
-# EXEC := $(EXEC)_TIMOR
-
-####End of tracer models
-
-# Sediment model (2D)
-# USE_SED2D = yes
-# EXEC := $(EXEC)_SED2D
-
-#########  Compiler configuration related flags
-
-# Include a timer
-# TIMER = yes
-
-# Debug mode (more time consuming)
-# USE_DEBUG = yes
+  #Following for GOTM3
+  GTMMOD =  -I/sciclone/home04/yinglong/gotm-3.2.5/modules/PGF90/ #modules
+  GTMLIBS = -L/sciclone/home04/yinglong/gotm-3.2.5/lib/PGF90/ -lturbulence_prod -lutil_prod
+else
+  GTMMOD =
+  GTMLIBS =
+endif
 
 
 ######### Specialty compiler flags and workarounds

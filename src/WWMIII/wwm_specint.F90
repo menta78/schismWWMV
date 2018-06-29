@@ -263,7 +263,7 @@
          ENDDO
 
 #ifdef DEBUG_SOURCE_TERM
-         WRITE(*,*) 'SOURCES_IMPLICIT', SUM(PHIA), SUM(DPHIDNA)
+         WRITE(DBG%FHNDL,*) 'SOURCES_IMPLICIT', SUM(PHIA), SUM(DPHIDNA)
 #endif
       END SUBROUTINE
 !**********************************************************************

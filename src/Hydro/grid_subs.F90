@@ -261,7 +261,7 @@ subroutine partition_hgrid
   endif !ics
 
   !Read in kbp from vgrid.in if ivcor=1 for partioning
-  !This will be remporary as it'll be recoputed once the final partioning is
+  !This will be temporary as it'll be recomputed once the final partioning is
   !done
   if(ivcor==1) then
     allocate(kbp(npa))
@@ -872,7 +872,7 @@ subroutine aquire_hgrid(full_aquire)
         endif
       enddo !j=1,nnegb(i)
       if(icount/=1) then
-        write(errmsg,*)'Illegal bnd node',i,isbnd_global(i)
+        write(errmsg,*)'Illegal bnd node',i,isbnd_global(i),icount
         call parallel_abort(errmsg)
       endif
     endif !bnd ball
@@ -2095,7 +2095,7 @@ subroutine aquire_hgrid(full_aquire)
   ! _global_ open bnd segment # if isbnd(1,ip)>0 (in this case isbnd(2,ip) may also be positive,
   !     even though isbnd(2,ip) may be outside the aug. domain); in this case, isbnd(-2:-1,ip) 
   !     are global index for the open bnd node;
-  ! _globa_ land bnd if isbnd(1,ip)=-1 (not on any open bnd);
+  ! _global_ land bnd if isbnd(1,ip)=-1 (not on any open bnd);
   ! isbnd(1,ip)=0 if ip is internal node
   if(allocated(isbnd)) deallocate(isbnd); allocate(isbnd(-2:2,npa),stat=stat);
   if(stat/=0) call parallel_abort('AQUIRE_HGRID: isbnd allocation failure')

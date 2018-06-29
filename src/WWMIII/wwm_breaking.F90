@@ -72,7 +72,7 @@
       REAL(rkind) :: SBRD, WS, SURFA0, SURFA1, COEFF_B, SURFSEL
 
       INTEGER :: IS, ID
-      REAL(rkind) :: BJALFA, SDBC1, CBJ, TM01, TM02, FMEANloc
+      REAL(rkind) :: BJALFA, SDBC1, CBJ, TM01, TM02, FMEANloc, SQPI, HRMS, FAK
 !
 !     Compute breaking fraction 
 !
@@ -103,15 +103,14 @@
 !     Transform to monochromatic waves 
 !
       IF (LMONO_IN) HMAX(IP) = HMAX(IP) * SQRT(TWO)
-
 !
 !     Compute beta ratio 
 ! 
       IF ( (HMAX(IP) .GT. VERYSMALL) .AND. (ETOT .GT. VERYSMALL) ) THEN
-        BETA = SQRT(8. * ETOT / (HMAX(IP)**2) )
+        BETA  = SQRT(8.*ETOT) / HMAX(IP)
         BETA2 = BETA**2
       ELSE
-        BETA = ZERO 
+        BETA  = ZERO 
         BETA2 = ZERO 
       END IF
 
@@ -180,6 +179,20 @@
           SURFA0 = ZERO
           SURFA1 = ZERO
         ENDIF
+      ELSEIF (IBREAK == 4) THEN ! Janssen & Battjes ... 
+!        IF ( BETA2 .GT. SMALL  .AND. MyABS(BETA2 - QB) .GT. SMALL ) THEN
+         IF (ETOT .GT. THR) THEN
+           HRMS    = SQRT(8*ETOT) 
+           SQPI    = THREE*SQRT(PI)
+           FAK     = (ONE+FOUR/SQPI*(BETA*BETA2+1.5*BETA)*exp(-BETA2)-ERF(BETA))
+           SURFA0  = -ALPBJ*SQPI/16.*SME/PI2*HRMS**3/DEP(IP)/ETOT
+         ELSE
+           SURFA0  = ZERO 
+         ENDIF
+!        ELSE
+!          SURFA0 = ZERO
+ !       END IF
+        SURFA1 = SURFA0
       ENDIF
 !
 #ifdef DEBUG
@@ -196,6 +209,8 @@
 #endif
 !
 !     Copy Right hand side and diagonal term 
+
+      !IF (ABS(SURFA0) .GT. 0. .AND. BETA .GE. 0.1) WRITE(*,'(4F20.10)') SURFA0, SURFA1, BETA, QB
 !
       DO IS = 1, NUMSIG
         DO ID = 1, NUMDIR

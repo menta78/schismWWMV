@@ -3511,7 +3511,7 @@
 !===============================================================================
       subroutine weno1_coef
       use schism_glbl, only:wts1,wmat1,ne,isten1,nweno1,xctr,yctr,xqp,yqp,mnweno1 &
-      &,rkind, elside,i34,iremove1,nremove1,ipre,ics,eframe,zctr,zcj
+      &,rkind, elside,i34,iremove1,nremove1,ipre,ics,eframe,zctr,zcj,nquad
       use schism_msgp
       implicit none
     
@@ -3569,7 +3569,7 @@
         if(istat/=0) call parallel_abort('failed in alloc. wts1')
       endif
       if (.not. allocated(wmat1)) then
-        allocate(wmat1(3,mnweno1,2,4,ne),stat=istat)
+        allocate(wmat1(3,mnweno1,nquad,4,ne),stat=istat)
         if(istat/=0) call parallel_abort('failed in alloc. wmat1')
       endif
     
@@ -3662,7 +3662,7 @@
            
           do j=1,i34(ie) !for three sides
             jsj=elside(j,ie)
-            do k=1,2 ! for two quadrature points
+            do k=1,nquad ! for 1 or 2 quadrature points
               p1(1)=1.0
               if (ics==1) then
                 p1(2)=xqp(k,jsj) - xctr(ie) 
@@ -3694,7 +3694,7 @@
       subroutine weno2_coef
       use schism_glbl, only:wts2,wmat2,ne,isten2,nweno2,xctr,yctr,xqp,yqp,mnweno2 &
       &,rkind,elside,i34,fwts2,xnd,ynd,elnode,area,errmsg,iremove2,nremove2,ipre,ics &
-      &,eframe,znd,zctr,zcj
+      &,eframe,znd,zctr,zcj,nquad
       use schism_msgp
       implicit none
 
@@ -3735,7 +3735,7 @@
       !enddo
       
       !-------compute weno p2 coefficients----------------------------
-      allocate(wts2(6,5,mnweno2,ne),fwts2(5,ne),wmat2(6,mnweno2,2,4,ne),stat=istat)
+      allocate(wts2(6,5,mnweno2,ne),fwts2(5,ne),wmat2(6,mnweno2,nquad,4,ne),stat=istat)
       if(istat/=0) call parallel_abort('failed in alloc. nweno2')
 
       !debug>
@@ -3837,7 +3837,7 @@
           do j=1,i34(ie) !for 3 sides
             jsj=elside(j,ie)
             p2(1)=1.0
-            do k=1,2 !for two quadrature pts
+            do k=1,nquad !for 1 or 2 quadrature pts
               if (ics==1) then
                 p2(2)=xqp(k,jsj)-xctr(ie) 
                 p2(3)=yqp(k,jsj)-yctr(ie)
@@ -3976,7 +3976,7 @@
       !calculate quadrature points coordinates
 !===============================================================================
       subroutine quadpts !weno
-      use schism_glbl, only: xqp,yqp,xnd,ynd,isidenode,rkind,ns
+      use schism_glbl, only: xqp,yqp,xnd,ynd,isidenode,rkind,ns,nquad
       use schism_msgp
       implicit none
       
@@ -3993,12 +3993,18 @@
       endif
       
       xqp=0.0;yqp=0.0
-      qrat(1)=0.5d0-sqrt(3.0d0)/6.0d0
-      qrat(2)=0.5d0+sqrt(3.0d0)/6.0d0 
+
+      if (nquad==1) then
+        qrat(1)=0.5d0
+        qrat(2)=-99999d0
+      elseif (nquad==2) then
+        qrat(1)=0.5d0-sqrt(3.0d0)/6.0d0
+        qrat(2)=0.5d0+sqrt(3.0d0)/6.0d0 
+      endif
       do j=1,ns
         n1=isidenode(1,j)
         n2=isidenode(2,j)
-        do i=1,2 !two quadrature points on each side
+        do i=1,nquad !two quadrature points on each side
           xqp(i,j)=xnd(n1)+qrat(i)*(xnd(n2)-xnd(n1))
           yqp(i,j)=ynd(n1)+qrat(i)*(ynd(n2)-ynd(n1))
         enddo

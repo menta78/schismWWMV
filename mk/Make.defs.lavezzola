@@ -72,77 +72,21 @@ USE_OPEN64 := TRUE
 
 # -DSCHISM is always on and is defined elsewhere
 
-# Precip/evaporation model
-# PPFLAGS := $(PPFLAGS) -DPREC_EVAP 
-# EXEC := $(EXEC)_EVAP
+include ../mk/include_modules
+# Don't comment out the follow ifdef
+# Note: currently GOTM4 may give reasonable results only with k-omega
+ifdef USE_GOTM
+  #Following for GOTM4
+  #GTMMOD =  -I/sciclone/home04/yinglong/SELFE/svn/trunk/src/GOTM4.0/modules/PGF90/ #modules
+  #GTMLIBS = -L/sciclone/home04/yinglong/SELFE/svn/trunk/src/GOTM4.0/lib/PGF90/ -lturbulence_prod -lutil_prod
 
-# MM5 in heat exchange model
-# PPFLAGS := $(PPFLAGS) -DMM5
-# EXEC := $(EXEC)_MM5
-
-# TVD limiter options (set as one of these: SB, VL, OS, MM)
-# No default and so these 2 lines should NOT be commented out!
- TVD_LIM = SB
- EXEC := $(EXEC)_$(TVD_LIM)
-
-# GOTM turbulence closure model
-# GOTM = yes
-
-# Wind wave model WWM
-# WWM = yes
-# EXEC := $(EXEC)_WWM
-
-# Harmonic analysis tool
-# HA = yes
-# EXEC := $(EXEC)_HA
-
-#####Tracer models
-# Generic (user defined) tracer model
-# USE_GEN = yes
-# EXEC := $(EXEC)_GEN
-
-# Age
-# USE_AGE = yes
-# EXEC := $(EXEC)_AGE
-
-# Sediment model (3D)
-# USE_SED = yes
-# EXEC := $(EXEC)_SED
-
-# Ecological model (EcoSim)
-# USE_ECO = yes
-# EXEC := $(EXEC)_ECO
-
-# CE-QUAL-ICM
-# USE_ICM = yes
-# EXEC := $(EXEC)_ICM
-
-# Oil spill model (not active)
-# USE_OIL = yes
-# EXEC := $(EXEC)_OIL
-
-# Ecological model - NAPZD Spitz (unavailable)
-# USE_NAPZD = yes
-# EXEC := $(EXEC)_NAPZD
-
-# TIMOR (not active yet)
-# USE_TIMOR = yes
-# EXEC := $(EXEC)_TIMOR
-
-####End of tracer models
-
-# Sediment model (2D)
-# USE_SED2D = yes
-# EXEC := $(EXEC)_SED2D
-
-#########  Compiler configuration related flags
-
-# Include a timer
-# TIMER = yes
-
-# Debug mode (more time consuming)
-# USE_DEBUG = yes
-
+  #Following for GOTM3
+  GTMMOD =  -I/sciclone/home04/yinglong/gotm-3.2.5/modules/PGF90/ #modules
+  GTMLIBS = -L/sciclone/home04/yinglong/gotm-3.2.5/lib/PGF90/ -lturbulence_prod -lutil_prod
+else
+  GTMMOD =
+  GTMLIBS =
+endif
 
 ######### Specialty compiler flags and workarounds
 # Add -DNO_TR_15581 like below for allocatable array problem in sflux_subs.F90

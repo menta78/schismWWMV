@@ -34,6 +34,11 @@
 ENV = SIRIUS
 
 ################################################################################
+# Alternate executable name if you do not want the default. 
+################################################################################
+EXEC   := pschism_$(ENV)
+
+################################################################################
 # Environment 
 ################################################################################
 
@@ -55,22 +60,7 @@ CDFMOD = -I/share/apps/netcdf/include/ # modules for netcdf
 ################################################################################
 
 # -DSCHISM is always on and is defined elsewhere
-
-# Precip/evaporation model
-# USE_PREC_EVAP = yes
-# PPFLAGS := $(PPFLAGS) -DPREC_EVAP 
-
-# MM5 in heat exchange model
-# USE_MM5 = yes
-# PPFLAGS := $(PPFLAGS) -DMM5
-
-# TVD limiter options (set as one of these: SB, VL, OS, MM)
-# No default and so these 2 lines should NOT be commented out!
- TVD_LIM = SB
- EXEC := $(EXEC)_$(TVD_LIM)
-
-# GOTM turbulence closure model
-# USE_GOTM = yes
+include ../mk/include_modules
 
 # Don't comment out the follow ifdef
 ifdef USE_GOTM
@@ -80,49 +70,6 @@ else
    GTMMOD =
    GTMLIBS =
 endif
-
-# Wind wave model WWM
-# USE_WWM = yes
-
-# TIMOR 
-# USE_TIMOR = yes
-
-# Harmonic analysis tool
-# USE_HA = yes
-
-##### Select only _one_ model from below
-
-# Ecological model - NAPZD Spitz (internal use only)
-# USE_NAPZD = yes
-
-# Or:
-# Ecological model (EcoSim)
-# USE_ECO = yes
-
-# Or:
-# CE-QUAL-ICM
-# USE_ICM = yes
-
-# Or:
-# Sediment model 
-# USE_SED = yes
-
-#Or:
-# Sediment model (2D)
-# USE_SED2D = yes
-
-# Or:
-# Oil spill model (not active)
-# USE_OIL = yes
-
-#########  Compiler configuration related flags
-
-# Include a timer
-# USE_TIMER = yes
-
-# Debug mode (more time consuming)
-# USE_DEBUG = yes
-
 
 ######### Specialty compiler flags and workarounds
 
@@ -136,9 +83,4 @@ USE_OPEN64 = no
 # PPFLAGS := $(PPFLAGS) -DUSE_WRAP 
 
 
-
-################################################################################
-# Alternate executable name if you do not want the default. 
-################################################################################
-EXEC   := pschism_$(ENV)_ADC
 

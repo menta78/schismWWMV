@@ -78,29 +78,29 @@ module schism_glbl
   integer,parameter :: natrm=11 !# of _available_ tracer models at the moment (including T,S)
   !Parameters from param.in
   integer,save :: ipre,indvel,imm,ihot,ics,iwbl,iharind,nws,iwindoff, &
-                  &ibc,nrampbc,nrampwind,nramp,nramp_ss,ibdef,ihorcon,nstep_wwm,icou_elfe_wwm, &
+                  &ibc,nrampbc,nrampwind,nrampwafo,nramp,nramp_ss,ibdef,ihorcon,nstep_wwm,icou_elfe_wwm, &
                   &iwind_form,irec_nu,itur,ihhat,inu_elev, &
                   &inu_uv,ibcc_mean,iflux,iout_sta,nspool_sta,nhot,nhot_write, &
-                  &moitn0,mxitn0,nchi,ibtrack_test,nramp_elev,islip,ibtp,inunfl, &
-                  &inv_atm_bnd,ieos_type,ieos_pres,iupwind_mom,inter_mom,ishapiro,ihydlg,isav, &
+                  &moitn0,mxitn0,nchi,ibtrack_test,nramp_elev,islip,ibtp,inunfl,shorewafo, &
+                  &inv_atm_bnd,ieos_type,ieos_pres,iupwind_mom,inter_mom,ishapiro,isav, &
                   &nstep_ice
   integer,save :: ntrs(natrm)
 
-  real(rkind),save :: dt,h0,drampbc,drampwind,dramp,dramp_ss,wtiminc,npstime,npstiminc, &
+  real(rkind),save :: dt,h0,drampbc,drampwind,drampwafo,dramp,dramp_ss,wtiminc,npstime,npstiminc, &
                       &surf_time1,surf_time2,time_nu,step_nu,time_nu_tr,step_nu_tr,dzb_min,vdmax_pp1, &
                       &vdmin_pp1,tdmin_pp1,vdmax_pp2,vdmin_pp2,tdmin_pp2, &
                       &h1_pp,h2_pp,dtb_min,dtb_max,thetai,theta2,rtol0, &
                       &vnh1,vnh2,vnf1,vnf2,rnday,btrack_nudge,hmin_man, &
                       &prmsl_ref,hmin_radstress,dzb_decay,eos_a,eos_b,eps1_tvd_imp,eps2_tvd_imp, &
                       &xlsc0,rearth_pole,rearth_eq,hvis_coef0,disch_coef(10),hw_depth,hw_ratio, &
-                      &slr_rate,rho0,shw,sav_cd
+                      &slr_rate,rho0,shw,sav_cd,gen_wsett,turbinj
 
   ! Misc. variables shared between routines
   integer,save :: nz_r,ieqstate,kr_co, &
                   &ihconsv,isconsv,ihdif,ntracers, & 
                   &ihydraulics,irouse_test,iwbl_itmax,nettype,nfltype, &
                   &ntetype,nsatype,ntrtype1(natrm),nettype2,nnode_et,nfltype2,nnode_fl, &
-                  &ntetype2,nnode_te,nsatype2,nnode_sa,nnode_tr2(natrm),inu_tr(natrm), &
+                  &ntetype2,nsatype2,nnode_tr2(natrm),inu_tr(natrm), &
                   &nvar_sta,nout_sta,ntip,nbfr,itr_met,if_source,mass_source,nsources,nsinks, &
                   &max_flreg,irange_tr(2,natrm)
 
@@ -120,7 +120,13 @@ module schism_glbl
 !  integer, parameter :: mirec=1109000000 !max. record # to prevent output ~> 4GB
 !  character(len=11), parameter :: fileopenformat='unformatted'
 !  integer,save :: iwrite
-  character(len=48),save :: start_time,version,data_format='DataFormat v5.0'
+!  character(len=48),save :: start_time,version,data_format='DataFormat v5.0'
+  integer,save        :: start_year  = -9999
+  integer,save        :: start_month = -9999
+  integer,save        :: start_day   = -9999
+  real(rkind),save :: start_hour  = -9999.0
+  real(rkind),save :: utc_start   = -9999.0
+
   character(len=12),save :: ifile_char
   character(len=48),save,dimension(mnout) :: outfile,variable_nm,variable_dim
   integer,save :: ihfskip,nrec,nspool,ifile,ifile_len, &
@@ -133,6 +139,7 @@ module schism_glbl
   character(len=16),save :: a_16
   character(len= 8),save :: a_8
   character(len= 4),save :: a_4
+  integer,save :: ncid_nu(natrm),ncid_tr3D(natrm),ncid_elev2D,ncid_uv3D
         
   ! ADT for global-to-local linked-lists
   type :: llist_type
@@ -402,7 +409,7 @@ module schism_glbl
   real(rkind),save,allocatable :: dfv(:,:) !viscosity
   integer,save,allocatable :: itier_nd(:,:) !multi-tier neighborhood; used in Kriging
   real(rkind),save,allocatable :: akrmat_nd(:,:,:)         ! Kriging matrix
-  real(rkind),save,allocatable :: albedo(:)         ! albedo
+  real(rkind),save,allocatable :: albedo(:)         ! albedo(npa)
   real(rkind),save,allocatable :: z_r(:)         ! z-cor. used in ts.ic
   real(rkind),save,allocatable :: tem1(:)         ! T profile in ts.ic
   real(rkind),save,allocatable :: sal1(:)         ! S profile in ts.ic
@@ -410,8 +417,8 @@ module schism_glbl
   real(rkind),save,allocatable :: rho_mean(:,:)         ! mean density
   real(rkind),save,allocatable :: Cdp(:)         ! drag at node
   real(rkind),save,allocatable :: rmanning(:)         ! Manning's n at node
-  real(rkind),save,allocatable :: windx(:),windy(:) !wind vector
-  real(rkind),save,allocatable :: sdbt(:,:,:),shapiro(:), &
+  real(rkind),save,allocatable,target :: windx(:),windy(:) !wind vector
+  real(rkind),save,allocatable,target :: sdbt(:,:,:),shapiro(:), &
                                   &windx1(:),windy1(:),windx2(:),windy2(:), &
                                   &surf_t1(:),surf_t2(:),surf_t(:), & !YC
                                   !WARNING: airt[12] are in C not K. The
@@ -453,6 +460,9 @@ module schism_glbl
   real(rkind),save :: epsilon1 !coefficient for 2nd order weno smoother
   real(rkind),save :: epsilon2 !1st coefficient for 3rd order weno smoother
   real(rkind),save :: epsilon3 !2nd coefficient for 3rd order weno smoother
+  integer, save :: nquad !number of quad points used for 3rd order weno
+  !levels of time discretization, mainly for testing purposes
+  integer, save :: ntd_weno !(1) one-level, reduces to Euler; (2) not implemented yet; (3) 3rd-order Runge-Kutta temporal discretization (Shu and Osher, 1988)
   !Elad filter
   integer, save :: ielad_weno !switch for elad filter, not used at the moment
   real(rkind),save :: small_elad !criteria for ELAD, not used at the moment
@@ -475,7 +485,7 @@ module schism_glbl
   integer,save,allocatable :: isten2(:,:,:)   
   !polynomial coefficient at quadrature points (3 poly. coeffcients, mnweno2 ploynomials, 2 quadrature points, 3 sides, ne elem.)
   real(rkind),save,allocatable :: wmat2(:,:,:,:,:)  
-  !coefficient for calculating final p2 polynomial weight (6 directions,5 compoents,mnweno2 polynomials,ne)
+  !coefficient for calculating final p2 polynomial weight (6 directions,5 components,mnweno2 polynomials,ne)
   real(rkind),save,allocatable :: wts2(:,:,:,:) 
   !coefficients used in smoother calculation (3,ne)
   real(rkind),save,allocatable :: fwts2(:,:) 
@@ -507,24 +517,23 @@ module schism_glbl
   !@whole levels
   !IMPORTANT: there are currently 3 options for imposing wsett; remember to set
   !iwsett together with wsett!
-  !1) iwsett(itrc)=0: wrap into body force (may cause stability problem)
-  !2) iwsett(itrc)=1 (like sediment): the surface & bottom b.c. has w_s terms (Robin
-  !             type) so tracer settles out of bottom. wsett(itrc) must NOT 
-  !             be varying along vertical! (itrc is the tracer index)
-  !3) iwsett(itrc)=2: variable settling (or swimming) vel along vertical. MUST set
-  !             wsett(:,nvrt,:)=0, and also pay attention to bottom value as it impacts
-  !             conservation statement! The surface & bottom b.c. is no flux.
-  !             The term is treated implicitly.
+  !1) iwsett(itrc)=-1 (or don't set wsett): wrap into body force (may cause stability problem). Remember to reset wsett=0 if you use it.
+  !2) iwsett(itrc)=1 (like sediment): the bottom b.c. has w_s terms (Robin
+  !             type) so tracer settles out of bottom. wsett should be >0 in
+  !             this case.
+  !3) iwsett(itrc)=0: variable settling (or swimming) vel along vertical. Code
+  !             will assume wsett(:,kbe|nvrt,:)=0 to accumulate mass there.
   real(rkind),save,allocatable :: wsett(:,:,:) 
   integer,save,allocatable :: iwsett(:) !iwsett(ntracers)
 
   !Declarations for other modules
 ! WWM
-!#ifdef  USE_WWM
-  real(rkind),save,allocatable :: wwave_force(:,:,:),stokes_vel(:,:,:),jpress(:),sbr(:,:),sbf(:,:)
-  real,save,allocatable :: out_wwm(:,:),out_wwm_windpar(:,:)
-!#endif
+!#ifdef USE_WWM
   integer,save :: msc2,mdc2
+  real(rkind),save,allocatable :: wwave_force(:,:,:), jpress(:), sbr(:,:), sbf(:,:)
+  real(rkind),save,allocatable :: stokes_vel(:,:,:), stokes_w_nd(:,:), stokes_vel_sd(:,:,:) 
+  real,save,allocatable :: out_wwm(:,:), out_wwm_windpar(:,:)
+!#endif
 
 ! TIMOR
 !#ifdef USE_TIMOR

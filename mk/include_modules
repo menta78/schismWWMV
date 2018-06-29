@@ -9,6 +9,7 @@
 # EXEC := $(EXEC)_EVAP
 
 # nws=5,6 option using WRF wind (simpler_wind.F90)
+# This option is not officially supported; use at your own risk
 # USE_SIMPLE_WIND = yes
 # EXEC := $(EXEC)_SIMPLE_WIND
 
@@ -70,7 +71,15 @@
 # USE_TIMOR = yes
 # EXEC := $(EXEC)_TIMOR
 
+# FABM
+#  USE_FABM = yes
+#  EXEC := $(EXEC)_FABM
+
 ####End of tracer models
+
+# Ice module
+# USE_ICE = yes
+# EXEC := $(EXEC)_ICE
 
 # Sediment model (2D)
 # USE_SED2D = yes
