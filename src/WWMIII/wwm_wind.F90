@@ -2587,7 +2587,7 @@
       USE GRIB_API
       IMPLICIT NONE
       REAL(rkind), intent(out) :: eTimeOut
-      CHARACTER(len=140), intent(in) :: eFile
+      CHARACTER(len=281), intent(in) :: eFile
       LOGICAL, intent(in) :: STEPRANGE_IN
       integer ifile, i, n
       INTEGER, SAVE :: nbCall = 0
@@ -2868,7 +2868,7 @@
       USE GRIB_API
       IMPLICIT NONE
       type(FD_FORCING_GRID), intent(out) :: TheInfo
-      character(len=140), intent(in) :: TheFile
+      character(len=281), intent(in) :: TheFile
       character(len=20), intent(in) :: shortName
       integer, intent(in) :: GRIB_TYPE
       !

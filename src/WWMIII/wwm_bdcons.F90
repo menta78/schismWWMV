@@ -325,7 +325,7 @@
           PKPER = ZERO 
         ENDIF 
       ELSE IF (ITPER.GE.100) THEN
-        WRITE (STAT%FHNDL,*) 'No convergence calculating the spectrum'
+        WRITE(STAT%FHNDL,*) 'No convergence calculating the spectrum'
         FLUSH(STAT%FHNDL)
       ENDIF
 
@@ -451,19 +451,21 @@
           TPEAK = 0.0
         END IF
 
-        WRITE (STAT%FHNDL,'("+TRACE...",A)') 'GIVEN BOUNDARY SPECTRA AND RECALCULATED WAVE PARAMETERS'
-        WRITE (STAT%FHNDL,'("+TRACE...",A)') 'THE DIFFERENCE IS MOSTLY DUE TO COARSE RESOLUTION IN SPECTRAL SPACE'
-        WRITE (STAT%FHNDL,*) 'GIVEN     ', 'HS =', SPPAR(1)  
-        WRITE (STAT%FHNDL,*) 'GIVEN     ', 'DM =', SPPAR(3)
-        WRITE (STAT%FHNDL,*) 'GIVEN     ', 'DSPR =', SPPAR(4)
-        WRITE (STAT%FHNDL,*) 'GIVEN     ', 'TM or TP', SPPAR(2)
-        WRITE (STAT%FHNDL,*) 'SIMUL     ', 'HS =', 4. * SQRT(ETOT)
-        WRITE (STAT%FHNDL,*) 'SIMUL     ', 'DM =',       DM 
-        WRITE (STAT%FHNDL,*) 'SIMUL     ', 'DSPR =', DSPR
-        WRITE (STAT%FHNDL,*) 'SIMUL     ', 'TM=', TM1, 'TPEAK=', TPEAK
-        WRITE (STAT%FHNDL,*) 'TOT AC   =', SUM(WALOC)
-        WRITE (STAT%FHNDL,*) SPPAR
-        FLUSH(STAT%FHNDL)
+        IF (PrintLOG) THEN
+          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'GIVEN BOUNDARY SPECTRA AND RECALCULATED WAVE PARAMETERS'
+          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'THE DIFFERENCE IS MOSTLY DUE TO COARSE RESOLUTION IN SPECTRAL SPACE'
+          WRITE(STAT%FHNDL,*) 'GIVEN     ', 'HS =', SPPAR(1)  
+          WRITE(STAT%FHNDL,*) 'GIVEN     ', 'DM =', SPPAR(3)
+          WRITE(STAT%FHNDL,*) 'GIVEN     ', 'DSPR =', SPPAR(4)
+          WRITE(STAT%FHNDL,*) 'GIVEN     ', 'TM or TP', SPPAR(2)
+          WRITE(STAT%FHNDL,*) 'SIMUL     ', 'HS =', 4. * SQRT(ETOT)
+          WRITE(STAT%FHNDL,*) 'SIMUL     ', 'DM =',       DM 
+          WRITE(STAT%FHNDL,*) 'SIMUL     ', 'DSPR =', DSPR
+          WRITE(STAT%FHNDL,*) 'SIMUL     ', 'TM=', TM1, 'TPEAK=', TPEAK
+          WRITE(STAT%FHNDL,*) 'TOT AC   =', SUM(WALOC)
+          WRITE(STAT%FHNDL,*) SPPAR
+          FLUSH(STAT%FHNDL)
+        END IF
       END IF
       END SUBROUTINE
 !**********************************************************************
@@ -511,14 +513,18 @@
         EAD = 0.5*(INSPE(IS) + INSPE(IS-1))*DS
         ETOT = ETOT + EAD
       END DO
-      WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - 1', 4.0*SQRT(ETOT)
+      IF (PrintLOG) THEN
+         WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - 1', 4.0*SQRT(ETOT)
+      END IF
       WALOC = 0.
       CALL INTERLIN (WBNUMSIG, NUMSIG, INSPF, SPSIG, INSPE, WALOC(:,1))
       DO IS = 1, NUMSIG
         IF (SPSIG(IS) .GT. INSPF(WBNUMSIG)) THEN
-           WRITE (STAT%FHNDL,*) 'Discrete Frequency is bigger then measured set FRMAX =', INSPF(WBNUMSIG)/PI2
-           WRITE (STAT%FHNDL,*) 'Setting all Action above the max. measured freq. zero'
-           WALOC(IS,1) = 0.0
+          IF (PrintLOG) THEN
+            WRITE(STAT%FHNDL,*) 'Discrete Frequency is bigger then measured set FRMAX =', INSPF(WBNUMSIG)/PI2
+            WRITE(STAT%FHNDL,*) 'Setting all Action above the max. measured freq. zero'
+          END IF
+          WALOC(IS,1) = 0.0
         END IF
       END DO
       ETOT = 0.0
@@ -527,7 +533,9 @@
         EAD  = 0.5*(WALOC(IS,1) + WALOC(IS-1,1))*DS
         ETOT = ETOT + EAD
       END DO
-      WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - INTERPOLATED', 4.0*SQRT(ETOT)
+      IF (PrintLOG) THEN
+        WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - INTERPOLATED', 4.0*SQRT(ETOT)
+      END IF
 !
 !        Convert to Wave Action if nessasary
 !
@@ -542,7 +550,9 @@
         EAD  = 0.5 * (SPSIG(IS)*WALOC(IS,1)+SPSIG(IS-1)*WALOC(IS-1,1))*DS
         ETOT = ETOT + EAD
       END DO
-      WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - WAVE ACTION', 4.0*SQRT(ETOT)
+      IF (PrintLOG) THEN
+        WRITE(STAT%FHNDL,*) 'HS - INPUTSPECTRA - WAVE ACTION', 4.0*SQRT(ETOT)
+      END IF
 !
 !        Convert from nautical to cartesian direction if nessasary and from deg2rad
 !
@@ -650,7 +660,9 @@
         END DO
       END DO
 
-      WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - AFTER 2D', 4.0*SQRT(ETOT)
+      IF (PrintLOG) THEN
+         WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - AFTER 2D', 4.0*SQRT(ETOT)
+      END IF
 
       ETOT = 0.
       EFTOT = 0.
@@ -713,8 +725,10 @@
         END DO
       END DO
 
-      WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - AFTER 2D', 4.0*SQRT(ETOT)
-      WRITE (STAT%FHNDL,*) 'TM01, TM02 & HS', TM1, TM2, 4.0*SQRT(ETOT)
+      IF (PrintLOG) THEN
+         WRITE (STAT%FHNDL,*) 'HS - INPUTSPECTRA - AFTER 2D', 4.0*SQRT(ETOT)
+         WRITE (STAT%FHNDL,*) 'TM01, TM02 & HS', TM1, TM2, 4.0*SQRT(ETOT)
+      END IF
 
       !FLUSH(DBG%FHNDL)
       !FLUSH(STAT%FHNDL)
@@ -839,7 +853,9 @@
         END IF
       END IF
       IF (LBCWA) THEN ! Parametric Wave Boundary is prescribed
-        WRITE(STAT%FHNDL,'("+TRACE...",A)') 'Parametric Wave Boundary Condition is prescribed'
+        IF (PrintLOG) THEN
+          WRITE(STAT%FHNDL,'("+TRACE...",A)') 'Parametric Wave Boundary Condition is prescribed'
+        END IF
         IF (LINHOM) THEN ! Inhomogenous in space
           IF (LBCSE) THEN ! Unsteady in time
             SPPARM = 0.
@@ -950,11 +966,15 @@
           END IF
         ELSE ! The boundary conditions is homogeneous in space !
           IF (LBSP1D) THEN ! 1-D Spectra is prescribed
-            WRITE(STAT%FHNDL,'("+TRACE...",A)') '1d Spectra is given as Wave Boundary Condition'
+            IF (PrintLOG) THEN
+              WRITE(STAT%FHNDL,'("+TRACE...",A)') '1d Spectra is given as Wave Boundary Condition'
+            END IF
             CALL READSPEC1D(LFIRSTREAD)
             CALL SPECTRUM_INT(WBACOUT(:,:,1))
           ELSE IF (LBSP2D) THEN ! 2-D Spectra is prescribed
-            WRITE(STAT%FHNDL,'("+TRACE...",A)') '2d Spectra is given as Wave Boundary Condition'
+            IF (PrintLOG) THEN
+              WRITE(STAT%FHNDL,'("+TRACE...",A)') '2d Spectra is given as Wave Boundary Condition'
+            END IF
             IF (IBOUNDFORMAT == 1) THEN
               CALL READSPEC2D(LFIRSTREAD)
             ELSE IF (IBOUNDFORMAT == 2) THEN !KM
@@ -1086,6 +1106,7 @@
       integer, dimension(nf90_max_var_dims) :: dimIDs
       INTEGER MAX_NDT_BND_FILE, iProc, eSize
       INTEGER iVect(4)
+      character(len=281) FULL_FILE
       REAL(rkind) rVect(4)
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_BOUND .or. (myrank .eq. 0)) THEN
@@ -1104,9 +1125,11 @@
 !        WRITE(STAT%FHNDL,*) 'NUM_NETCDF_FILES_BND=', NUM_NETCDF_FILES_BND
 
         NUM_NETCDF_FILES_BND = NUM_NETCDF_FILES_BND / NUM_NETCDF_VAR_TYPES
-        WRITE(STAT%FHNDL,*) 'NUM_NETCDF_FILES_BND=', NUM_NETCDF_FILES_BND
-        WRITE(STAT%FHNDL,*) 'NUM_NETCDF_VAR_TYPES=', NUM_NETCDF_VAR_TYPES
-        ALLOCATE(NETCDF_FILE_NAMES_BND(NUM_NETCDF_FILES_BND,NUM_NETCDF_VAR_TYPES), stat=istat)
+        IF (PrintLOG) THEN
+          WRITE(STAT%FHNDL,*) 'NUM_NETCDF_FILES_BND=', NUM_NETCDF_FILES_BND
+          WRITE(STAT%FHNDL,*) 'NUM_NETCDF_VAR_TYPES=', NUM_NETCDF_VAR_TYPES
+        END IF
+        ALLOCATE(NETCDF_FILE_NAMES_BND(NUM_NETCDF_FILES_BND, NUM_NETCDF_VAR_TYPES), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 9')
         DO IT = 1, NUM_NETCDF_FILES_BND
           DO IVAR = 1, NUM_NETCDF_VAR_TYPES
@@ -1127,13 +1150,16 @@
 ! check number of time steps in netcdf file ... it is assumed that all files have the same ammount of time steps ...
 !
         DO IFILE = 1, NUM_NETCDF_FILES_BND
-          WRITE(STAT%FHNDL,*) 'ifile=', ifile, 'file=', TRIM(NETCDF_FILE_NAMES_BND(IFILE,1))
-          FLUSH(STAT%FHNDL)
-          CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(NETCDF_FILE_NAMES_BND(IFILE,1)))
-          ISTAT = NF90_OPEN(TRIM(NETCDF_FILE_NAMES_BND(IFILE,1)), NF90_NOWRITE, BND_NCID)
+          FULL_FILE = TRIM(PREFIX_WAVE_FILE) // TRIM(NETCDF_FILE_NAMES_BND(IFILE,1))
+          IF (PrintLOG) THEN
+            WRITE(STAT%FHNDL,*) 'ifile=', ifile, ' full_file=', TRIM(FULL_FILE)
+            FLUSH(STAT%FHNDL)
+          END IF
+          CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(FULL_FILE))
+          ISTAT = NF90_OPEN(TRIM(FULL_FILE), NF90_NOWRITE, BND_NCID)
           IF (ISTAT /= 0) THEN
             Print *, 'Error while trying to open netcdf file'
-            Print *, 'FILE=', TRIM(NETCDF_FILE_NAMES_BND(IFILE,1))
+            Print *, 'FULL_FILE=', TRIM(FULL_FILE)
             Print *, 'One possible error is that the file is NC4 but you linked to NC3'
             CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
           END IF
@@ -1170,7 +1196,9 @@
         ISTAT = nf90_inquire_dimension(BND_NCID, dimIDs(1), len = NDY_BND)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, ISTAT)
 
-        WRITE(STAT%FHNDL,*) 'Number of Gridpoints', NDX_BND, NDY_BND
+        IF (PrintLOG) THEN
+          WRITE(STAT%FHNDL,*) 'Number of Gridpoints', NDX_BND, NDY_BND
+        END IF
 
         ALLOCATE (COORD_BND_X(NDX_BND), COORD_BND_Y(NDY_BND), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 11')
@@ -1208,7 +1236,9 @@
         END DO
 !        WRITE(STAT%FHNDL,*) NDT_BND_ALL_FILES, NDT_BND_FILE
 
-        WRITE(STAT%FHNDL, *) 'INIT_NETCDF_WW3_WAVEPARAMETER'
+        IF (PrintLOG) THEN
+          WRITE(STAT%FHNDL, *) 'INIT_NETCDF_WW3_WAVEPARAMETER'
+        END IF
         MAX_NDT_BND_FILE=MAXVAL(NDT_BND_FILE)
         ALLOCATE (BND_TIME_ALL_FILES(NUM_NETCDF_FILES_BND,MAX_NDT_BND_FILE), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 12')
@@ -1217,8 +1247,9 @@
 ! read all time steps in the proper format and transform in wwm time line
 !
         DO IFILE = 1, NUM_NETCDF_FILES_BND
-          CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(NETCDF_FILE_NAMES_BND(IFILE,1)))
-          ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,1),NF90_NOWRITE,BND_NCID)
+          FULL_FILE = TRIM(PREFIX_WAVE_FILE) // TRIM(NETCDF_FILE_NAMES_BND(IFILE,1))
+          CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(FULL_FILE))
+          ISTAT = NF90_OPEN(TRIM(FULL_FILE), NF90_NOWRITE, BND_NCID)
           CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 14, ISTAT)
 
           ALLOCATE (BND_TIME(NDT_BND_FILE(IFILE)), stat=istat)
@@ -1337,6 +1368,7 @@
       integer :: ITMP(NDX_BND,NDY_BND)
       REAL(rkind) :: scale_factor
       integer ncid, var_id
+      character(len=281) FULL_FILE
       IF (IVAR .eq. 3) THEN
         EVAR='hs'
       ELSE IF (IVAR .eq. 2) THEN
@@ -1352,8 +1384,9 @@
         CALL WWM_ABORT('Wrong IVAR')
       END IF
 
-      CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(NETCDF_FILE_NAMES_BND(IFILE,IVAR)))
-      ISTAT = NF90_OPEN(NETCDF_FILE_NAMES_BND(IFILE,IVAR),NF90_NOWRITE,ncid)
+      FULL_FILE = TRIM(PREFIX_WAVE_FILE) // TRIM(NETCDF_FILE_NAMES_BND(IFILE,IVAR))
+      CALL TEST_FILE_EXIST_DIE("Missing ww3 boundary condition file : ", TRIM(FULL_FILE))
+      ISTAT = NF90_OPEN(TRIM(FULL_FILE), NF90_NOWRITE, ncid)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
 
       ISTAT = nf90_inq_varid(ncid, TRIM(EVAR), var_id)
@@ -1757,14 +1790,16 @@
       CHARACTER(LEN=21) :: LABEL
       CALL TEST_FILE_EXIST_DIE('Missing wave file : ', TRIM(WAV%FNAME))
       OPEN(WAV%FHNDL,FILE=WAV%FNAME, STATUS='OLD',CONVERT='BIG_ENDIAN',FORM='UNFORMATTED')
-      READ(WAV%FHNDL)LABEL, NUMSIG_WW3,NUMDIR_WW3, NP_WW3, GNAME
-      WRITE(STAT%FHNDL,*) 'START READSPEC2D_WW3_INIT_SPEC'
-      WRITE(STAT%FHNDL,*) 'LABEL, NUMSIG_WW3,NUMDIR_WW3, NP_WW3, GNAME'
-      WRITE(STAT%FHNDL,*) LABEL, NUMSIG_WW3,NUMDIR_WW3, NP_WW3, GNAME
+      READ(WAV%FHNDL) LABEL, NUMSIG_WW3,NUMDIR_WW3, NP_WW3, GNAME
       CLOSE(WAV%FHNDL)
-      WRITE(STAT%FHNDL,*) 'DIRECTION NUMBER IN WW3 SPECTRUM:',NUMDIR_WW3
-      WRITE(STAT%FHNDL,*) 'FREQUENCY NUMBER IN WW3 SPECTRUM:',NUMSIG_WW3
-      WRITE(STAT%FHNDL,'("+TRACE...",A)')'DONE READSPEC2D_WW3_INIT_SPEC'
+      IF (PrintLOG) THEN
+        WRITE(STAT%FHNDL,*) 'START READSPEC2D_WW3_INIT_SPEC'
+        WRITE(STAT%FHNDL,*) 'LABEL, NUMSIG_WW3,NUMDIR_WW3, NP_WW3, GNAME'
+        WRITE(STAT%FHNDL,*) LABEL, NUMSIG_WW3,NUMDIR_WW3, NP_WW3, GNAME
+        WRITE(STAT%FHNDL,*) 'DIRECTION NUMBER IN WW3 SPECTRUM:',NUMDIR_WW3
+        WRITE(STAT%FHNDL,*) 'FREQUENCY NUMBER IN WW3 SPECTRUM:',NUMSIG_WW3
+        WRITE(STAT%FHNDL,'("+TRACE...",A)')'DONE READSPEC2D_WW3_INIT_SPEC'
+      END IF
       IF ((NUMDIR_WW3 .gt. 360).or.(NUMSIG_WW3 .gt. 1000)) THEN
         CALL WWM_ABORT('NUMDIR_WW3 or NUMSIG_WW3 are too large to be reasonable')
       END IF
@@ -1795,7 +1830,9 @@
       REAL :: TMP1(NUMSIG_WW3),TMP2(NUMDIR_WW3) !GD: in ww3 binary file, reals 
       REAL :: TMPR1, TMPR2, TMPR3, TMPR4, TMPR5, TMPR6, TMPR7
 
-      WRITE(STAT%FHNDL,*) 'START READSPEC2D_WW3_INIT_TIME'
+      IF (PrintLOG) THEN
+        WRITE(STAT%FHNDL,*) 'START READSPEC2D_WW3_INIT_TIME'
+      END IF
    
       ALLOCATE(FQ_WW3(NUMSIG_WW3), DR_WW3(NUMDIR_WW3), XP_WW3(NP_WW3), YP_WW3(NP_WW3), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_bdcons, allocate error 19')
@@ -1806,10 +1843,10 @@
  
       CALL TEST_FILE_EXIST_DIE('Missing wave file : ', TRIM(WAV%FNAME))
       OPEN(WAV%FHNDL, FILE = WAV%FNAME, STATUS = 'OLD',CONVERT='BIG_ENDIAN',FORM='UNFORMATTED')
-      READ(WAV%FHNDL)LABEL,TMP,TMP,TMP,GNAME
-      READ(WAV%FHNDL)TMP1
+      READ(WAV%FHNDL) LABEL,TMP,TMP,TMP,GNAME
+      READ(WAV%FHNDL) TMP1
       FQ_WW3 = TMP1
-      READ(WAV%FHNDL)TMP2
+      READ(WAV%FHNDL) TMP2
       DR_WW3 = TMP2
       MAXSTEP_WW3 = 0
 
@@ -1822,7 +1859,7 @@
           EXIT
         END IF
         DO IP = 1, NP_WW3 
-          READ(WAV%FHNDL,IOSTAT=IFLAG) PID,TMPR1,TMPR2,TMPR3,TMPR4,TMPR5,TMPR6,TMPR7
+          READ(WAV%FHNDL,IOSTAT=IFLAG) PID, TMPR1, TMPR2, TMPR3, TMPR4, TMPR5, TMPR6, TMPR7
 !          WRITE(STAT%FHNDL,'(A10,7F15.4)') PID,TMPR1,TMPR2,TMPR3,TMPR4,TMPR5,TMPR6,TMPR7
           IF (IFLAG .GT. 0) THEN
             CALL WWM_ABORT('IFLAG incorrectly set 2')

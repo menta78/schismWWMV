@@ -726,7 +726,8 @@
      &      BEGTC_OUT, DELTC_OUT, UNITC_OUT, ENDTC_OUT,                 &
      &      EXTRAPOLATION_ALLOWED,                                      &
      &      HACK_HARD_SET_IOBP, PARAMWRITE,                             &
-     &      NETCDF_IN_FILE, LEXPORT_BOUC_MOD_OUT, EXPORT_BOUC_DELTC
+     &      NETCDF_IN_FILE, LEXPORT_BOUC_MOD_OUT, EXPORT_BOUC_DELTC,    &
+     &      PREFIX_WAVE_FILE
 
          NAMELIST /WIND/ LSEWD, LSTWD, LCWIN, LWDIR, BEGTC, DELTC,      &
      &      UNITC, ENDTC, LINTERWD, WDIR, WVEL, CWINDX, CWINDY,         &
