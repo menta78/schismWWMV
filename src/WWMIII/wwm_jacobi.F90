@@ -718,7 +718,10 @@
 !
 ! The termination criterions several can be chosen
 !
-        WRITE(STAT%FHNDL,'(A10,4I10,E30.20,F10.5)') 'solver', nbiter, nbPassive, is_converged(1), np_total-is_converged(1), p_is_converged, pmin
+!        Print *, 'LOGLEVEL=', LOGLEVEL
+        IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+          WRITE(STAT%FHNDL,'(A10,4I10,E30.20,F10.5)') 'solver', nbiter, nbPassive, is_converged(1), np_total-is_converged(1), p_is_converged, pmin
+        END IF
         !
         ! Number of iterations. If too large the exit.
         !

@@ -88,13 +88,15 @@
 #ifndef SCHISM
 # ifndef PDLIB
 #  ifdef USE_SINGLE
-      integer,parameter :: rkind = 4
+        integer,parameter :: rkind = 4
 #  else
-      integer,parameter :: rkind = 8      ! Default real datatype
+        integer,parameter :: rkind = 8      ! Default real datatype
 #  endif
 # endif
 #endif
 
+        integer :: LOGLEVEL = 2
+        
          INTEGER    :: NP_TOTAL, NE_TOTAL
 #ifdef MPI_PARALL_GRID
          REAL(rkind), allocatable           :: nwild_gb(:)

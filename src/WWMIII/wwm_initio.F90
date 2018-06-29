@@ -549,10 +549,11 @@
       CALL INIT_FILE_HANDLES
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE SETTING FHNDL'
       FLUSH(STAT%FHNDL)
-
+      
       CALL READ_WWMINPUT
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE READING NAMELIST'
       FLUSH(STAT%FHNDL)
+
       CALL READ_SPATIAL_GRID_TOTAL
       WRITE(STAT%FHNDL,'("+TRACE...",A)') 'DONE READ SPATIAL GRID'
       FLUSH(STAT%FHNDL)
@@ -1299,7 +1300,6 @@
          SRCDBG%FHNDL   = STARTHNDL + 18
 
          IU06           = STAT%FHNDL
-
 #ifndef MPI_PARALL_GRID
          open(DBG%FHNDL,file='wwmdbg.out',status='unknown') !non-fatal errors
          open(STAT%FHNDL,file='wwmstat.out',status='unknown') !non-fatal errors
@@ -1318,7 +1318,7 @@
          FDB  ='windbg_0000'
          LFDB =len_trim(FDB)
          write(FDB(LFDB-3:LFDB),'(i4.4)') MYRANK
-         open(WINDBG%FHNDL,file='outputs/'//fdb,status='replace') 
+         open(WINDBG%FHNDL,file='outputs/'//fdb,status='replace')
 # else
          FDB  ='wwmdbg_0000'
          LFDB =len_trim(FDB)

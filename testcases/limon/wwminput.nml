@@ -16,7 +16,8 @@
  MULTIPLE_OUT_INFO = .T.,               
  MODEL_OUT_TYPE = 'WW3',             
  ABORT_BLOWUP   = .F.,               
- LEVEL_HS_BLOW  = 50,                
+ LEVEL_HS_BLOW  = 50,
+ LOGLEVEL = 1
 /
 
 &COUPL         
