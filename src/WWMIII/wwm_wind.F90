@@ -2946,6 +2946,7 @@
       REAL(rkind), allocatable :: wind_time_mjd(:)
       REAL cf_scale_factor, cf_add_offset
       TYPE(FD_FORCING_GRID) :: TheInfo
+      character(len=281) FULL_FILE
 !     Print *, 'Begin of INIT_GRIB_WIND'
       IF (PrintLOG) THEN
         WRITE(WINDBG%FHNDL, *) 'GRIB_FILE_TYPE=', GRIB_FILE_TYPE
@@ -2989,12 +2990,13 @@
         allocate(wind_time_mjd(nbtime_mjd), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 48')
         DO IT=1, nbTime_mjd
+          FULL_FILE = TRIM(PREFIX_WIND_FILE) // TRIM(GRIB_FILE_NAMES(IT))
           IF (PrintLOG) THEN
             WRITE(WINDBG%FHNDL, *) '---------------------------------------'
-            WRITE(WINDBG%FHNDL, *) 'IT=', IT, 'file = ',  TRIM(GRIB_FILE_NAMES(IT))
+            WRITE(WINDBG%FHNDL, *) 'IT=', IT, 'file = ',  TRIM(GRIB_FILE_NAMES(IT)), ' FULL_FILE=', FULL_FILE
             FLUSH(WINDBG%FHNDL)
           END IF
-          CALL READ_TIME_OF_GRIB_FILE(eTimeMjd, GRIB_FILE_NAMES(IT), USE_STEPRANGE)
+          CALL READ_TIME_OF_GRIB_FILE(eTimeMjd, TRIM(FULL_FILE), USE_STEPRANGE)
           wind_time_mjd(IT)=eTimeMjd
         END DO
         cf_scale_factor=ONE
@@ -3004,7 +3006,8 @@
         !
         shortName='10u'
         IT=1
-        CALL READ_GRID_INFO_FROM_GRIB(TheInfo, GRIB_FILE_NAMES(IT), shortName, GRIB_FILE_TYPE)
+        FULL_FILE = TRIM(PREFIX_WIND_FILE) // TRIM(GRIB_FILE_NAMES(IT))
+        CALL READ_GRID_INFO_FROM_GRIB(TheInfo, TRIM(FULL_FILE), shortName, GRIB_FILE_TYPE)
         NDX_WIND_FD = TheInfo % nx_dim
         NDY_WIND_FD = TheInfo % ny_dim
         allocate(UWIND_FD(NDX_WIND_FD, NDY_WIND_FD), VWIND_FD(NDX_WIND_FD, NDY_WIND_FD), stat=istat)
@@ -3058,6 +3061,7 @@
       character(len=100) eShortName
       real(rkind) valueU(NDX_WIND_FD*NDY_WIND_FD)
       real(rkind) valueV(NDX_WIND_FD*NDY_WIND_FD)
+      character(len=281) FULL_FILE
 !     Print *, 'NDX_WIND_FD=', NDX_WIND_FD
 !     Print *, 'NDY_WIND_FD=', NDY_WIND_FD
       !
@@ -3065,12 +3069,13 @@
 # ifdef MPI_PARALL_GRID
       IF (MULTIPLE_IN_WIND .or. (myrank .eq. 0)) THEN
 # endif
+        FULL_FILE = TRIM(PREFIX_WIND_FILE) // TRIM(GRIB_FILE_NAMES(IT))
         IF (PrintLOG) THEN
-           WRITE(WINDBG%FHNDL,*) 'IT=', IT, 'file = ',  TRIM(GRIB_FILE_NAMES(IT))
+           WRITE(WINDBG%FHNDL,*) 'IT=', IT, 'file = ',  TRIM(FULL_FILE)
         END IF
 !       Print *, 'GRIB_FILE_NAMES(IT)=', TRIM(GRIB_FILE_NAMES(IT))
-        CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(GRIB_FILE_NAMES(IT)))
-        CALL GRIB_OPEN_FILE(ifile, TRIM(GRIB_FILE_NAMES(IT)), 'r')
+        CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(FULL_FILE))
+        CALL GRIB_OPEN_FILE(ifile, TRIM(FULL_FILE), 'r')
         call grib_count_in_file(ifile,n)
         IF (PrintLOG) THEN
            WRITE(WINDBG%FHNDL,*) 'n=', n
