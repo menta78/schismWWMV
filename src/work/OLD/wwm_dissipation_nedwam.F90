@@ -1,0 +1,138 @@
+#include "wwm_functions.h"
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE SDS_NEDWAM_CYCLE4( IP, KMESPC, SMESPC, ETOT, WALOC, PHI, DPHIDN, SSDS )
+         USE DATAPOOL
+         IMPLICIT NONE
+
+         INTEGER, INTENT(IN)          :: IP
+         REAL(rkind), INTENT(IN)      :: KMESPC, SMESPC, ETOT
+         REAL(rkind), INTENT(IN)      :: WALOC(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(OUT)     :: SSDS(NUMSIG,NUMDIR)
+         REAL(rkind), INTENT(INOUT)   :: PHI(NUMSIG,NUMDIR), DPHIDN(NUMSIG,NUMDIR)
+ 
+         INTEGER                      :: IS, ID
+         REAL(rkind)                  :: BSAT(NUMSIG), PSAT(NUMSIG), C_K(NUMSIG)
+         REAL(rkind)                  :: CDS, ALPH
+         REAL(rkind)                  :: SATDIS, SIGMA, DELTA
+         REAL(rkind)                  :: BSATR, N1, PMK, STP_OV, STP_LO
+
+!        Parameter for the Alves & Banner Dissipation function
+!        Same implementation like Lefevre & Makin
+!        8th International Conference on Wave Forecasting and Hindcasting, Hawaii, November 2004
+!        Background dissipation according to Cycle 4 
+
+         N1      = 2.0
+         PMK     = 6.0!6.0 makin original
+         DELTA   = 0.5
+         BSATR   = 4.E-3
+         CDS     = 2.1
+
+         ALPH    = KMESPC**2*ETOT
+!         ALPH    = KP**2*ETOT
+
+         STP_OV  = ALPH**N1
+
+         BSAT(:) = 0.0
+         PSAT(:) = 0.0
+
+         DO IS = 1, NUMSIG
+           DO ID = 1, NUMDIR
+             BSAT(IS) = BSAT(IS)+WALOC(IS,ID)*SPSIG(IS)*DDIR
+           END DO
+         END DO
+
+         DO IS = 1, NUMSIG
+           SIGMA = SPSIG(IS)
+           BSAT(IS) = BSAT(IS) * CG(IS,IP) * WK(IS,IP)**3
+           STP_LO = WK(IS,IP)/KMESPC
+           C_K(IS) =  (DELTA + (1.-DELTA) * STP_LO ) *STP_LO
+           IF (BSAT(IS) < BSATR) THEN
+             PSAT(IS) = 0.
+           ELSE
+             PSAT(IS)= 0.25*PMK*(1.+MyTANH(10.0*(BSAT(IS)/BSATR-1.0)))
+           END IF
+           SATDIS = (BSAT(IS)/BSATR)**PSAT(IS)
+           DO ID = 1, NUMDIR
+             SSDS(IS,ID)      = CDS * SATDIS * STP_OV * C_K(IS) * SIGMA
+             IF (ICOMP .GE. 2) THEN
+               DPHIDN(IS,ID) = DPHIDN(IS,ID) + SSDS(IS,ID)
+             ELSE IF (ICOMP .LT. 2) THEN
+               DPHIDN(IS,ID) = DPHIDN(IS,ID) - SSDS(IS,ID)
+               PHI(IS,ID) = PHI(IS,ID) - SSDS(IS,ID) * WALOC(IS,ID)
+             END IF
+           END DO
+         END DO
+
+         RETURN
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE SDS_NEDWAM_CYCLE3( IP, KMESPC, SMESPC, ETOT, WALOC, PHI, DPHIDN, SSDS )
+         USE DATAPOOL
+         IMPLICIT NONE
+
+         INTEGER, INTENT(IN)          :: IP
+         REAL(rkind), INTENT(IN)      :: KMESPC, SMESPC, ETOT
+         REAL(rkind), INTENT(OUT)     :: SSDS(NUMSIG,NUMDIR)
+         REAL(rkind)   , INTENT(IN)   :: WALOC(NUMSIG,NUMDIR)
+         REAL(rkind)   , INTENT(INOUT):: PHI(NUMSIG,NUMDIR), DPHIDN(NUMSIG,NUMDIR)
+
+         INTEGER                      :: IS, ID
+         REAL(rkind)                  :: BSAT(NUMSIG), PSAT(NUMSIG), C_K(NUMSIG)
+         REAL(rkind)                  :: CDS, ALPHAPM, ALPH
+         REAL(rkind)                  :: SATDIS, SIGMA
+         REAL(rkind)                  :: BSATR, N1, N2, PMK, STP_OV
+
+!        Parameter for the Alves & Banner Dissipation function
+!        Same implementation like Lefevre & Makin
+!        8th International Conference on Wave Forecasting and Hindcasting, Hawaii, November 2004
+!        Background dissipation according to Cycle 3
+
+         N1      = 2.0
+         N2      = 1.0!1.0 makin original
+         PMK     = 6.0!6.0 makin original
+         BSATR   = 4.E-3
+         ALPHAPM = 4.57E-3
+         CDS     = 2.5E-5
+
+         ALPH    = KMESPC**2*ETOT
+         STP_OV  = (ALPH/ALPHAPM)**N1
+
+         BSAT(:) = 0.0
+         PSAT(:) = 0.0
+
+         DO IS = 1, NUMSIG
+           DO ID = 1, NUMDIR
+             BSAT(IS) = BSAT(IS)+WALOC(IS,ID)*SPSIG(IS)*DDIR
+           END DO
+         END DO
+
+         DO IS = 1, NUMSIG
+           SIGMA = SPSIG(IS)
+           BSAT(IS) = BSAT(IS) * CG(IS,IP) * WK(IS,IP)**3
+           C_K(IS) = (WK(IS,IP) / KMESPC) ** N2
+           IF (BSAT(IS) < BSATR) THEN
+             PSAT(IS) = 0.
+           ELSE
+             PSAT(IS)= 0.25*PMK*(1.+MyTANH(10.0*(BSAT(IS)/BSATR-1.0)))
+           END IF
+           SATDIS = (BSAT(IS)/BSATR)**PSAT(IS)
+           DO ID = 1, NUMDIR
+             SSDS(IS,ID)      = CDS * SATDIS * STP_OV * C_K(IS) * SIGMA
+             IF (ICOMP .GE. 2) THEN
+               DPHIDN(IS,ID) = DPHIDN(IS,ID) + SSDS(IS,ID)
+             ELSE IF (ICOMP .LT. 2 ) THEN
+               DPHIDN(IS,ID) = DPHIDN(IS,ID) - SSDS(IS,ID)
+               PHI(IS,ID) = PHI(IS,ID) - SSDS(IS,ID) * WALOC(IS,ID)
+             END IF
+           END DO
+         END DO
+
+         RETURN
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************

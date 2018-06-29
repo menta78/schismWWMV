@@ -21,7 +21,7 @@
 !         /____/ \____//_/  /_/ I_I   /____/ /_/  *  /_/
 !
 !
-!         SCHISM (Semi-implicit Cross-scale Hydroscience Integrated System Model)                         
+!         SCHISM (Semi-implicit Cross-scale Hydroscience Integrated System Model)                        
 !         A Three-Dimensional Model on Unstructured Grids for Hydroscience
 !         This is a derivative work from the original SELFE model of STC-CMOP,
 !         Oregon Health & Science University, Beaverton, Oregon 97006, USA         
@@ -72,9 +72,18 @@
 !===============================================================================
 program schism_driver
   use schism_msgp, only: parallel_init,parallel_finalize,parallel_abort
+  use schism_version
   implicit none
+  character*8 cli
+  call get_command_argument(1,cli)
+  if (cli(1:2) == "-v")then
+     print*, ""
+     call print_version
+     stop
+  endif
 
   call parallel_init
+
   !Deal with command args
   !call get_command_args
   call schism_main

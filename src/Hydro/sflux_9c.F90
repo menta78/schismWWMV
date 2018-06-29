@@ -53,10 +53,12 @@
 !       fdb
 !       lfdb
 !       albedo
+!       start_year,start_month,start_day,start_hour,utc_start
 !
 ! From module schism_msgp:
 !       myrank
 !       parallel_abort
+!       comm
 !
 !-----------------------------------------------------------------------
 !
@@ -346,7 +348,7 @@
 #ifdef PREC_EVAP
      &                   precip_flux, evap_flux, &
 #endif
-     &                   nws, fluxsu00, srad00)
+     &                   nws) !, fluxsu00, srad00)
 
         use schism_glbl, only : rkind, npa, uu2, vv2, tr_nd, & !tnd, snd, &
      &                     kfp, idry, nvrt, ivcor,ipgl,fdb,lfdb
@@ -354,7 +356,7 @@
         implicit none
 
 ! input/output variables
-        real(rkind), intent(in) :: time, fluxsu00, srad00
+        real(rkind), intent(in) :: time !, fluxsu00, srad00
         real(rkind), dimension(npa), intent(in) :: &
      &    u_air, v_air, p_air, t_air, q_air
         real(rkind), dimension(npa), intent(out) :: &
@@ -467,27 +469,27 @@
 !$OMP end parallel do 
 
 ! reset flux values if the nws flag is set
-        if (nws .eq. 3) then
-          open(31,file=grid_file, status='old')
-          read(31,*)
-          read(31,*) ne_global,np_global
-          do i_node = 1, np_global
-            read(31,*) i_node_tmp, x_tmp, y_tmp, sflux_frac
-            if(ipgl(i_node)%rank==myrank) then
-              itmp=ipgl(i_node)%id
-              sen_flux(itmp)    = sflux_frac * fluxsu00
-              shortwave_d(itmp) = sflux_frac * srad00
-              lat_flux(itmp) = 0.0
-              longwave_u(itmp) = 0.0
-              longwave_d(itmp) = 0.0
-#ifdef PREC_EVAP
-              precip_flux(itmp) = 0.0
-              evap_flux(itmp) = 0.0
-#endif
-            endif
-          enddo
-          close(31)
-        endif
+!        if (nws .eq. 3) then
+!          open(31,file=grid_file, status='old')
+!          read(31,*)
+!          read(31,*) ne_global,np_global
+!          do i_node = 1, np_global
+!            read(31,*) i_node_tmp, x_tmp, y_tmp, sflux_frac
+!            if(ipgl(i_node)%rank==myrank) then
+!              itmp=ipgl(i_node)%id
+!              sen_flux(itmp)    = sflux_frac * fluxsu00
+!              shortwave_d(itmp) = sflux_frac * srad00
+!              lat_flux(itmp) = 0.0
+!              longwave_u(itmp) = 0.0
+!              longwave_d(itmp) = 0.0
+!#ifdef PREC_EVAP
+!              precip_flux(itmp) = 0.0
+!              evap_flux(itmp) = 0.0
+!#endif
+!            endif
+!          enddo
+!          close(31)
+!        endif
 
 #ifdef DEBUG
         do i_node = 1, num_nodes
@@ -495,7 +497,7 @@
 
 ! define whether this node is dry or not (depends on coordinate system)
             dry = &
-     &          ( (ivcor .eq. -1) .and. (kfp(i_node)  .eq. 0) ) & ! z
+     &          ( (ivcor .eq. -1) .and. (kfp(i_node)  .eq. -1) ) & ! z
      &        .or. &
      &          ( (ivcor .ne. -1) .and. (idry(i_node) .eq. 1) )   !sigma
 
@@ -618,7 +620,7 @@
 
 ! define whether this node is dry or not (depends on coordinate system)
           dry = &
-     &        ( (ivcor .eq. -1) .and. (kfp(i_node)  .eq. 0) ) & ! z
+     &        ( (ivcor .eq. -1) .and. (kfp(i_node)  .eq. -1) ) & ! z
      &      .or. &
      &        ( (ivcor .ne. -1) .and. (idry(i_node) .eq. 1) )   !sigma
 
@@ -1093,7 +1095,7 @@
 !-----------------------------------------------------------------------
       module netcdf_io
 
-        use schism_glbl, only : rkind
+        use schism_glbl, only : rkind,start_year,start_month,start_day,start_hour,utc_start
         implicit none
         
         integer, parameter :: max_files = 1000 !max. # of nc files
@@ -1130,11 +1132,11 @@
           logical :: fail_if_missing
         end type dataset_info
         
-        integer             :: start_year  = -9999
-        integer             :: start_month = -9999
-        integer             :: start_day   = -9999
-        real(rkind) :: start_hour  = -9999.0
-        real(rkind) :: utc_start   = -9999.0
+!        integer             :: start_year  = -9999
+!        integer             :: start_month = -9999
+!        integer             :: start_day   = -9999
+!        real(rkind) :: start_hour  = -9999.0
+!        real(rkind) :: utc_start   = -9999.0
         integer             :: start_jdate
         real(rkind) :: start_frac_jdate = -9999.0
 
@@ -1155,7 +1157,7 @@
 
         real(rkind) :: rad_1_relative_weight = 1.0
         real(rkind) :: rad_2_relative_weight = 99.0
-        real(rkind) :: rad_1_max_window_hours = 24.0
+        real(rkind) :: rad_1_max_window_hours = 120.0
         real(rkind) :: rad_2_max_window_hours = 24.0
         logical             :: rad_1_fail_if_missing = .true.
         logical             :: rad_2_fail_if_missing = .false.
@@ -1166,7 +1168,7 @@
        
         real(rkind) :: prc_1_relative_weight = 1.0
         real(rkind) :: prc_2_relative_weight = 99.0
-        real(rkind) :: prc_1_max_window_hours = 24.0
+        real(rkind) :: prc_1_max_window_hours = 120.0
         real(rkind) :: prc_2_max_window_hours = 24.0
         logical             :: prc_1_fail_if_missing = .true.
         logical             :: prc_2_fail_if_missing = .false.
@@ -1175,7 +1177,7 @@
         character (len=50)  :: prate_name = 'prate'
 
         namelist /sflux_inputs/ &
-     &    start_year, start_month, start_day, start_hour, utc_start, &
+!     &    start_year, start_month, start_day, start_hour, utc_start, &
      &    air_1_relative_weight, air_2_relative_weight,              &
      &    air_1_max_window_hours, air_2_max_window_hours,            &
      &    air_1_fail_if_missing, air_2_fail_if_missing,              &

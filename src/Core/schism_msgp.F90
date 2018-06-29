@@ -364,15 +364,22 @@ module schism_msgp
 contains
 
 
-subroutine parallel_init
+subroutine parallel_init(communicator)
   implicit none
+  integer, optional :: communicator
 
-  ! Initialize MPI
-  call mpi_init(ierr)
-  if(ierr/=MPI_SUCCESS) call parallel_abort(error=ierr)
 
-  ! Duplicate communication space to isolate ELCIRC communication
-  call mpi_comm_dup(MPI_COMM_WORLD,comm,ierr)
+  if (present(communicator)) then
+    ! Expect external call to mpi_init,
+    ! use communicator as provided by the interface
+    call mpi_comm_dup(communicator,comm,ierr)
+  else
+    ! Initialize MPI
+    call mpi_init(ierr)
+    if(ierr/=MPI_SUCCESS) call parallel_abort(error=ierr)
+    ! Duplicate communication space to isolate ELCIRC communication
+    call mpi_comm_dup(MPI_COMM_WORLD,comm,ierr)
+  endif
   if(ierr/=MPI_SUCCESS) call parallel_abort(error=ierr)
 
   ! Get number of processors

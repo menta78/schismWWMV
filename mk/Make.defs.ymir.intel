@@ -78,98 +78,22 @@ endif
 ################################################################################
 
 # -DSCHISM is always on and is defined elsewhere
+include ../mk/include_modules
 
-# Precip/evaporation model
-# PPFLAGS := $(PPFLAGS) -DPREC_EVAP 
+# Don't comment out the follow ifdef
+# Note: currently GOTM4 may give reasonable results only with k-omega
+ifdef USE_GOTM
+  #Following for GOTM4
+  #GTMMOD =  -I/sciclone/home04/yinglong/SELFE/svn/trunk/src/GOTM4.0/modules/PGF90/ #modules
+  #GTMLIBS = -L/sciclone/home04/yinglong/SELFE/svn/trunk/src/GOTM4.0/lib/PGF90/ -lturbulence_prod -lutil_prod
 
-# MM5 in heat exchange model
-# PPFLAGS := $(PPFLAGS) -DMM5
-
-# TVD limiter options (set as one of these: SB, VL, OS, MM)
-# No default and so these 2 lines should NOT be commented out!
- TVD_LIM = SB
- EXEC := $(EXEC)_$(TVD_LIM)
-
-# GOTM turbulence closure model
-# USE_GOTM = yes
-
-# Wind wave model WWM
-# USE_WWM = yes
-
-# TIMOR 
-# USE_TIMOR = yes
-
-# Harmonic analysis tool
- USE_HA = yes
-
-##### Select only _one_ model from below
-
-# Ecological model - NAPZD Spitz (internal use only)
-# USE_NAPZD = yes
-
-# Or:
-# Ecological model (EcoSim)
-# USE_ECO = yes
-
-# Or:
-# CE-QUAL-ICM
-# USE_ICM = yes
-
-# Or:
-# Sediment model 
-# USE_SED = yes
-
-# If you choose SED you should set the following algorithmic preferences
-
-  ##Bedload 
-#  PPFLAGS := $(PPFLAGS) -DBEDLOAD
-
-  ##Bedload - MPM model
-#  PPFLAGS := $(PPFLAGS) -DBEDLOAD_MPM
-
-  ##slope formulation
-#  PPFLAGS := $(PPFLAGS) -DDAMGAARD
-#  PPFLAGS := $(PPFLAGS) -DDELFT
-#  PPFLAGS := $(PPFLAGS) -DCARMO
-
-  ##Bedload - VR model
-#  PPFLAGS := $(PPFLAGS) -DBEDLOAD_VR
-
-  ##Suspended load
-#  PPFLAGS := $(PPFLAGS) -DSUSPLOAD
-
-  ##boundary conditions for WENO
-  ## default strictly monotonic
-#  PPFLAGS:= $(PPFLAGS) -DLINEAR_CONTINUATION
-#  PPFLAGS:= $(PPFLAGS) -DNEUMANN
-
-  ## Morphology
-#  PPFLAGS := $(PPFLAGS) -DSED_MORPH
-
-  ## Choose one drag formulation from the following 3 choices (only 1st one is functional now)
-#  PPFLAGS := $(PPFLAGS) -DUV_LOGDRAG
-  #PPFLAGS := $(PPFLAGS) -DUV_QDRAG
-  #PPFLAGS := $(PPFLAGS) -DUV_LDRAG
-
-  ##sediment density in eqstate
-#   PPFLAGS:= $(PPFLAGS) -DDENSED
-
-# Or:
-# Sediment model (2D)
-# #  USE_SED2D = yes
-
-# Or:
-# Oil spill model (not active)
-# OIL = yes
-
-
-#########  Compiler configuration related flags
-
-# Include a timer
-# USE_TIMER = yes
-
-# Debug mode (more time consuming)
-# USE_DEBUG = yes
+  #Following for GOTM3
+  GTMMOD =  -I/sciclone/home04/yinglong/gotm-3.2.5/modules/PGF90/ #modules
+  GTMLIBS = -L/sciclone/home04/yinglong/gotm-3.2.5/lib/PGF90/ -lturbulence_prod -lutil_prod
+else
+  GTMMOD =
+  GTMLIBS =
+endif
 
 
 ######### Specialty compiler flags and workarounds

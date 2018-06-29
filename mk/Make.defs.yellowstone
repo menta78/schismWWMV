@@ -68,22 +68,7 @@ EXEC   := pschism_$(ENV)
 
 # -DSCHISM is always on and is defined elsewhere
 
-# Precip/evaporation model
-# USE_PREC_EVAP = yes
-# EXEC := $(EXEC)_EVAP
-
-# MM5 in heat exchange model
-# USE_MM5 = yes
-# EXEC := $(EXEC)_MM5
-
-# TVD limiter options (set as one of these: SB, VL, OS, MM)
-# No default and so these 2 lines should NOT be commented out!
- TVD_LIM = SB
- EXEC := $(EXEC)_$(TVD_LIM)
-
-# GOTM turbulence closure model
-# USE_GOTM = yes
-# EXEC := $(EXEC)_GOTM
+include ../mk/include_modules
 
 # Don't comment out the follow ifdef
 ifdef USE_GOTM
@@ -93,95 +78,6 @@ else
   GTMMOD =
   GTMLIBS =
 endif
-
-# Wind wave model WWM
-# USE_WWM = yes
-# EXEC := $(EXEC)_WWM
-
-# Harmonic analysis tool
-# USE_HA = yes
-# EXEC := $(EXEC)_HA
-
-#####Tracer models
-# Generic (user defined) tracer model
-# USE_GEN = yes
-# EXEC := $(EXEC)_GEN
-
-# Age
-# USE_AGE = yes
-# EXEC := $(EXEC)_AGE
-
-# Sediment model (3D)
-# USE_SED = yes
-# EXEC := $(EXEC)_SED
-
-# Ecological model (EcoSim)
-# USE_ECO = yes
-# EXEC := $(EXEC)_ECO
-
-# CE-QUAL-ICM
-# USE_ICM = yes
-# EXEC := $(EXEC)_ICM
-
-# Oil spill model (not active)
-# USE_OIL = yes
-# EXEC := $(EXEC)_OIL
-
-# Ecological model - NAPZD Spitz (unavailable)
-# USE_NAPZD = yes
-# EXEC := $(EXEC)_NAPZD
-
-# TIMOR (not active yet)
-# USE_TIMOR = yes
-# EXEC := $(EXEC)_TIMOR
-
-####End of tracer models
-
-# Sediment model (2D)
-# USE_SED2D = yes
-# EXEC := $(EXEC)_SED2D
-
-##### Select only _one_ model from below
-
-# Ecological model - NAPZD Spitz (internal use only)
-# USE_NAPZD = yes
-# EXEC := $(EXEC)_NAPZD
-
-# Or:
-# Ecological model (EcoSim)
-# USE_ECO = yes
-# EXEC := $(EXEC)_ECO
-
-# Or:
-# CE-QUAL-ICM
-# USE_ICM = yes
-# EXEC := $(EXEC)_ICM
-
-# Or:
-# Sediment model 
-# USE_SED = yes
-# EXEC := $(EXEC)_SED
-
-#Or:
-# Sediment model (2D)
-# USE_SED2D = yes
-# EXEC := $(EXEC)_SED2D
-
-# Or:
-# Oil spill model (not active)
-# USE_OIL = yes
-# EXEC := $(EXEC)_OIL
-
-#########  Compiler configuration related flags
-
-# Include a timer
-# USE_TIMER = yes
-# EXEC := $(EXEC)_TIMER
-
-# Debug mode (more time consuming)
-# USE_DEBUG = yes
-# EXEC := $(EXEC)_DEBUG
-
 
 ######### Specialty compiler flags and workarounds
 # Add -DNO_TR_15581 like below for allocatable array problem in sflux_subs.F90

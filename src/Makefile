@@ -32,6 +32,9 @@
 #            these are just for testing)
 ################################################################################
 
+##########
+
+
 
 ########### Ensure that the user's Make.defs.local exists and include it
 
@@ -107,8 +110,10 @@ ifdef FUJITSU
   PPFLAGS := $(PPFLAGS) $(IBMCPP)-DFUJITSU
 endif
 
+include o/$(config)/autosrc.mk
+
 #Cores
-OBJS = schism_glbl.o schism_msgp.o misc_modules.o schism_io.o schism_driver.o
+OBJS =  $(AUTO_OBJ) schism_glbl.o schism_msgp.o misc_modules.o schism_io.o schism_driver.o 
 
 ifdef USE_PETSC
   PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_PETSC
@@ -204,7 +209,7 @@ endif
 
 ifdef USE_ICM
   PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_ICM
-  OBJS := $(OBJS) icm_mod.o icm_sed_mod.o icm_init.o icm_biology.o  icm.o  read_icm_input.o
+  OBJS := $(OBJS) icm_mod.o icm_sed_mod.o icm_init.o icm_sed_flux.o  icm.o  read_icm_input.o
 endif
 
 ifdef USE_COSINE
@@ -243,8 +248,8 @@ OBJS := $(OBJS) wwm_datapl.o wwm_petscpool.o  wwm_petsc_seriell.o wwm_petsc_para
          wwm_wind.o wwm_breaking.o wwm_friction.o wwm_cycle3.o \
          wwm_gridcf.o wwm_hotfile.o wwm_parall_solver.o wwm_m_constants.o \
          wwm_m_fileio.o wwm_serv_xnl4v5.o wwm_mod_xnl4v5.o wwm_snl4_wrt.o \
-         wwm_wave_setup.o wwm_ecmwf_local.o wwm_st4_local.o wwm_initio.o wwm_netcdf.o wwm_input.o wwm_grid.o\
-         wwm_ecmwf.o wwm_deep.o wwm_shallow.o wwm_st4.o wwm_snl4.o \
+         wwm_wave_setup.o wwm_ecmwf_local.o wwm_st4_local.o wwm_st6_local.o wwm_initio.o wwm_netcdf.o wwm_input.o wwm_grid.o\
+         wwm_ecmwf.o wwm_deep.o wwm_shallow.o wwm_st4.o wwm_st6.o wwm_snl4.o \
          wwm_bdcons_init.o wwm_bdcons.o wwm_bdcons_wam.o wwm_nesting.o \
          wwm_specparam.o wwm_windinput.o wwm_snl3.o wwm_vegdiss.o\
          wwm_specint.o wwm_nums1d.o wwm_numtheta.o wwm_numsigma.o wwm_fluctsplit.o \
@@ -305,11 +310,19 @@ ifeq ($(EXEC),)
 endif
 
 
-.PHONY: pschism
-
-pschism: $(EXEC) o/$(config)/.dummy
 
 
+o/$(config)/autosrc.mk: o/$(config)/.dummy
+	python Core/gen_version.py
+	echo "AUTO_OBJ=`echo schism_version.o`"  > o/$(config)/autosrc.mk
+
+
+
+.PHONY: pschism psc
+
+pschism: $(EXEC) o/$(config)/.dummy 
+
+psc: $(EXEC) o/$(config)/.dummy 
 
 .PHONY: all
 all: pschism utility
@@ -343,12 +356,19 @@ depend: o/$(config)/.dummy o/$(config)/.depend ../bin/.dummy
 
 
 
-o/$(config)/.depend: o/$(config)/.dummy
+o/$(config)/.depend: o/$(config)/.dummy 
 	@echo Building depend list
 	@echo $(util_srcs_abs)
 	@ ../mk/sfmakedepend.pl -d o/$(config) -I $(VPATH) -f o/$(config)/.depend_extended $(FULLSRC) > depend.out
 	@echo $(FULL_CONFIG_OBJS)
-	@ ../mk/cull_depends.py o/$(config)/.depend_extended o/$(config)/.depend "$(FULL_CONFIG_OBJS)" 
+	@ ../mk/cull_depends.py o/$(config)/.depend_extended o/$(config)/.depend "$(FULL_CONFIG_OBJS)"
+
+
+o/$(config)/schism_version.mod: o/$(config)/schism_version.o
+
+o/$(config)/schism_version.o: Core/schism_version.F90 
+
+Core/schism_version.F90:
 
 ifneq "$(MAKECMDGOALS)" "clean"
   -include o/$(config)/.depend
@@ -370,7 +390,7 @@ o/$(config)/%.o: %.F90 o/$(config)/.dummy o/$(config)/.depend
 
 
 src_extension := .f90
-util_lib_src := schism_geometry.f90 extract_mod.f90 compute_zcor.f90 stat_pool.f90 stat_pool.f90 stripsearch_unstr.f90 argparse.F90
+util_lib_src := schism_geometry.f90 pt_in_poly.f90 pt_in_poly2.f90 extract_mod.f90 compute_zcor.f90 stat_pool.f90 stat_pool.f90 stripsearch_unstr.f90 argparse.f90 netcdf_var_names.f90 moving_average_filter.f90
 util_lib_obj := $(subst $(src_extension),.o,$(util_lib_src))
 util_lib_config_objs := $(addprefix o/$(config)/, $(util_lib_obj))
 
@@ -415,7 +435,7 @@ o/$(config)/libutil_lib.a: $(util_lib_config_objs)
 
 o/$(config)/%.o : %.f90 o/$(config)/.dummy  ../bin/.dummy
 #	$(FCS) -c $(FCPFLAGS)  ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTTMOD) $(CDFMOD) $< -o $@
-	$(FCS) -c $(FCPFLAGS) $< ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTTMOD) $(CDFMOD) -o $@
+	$(FCS) -c -cpp $(FCPFLAGS) $< ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTTMOD) $(CDFMOD) -o $@
 
 
 ../bin/%.ex: o/$(config)/%.o  ../bin/.dummy

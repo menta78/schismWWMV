@@ -262,14 +262,12 @@
 #endif
         END IF
 
-        IF (LMAXETOT) CALL BREAKING_LIMITER_GLOBAL 
-
         IF (LNANINFCHK) THEN
           WRITE(DBG%FHNDL,*) ' AFTER ADVECTION',  SUM(AC2)
           IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN COMPUTE 4')
         ENDIF
 
-        IF (LMAXETOT) CALL BREAKING_LIMITER_GLOBAL
+        IF(LMAXETOT) CALL BREAKING_LIMITER_GLOBAL
 
 #ifdef TIMINGS
         CALL WAV_MY_WTIME(TIME5)
@@ -283,7 +281,10 @@
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'FINISHED COMPUTE COMPUTE_IMPLICIT'
 #endif
-
+#ifdef DEBUG_COHERENCY_FLUCT
+        CALL PRINT_COHERENCY_ERROR(AC2, "After evaluation")
+      CALL Print_SumAC2("Sums after loop")
+#endif
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -324,9 +325,9 @@
         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE_SOURCES_EXP'
         FLUSH(STAT%FHNDL)
 
-        IF (ICOMP < 2) THEN
+        IF (ICOMP .LT. 2) THEN
           CALL SOURCES_EXPLICIT
-        ELSEIF (ICOMP  .GE. 2) THEN
+        ELSEIF (ICOMP .GE. 2) THEN
           CALL SOURCES_IMPLICIT
         ENDIF 
 

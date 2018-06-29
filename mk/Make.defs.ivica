@@ -1,5 +1,5 @@
 ################################################################################
-# Parallel SELFE Makefile
+# Parallel SCHISM Makefile
 #
 # User makes environment settings for particular OS / PLATFORM / COMPILER / MPI
 # below as well as setting flags having to do with included algorithms (e.g. sediment)
@@ -32,156 +32,80 @@
 ################################################################################
 
 ################################################################################
-## Environment for TACC/Stampede
-## Some modules are loaded at start-up thru .modules
+## Environment for STORM cluster of College of William and Mary
 #################################################################################
-ENV = IVICA
+ENV = BOREAS
+
+################################################################################
+# Alternate executable name if you do not want the default. 
+################################################################################
+EXEC   := pschism_$(ENV)_GNU
 
 ################################################################################
 # Environment 
 ################################################################################
 
-FCP = mpif90 #MPI compiler
+FCP = mpif90 -ffree-line-length-none
+FCS = gfortran
 FLD = $(FCP)
-# MPI vserion (1 or 2)
-PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
-##########################################################################################
-############################ DEBUG + DEVELOPEMENT
-##########################################################################################
-#  FCPFLAGS = $(PPFLAGS) -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn all,nounused -gen-interfaces 
-#  FLDFLAGS = -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces 
-##########################################################################################
-############################ PERFORMANCE SAVE OPTIMIZATION
-##########################################################################################
-  FCPFLAGS = $(PPFLAGS) -O1 -g -traceback -assume byterecl
-  FLDFLAGS = -O1 -g -traceback -assume byterecl
-##########################################################################################
-############################ AGGRESSIVE OPTIMIZATION
-##########################################################################################
-#  FCPFLAGS = $(PPFLAGS) -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl 
-#  FLDFLAGS = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
-##########################################################################################
-#####Libraries
-#From my own dir
-MTSLIBS = -L$(METIS_PATH)/lib -lparmetis -lmetis 
-CDFLIBS = -L$(NETCDF_PATH)/lib -lnetcdf # new version -lnetcdff
-CDFMOD  = -I$(NETCDF_PATH)/include    # modules for netcdf
+# MPI vserion (1 or 2) 
+PPFLAGS := $(PPFLAGS) -DMPIVERSION=2 #-DUSE_WRAP
 
-################################################################################
-# Alternate executable name if you do not want the default. 
-################################################################################
-EXEC   := ~/bin/pelfe_$(ENV)
+#Check bound
+#FCPFLAGS = $(PPFLAGS) -fast -m64 -tp istanbul -Mbounds -Bstatic -g # full optimization w/ vectorization
+#FLDFLAGS= -O2 -Mcache_align -m64 -tp istanbul # basic optimization
+
+#Use  wind (fastest)
+#FCPFLAGS = $(PPFLAGS) -fast -m64 -tp istanbul -Bstatic  # full optimization w/ vectorization
+#FLDFLAGS = -O2 -Mcache_align -m64 -tp istanbul #for final linking of object files
+
+#Pure MPI
+OPTFLAGS = -O2 -Bstatic
+FCPFLAGS = $(PPFLAGS) -O2 -static -static-libgfortran -finit-local-zero
+FLDFLAGS = -O2
+
+#Hybrid de-activated)
+#FCPFLAGS = $(PPFLAGS) -O2 -static -static-libgfortran -finit-local-zero -fopenmp
+#FLDFLAGS = -O2 -fopenmp
+#EXEC   := $(EXEC)_OMP
+
+  #####Libraries
+NC_CONFIG ?=nc-config
+NETCDF_PATH=$(shell $(NC_CONFIG) --prefix)
+METIS_PATH=./ParMetis-3.1-Sep2010
+MTSLIBS = -L$(METIS_PATH) -lparmetis -lmetis
+CDFLIBS = -L$(NETCDF_PATH)/lib -lnetcdf -lnetcdff
+CDFMOD = -I$(NETCDF_PATH)/include # modules for netcdf
 
 ################################################################################
 # Algorithm preference flags.
 # Comment out unwanted modules and flags.
 ################################################################################
 
-# -DSELFE is always on and is defined elsewhere
+# -DSCHISM is always on and is defined elsewhere
 
-# SURA project (remove afterwards)
-#  USE_ADC = yes
-#  EXEC := $(EXEC)_ADC
-
-# Precip/evaporation model
-# USE_PREC_EVAP = yes
-# PPFLAGS := $(PPFLAGS) -DPREC_EVAP 
-# EXEC := $(EXEC)_EVAP
-
-# MM5 in heat exchange model
-# USE_MM5 = yes
-# PPFLAGS := $(PPFLAGS) -DMM5
-# EXEC := $(EXEC)_MM5
-
-# TVD flag (turn off for performance)
-# CHOOSE_TVD = yes
-# EXEC := $(EXEC)_CHOOSE_TVD
-
-# GOTM turbulence closure model
-# USE_GOTM = yes
-# EXEC := $(EXEC)_GOTM
+include ../mk/include_modules
 
 # Don't comment out the follow ifdef
+# Note: currently GOTM4 may give reasonable results only with k-omega
 ifdef USE_GOTM
-  GTMMOD =  -I/home1/01621/zhangy/selfe/trunk/src/GOTM3.2.5/modules/IFORT #modules
-  GTMLIBS = -L/home1/01621/zhangy/selfe/trunk/src/GOTM3.2.5/lib/IFORT -lturbulence_prod -lutil_prod
+  #Following for GOTM4
+  #GTMMOD =  -I/sciclone/home04/yinglong/SELFE/svn/trunk/src/GOTM4.0/modules/PGF90/ #modules
+  #GTMLIBS = -L/sciclone/home04/yinglong/SELFE/svn/trunk/src/GOTM4.0/lib/PGF90/ -lturbulence_prod -lutil_prod
+
+  #Following for GOTM3
+  GTMMOD =  -I/sciclone/home04/yinglong/gotm-3.2.5/modules/PGF90/ #modules
+  GTMLIBS = -L/sciclone/home04/yinglong/gotm-3.2.5/lib/PGF90/ -lturbulence_prod -lutil_prod
 else
   GTMMOD =
   GTMLIBS =
 endif
 
-# Wind wave model WWM
- USE_WWM = yes
- EXEC := $(EXEC)_WWM
-# Implicit schemes in WWM needs PetSc
-# USE_PETSC = yes
-# EXEC := $(EXEC)_PETSC
-
-# TIMOR 
-# USE_TIMOR = yes
-# EXEC := $(EXEC)_TIMOR
-
-# Harmonic analysis tool
-# USE_HA = yes
-# EXEC := $(EXEC)_HA
-
-# STORM SURGE 
-# with forcing stored in netCDF within UVP.nc (Uwind, Vwind, Pair)
-USE_STORM_SURGE_NC = yes
-EXEC := $(EXEC)_STORM_SURGE_NC
-
-##### Select only _one_ model from below
-
-# Ecological model - NAPZD Spitz (internal use only)
-# USE_NAPZD = yes
-# EXEC := $(EXEC)_NAPZD
-
-# Or:
-# Ecological model (EcoSim)
-# USE_ECO = yes
-# EXEC := $(EXEC)_ECO
-
-# Or:
-# CE-QUAL-ICM
-# USE_ICM = yes
-# EXEC := $(EXEC)_ICM
-
-# Or:
-# Sediment model 
-# USE_SED = yes
-# EXEC := $(EXEC)_SED
-
-#Or:
-# Sediment model (2D)
-# USE_SED2D = yes
-# EXEC := $(EXEC)_SED2D
-
-# Or:
-# Oil spill model (not active)
-# USE_OIL = yes
-# EXEC := $(EXEC)_OIL
-
-#########  Compiler configuration related flags
-
-# Include a timer
-# USE_TIMER = yes
-# EXEC := $(EXEC)_TIMER
-
-# Debug mode (more time consuming)
- USE_DEBUG = yes
- EXEC := $(EXEC)_DEBUG
-
 
 ######### Specialty compiler flags and workarounds
-
 # Add -DNO_TR_15581 like below for allocatable array problem in sflux_subs.F90
 # PPFLAGS := $(PPFLAGS) -DNO_TR_15581
-
-# For openMPI compiler, search for "USE_OPEN64" below for compiler flags
-USE_OPEN64 = yes
 
 # Obsolete flags: use USE_WRAP flag to avoid problems in ParMetis lib (calling C from FORTRAN)
 # PPFLAGS := $(PPFLAGS) -DUSE_WRAP 
 
-#Temporary fix for Stampede cluster; leave it on
-# PPFLAGS := $(PPFLAGS) -DSTAMPEDE
