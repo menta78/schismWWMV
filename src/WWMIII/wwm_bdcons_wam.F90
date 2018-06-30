@@ -104,8 +104,11 @@
         nbTotalNumberEntry=0
         IsFirst=.TRUE.
         DO IFILE_IN = 1, NUM_WAM_SPEC_FILES
+          Print *, 'PREFIX_WAVE_FILE=', TRIM(PREFIX_WAVE_FILE)
+          Print *, 'WAM_SPEC_FILE_NAMES_BND(IFILE_IN)=', TRIM(WAM_SPEC_FILE_NAMES_BND(IFILE_IN))
           FULL_FILE=TRIM(PREFIX_WAVE_FILE) // TRIM(WAM_SPEC_FILE_NAMES_BND(IFILE_IN))
-          CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(FULL_FILE))
+          Print *, 'FULL_FILE=', TRIM(FULL_FILE)
+          CALL TEST_FILE_EXIST_DIE("Missing wam grib file 1: ", TRIM(FULL_FILE))
           CALL GRIB_OPEN_FILE(ifile, TRIM(FULL_FILE), 'r')
           call grib_count_in_file(ifile,n)
           allocate(igrib(n))
@@ -186,7 +189,7 @@
 !          WRITE(STAT%FHNDL,*) 'iFile=', iFile
 !          WRITE(STAT%FHNDL,*) 'eFile=', TRIM(eFile)
 !          FLUSH(STAT%FHNDL)
-          CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(FULL_FILE))
+          CALL TEST_FILE_EXIST_DIE("Missing wam grib file 2: ", TRIM(FULL_FILE))
 !          WRITE(STAT%FHNDL,*) 'Debug GRID, step 1'
 !          FLUSH(STAT%FHNDL)
           CALL GRIB_OPEN_FILE(ifile, TRIM(FULL_FILE), 'r')
@@ -367,7 +370,7 @@
 !      Print *, 'Begin READ_GRIB_WAM_BOUNDARY_WBAC_KERNEL_NAKED'
       DirFreqStatus=0
       FULL_FILE=TRIM(PREFIX_WAVE_FILE) // TRIM(WAM_SPEC_FILE_NAMES_BND(IFILE_IN))
-      CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(FULL_FILE))
+      CALL TEST_FILE_EXIST_DIE("Missing wam grib file 3: ", TRIM(FULL_FILE))
       CALL GRIB_OPEN_FILE(ifile, TRIM(FULL_FILE), 'r')
       call grib_count_in_file(ifile,n)
       allocate(igrib(n))

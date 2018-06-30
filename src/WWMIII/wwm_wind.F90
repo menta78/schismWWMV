@@ -2587,12 +2587,14 @@
       USE GRIB_API
       IMPLICIT NONE
       REAL(rkind), intent(out) :: eTimeOut
-      CHARACTER(len=281), intent(in) :: eFile
+      CHARACTER(len=*), intent(in) :: eFile
       LOGICAL, intent(in) :: STEPRANGE_IN
       integer ifile, i, n
       INTEGER, SAVE :: nbCall = 0
       integer, allocatable :: igrib(:)
-      CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(eFile))
+!      Print *, 'READ_TIME_OF_GRIB_FILE, len(eFile)=', LEN_TRIM(eFile)
+!      Print *, 'READ_TIME_OF_GRIB_FILE, eFile=', eFile
+      CALL TEST_FILE_EXIST_DIE("Missing wind grib file 1: ", eFile)
 !      WRITE(STAT%FHNDL, *) 'Step 1, nbCall=', nbCall
 !      FLUSH(STAT%FHNDL)
       CALL GRIB_OPEN_FILE(ifile, TRIM(eFile), 'r')
@@ -2868,7 +2870,7 @@
       USE GRIB_API
       IMPLICIT NONE
       type(FD_FORCING_GRID), intent(out) :: TheInfo
-      character(len=281), intent(in) :: TheFile
+      character(len=*), intent(in) :: TheFile
       character(len=20), intent(in) :: shortName
       integer, intent(in) :: GRIB_TYPE
       !
@@ -2881,8 +2883,8 @@
          WRITE(STAT%FHNDL,*) 'TheFile=', TheFile
          FLUSH(STAT%FHNDL)
       END IF
-      CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(TheFile))
-      CALL GRIB_OPEN_FILE(ifile, TRIM(TheFile), 'r')
+      CALL TEST_FILE_EXIST_DIE("Missing wind grib file 2: ", TheFile)
+      CALL GRIB_OPEN_FILE(ifile, TheFile, 'r')
       call grib_count_in_file(ifile,n)
       allocate(igrib(n))
       !
@@ -2991,6 +2993,11 @@
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 48')
         DO IT=1, nbTime_mjd
           FULL_FILE = TRIM(PREFIX_WIND_FILE) // TRIM(GRIB_FILE_NAMES(IT))
+!          Print *, 'IT=', IT
+!          Print *, 'PREFIX_WIND_FILE=', TRIM(PREFIX_WIND_FILE)
+!          Print *, 'GRIB_FILE_NAMES(IT))=', TRIM(GRIB_FILE_NAMES(IT))
+!          Print *, 'FULL_FILE=', TRIM(FULL_FILE)
+!          Print *, 'LEN_TRIM(FULL_FILE)=', LEN_TRIM(FULL_FILE)
           IF (PrintLOG) THEN
             WRITE(WINDBG%FHNDL, *) '---------------------------------------'
             WRITE(WINDBG%FHNDL, *) 'IT=', IT, 'file = ',  TRIM(GRIB_FILE_NAMES(IT)), ' FULL_FILE=', FULL_FILE
@@ -3074,7 +3081,7 @@
            WRITE(WINDBG%FHNDL,*) 'IT=', IT, 'file = ',  TRIM(FULL_FILE)
         END IF
 !       Print *, 'GRIB_FILE_NAMES(IT)=', TRIM(GRIB_FILE_NAMES(IT))
-        CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(FULL_FILE))
+        CALL TEST_FILE_EXIST_DIE("Missing wind grib file 3: ", TRIM(FULL_FILE))
         CALL GRIB_OPEN_FILE(ifile, TRIM(FULL_FILE), 'r')
         call grib_count_in_file(ifile,n)
         IF (PrintLOG) THEN
