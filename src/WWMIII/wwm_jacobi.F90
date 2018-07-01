@@ -538,12 +538,13 @@
 #ifdef DEBUG
       REAL(rkind) sumESUM
 #endif
-      WRITE(STAT%FHNDL,*) 'LCALC=', LCALC
-      WRITE(STAT%FHNDL,*) 'SOURCE_IMPL=', SOURCE_IMPL
-      WRITE(STAT%FHNDL,*) 'LNONL=', LNONL
-      WRITE(STAT%FHNDL,*) 'REFRACTION_IMPL=', REFRACTION_IMPL
-      WRITE(STAT%FHNDL,*) 'FREQ_SHIFT_IMPL=', FREQ_SHIFT_IMPL
-
+      IF (PrintLOG) THEN
+        WRITE(STAT%FHNDL,*) 'LCALC=', LCALC
+        WRITE(STAT%FHNDL,*) 'SOURCE_IMPL=', SOURCE_IMPL
+        WRITE(STAT%FHNDL,*) 'LNONL=', LNONL
+        WRITE(STAT%FHNDL,*) 'REFRACTION_IMPL=', REFRACTION_IMPL
+        WRITE(STAT%FHNDL,*) 'FREQ_SHIFT_IMPL=', FREQ_SHIFT_IMPL
+      END IF
       IF (WAE_JGS_CFL_LIM) THEN
         IF (InitCFLadvgeo .eqv. .FALSE.) THEN
           allocate(CFLadvgeoI(MNP), NumberOperationJGS(MNP), stat=istat)
@@ -744,7 +745,9 @@
           END IF
         END IF
       END DO
-      WRITE(STAT%FHNDL,*) 'nbIter=', nbIter
+      IF (PrintLOG) THEN
+        WRITE(STAT%FHNDL,*) 'nbIter=', nbIter
+      END IF
 #ifdef DEBUG
       CALL LOCAL_NODE_PRINT(20506, "After Jacobi Iteration")
 #endif

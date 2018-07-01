@@ -104,10 +104,10 @@
         nbTotalNumberEntry=0
         IsFirst=.TRUE.
         DO IFILE_IN = 1, NUM_WAM_SPEC_FILES
-          Print *, 'PREFIX_WAVE_FILE=', TRIM(PREFIX_WAVE_FILE)
-          Print *, 'WAM_SPEC_FILE_NAMES_BND(IFILE_IN)=', TRIM(WAM_SPEC_FILE_NAMES_BND(IFILE_IN))
+!          Print *, 'PREFIX_WAVE_FILE=', TRIM(PREFIX_WAVE_FILE)
+!          Print *, 'WAM_SPEC_FILE_NAMES_BND(IFILE_IN)=', TRIM(WAM_SPEC_FILE_NAMES_BND(IFILE_IN))
           FULL_FILE=TRIM(PREFIX_WAVE_FILE) // TRIM(WAM_SPEC_FILE_NAMES_BND(IFILE_IN))
-          Print *, 'FULL_FILE=', TRIM(FULL_FILE)
+!          Print *, 'FULL_FILE=', TRIM(FULL_FILE)
           CALL TEST_FILE_EXIST_DIE("Missing wam grib file 1: ", TRIM(FULL_FILE))
           CALL GRIB_OPEN_FILE(ifile, TRIM(FULL_FILE), 'r')
           call grib_count_in_file(ifile,n)
