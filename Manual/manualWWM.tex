@@ -352,7 +352,8 @@ The choice made there directly affects the running time of the model.
  LSLOP          = F 
  SLMAX          = 0.2 
  LVAR1D         = F
-
+ CART2LATLON    = F
+ LATLON2CART    = F
  APPLY_DXP_CORR = F
  USE_EXACT_FORMULA_SPHERICAL_AREA = F
  LEXPORT_GRID_WW3 = F
@@ -374,6 +375,9 @@ The meaning of the options is following:
 \item {\tt SLMAX} (float): the maximum slope in the computation of the gradient. Default value is 0.2
 \item {\tt LVAR1D} (logical): This is for 1-dimensional mode only. Default is false
 \item {\tt LOPTSIG} (logical): use optimal frequency bins. If true frequency increment of 1.1 are used and the FRHIG is not used. Default is false.
+
+\item {\tt CART2LATLON} (logical): Convert a Cartesian grid to a lat/lon grid. Default is false. Use it only if you are sure of what you are doing.
+\item {\tt LATLON2CART} (logical): Convert a lat/lon grid to a Cartesian grid. Default is false. Use it only if you are sure of what you are doing.
 \item {\tt APPLY\_DXP\_CORR} (logical): If true we try to resolve the -180 / 180 problem in global grids. Default is false.
 \item {\tt USE\_EXACT\_FORMULA\_SPHERICAL\_AREA} (logical): Use exact formula for computing spherical triangle area. Needed if the grid contains the North or South pole. Default is false.
 \item {\tt LEXPORT\_GRID\_WW3} (logical): If true the grid of WWM is exported to a WaveWatch III readable format. Default is false.
@@ -1252,7 +1256,7 @@ The measning of those options is the following:
 \item {\tt ENDTC} (string): end time of station output.
 \item {\tt OUTSTYLE} (string): type of output used. Possible values:
   \begin{itemize}
-  \item {\tt ``NO''}: No history output is done.
+  \item {\tt ``NO''}: No station output is done.
   \item {\tt ``NC''}: netCDF style of data output.
   \item {\tt ``STE''}: ascii data output for text analysis.
   \end{itemize}
