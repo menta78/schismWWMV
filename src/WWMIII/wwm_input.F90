@@ -703,7 +703,7 @@
          LOGICAL     :: PARAMWRITE
          NAMELIST /PROC/ PROCNAME, DIMMODE, LSTEA, LQSTEA, LSPHE,       &
      &      LNAUTIN, LNAUTOUT, LMONO_OUT, LMONO_IN,                     &
-     &      BEGTC, DELTC, UNITC, ENDTC, DMIN, MULTIPLE_OUT_INFO,        &
+     &      BEGTC, DELTC, UNITC, ENDTC, DMIN,                           &
      &      MODEL_OUT_TYPE, ABORT_BLOWUP, LEVEL_HS_BLOW, LOGLEVEL
 
          NAMELIST /COUPL/ LCPL, LROMS, LTIMOR, LSHYFEM, RADFLAG,        &

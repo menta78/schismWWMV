@@ -325,7 +325,6 @@
          LOGICAL    :: MULTIPLE_IN_WIND = .TRUE.
          LOGICAL    :: MULTIPLE_IN_WATLEV = .TRUE.
          LOGICAL    :: MULTIPLE_IN_CURR = .TRUE.
-         LOGICAL    :: MULTIPLE_OUT_INFO = .TRUE.
 !
 ! SIN4 parameters
 !

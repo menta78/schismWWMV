@@ -138,11 +138,10 @@ The following options are available:
 \item {\tt MPI}: it is to select whether you use MPI parallelization or not. If not selected the model is run in serial mode.
 \item {\tt PETSC}: if selected, the PETSc implicit solver becomes available as a solver. This option is not a priori interesting since we have better solvers.
 \item {\tt NETCDF}: if selected netcdf input/output become available. This concerns hotfile, wind input, history output, boundary conditions. Most likely you want to select this option.
-\item {\tt DARKO}: Always unselect this option.
 \item {\tt SNL4\_TSA}: The TSA method for computing snl4 interactions.
 \item {\tt OPENMP}: This option activates the OpenMP parallelization.
 \item {\tt GRIB}: this option allows the use of the GRIB type of files. This concerns the WAM boundary forcing and the wind input.
-\item {\tt TIME}: this option allows the computing of timings in the integration.
+\item {\tt TIMINGS}: this option allows the computing of timings in the integration.
 \item {\tt PDLIB}: this option allows the use of the PDLIB parallelization scheme. This option is relevant only if MPI is selected. If not selected then the parallelization is done with the SCHISM scheme.
 \end{enumerate}
 
@@ -231,18 +230,21 @@ This is the main section of the input file. It chooses the kind of grid used (sp
 \begin{verbatim}
 &PROC
  PROCNAME       = 'wwm_test'
- DIMMODE        = 2                  
- LSTEA          = F                  
- LQSTEA         = F                  
- LSPHE          = F                  
+ DIMMODE        = 2
+ LSTEA          = F
+ LQSTEA         = F
+ LSPHE          = F
  LNAUTIN        = T
  LMONO_IN       = F                
- LMONO_OUT      = F                
+ LMONO_OUT      = F
  BEGTC          = '20071101.000000'
  DELTC          = 600              
  UNITC          = 'SEC'            
  ENDTC          = '20071102.000000'
  DMIN           = 0.001            
+ ABORT_BLOWUP   = F
+ LEVEL_HS_BLOW  = 50
+ LOGLEVEL       = 2
 /
 \end{verbatim}
 The meaning of those options is indicated below:
@@ -260,6 +262,9 @@ The meaning of those options is indicated below:
 \item {\tt UNITC} (string): the unit of the time step. No default.
 \item {\tt ENDTC} (string): the end date of the simulation. No default.
 \item {\tt DMIN} (float): the minimum water depth.
+\item {\tt ABORT\_BLOWUP}: Whether to abort the run in case of blowup of the model. Default is false.
+\item {\tt LEVEL\_HS\_BLOW}: The height that triggers the blowup. Default is 50m
+\item {\tt LOGLEVEL}: The degree of debugging. If 0, no log after the first reading of data. If 1, only node 0 will have some logs. If 2 all the nodes will have some log. Default is 2.
 \end{enumerate}
 The nautical convention for direction is following: 0 degree is from the north and 90 degree is from the east.
 The mathematical convention for direction is following: 0 degree is to the east and 90 degree is to the north.

@@ -16,8 +16,8 @@ OPENMP =
 SNL4_TSA = 
 # Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
 GRIB = on
-# Put TIMINGS = on for timings with
-TIME = on
+# Put TIMINGS = on for selecttimings with
+TIMINGS = on
 # Put PDLIB = on for using the pdlib library.
 PDLIB = on
 
