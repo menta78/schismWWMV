@@ -465,8 +465,10 @@ Other important thing to decide is the origin of the spectrum. If it is time spa
  NETCDF_OUT_SPECTRA = F 
  NETCDF_OUT_FILE        
  USE_SINGLE_OUT = T  
+ PARAMWRITE = T
  HACK_HARD_SET_IOBP = F,
  PREFIX_WAVE_FILE = '/Location/of/my/nice/files/'
+ LEXPORT_BOUC_MOD_OUT = T
  /
 \end{verbatim}
 The meaning of the options is the following:
@@ -481,23 +483,6 @@ The meaning of the options is the following:
 \item {\tt LINDSPRDEG} (logical): If 1-d wave spectra are read this flag defines whether the input for the directional spreading is in degrees (true) or exponent (false).
 \item {\tt LPARMDIR} (logical): If {\tt LPARMDIR} is true than directional spreading is read from {\tt WBDS} and must be in exponential format at this time, only valid for 1d spectra.
 \item {\tt HACK\_HARD\_SET\_IOBP} (logical): with this option, the IOBP from the input file is not corrected. This is useful for example if one wants to have a wave source in the middle of the Ocean. Default is false of course as it is only for hackish purpose.
-\item {\tt FILEWAVE} (logical): File containing the boundary spectra. Related entries to {\tt FILEWAVE} are:
-  \begin{itemize}
-  \item {\tt BEGTC} (string): beginning time of data availability in {\tt FILEWAVE}.
-  \item {\tt DELTC} (float): unit of time step.
-  \item {\tt UNITC} (string): unit of time.
-  \item {\tt ENDTC} (string): end time of data availability in {\tt FILEWAVE}.
-  \end{itemize}
-  This concerns the option XXX.
-\item {\tt PREFIX\_WAVE\_FILE}: The prefix to be applied on the life of files in {\tt FILEWAVE}.
-\item {\tt FILEBOUND} (string): the file containing the description of the boundary condition. The format depends on the {\tt IGRIDTYPE}. Possible values:
-  \begin{itemize}
-  \item {\tt -1}: island boundary point
-  \item {\tt 1}: exterior boundary point.
-  \item {\tt 0}: not on boundary.
-  \item {\tt 2}: active boundary point.
-  \item {\tt 3}: Neumann boundary point.
-  \end{itemize}
 \item {\tt IBOUNDFORMAT} (integer): this specifies the nature of boundary data. Possible values:
   \begin{itemize}
   \item {\tt 1}: This is parametric wave boundary condition with WWM format. (Use FILEWAVE)
@@ -505,6 +490,28 @@ The meaning of the options is the following:
   \item {\tt 3}: This is boundary condition using WW3 output from IFREMER.
   \item {\tt 4}: This is boundary condition using netcdf output files.
   \item {\tt 5}: This is boundary condition using grib 2DFD output from WAM at ECMWF
+  \end{itemize}
+\item {\tt FILEWAVE} (logical): File containing the boundary spectra. Meaning are following.
+  \begin{itemize}
+  \item For {\tt IBOUNDFORMAT=3} this is the list of wavewatch3 netcdf files to use.
+  \item For {\tt IBOUNDFORMAT=5} this is the list of 2dfm files to use
+  \item For the option {\tt LINHOM=F} and {\tt LBCSP=T} the boundary spectrum will be assigned from data in this file.
+  \end{itemize}
+  Related entries to {\tt FILEWAVE} are:
+  \begin{itemize}
+  \item {\tt BEGTC} (string): beginning time of data availability in {\tt FILEWAVE}.
+  \item {\tt DELTC} (float): unit of time step.
+  \item {\tt UNITC} (string): unit of time.
+  \item {\tt ENDTC} (string): end time of data availability in {\tt FILEWAVE}.
+  \end{itemize}
+\item {\tt PREFIX\_WAVE\_FILE}: The prefix to be applied on the life of files in {\tt FILEWAVE}. Final letter should be a /.
+\item {\tt FILEBOUND} (string): the file containing the description of the boundary condition. The format depends on the {\tt IGRIDTYPE}. Possible values:
+  \begin{itemize}
+  \item {\tt -1}: island boundary point
+  \item {\tt 1}: exterior boundary point.
+  \item {\tt 0}: not on boundary.
+  \item {\tt 2}: active boundary point.
+  \item {\tt 3}: Neumann boundary point.
   \end{itemize}
 \item If {\tt LINHOM=F}, {\tt LBCWA=T} and {\tt LBCSE=T} then the spectra is determined by just a few parameters that are actually in the WWM input file:
   \begin{itemize}
@@ -541,10 +548,17 @@ The meaning of the options is the following:
   \end{itemize}
   All the files are contained in {\tt FILEWAVE}
 \item When selecting {\tt IBOUNDFORMAT=4} the boundary condition is obtained from a netCDF boundary file (created either by WWM, ww3ifr or any other method). The filename is {\tt FILEWAVE}. The data can be spectral or parametric.
+\item {\tt PARAMWRITE} (logical): Whether to export parameters of the system in the boundary spectral file. Default is true.
 \item If {\tt IBOUNDFORMAT=5} then the boundary condition is taken from 2DFD wave spectra obtained from ECMWF are used. The list of files is contained in {\tt FILEWAVE}. It is allowed to have several wave spectrum per files. Following option is specific to this code:
   \begin{itemize}
   \item {\tt EXTRAPOLATION\_ALLOWED} (logical): sometimes the grid of origin is too small for effective runs. The idea is then to do extrapolation for the point outside. Default is false.
+  
   \end{itemize}
+\item {\tt LEXPORT\_BOUC\_MOD\_OUT} (logical): export of boundary data in WW3 format in order to be read by WW3. Default is false. Relevant option is:
+  \begin{itemize}
+  \item {\tt EXPORT\_BOUC\_DELTC}: The timestep for exporting the data to the ww3 file.
+  \end{itemize}
+  
 
 \end{enumerate}
 
@@ -577,6 +591,7 @@ The wind section specifies how the wind, is provided to the WWM model. It is the
  EXTRAPOLATION_ALLOWED = T,
  USE_STEPRANGE = T,
  MULTIPLE_IN   = T 
+ LEXPORT_WIND_MOD_OUT = T
 /
 \end{verbatim}
 The meaning of the options is the following:
@@ -591,20 +606,21 @@ The meaning of the options is the following:
   \end{itemize}
 \item Otherwise, the wind is obtained by the selection of {\tt IWINDFORMAT}. Possible values are:
   \begin{itemize}
-  \item {\tt 1}: ASCII file {\tt FILEWAVE} with the relevant entry
+  \item {\tt 1}: ASCII file {\tt FILEWIND} with the relevant entry
     \begin{itemize}
     \item {\tt BEGTC} (string): Beginning of the file.
     \item {\tt DELTC} (float): the separation between different data in {\tt FILEWAVE}
     \item {\tt UNITC} (string): the unit of time separation
     \item {\tt ENDTC} (string): ending of time 
     \end{itemize}
-  \item {\tt 2}: DWD grib file converted to netcdf. List of files is in {\tt FILEWAVE}
-  \item {\tt 3}: NOAA CFRS grib netcdf files. List of files is in {\tt FILEWAVE}
-  \item {\tt 4}: NOAA NARR grib netcdf files. List of files is in {\tt FILEWAVE}
-  \item {\tt 5}: NetCDF CF file {\tt FILEWAVE} with wind field in Uwind / Vwind in a finite difference grid.
-  \item {\tt 6}: NetCDF CF file {\tt FILEWAVE} with wind field in Uwind / Vwind with values at the model nodes.
-  \item {\tt 7}: Grib files from meteorological models. List of files is in {\tt FILEWAVE}
+  \item {\tt 2}: DWD grib file converted to netcdf. List of files is in {\tt FILEWIND}
+  \item {\tt 3}: NOAA CFRS grib netcdf files. List of files is in {\tt FILEWIND}
+  \item {\tt 4}: NOAA NARR grib netcdf files. List of files is in {\tt FILEWIND}
+  \item {\tt 5}: NetCDF CF file {\tt FILEWIND} with wind field in Uwind / Vwind in a finite difference grid.
+  \item {\tt 6}: NetCDF CF file {\tt FILEWIND} with wind field in Uwind / Vwind with values at the model nodes.
+  \item {\tt 7}: Grib files from meteorological models. List of files is in {\tt FILEWIND}
   \end{itemize}
+\item {\tt PREFIX\_WIND\_FILE}: It is a prefix to add to the file for the {\tt FILEWIND}. Final letter should be a /.
 \item {\tt MULTIPLE\_IN} (logical): If true all MPI nodes are reading data at the same time. If false, only one node is reading and sending data to others via MPI sends/recvs. Default is false.
 \item {\tt LINTERWD} (logical): If true interpolate between time steps. Default is true.
 \end{enumerate}
@@ -618,6 +634,11 @@ Following options are specific to the GRIB input files (option {\tt IWINDFORMAT=
   \end{itemize}
 \item {\tt EXTRAPOLATION\_ALLOWED} (logical): Sometimes some model grid points are outside of the forcing file. If it is only a few such points, then it makes sense to use extrapolation for them. Default is false. This option should be used with caution.
 \item {\tt USE\_STEPRANGE} (logical): The grib forcing file have this entry which specifies how advanced in the simulation the file is. If selected time of grib file is increased by {\tt steprange/24} days. But sometime the steprange is mangled. Default is true.
+\item {\tt LEXPORT\_WIND\_MOD\_OUT} (logical): Whether to export the wind from WWM to the Wavewatch 3 format {\tt wind.ww3} for use as wind forcing. Default is false. Relevant entry are:
+  \begin{itemize}
+  \item {\tt EXPORT\_WIND\_DELTC}: The timestep for exporting the data to the ww3 file.
+  \end{itemize}
+  
 \end{enumerate}
 
 TODO: Clear the LSTWD vs LSEWD issue.
@@ -648,6 +669,7 @@ This is the section for currents in the model.
  MULTIPLE_IN   = T                   ! If T then all process are reading data
                                      ! If F then only process 0 does it and
                                      ! then spread to other nodes.
+ LEXPORT_CURR_MOD_OUT = F
 /
 \end{verbatim}
 The meaning of the options is the following:
@@ -655,7 +677,10 @@ The meaning of the options is the following:
 \item {\tt LSECU} (logical): If selected we have time dependent currents. Default is false.
 \item {\tt LCCUR} (logical): If selected we have constant currents over the domain. Default is false.
 \item If {\tt LSECU=T} and {\tt LCCUR=T} then the current is described by two numbers, i.e. {\tt CCURTX} and {\tt CCURTY}.
-\item 
+\item {\tt LEXPORT\_CURR\_MOD\_OUT} (logical): Whether to export the current from WWM to the Wavewatch 3 format {\tt current.ww3} for use as current forcing. Default is false. Relevant entry are:
+  \begin{itemize}
+  \item {\tt EXPORT\_CURR\_DELTC}: The timestep for exporting the data to the ww3 file.
+  \end{itemize}
 \end{enumerate}
 TODO: clear the meaning with {\tt LSTCU}.
 
@@ -679,6 +704,19 @@ TODO: clear the meaning with {\tt LSTCU}.
                                      ! then spread to other nodes.
 /
 \end{verbatim}
+
+
+
+The meaning of the options is the following:
+\begin{enumerate}
+\item {\tt LSEWL} (logical): If selected we have time dependent currents. Default is false.
+\item {\tt LSTWL} (logical): If selected we have constant currents over the domain. Default is false.
+\item If {\tt LSEWL=T} and {\tt LSTWL=T} then the water level is described by one number, i.e. {\tt CWATLV}.
+\item {\tt LEXPORT\_WALV\_MOD\_OUT} (logical): Whether to export the wind from WWM to the Wavewatch 3 format {\tt current.ww3} for use as current forcing. Default is false. Relevant entry are:
+  \begin{itemize}
+  \item {\tt EXPORT\_WALV\_DELTC}: The timestep for exporting the data to the ww3 file.
+  \end{itemize}
+\end{enumerate}
 
 
 \subsection{Section {\tt ENGS}}

@@ -754,21 +754,20 @@
      &      IMPL_GEOADVECT,                                             &
      &      LITERSPLIT, LFILTERTH, MAXCFLTH, LTHBOUND, FMETHOD,         &
      &      LFILTERCXY, MAXCFLCXY, LFILTERSIG, MAXCFLSIG, LSIGBOUND,    &
-     &      MELIM, LIMFAK, &
+     &      MELIM, LIMFAK,                                              &
      &      LDIFR, IDIFFR, LADVTEST, LSOUBOUND, LGSE,                   &
      &      LCFL, LCFL_CASD, RTHETA, LEXPIMP, FREQEXP, LVECTOR,IVECTOR, &
      &      DTMIN_DYN, NDYNITER, DTMIN_SIN, DTMIN_SNL4,                 &
      &      DTMIN_SDS, DTMIN_SNL3, DTMIN_SBR, DTMIN_SBF,                &
      &      NDYNITER_SIN, NDYNITER_SNL4, NDYNITER_SDS, NDYNITER_SBR,    &
      &      NDYNITER_SNL3, NDYNITER_SBF, NB_BLOCK, MAXITER,             &
-     &      LNANINFCHK, PMIN,                              &
-     &      BLOCK_GAUSS_SEIDEL, LNONL,                   &
+     &      LNANINFCHK, PMIN, BLOCK_GAUSS_SEIDEL, LNONL,                &
      &      L_SOLVER_NORM, WAE_SOLVERTHR, ASPAR_LOCAL_LEVEL,            &
      &      WAE_JGS_CFL_LIM,                                            &
      &      JGS_CHKCONV, JGS_DIFF_SOLVERTHR,                            &
-     &      LCONV, LCHKCONV, NQSITER, QSCONV1, QSCONV2,                 &
-     &      QSCONV3, QSCONV4, QSCONV5, EPSH1, EPSH2, EPSH3, EPSH4,      &
-     &      EPSH5,                                                      &
+     &      LCONV, LCHKCONV, NQSITER,                                   &
+     &      QSCONV1, QSCONV2, QSCONV3, QSCONV4, QSCONV5,                &
+     &      EPSH1, EPSH2, EPSH3, EPSH4, EPSH5,                          &
      &      LZETA_SETUP, ZETA_METH, STP_SOLVERTHR
 
          NAMELIST /HOTFILE/ BEGTC, DELTC, UNITC, ENDTC, LHOTF,          &
