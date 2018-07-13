@@ -13,8 +13,6 @@ NETCDF = on
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 OPENMP =
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
-DARKO =
-# Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 SNL4_TSA = 
 # Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
 GRIB = on
@@ -126,15 +124,11 @@ ifdef PETSC
   LIBS  += ${PETSC_LIB}  
 endif
 
-ifdef DARKO 
-  DARKOFLAG = -DDARKO 
-endif
-
 ifdef SNL4_TSA 
   SNL4_TSAFLAG = -DSNL4_TSA
 endif
 
-F90FLAGS = ${MPIFLAG} ${FFLAGS} ${F90OPTI} ${OPENMPFLAG} ${DARKOFLAG} ${SNL4_TSAFLAG}
+F90FLAGS = ${MPIFLAG} ${FFLAGS} ${F90OPTI} ${OPENMPFLAG} ${SNL4_TSAFLAG}
 
 NETC = NETC
 
