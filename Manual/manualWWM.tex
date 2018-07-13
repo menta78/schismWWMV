@@ -234,7 +234,8 @@ This is the main section of the input file. It chooses the kind of grid used (sp
  LSTEA          = F
  LQSTEA         = F
  LSPHE          = F
- LNAUTIN        = T
+ LNAUTIN        = F
+ LNAUTOUT       = F
  LMONO_IN       = F                
  LMONO_OUT      = F
  BEGTC          = '20071101.000000'
@@ -251,10 +252,11 @@ The meaning of those options is indicated below:
 \begin{enumerate}
 \item {\tt PROCNAME} (string): it is the name of the project simulation and is not used thereafter.
 \item {\tt DIMMODE} (integer): dimension mode. Default is 2 for two-dimensional waves.
-\item {\tt LSTEA} (logical): Whether ot use steady mode or not. Default value is true.
+\item {\tt LSTEA} (logical): Whether ot use steady mode or not. Default value is false.
 \item {\tt LQSTEA} (logical): Whether to use the quasi-steady mode or not. Default is false.
 \item {\tt LSPHE} (logical): Whether to use spherical coordinates (lon/lat in degree) or plane coordinates (xy in meter)
-\item {\tt LNAUTIN} (logical): Whether to use nautical convention for wind direction as input.
+\item {\tt LNAUTIN} (logical): Whether to use nautical convention for wind direction as input. Default is false.
+\item {\tt LNAUTOUT} (logical): Whether to use nautical convention for wind direction as input. Default is false.
 \item {\tt LMONO\_IN} (logical): If true the wave height used in the boundary condition is assumed to be monochromatic. If false it is assumed to be a significant wave height. Default is false.
 \item {\tt LMONO\_OUT} (logical): If true the wave height in output is assumed to be monochromatic. If false it is a significant wave height. Default is false.
 \item {\tt BEGTC} (string): The starting date of the simulation. No default.
@@ -310,18 +312,21 @@ The meaning of the options is the following:
 \item {\tt LETOT} (logical): Whether the coupling effect is computed from the wave spectra (the right option but more expensive) or from the mean wave quantities.
 \item {\tt NLVT} (integer): The number of vertical levels in SHYFEM.
 \item {\tt DTCOUP} (float): the time coupling. It must be an integral multiple of the time stepping of WWM. Default is to set it equal to that value.
-\item {\tt IMET\_DRY} (integer): scheme for computing derivative at the wet/dry interface
+\item {\tt IMET\_DRY} (integer): scheme for computing derivative at the wet/dry interface. It is relevant only for {\tt SCHISM} and it concerns the method used for computer the gradients at the nodes in the {\tt hgrad\_nodes} subroutine.
 \end{enumerate}
 
 The logical {\tt LCPL} determines whether the WWM is coupled or not.
 If True, then it can be
 \begin{itemize}
-\item With SELFE when compiled with SELFE.
-\item With ROMS (using pipes) if LROMS=T
-\item With ROMS when compiled with the PGMCL library and ROMS
-\item With TIMOR (using pipes) if LTIMOR=T
-\item With SHYFEM (using pipes) if LSHYFEM=T
+\item With {\tt SCHISM} when compiled with {\tt SCHISM}.
+\item With {\tt ROMS} (using pipes) if {\tt LROMS=T}.
+\item With {\tt ROMS} when compiled with the {\tt PGMCL} library and {\tt ROMS}.
+\item With {\tt TIMOR} (using pipes) if {\tt LTIMOR=T}.
+\item With {\tt SHYFEM} (using pipes) if {\tt LSHYFEM=T}.
 \end{itemize}
+
+
+
 
 
 \subsection{Section {\tt GRID}}
@@ -334,16 +339,20 @@ The choice made there directly affects the running time of the model.
  LSTAG          = F                 
  MINDIR         = 340.              
  MAXDIR         = 7.5               
- MDC            = 36                
+ NUMDIR         = 36                
  FRLOW          = 0.04              
- FRHIGH         = 1.                
- MSC            = 21                
- IGRIDTYPE      = 3                 
- FILEGRID       = 'hgrid.gr3'
- LSLOP          = F          
- SLMAX          = 0.2        
- LVAR1D         = F          
+ FRHIGH         = 1.
+ NUMSIG         = 21
  LOPTSIG        = F          
+ IGRIDTYPE      = 3
+ FILEGRID       = 'hgrid.gr3'
+ LSLOP          = F 
+ SLMAX          = 0.2 
+ LVAR1D         = F
+
+ APPLY_DXP_CORR = F
+ USE_EXACT_FORMULA_SPHERICAL_AREA = F
+ LEXPORT_GRID_WW3 = F
 /
 \end{verbatim}
 The meaning of the options is following:
@@ -355,26 +364,26 @@ The meaning of the options is following:
 \item {\tt MDC} (integer): number of directions.
 \item {\tt FRLOW} (float): lowest frequency (in Hz)
 \item {\tt FRHIGH} (float): highest frequency (in Hz)
-\item {\tt MSC} (integer): number of frequency
+\item {\tt MSC} (integer): number of frequency. 
 \item {\tt IGRIDTYPE} (integer): index describing the file format of the grid used.
 \item {\tt FILEGRID} (string): The filename of the grid file.
 \item {\tt LSLOP} (logical): bottom slope limiter. Default is false.
-\item {\tt SLMAX} (float): maximum slope.
-\item {\tt LVAR1D} (logical): This is for 1-dimensional mode only.
-\item {\tt LOPTSIG} (logical): use optimal frequency bins.
+\item {\tt SLMAX} (float): the maximum slope in the computation of the gradient. Default value is 0.2
+\item {\tt LVAR1D} (logical): This is for 1-dimensional mode only. Default is false
+\item {\tt LOPTSIG} (logical): use optimal frequency bins. If true frequency increment of 1.1 are used and the FRHIG is not used. Default is false.
 \item {\tt APPLY\_DXP\_CORR} (logical): If true we try to resolve the -180 / 180 problem in global grids. Default is false.
 \item {\tt USE\_EXACT\_FORMULA\_SPHERICAL\_AREA} (logical): Use exact formula for computing spherical triangle area. Needed if the grid contains the North or South pole. Default is false.
 \item {\tt LEXPORT\_GRID\_WW3} (logical): If true the grid of WWM is exported to a WaveWatch III readable format. Default is false.
 \end{enumerate}
 For real applications, one should work with {\tt LCIRCD=T}. The choice {\tt LCIRCD=F} makes sense for laboratory experiments when the wave directions are in a specific quadrant.
 
-The frequencies of the model are put in an exponential grid {\tt FR(1:MSC)} with {\tt FR(1)=FRLOW}, {\tt FR(MSC)=FRHIGH}, and {\tt FR(i+1) = XFR FR(i)}. The value of {\tt XFR} should be around 1.1
+The frequencies of the model are put in an exponential grid {\tt FR(1:NUMSIG)} with {\tt FR(1)=FRLOW}, {\tt FR(NUMSIG)=FRHIGH}, and {\tt FR(i+1) = XFR FR(i)}. The value of {\tt XFR} should be around 1.1. One way to impose 1.1 is to use the option {\tt LOPTSIG}.
 
 The {\tt IGRIDTYPE} value has following possibilities:
 \begin{enumerate}
 \item {\tt IGRIDTYPE=1}: This is the XFN {\tt system.dat} file format.
 \item {\tt IGRIDTYPE=2}: This is a special format for periodic grids, which are of interest for laboratory or idealized case simulations.
-\item {\tt IGRIDTYPE=3}: This is the SELFE format. Filename is typically {\tt hgrid.gr3}
+\item {\tt IGRIDTYPE=3}: This is the SCHISM format. Filename is typically {\tt hgrid.gr3}
 \item {\tt IGRIDTYPE=4}: This is an old WWM grid format that should no longer be used.
 \item {\tt IGRIDTYPE=5}: This is a netcdf grid format. It is produced for example by history files of WWM.
 \end{enumerate}
@@ -414,8 +423,8 @@ TODO: The LINID option possibly needs to be eliminated.
 \subsection{Section {\tt BOUC}}
 The construction of the boundary condition used in the model. The complex nature of this section is to take into account whether the spectrum is
 \begin{enumerate}
-\item time dependent (realistic case typically) or not.
-\item spatially dependent (realistic case typically) or not
+\item Time dependent (realistic case typically) or not.
+\item Spatially dependent (realistic case typically) or not.
 \item In parametric form (that is dependent on a few parameters) or not.
 \end{enumerate}
 Other important thing to decide is the origin of the spectrum. If it is time spatially dependent and/or time dependent then it has to come from another data source. This can be IFREMER wave forecasts. This can also be netcdf wave boundary which may be parametric or not.
@@ -457,6 +466,7 @@ Other important thing to decide is the origin of the spectrum. If it is time spa
  NETCDF_OUT_FILE        
  USE_SINGLE_OUT = T  
  HACK_HARD_SET_IOBP = F,
+ PREFIX_WAVE_FILE = '/Location/of/my/nice/files/'
  /
 \end{verbatim}
 The meaning of the options is the following:
@@ -469,16 +479,17 @@ The meaning of the options is the following:
 \item {\tt LBSP2D} (logical): The input spectra is 2-dimensional. Default is false.
 \item {\tt LBINTER} (logical): Time interpolation of spectrum between two times in which the spectrum is available. Default is true.
 \item {\tt LINDSPRDEG} (logical): If 1-d wave spectra are read this flag defines whether the input for the directional spreading is in degrees (true) or exponent (false).
-\item {\tt LPARMDIR} (logical): If LPARMDIR is true than directional spreading is read from WBDS and must be in exponential format at this time, only valid for 1d Spectra.
+\item {\tt LPARMDIR} (logical): If {\tt LPARMDIR} is true than directional spreading is read from {\tt WBDS} and must be in exponential format at this time, only valid for 1d spectra.
 \item {\tt HACK\_HARD\_SET\_IOBP} (logical): with this option, the IOBP from the input file is not corrected. This is useful for example if one wants to have a wave source in the middle of the Ocean. Default is false of course as it is only for hackish purpose.
 \item {\tt FILEWAVE} (logical): File containing the boundary spectra. Related entries to {\tt FILEWAVE} are:
   \begin{itemize}
-  \item {\tt BEGTC} (string): beginning time of data availability in FILEWAVE
-  \item {\tt DELTC} (float): unit of time step
-  \item {\tt UNITC} (string): unit of time
-  \item {\tt ENDTC} (string): end time of data availability in FILEWAVE
+  \item {\tt BEGTC} (string): beginning time of data availability in {\tt FILEWAVE}.
+  \item {\tt DELTC} (float): unit of time step.
+  \item {\tt UNITC} (string): unit of time.
+  \item {\tt ENDTC} (string): end time of data availability in {\tt FILEWAVE}.
   \end{itemize}
   This concerns the option XXX.
+\item {\tt PREFIX\_WAVE\_FILE}: The prefix to be applied on the life of files in {\tt FILEWAVE}.
 \item {\tt FILEBOUND} (string): the file containing the description of the boundary condition. The format depends on the {\tt IGRIDTYPE}. Possible values:
   \begin{itemize}
   \item {\tt -1}: island boundary point
@@ -515,8 +526,8 @@ The meaning of the options is the following:
   \end{itemize}
 \item It is possible to output the boundary condition from an actual run and those boundary condition may later be used in another WWM run as forcing data. Relevant variables are:
   \begin{itemize}
-  \item {\tt NETCDF\_OUT\_PARAM} (logical): whether to output the variable for parametric boundary condition-
-  \item {\tt NETCDF\_OUT\_SPECTRA} (logical): whether to output the spectra for the boundary condition
+  \item {\tt NETCDF\_OUT\_PARAM} (logical): whether to output the variable for parametric boundary condition. Default is false.
+  \item {\tt NETCDF\_OUT\_SPECTRA} (logical): whether to output the spectra for the boundary condition. Default is false.
   \item {\tt NETCDF\_OUT\_FILE} (string): the filename of the output.
   \item {\tt USE\_SINGLE\_OUT} (logical): use single precision in the output file.
   \end{itemize}
@@ -570,7 +581,7 @@ The wind section specifies how the wind, is provided to the WWM model. It is the
 \end{verbatim}
 The meaning of the options is the following:
 \begin{enumerate}
-\item {\tt LWINDFROMWWM} (logical): Whether wind should come from WWM. Default is True, but SELFE users may use False in which case the wind comes from SELFE.
+\item {\tt LWINDFROMWWM} (logical): Whether wind should come from WWM. Default is True, but SCHISM users may use False in which case the wind comes from SCHISM.
 \item {\tt LSEWD} (logical): time dependent wind file
 \item {\tt LCWIN} (logical): Constant wind in space. Default is false.
 \item If {\tt LCWIN=T} and {\tt LSEWD=T} then the wind is constant in time and space. Thus it can be describe by two numbers:
@@ -619,7 +630,7 @@ TODO: Clear the LSTWD vs LSEWD issue.
 This is the section for currents in the model.
 
 \begin{verbatim}
-&CURR !NOT USED WITH SELFE
+&CURR !NOT USED WITH SCHISM
  LSECU          = F                  ! Time dependend currents
  LSTCU          = F                  ! Steady current
  LCCUR          = F                  ! Constant current
@@ -651,7 +662,7 @@ TODO: clear the meaning with {\tt LSTCU}.
 
 \subsection{Section {\tt WALV}}
 \begin{verbatim}
-&WALV !NOT USED WITH SELFE
+&WALV !NOT USED WITH SCHISM
  LSEWL          = F                  ! Time dependend currents
  BEGTC          = ' '                ! Begin time
  DELTC          = 1                  ! Time step

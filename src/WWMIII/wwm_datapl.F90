@@ -218,7 +218,7 @@
          REAL(rkind)       :: WINDFAC    = 1.0
          REAL(rkind)       :: SHIFT_WIND_TIME = 0.0_rkind
          REAL(rkind)       :: WALVFAC    = 1.0
-         REAL(rkind)       ::  CURFAC    = 1.0
+         REAL(rkind)       :: CURFAC     = 1.0
 
          REAL(rkind)       :: SLMAX      = 0.2
          REAL(rkind)       :: ALPHA_GSE(3) 
@@ -267,7 +267,7 @@
          LOGICAL    :: LSTAG       = .TRUE.
          LOGICAL    :: LVAR1D      = .FALSE.
          LOGICAL    :: LNAUTIN     = .FALSE.
-         LOGICAL    :: LNAUTOUT    = .TRUE.
+         LOGICAL    :: LNAUTOUT    = .FALSE.
          LOGICAL    :: LSTEA       = .FALSE.
          LOGICAL    :: LQSTEA      = .FALSE.
          LOGICAL    :: LCONV       = .FALSE.
