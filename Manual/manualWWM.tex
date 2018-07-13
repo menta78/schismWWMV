@@ -5,6 +5,9 @@
 \usepackage{url}
 %\usepackage{tikz}
 
+\usepackage{vmargin}
+\setpapersize{custom}{21cm}{29.7cm}
+\setmarginsrb{2cm}{2cm}{2cm}{2cm}{1cm}{1cm}{0pt}{0pt}
 
 \newcommand{\sfA}{\ensuremath{\mathsf{A}}}
 \newcommand{\RR}{\ensuremath{\mathbb{R}}}
@@ -280,7 +283,7 @@ H_{significant} = \sqrt{2} H_{monochromatic}
 \end{equation*}
 
 
-
+\newpage
 
 \subsection{Section {\tt COUPL}}
 This is the coupling section of the namelist file. It specifies how the WWM is coupled to other models (if it is).
@@ -327,7 +330,7 @@ If True, then it can be
 
 
 
-
+\newpage
 
 \subsection{Section {\tt GRID}}
 This section describe the spectral and spatial grid that are used by the wave model.
@@ -389,7 +392,7 @@ The {\tt IGRIDTYPE} value has following possibilities:
 \end{enumerate}
 
 
-
+\newpage
 
 \subsection{Section {\tt INIT}}
 This is to specify how the initial condition is set up
@@ -418,7 +421,7 @@ TODO: The LINID option possibly needs to be eliminated.
 
 
 
-
+\newpage
 
 \subsection{Section {\tt BOUC}}
 The construction of the boundary condition used in the model. The complex nature of this section is to take into account whether the spectrum is
@@ -564,7 +567,7 @@ The meaning of the options is the following:
 
 
 
-
+\newpage
 
 
 \subsection{Section {\tt WIND}}
@@ -645,7 +648,7 @@ TODO: Clear the LSTWD vs LSEWD issue.
 
 
 
-
+\newpage
 
 \subsection{Section {\tt CURR}}
 This is the section for currents in the model.
@@ -661,8 +664,9 @@ This is the section for currents in the model.
  DELTC          = 1800               ! Time step
  UNITC          = 'SEC'              ! Unit
  ENDTC          = '20040904.180000'  ! End time
- LINTERCU       = F                  ! Interpolate linear within the wind input time step
- FILECUR        = 'current.dat'      ! Current file name; input file format: write(*,*) curtx; write(*,*) curty
+ LINTERCU       = F                  ! Interpolate linear within the current
+                                     ! input time step
+ FILECUR        = 'current.dat'      ! Current file name
  LERGINP        = F                  ! read timor file for input ... ergzus.bin
  CURFAC         = 1.000000
  ICURRFORMAT    = 1
@@ -685,6 +689,8 @@ The meaning of the options is the following:
 TODO: clear the meaning with {\tt LSTCU}.
 
 
+\newpage
+
 \subsection{Section {\tt WALV}}
 \begin{verbatim}
 &WALV !NOT USED WITH SCHISM
@@ -693,12 +699,13 @@ TODO: clear the meaning with {\tt LSTCU}.
  DELTC          = 1                  ! Time step
  UNITC          = 'HR'               ! Unit
  ENDTC          = ' '                ! End time
- LINTERWL       = F                  ! Interpolate linear within the wind input time step
+ LINTERWL       = F                  ! Interpolate linear within the water
+                                     ! level input time step
  LSTWL          = T                  ! Steady water level
  LCWLV          = T                  ! Constant water level
  CWATLV         = 0.0                ! elevation of the water level [m]
  IWATLVFORMAT   = 1
- FILEWATL       = '_'                ! water level file name; input file format: write(*,*) eta
+ FILEWATL       = '_'                ! water level file name
  MULTIPLE_IN   = T                   ! If T then all process are reading data
                                      ! If F then only process 0 does it and
                                      ! then spread to other nodes.
@@ -717,6 +724,8 @@ The meaning of the options is the following:
   \item {\tt EXPORT\_WALV\_DELTC}: The timestep for exporting the data to the ww3 file.
   \end{itemize}
 \end{enumerate}
+
+\newpage
 
 
 \subsection{Section {\tt ENGS}}
@@ -740,8 +749,6 @@ This section specifies the choices of physical parametrizations done in the WWM 
  TRICO          = 0.1        
  TRIRA          = 5.       
  TRIURS         = 0.1      
- LPRECOMPST4    = T                  ! Precompute the indices and weightings for the Ardhuin et al. formulation and save to disk, if it is .F. then the saved
-                                     ! values are read from disk
 /
 \end{verbatim}
 The meaning of the options is the following:
@@ -769,7 +776,6 @@ Recommended option is {\tt MESIN=1}. Other options are for research purposes.
   \item {\tt 0}: no nonlinear interactions
   \item {\tt 1}: nonlinear interactions computed according to DIA.
   \end{itemize}
-\item {\tt LPRECOMPST4} (logical): precompute ST4 data and save it to disk. This concerns only {\tt MESIN=1}. 
 \item {\tt IFRIC} (integer): atmospheric boundary layer formulation. Possible values:
   \begin{itemize}
   \item {\tt 1}: for {\tt MESIN=1}
@@ -811,7 +817,7 @@ Recommended option is {\tt MESIN=1}. Other options are for research purposes.
 \end{enumerate}
 
 
-
+\newpage
 
 \subsection{Section {\tt NUMS}}
 This is the section about numerics of the WWM model.
@@ -828,28 +834,14 @@ This is the section about numerics of the WWM model.
    PMIN = 2,
  SMETHOD        = 1
  DMETHOD        = 2
- RTHETA         = 0.5                ! Weighing factor for DMETHOD = 1, not really useful since Crank Nicholson integration can only be montotone for CFL .le. 2
+ RTHETA         = 0.5  
  FMETHOD        = 1
- LITERSPLIT     = F                  ! T: double Strang split; F: simple split (more efficienct). Default: F
-
+ LITERSPLIT     = F
  LFILTERTH      = F
-                                     ! LFILTERTH: use a CFL filter to limit the advection vel. In directional space. This is similar to WW3.
-                                     ! Mostly not used. WWMII is always stable.
- MAXCFLTH       = 1.0                ! Max Cfl in Theta space; used only if LFILTERTH=T
- LFILTERSIG     = F                  ! Limit the advection velocitiy in freq. space (usually F)
- MAXCFLSIG      = 1.0                ! Max Cfl in freq. space; used only if LFILTERSIG=T
- LLIMT          = T                  ! Switch on/off Action limiter, Action limiter must mostly be turned on.
-
+ MAXCFLTH       = 1.0 
+ LFILTERSIG     = F
+ MAXCFLSIG      = 1.0
  MELIM          = 1
-                                     ! Formulation for the action limiter
-                                     ! MELIM = 1 (default)
-                                     ! Limiter according to the WAM group (1988)
-                                     ! MELIM = 2
-                                     ! Limiter according to Hersbach Janssen (1999)
-                                     ! For MESIN = 1 and MESDS = 1, which represents Cycle 3 formulation or Ardhuin, or other formulations except Cycle4, use MELIM = 1 and LIMFAK = 0.1
-                                     ! For MESIN = 2 and MESDS = 2, which represents Cycle 4 formulation, use MELIM = 2 and LIMFAK = 0.6
-                                     ! For WAM we need MELIM = 3
- LIMFAK         = 0.6                ! Proportionality coefficient for the action limiter MAX_DAC_DT = Limfak * Limiter; see notes above for value
  LDIFR          = T                  ! Use phase decoupled diffraction approximation according to Holthuijsen et al. (2003) (usually T; if crash, use F)
  IDIFFR         = 1                  ! Extended WAE account for higher order effects WAE becomes nonlinear; 1: Holthuijsen et al. ; 2: Liau et al. ; 3: Toledo et al. (in preparation)
  LCONV          = F                  ! Estimate convergence criterian and write disk (quasi-steady - qstea.out)
@@ -971,7 +963,11 @@ The meaning of the options is the following:
   \item {\tt 4}: Explicit FVM Upwind scheme
   \item {\tt 5}: Implicit FVM Upwind scheme
   \end{itemize}
-\item {\tt RTHETA} (float): value used in case {\tt DMETHOD=1}.
+\item {\tt RTHETA} (float): value used in case {\tt DMETHOD=1} for the Crank-Nicholson scheme.
+\item {\tt LFILTERTH} (logical): logical for putting the filter on refraction. Default is false and usually not needed.
+\item {\tt MAXCFLTH} (real): Maximum value for the CFL in the refraction. Default value is 1.
+\item {\tt LFILTERSIG} (logical): logical for putting the filter on frequency shifting. Default is false and usually not needed.
+\item {\tt MAXCFLSIG} (real): Maximum value for the CFL in the frequency shifting. Default value is 1.
 \item {\tt FMETHOD} (integer): the choice of frequency-shifting integration method:
   \begin{itemize}
   \item {\tt 0}: no frequency shifting advection
@@ -979,21 +975,29 @@ The meaning of the options is the following:
   \item {\tt 2}: Explicit Upwind scheme
   \item {\tt 3}: Implicit Upwind scheme
   \end{itemize}
-\item {\tt MELIM} (integer): limiter for the action. Possible choices:
+\item {\tt MELIM} (integer): limiter for the action. Default is 1. Effect
   \begin{itemize}
-  \item {\tt 1}: (default) Limiter according to the WAM group (1988) \cite{WAMDIgroup}.
-  \item {\tt 2}: Limiter according to Hersbach Janssen (1999) \cite{HersbachJanssen}.
-  \item {\tt 3}: ????
+  \item {\tt MELIM=0}: No limiter on the action
+  \item {\tt MELIM=1}: is limiting on the action. 
   \end{itemize}
-For {\tt MESIN=1} and {\tt MESDS=1}, which represents Cycle 3 formulation or Ardhuin,
-or other formulations except Cycle4, use {\tt MELIM=1} and {\tt LIMFAK=0.1}.
-For {\tt MESIN=2} and {\tt MESDS=2}, which represents Cycle 4 formulation, use {\tt MELIM=2} and {\tt LIMFAK=0.6}
-For WAM we need {\tt MELIM=3}.
-    
+  
+%\item {\tt MELIM} (integer): limiter for the action. Possible choices:
+%  \begin{itemize}
+%  \item {\tt 1}: (default) Limiter according to the WAM group (1988) \cite{WAMDIgroup}.
+%  \item {\tt 2}: Limiter according to Hersbach Janssen (1999) \cite{HersbachJanssen}.
+%  \item {\tt 3}: ????
+%  \end{itemize}
+%For {\tt MESIN=1} and {\tt MESDS=1}, which represents Cycle 3 formulation or Ardhuin,
+%or other formulations except Cycle4, use {\tt MELIM=1} and {\tt LIMFAK=0.1}.
+%For {\tt MESIN=2} and {\tt MESDS=2}, which represents Cycle 4 formulation, use {\tt MELIM=2} and {\tt LIMFAK=0.6}
+%For WAM we need {\tt MELIM=3}.
+
+\item {\tt LITERSPLIT} (logical): For iterative splitting. Not used. Default is false.
+
 \end{enumerate}
 
 
-
+\newpage
 
 \subsection{Section {\tt HISTORY}}
 This is the code for doing the history output, that is variable defined all over the domain.
@@ -1104,7 +1108,7 @@ The name of the variable are mostly self-explanatory.
 
 
 
-
+\newpage
 
 \subsection{Section {\tt STATION}}
 This is the section for doing station output at predefined locations. Maximum number of output locations is 50.
@@ -1208,6 +1212,11 @@ The measning of those options is the following:
   \item {\tt ``NC''}: netCDF style of data output.
   \item {\tt ``STE''}: ascii data output for text analysis.
   \end{itemize}
+\item {\tt IOUTS} (integer): is the number of stations in output.
+\item {\tt NOUTS} (list of strings): The name of the stations in output
+\item {\tt XOUTS/YOUTS} (list of real): The positions of the stations in output. If running on cartesian mode, those are in meters. If running in spherical mode, those are in degrees, for lon/lat.
+\item {\tt CUTOFF} (list of real): The list of cutoff frequencies of the stations. It is especially important if the stations have a cutoff frequency lower than the highest frequency.
+\item The variables are the same as for HISTORY.
 \end{enumerate}
 Following options are only for netCDF:
 \begin{enumerate}
@@ -1221,6 +1230,7 @@ If set to a value of 86400 daily output files are created.
 The output data is then according to the options in a parallel way to section HISTORY.
 
 
+\newpage
 
 \subsection{Section {\tt HOTFILE}}
 This section specifies how the hotfile is written and read (but note that decision whether to use hotfile or not is done in the INIT section).
@@ -1264,6 +1274,7 @@ The meaning of the options is the following:
 \end{enumerate}
 
 
+\newpage
 
 \subsection{Section {\tt NESTING}}
 This section specifies how to do nesting of another grid in WWM. The nesting if offline and 1-way.
@@ -1325,7 +1336,7 @@ then the files {\tt fine01\_hotfile.nc}, {\tt fine01\_boundary.nc}, {\tt fine02\
 
 
 
-
+\newpage
 
 \subsection{Section {\tt PETScOptions}}
 In this section, we detail the options relevant to PETSC\footnote{For software availability and more details, see \url{http://www.mcs.anl.gov/petsc/documentation/linearsolvertable.html}}, which are actually very rarely used.

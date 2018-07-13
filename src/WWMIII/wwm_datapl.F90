@@ -1181,7 +1181,6 @@
          REAL(rkind)          :: QSCONV3 = 0.97
          REAL(rkind)          :: QSCONV4 = 0.97
          REAL(rkind)          :: QSCONV5 = 0.97
-         REAL(rkind)          :: LIMFAK = 0.1
 
          INTEGER                :: NNZ
          INTEGER                :: MAXMNECON

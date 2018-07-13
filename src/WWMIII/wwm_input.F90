@@ -747,14 +747,14 @@
      &      EXPORT_WALV_DELTC
 
          NAMELIST /ENGS/ ISOURCE, MESNL, MESIN, IFRIC, MESBF, FRICC,    &
-     &      MESBR, MEVEG, ICRIT, IBREAK, ALPBJ, BRHD,            &
+     &      MESBR, MEVEG, ICRIT, IBREAK, ALPBJ, BRHD,                   &
      &      LMAXETOT, MESDS, MESTR, TRICO, TRIRA, TRIURS
 
          NAMELIST /NUMS/ ICOMP, AMETHOD, SMETHOD, DMETHOD,              &
      &      IMPL_GEOADVECT,                                             &
      &      LITERSPLIT, LFILTERTH, MAXCFLTH, LTHBOUND, FMETHOD,         &
      &      LFILTERCXY, MAXCFLCXY, LFILTERSIG, MAXCFLSIG, LSIGBOUND,    &
-     &      MELIM, LIMFAK,                                              &
+     &      MELIM,                                                      &
      &      LDIFR, IDIFFR, LADVTEST, LSOUBOUND, LGSE,                   &
      &      LCFL, LCFL_CASD, RTHETA, LEXPIMP, FREQEXP, LVECTOR,IVECTOR, &
      &      DTMIN_DYN, NDYNITER, DTMIN_SIN, DTMIN_SNL4,                 &
