@@ -756,7 +756,7 @@
      &      LFILTERCXY, MAXCFLCXY, LFILTERSIG, MAXCFLSIG, LSIGBOUND,    &
      &      MELIM,                                                      &
      &      LDIFR, IDIFFR, LADVTEST, LSOUBOUND, LGSE,                   &
-     &      LCFL, LCFL_CASD, RTHETA, LEXPIMP, FREQEXP, LVECTOR,IVECTOR, &
+     &      LCFL, LCFL_CASD, RTHETA, LEXPIMP, LVECTOR,IVECTOR,          &
      &      DTMIN_DYN, NDYNITER, DTMIN_SIN, DTMIN_SNL4,                 &
      &      DTMIN_SDS, DTMIN_SNL3, DTMIN_SBR, DTMIN_SBF,                &
      &      NDYNITER_SIN, NDYNITER_SNL4, NDYNITER_SDS, NDYNITER_SBR,    &

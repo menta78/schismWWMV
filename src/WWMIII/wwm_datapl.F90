@@ -543,7 +543,6 @@
          REAL(rkind)      :: FDIR
          REAL(rkind)      :: MINDIR
          REAL(rkind)      :: MAXDIR
-         REAL(rkind)      :: FREQEXP
 !
 ! Triads
 !

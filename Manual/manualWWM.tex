@@ -842,62 +842,45 @@ This is the section about numerics of the WWM model.
  LFILTERSIG     = F
  MAXCFLSIG      = 1.0
  MELIM          = 1
- LDIFR          = T                  ! Use phase decoupled diffraction approximation according to Holthuijsen et al. (2003) (usually T; if crash, use F)
- IDIFFR         = 1                  ! Extended WAE account for higher order effects WAE becomes nonlinear; 1: Holthuijsen et al. ; 2: Liau et al. ; 3: Toledo et al. (in preparation)
- LCONV          = F                  ! Estimate convergence criterian and write disk (quasi-steady - qstea.out)
- LCFL           = F                  ! Write out CFL numbers; use F to save time
- NQSITER        = 1                  ! # of quasi-steady (Q-S) sub-divisions within each WWM time step (trial and errors)
- QSCONV1        = 0.98               ! Number of grid points [%/100] that have to fulfill abs. wave height criteria EPSH1
- QSCONV2        = 0.98               ! Number of grid points [%/100] that have to fulfill rel. wave height criteria EPSH2
- QSCONV3        = 0.98               ! Number of grid points [%/100] that have to fulfill sum. rel. wave action criteria EPSH3
- QSCONV4        = 0.98               ! Number of grid points [%/100] that have to fulfill rel. avg. wave steepness criteria EPSH4
- QSCONV5        = 0.98               ! Number of grid points [%/100] that have to fulfill avg. rel. wave period criteria EPSH5
- LEXPIMP        = F                  ! Use implicit schemes for freq. lower than given below by FREQEXP; used only if ICOMP=0
- FREQEXP        = 0.1                ! Minimum frequency for explicit schemes; only used if LEXPIMP=T and ICOMP=0
- EPSH1          = 0.01               ! Convergence criteria for rel. wave height ! EPSH1 < CONVK1 = REAL(ABS(HSOLD(IP)-HS2)/HS2)
- EPSH2          = 0.01               ! Convergence criteria for abs. wave height ! EPSH2 < CONVK2 = REAL(ABS(HS2-HSOLD(IP)))
- EPSH3          = 0.01               ! Convergence criteria for the rel. sum of wave action ! EPSH3 < CONVK3 = REAL(ABS(SUMACOLD(IP)-SUMAC)/SUMAC)
- EPSH4          = 0.01               ! Convergence criteria for the rel. avg. wave steepness criteria ! EPSH4 < CONVK4 = REAL(ABS(KHS2-KHSOLD(IP))/KHSOLD(IP))
- EPSH5          = 0.01               ! Convergence criteria for the rel. avg. waveperiod ! EPSH5 < REAL(ABS(TM02-TM02OLD(IP))/TM02OLD(IP))
- LVECTOR        = T                  ! Use optmized propagation routines for large high performance computers e.g. at least more than 128 CPU. Try LVECTOR=F first.
- IVECTOR        = 2                  ! USed if LVECTOR=T; Different flavours of communications
-                                     ! LVECTOR = 1; same propagation style as if LVECTOR = F, this is for testing and development
-                                     ! LVECTOR = 2; all spectral bins are propagated with the same time step and communications is done only once per sub-iteration
-                                     ! LVECTOR = 3; all directions with the same freq. are propgated using the same time step the communications is done for each freq.
-                                     ! LVECTOR = 4; 2 but for mixed open-mpi, code has to be compiled with -openmp
-                                     ! LVECTOR = 5; 3 but for mixed open-mpi, code has to be compiled with -openmp
-                                     ! LVECTOR = 6; same as 2 but highly optmizied with respect to memory usage, of course it is must less efficient than 2
-                                     ! remarks: if you are using this routines be aware that the memory amount that is used is approx. for LVECTOR 1-5 arround
-                                     ! 24 * MSC * MDC * MNP, so if you are trying this on 1 CPU you get a segmentation fault if your system has not enough memory or
-                                     ! if your system is not properly configured it may results into the fact that your computer starts blocking since it try's to swap to disk
-                                     ! The total amount of memoery used per CPU = 24 * MSC * MDC * MNP / No.CPU
- LADVTEST       = F                  ! for testing the advection schemes, testcase will be added soon
- LCHKCONV       = F                  ! needs to set to .true. for quasi-steady mode. in order to compute the QSCONVi criteria and check them
- DTMIN_DYN      =   1.00000000000000 ! min. time step for dynamic integration 
- NDYNITER       =         100,       ! max. iteration for dyn. scheme afterwards the limiter is applied in the last step 
- DTMIN_SIN      =   1.00000000000000 ! min. time steps for the full fractional step method, where each source term is integrated with it's own fractional step
- DTMIN_SNL4     =   1.00000000000000 !    
- DTMIN_SDS      =   1.00000000000000 !    
- DTMIN_SNL3     =   1.00000000000000 !   
- DTMIN_SBR      =  0.100000000000000 !    
- DTMIN_SBF      =   1.00000000000000 !    
- NDYNITER_SIN   =          10,       ! max. iterations for each source term in the fractional step approach. 
- NDYNITER_SNL4  =          10,       !
- NDYNITER_SDS   =          10,       !
- NDYNITER_SBR   =          10,       !
- NDYNITER_SNL3  =          10,       ! 
- NDYNITER_SBF   =          10,       !
- LZETA_SETUP    = F,                 ! T/F, whether to compute the wave setup.
- ZETA_METH      = 0,                 ! 0: use a simple conjugate gradient
-                                     !    preconditioner
-                                     ! 1: use PETSC
- SOLVERTHR       =  1.000000000000000E-5, ! Thr for the Block-Jacobi or Block-Gauss-Seider solver
- MAXITER =         100,                   ! Max. number of iterations 
- LNANINFCHK      = T,                     ! Check for NaN and INF
- LZETA_SETUP     = F,                     ! Compute wave setup 
- ZETA_METH       =           0,           ! Method for wave setup, Mathieu please explain!
- LSOURCESWAM     = T,                     ! Use ECMWF WAM formualtion for deep water physics 
- LSOURCESWWIII   = F,                     ! WW3 Ardhuin et al. sources, not working yet in this code use MESIN = 1 
+ LDIFR          = T
+ IDIFFR         = 1
+ LCONV          = F
+ LCFL           = F
+ NQSITER        = 1
+ QSCONV1        = 0.98
+ QSCONV2        = 0.98
+ QSCONV3        = 0.98
+ QSCONV4        = 0.98
+ QSCONV5        = 0.98
+ LEXPIMP        = F
+ EPSH1          = 0.01
+ EPSH2          = 0.01
+ EPSH3          = 0.01
+ EPSH4          = 0.01
+ EPSH5          = 0.01
+ LVECTOR        = T
+ IVECTOR        = 2
+ LADVTEST       = F
+ LCHKCONV       = F
+ DTMIN_DYN      =   1.00000000000000
+ NDYNITER       =         100,
+ DTMIN_SIN      =   1.00000000000000
+ DTMIN_SNL4     =   1.00000000000000 
+ DTMIN_SDS      =   1.00000000000000
+ DTMIN_SNL3     =   1.00000000000000
+ DTMIN_SBR      =  0.100000000000000
+ DTMIN_SBF      =   1.00000000000000
+ NDYNITER_SIN   =          10,
+ NDYNITER_SNL4  =          10,
+ NDYNITER_SDS   =          10,
+ NDYNITER_SBR   =          10,
+ NDYNITER_SNL3  =          10,
+ NDYNITER_SBF   =          10,
+ LNANINFCHK      = T,
+ LZETA_SETUP    = F,
+ ZETA_METH      = 0,
+ SOLVERTHR       =  1.000000000000000E-5,
+ MAXITER =         100,
 /
 \end{verbatim}
 The meaning of the options is the following:
@@ -980,6 +963,48 @@ The meaning of the options is the following:
   \item {\tt MELIM=0}: No limiter on the action
   \item {\tt MELIM=1}: is limiting on the action. 
   \end{itemize}
+
+\item {\tt LDIFR} (logical): Use phase decoupled diffraction approximation according to Holthuijsen et al. (2003) (usually T; if crash, use F)
+\item {\tt IDIFFR} (integer): Extended WAE account for higher order effects WAE becomes nonlinear; 1: Holthuijsen et al. ; 2: Liau et al. ; 3: Toledo et al. (in preparation)
+\item {\tt QSCONV1} (real): Number of grid points [\%/100] that have to fulfill abs. wave height criteria EPSH1. Default 0.97
+\item {\tt QSCONV2} (real): Number of grid points [\%/100] that have to fulfill rel. wave height criteria EPSH2. Default 0.97
+\item {\tt QSCONV3} (real): Number of grid points [\%/100] that have to fulfill sum. rel. wave action criteria EPSH3. Default is 0.97
+\item {\tt QSCONV4} (real): Number of grid points [\%/100] that have to fulfill rel. avg. wave steepness criteria EPSH4. Default is 0.97
+\item {\tt QSCONV5} (real): Number of grid points [\%/100] that have to fulfill avg. rel. wave period criteria EPSH5. Default is 0.97
+\item {\tt LEXPIMP} (logical): Use implicit schemes for freq. lower than given below by FREQEXP; used only if ICOMP=0. Default is false.
+\item {\tt EPSH1} (real): Convergence criteria for rel. wave height ! EPSH1 < CONVK1 = REAL(ABS(HSOLD(IP)-HS2)/HS2). Default is 0.01
+\item {\tt EPSH2} (real): Convergence criteria for abs. wave height ! EPSH2 < CONVK2 = REAL(ABS(HS2-HSOLD(IP))). Default is 0.01
+\item {\tt EPSH3} (real): Convergence criteria for the rel. sum of wave action ! EPSH3 < CONVK3 = REAL(ABS(SUMACOLD(IP)-SUMAC)/SUMAC). Default is 0.01
+\item {\tt EPSH4} (real): Convergence criteria for the rel. avg. wave steepness criteria ! EPSH4 < CONVK4 = REAL(ABS(KHS2-KHSOLD(IP))/KHSOLD(IP)). Default is 0.01
+\item {\tt EPSH5} (real): Convergence criteria for the rel. avg. waveperiod ! EPSH5 < REAL(ABS(TM02-TM02OLD(IP))/TM02OLD(IP)). Default is 0.01
+\item {\tt LVECTOR} (logical): Use optmized propagation routines for large high performance computers e.g. at least more than 128 CPU. Default is false.
+\item {\tt IVECTOR} (integer): Used if LVECTOR=T; Different flavours of communications.
+  \begin{itemize}
+  \item {\tt IVECTOR=1}: same propagation style as if LVECTOR = F, this is for testing and development
+  \item {\tt IVECTOR=2}: all spectral bins are propagated with the same time step and communications is done only once per sub-iteration
+  \item {\tt IVECTOR=3}: all directions with the same freq. are propgated using the same time step the communications is done for each freq.
+  \item {\tt IVECTOR=4}: 2 but for mixed open-mpi, code has to be compiled with -openmp
+  \item {\tt IVECTOR=5}: 3 but for mixed open-mpi, code has to be compiled with -openmp
+  \item {\tt IVECTOR=6}: same as 2 but highly optmizied with respect to memory usage, of course it is must less efficient than 2
+  \end{itemize}
+Remarks: if you are using this routines be aware that the memory amount that is used is approx.
+For IVECTOR 1-5 around 24 * NUMDIR * NUMSIG * MNP, so if you are trying this on 1 CPU
+you get a segmentation fault if your system has not enough memory or
+if your system is not properly configured it may results into the fact that your computer
+starts blocking since it try's to swap to disk
+The total amount of memoery used per CPU = 24 * MSC * MDC * MNP / No.CPU
+\item {\tt LADVTEST} (logical): Adds a number of print statements to the output.
+\item {\tt LNANINFCHK} (logical): Search for NaN or infinite values. Default is false.
+
+\item {\tt LCHKCONV} (logical):  needs to set to .true. for quasi-steady mode. in order to compute the QSCONVi criteria and check them
+\item {\tt DTMIN\_DYN} (real): min. time step for dynamic integration. Default is 1.000
+\item {\tt NDYNITER} (integer): max. iteration for dyn. scheme afterwards the limiter is applied in the last step. Default is 100
+\item {\tt DTMIN\_SIN} (real): min. time steps for the full fractional step method, where each source term is integrated with it's own fractional step. Default is 1.000
+
+\item {\tt NDYNITER\_SIN / NDYNITER\_SNL4 / NDYNITER\_SDS / NDYNITER\_SBR / NDYNITER\_SNL3 / NDYNITER\_SBF} (integer: max. iterations for each source term in the fractional step approach. 
+  
+  
+  
   
 %\item {\tt MELIM} (integer): limiter for the action. Possible choices:
 %  \begin{itemize}
@@ -993,8 +1018,25 @@ The meaning of the options is the following:
 %For WAM we need {\tt MELIM=3}.
 
 \item {\tt LITERSPLIT} (logical): For iterative splitting. Not used. Default is false.
-
+\item {\tt LCONV} (logical): Estimate convergence criterian and write disk (quasi-steady - qstea.out). Default is false.
+\item {\tt LCFL} (logical): Compute the CFL numbers over the domain.
+\item {\tt NQSITER} (integer): Number of quasi-steady (Q-S) sub-divisions within each WWM time step (trial and errors)
 \end{enumerate}
+
+
+Following options are relative to the computation of the wave setup:
+
+\begin{enumerate}
+\item {\tt LZETA\_SETUP} (logical): whether to compute the wave setup. Default is false.
+\item {\tt ZETA\_METH} (integer): method for computing the wave setup.
+  \begin{itemize}
+  \item {\bf 0}: use a simple conjugate gradient solver.
+  \item {\bf 1}: use PETSc.
+  \end{itemize}
+\item {\tt SOLVERTHR} (real): solver threshold used in the computation.
+\item {\tt MAXITER} (integer): Maximum number of iterations. Default is 100.
+\end{enumerate}
+
 
 
 \newpage
@@ -1125,14 +1167,16 @@ This is the section for doing station output at predefined locations. Maximum nu
  PARAMWRITE      = T     
  FILEOUT        = 'misc.dat'
  LOUTITER       = F
- IOUTS          = 8                  ! Number of output stations
- NOUTS          = 'P-1', 'P-2', 'P-3', 'P-4', 'P-5', 'P-6', 'P-7', 'P-8'! Name of output locations
- XOUTS          = 7280., 7257., 7324., 7319., 7302., 7270., 7958., 8663.! X-Coordinate of output locations
- YOUTS          = 19574., 18549., 17129., 15549., 14096., 12615., 8669., 5598.! Y-Coordinate of output locations
- CUTOFF         = 8*0.44             ! cutoff freq (Hz) for each station - consistent with buoys
+ IOUTS          = 4                  ! Number of output stations
+ NOUTS          = 'P-1', 'P-2', 'P-3', 'P-4', ! Name of stations
+ XOUTS          = 7280., 7257., 7324., 7319., ! X-Coordinate of stations
+ YOUTS          = 19574., 18549., 17129., 15549., ! Y-Coordinate of stations
+ CUTOFF         = 8*0.44             ! cutoff freq (Hz) for
+                                     ! each station - consistent with buoys
  LSP1D          = T                  ! 1D spectral station output
  LSP2D          = F                  ! 2D spectral station output
- LSIGMAX        = T                  ! Adjust the cut-freq. for the output (e.g. consistent with buoy cut-off freq.)
+ LSIGMAX        = T                  ! Adjust the cut-freq. for the output
+                                     ! (e.g. consistent with buoy cut-off freq.)
 ! Below is selection for station specific variables. Default is F for all variables.
  AC             = F                  ! spectrum 
  WK             = F                  ! variable WK
@@ -1293,13 +1337,17 @@ The fullset of options is:
 &NESTING
  L_NESTING = F,      ! whether to produce nesting data or not
  L_HOTFILE = F       ! whether to produce an hotfile as output
- L_BOUC_PARAM = F    ! whether to produce a parametric boundary condition to be used by the nested grids
- L_BOUC_SPEC = F     ! whether to produce a spectral   boundary condition to be used by the nested grids
- NB_GRID_NEST = 0    ! number of nested grids. All lines below must contain NB_GRID_NEST entries.
+ L_BOUC_PARAM = F    ! whether to produce a parametric boundary
+                     ! condition to be used by the nested grids
+ L_BOUC_SPEC = F     ! whether to produce a spectral boundary
+                     ! condition to be used by the nested grids
+ NB_GRID_NEST = 0    ! number of nested grids. All lines below
+                     ! must contain NB_GRID_NEST entries.
  ListIGRIDTYPE =     ! list of integers giving the type of nested grid
  ListFILEGRID =      ! list of strings for the grid file names.
  ListFILEBOUND =     ! list of boundary file names to be used
- ListBEGTC = ....    ! list of beginning time of the runs (used for hotfile and boundary)
+ ListBEGTC = ....    ! list of beginning time of the runs
+                     ! (used for hotfile and boundary)
  ListDELTC =         ! list of DELTC of the boundary output
  ListUNITC =         ! list of UNITS of the boundary output
  ListENDTC =         ! list of ENDTC of the boundary output
