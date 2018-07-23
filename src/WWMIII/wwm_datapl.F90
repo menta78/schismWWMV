@@ -523,7 +523,7 @@
          CHARACTER(LEN=140)     :: FILEWAVE
          CHARACTER(LEN=140)     :: FILEWIND
          CHARACTER(LEN=140)     :: FILESTAT
-         CHARACTER(LEN=140)     :: PREFIX_WAVE_FILE
+         CHARACTER(LEN=140)     :: PREFIX_WAVE_FILE = ''
 
          REAL(rkind)            :: WBHS, WBTP, WBDM, WBDS, WBSS, WBDSMS, WBGAUSS, WBPKEN
 !
