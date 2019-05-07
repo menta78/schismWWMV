@@ -38,7 +38,7 @@
       IF (LSTWD) THEN
         IF (LCWIN) THEN
           IF (PrintLOG) THEN
-            WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'HOMOGENOUS STEADY WIND FIELD IS USED' 
+            WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'HOMOGENOUS STEADY WIND FIELD IS USED'
             WRITE(WINDBG%FHNDL,'("+TRACE...",A,I10)') 'WIND IS COMING FROM WWM - WINDFORMAT', IWINDFORMAT, LWDIR
             FLUSH(WINDBG%FHNDL)
           END IF
@@ -77,7 +77,7 @@
             IFILE=WIND_TIME_IFILE(idxWind)
             IT=WIND_TIME_IT(idxWind)
             CALL READ_NETCDF_NARR(IFILE, IT, WINDXY)
-          ELSE IF (IWINDFORMAT == 5) THEN ! NETCDF CF_COMPLIANT STATIONARY FIELD 
+          ELSE IF (IWINDFORMAT == 5) THEN ! NETCDF CF_COMPLIANT STATIONARY FIELD
             IF (PrintLOG) THEN
               WRITE(WINDBG%FHNDL,'("+TRACE...",A)') 'COMPUTING CF INTERPOLATION COEFS AND LOADING WIND_TIME_MJD'
               FLUSH(WINDBG%FHNDL)
@@ -127,7 +127,7 @@
         IF (LCWIN) THEN
           CALL wwm_abort('LSEWD + LCWIN NOT READY')
 !         CALL READ_WIND_TIME_SERIES(IT) ! set time according to wwminput.nml and get initial time step
-!         CALL SET_INITIAL_WIND(IT) ! 
+!         CALL SET_INITIAL_WIND(IT) !
         ELSE
           IF (PrintLOG) THEN
             WRITE(WINDBG%FHNDL,'("+TRACE...",A,I10)') 'WIND IS COMING FROM WWM - WINDFORMAT', IWINDFORMAT
@@ -228,7 +228,7 @@
 !**********************************************************************
       SUBROUTINE UPDATE_WIND(K)
 #ifdef NCDF
-      USE NETCDF 
+      USE NETCDF
 #endif
       USE DATAPOOL
       IMPLICIT NONE
@@ -476,7 +476,7 @@
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, ISTAT)
         iret=NF90_GET_VAR(ncid, varid, CF_COEFF_GLOBAL)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, ISTAT)
-        !      
+        !
         iret=nf90_close(ncid)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 27, iret)
         !
@@ -676,7 +676,7 @@
         deallocate(CF_IX_GLOBAL, CF_IY_GLOBAL, CF_COEFF_GLOBAL)
 # ifdef MPI_PARALL_GRID
       END IF
-# endif      
+# endif
      END SUBROUTINE SAVE_INTERP_ARRAY
 #endif
 !**********************************************************************
@@ -725,9 +725,9 @@
         IYmax=min(ny-1, IYs+aShift)
         DO IX=IXmin,IXmax
           DO IY=IYmin,IYmax
-            ! 
+            !
             ! First triangle
-            ! 
+            !
             X(1)=TheInfo % LON(IX, IY)
             X(2)=TheInfo % LON(IX+1, IY)
             X(3)=TheInfo % LON(IX, IY+1)
@@ -785,7 +785,7 @@
         eCF_COEFF(4)=0
         WRITE(STAT % FHNDL,*) 'Point ', eX, '/', eY, ' outside grid'
         WRITE(STAT % FHNDL,*) 'MinDist=', MinDist
-      ELSE 
+      ELSE
         WRITE(STAT % FHNDL,*) 'aShift=', aShift
         WRITE(STAT % FHNDL,*) 'eX=', eX, 'eY=', eY
         FLUSH(STAT % FHNDL)
@@ -823,7 +823,7 @@
         END IF
         IF (success .eqv. .TRUE.) RETURN
       END IF
-#endif     
+#endif
       CF_IX=0
       CF_IY=0
       CF_COEFF=0
@@ -871,7 +871,7 @@
       INTEGER, INTENT(OUT)                :: REC1, REC2
       REAL(rkind) :: eTime1, eTime2
       INTEGER  :: iTime
- 
+
       DO iTime=2,eVAR % nbTime
         eTime1=eVAR % ListTime(iTime-1)
         eTime2=eVAR % ListTime(iTime)
@@ -1112,7 +1112,7 @@
       REAL(rkind), intent(inout) :: eField(MNP,2)
       REAL(rkind)                :: Vtotal1(MNP_WIND)
       REAL(rkind)                :: Vtotal2(MNP_WIND)
-#ifdef MPI_PARALL_GRID      
+#ifdef MPI_PARALL_GRID
       REAL(rkind)                :: Vlocal(MNP)
 #endif
       character (len = *), parameter :: CallFct="READ_NETCDF_DWD"
@@ -1404,7 +1404,7 @@
              WRITE(WINDBG%FHNDL,*) 'IFILE=', IFILE
           END IF
           DO IT = 1, NDT_WIND_FILE
-            eNewTime=START_TIME+WIND_TIME_NETCDF(IT)*3600. * SEC2DAY
+            eNewTime=START_TIME + WIND_TIME_NETCDF(IT)*3600. * SEC2DAY
             IF (eNewTime .gt. ePresTime + THR8) THEN
               NDT_WIND_ALL_FILES=NDT_WIND_ALL_FILES + 1
               ePresTime=eNewTime
@@ -1547,7 +1547,7 @@
            FLUSH(WINDBG%FHNDL)
            CALL WWM_ABORT('Please correct your setup')
         END IF
-        
+
         ALLOCATE(NETCDF_FILE_NAMES(NUM_NETCDF_FILES), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 22')
         IF (PrintLOG) THEN
@@ -1758,7 +1758,7 @@
             WI_NARR(IP,:)=Wi
 !           WRITE(WINDBG%FHNDL,*) 'IP=', MNP, ' sumWi=', sum(Wi)
 !           WRITE(WINDBG%FHNDL,*) 'IP=', MNP, ' minW=', minval(Wi), ' maxW=', maxval(Wi)
-          ENDIF 
+          ENDIF
         END DO
         IF (PrintLOG) THEN
           WRITE(WINDBG%FHNDL,*) 'MNP_WIND=', MNP_WIND, ' nbFail=', nbFail
@@ -1841,7 +1841,6 @@
 
         ISTAT = nf90_inquire_dimension(WIND_NCID, dimIDs(4), len = numTime)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, ISTAT)
-
 
         ISTAT = NF90_GET_VAR(WIND_NCID, DWIND_X_ID, WIND_X, start = (/ 1, 1, 1, IT /), count = (/ NDX_WIND, NDY_WIND,1,1 /))
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 14, ISTAT)
@@ -1975,7 +1974,7 @@
         ErrorCoord=0
         DO IP = 1, MNP_WIND
           IEwind=WIND_ELE(IP)
-          IF (IEwind .gt. 0) then 
+          IF (IEwind .gt. 0) then
             XPinterp=0
             YPinterp=0
             eF1=0
@@ -2365,7 +2364,7 @@
       logical, intent(in) :: MULTIPLE_IN
       character(len=100), intent(in) :: eFileName
       character(len=*), intent(in) :: eString
-!      
+!
       INTEGER           :: fid, varid
       INTEGER           :: dimidsB(nf90_max_var_dims), dimids(nf90_max_var_dims)
       integer nbChar
@@ -2448,7 +2447,7 @@
         END IF
 
         ! Reading time
-       
+
         ISTAT = nf90_inq_varid(fid, eTimeStr, varid)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, ISTAT)
 
@@ -2696,7 +2695,7 @@
       zsinpol = sin(DEGRAD * polphi)
       zcospol = cos(DEGRAD * polphi)
       zphis  = DEGRAD * phirot
-      
+
       if (rlarot .gt. 180.) THEN
         zrlas = rlarot - 360.
       ELSE
@@ -2730,7 +2729,7 @@
       zcospol = cos(DEGRAD * polphi)
       zphis  = DEGRAD * phirot
 
-      
+
       if (rlarot .gt. 180.) THEN
         zrlas = rlarot - 360.
       ELSE
@@ -2811,7 +2810,7 @@
       pollon= pollon_sp - 180.
       startlon_tot=zstartlon_tot
       startlat_tot=zstartlat_tot
-      
+
       allocate(TheInfo % LON(nx_dim, ny_dim), TheInfo % LAT(nx_dim, ny_dim), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_wind, allocate error 47')
       DO iX=1,nx_dim
@@ -2860,7 +2859,7 @@
           TheInfo % LAT(iX,iY)=LAT_serial(idx)
         END DO
       END DO
-      DEALLOCATE(LON_serial, LAT_serial, DATA_serial)      
+      DEALLOCATE(LON_serial, LAT_serial, DATA_serial)
       END SUBROUTINE
 !****************************************************************************
 !* Reading grid information from a GRIB file                                *
@@ -2924,7 +2923,7 @@
       END IF
       IF (WeFound .eqv. .FALSE.) THEN
         Print *, 'Failed to find the wind variable in the grib file'
-        CALL WWM_ABORT("Wind has not been found in grib file")          
+        CALL WWM_ABORT("Wind has not been found in grib file")
       END IF
       IF (PrintLOG) THEN
          WRITE(STAT%FHNDL, *) 'WeFound=', WeFound

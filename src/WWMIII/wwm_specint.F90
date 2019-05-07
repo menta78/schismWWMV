@@ -93,7 +93,7 @@
       IF (IP .eq. TESTNODE) THEN
          WRITE(740+myrank,*) 'sum(SSINE)=', sum(SSINE), ' sum(DSSINE)=', sum(DSSINE)
       END IF
-#endif/
+#endif
 !
       IF (ISHALLOW(IP) .EQ. 1) CALL SHALLOW_WATER(IP, WALOC, PHI, DPHIDN, SSBR, DSSBR, SSBF, DSSBF, SSNL3, DSSNL3)
 

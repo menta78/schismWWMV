@@ -1,4 +1,4 @@
-#include ${PETSC_DIR}/conf/variables
+#include ${PETSC_DIR}/lib/petsc/conf/variables
 #PROG = $(HOME)/bin/wwmadv
 PROG = wwmadv
 
@@ -13,7 +13,7 @@ NETCDF = on
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 OPENMP =
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
-SNL4_TSA = 
+SNL4_TSA =
 # Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
 GRIB = on
 # Put TIMINGS = on for selecttimings with
@@ -105,12 +105,12 @@ ifdef MPI
     OBJS= $(OBJSELFE) $(OBJWWM)
   endif
 else
-  MPIFLAG = 
+  MPIFLAG =
   OBJS= $(OBJWWM)
 endif
 
-ifdef OPENMP 
-  OPENMPFLAG  = -openmp 
+ifdef OPENMP
+  OPENMPFLAG  = -openmp
 endif
 
 ifdef GRIB
@@ -121,10 +121,10 @@ endif
 
 ifdef PETSC
   MPIFLAG += -DPETSC ${PETSC_FC_INCLUDES} -DDIRECT_METHOD
-  LIBS  += ${PETSC_LIB}  
+  LIBS  += ${PETSC_LIB}
 endif
 
-ifdef SNL4_TSA 
+ifdef SNL4_TSA
   SNL4_TSAFLAG = -DSNL4_TSA
 endif
 
@@ -137,7 +137,7 @@ $(NETC):
 	cp -f $(NETCDF_INCDIR)/typesizes.mod .
 
 $(PROG): $(OBJS)
-	$(F90) -o $(PROG) $(F90FLAGS)  $(OBJS) $(LIBS) 
+	$(F90) -o $(PROG) $(F90FLAGS)  $(OBJS) $(LIBS)
 
 clean:
 	rm -f *.o *.oo *.obj *.ipo *.mod *.map *__genmod.f90 *.ilk *.pdb $(PROG)
@@ -152,4 +152,3 @@ cleanall:
 
 .ftn.o:
 	$(F90) $(F90FLAGS) -c $<
-
