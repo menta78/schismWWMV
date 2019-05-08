@@ -1240,7 +1240,7 @@
 !for data description consult ftp://nomads.ncdc.noaa.gov/CFSR/HP_time_series/200307/wnd10m.l.gdas.200307.grb2.inv
       INTEGER :: IT, IFILE
       INTEGER :: ILON_ID, ILAT_ID, ITIME_ID, I, J, COUNTER
-      REAL(rkind)   :: START_TIME
+      REAL(rkind)   :: START_TIME, ConvertToDay
       REAL(rkind) , ALLOCATABLE :: WIND_TIME(:), WIND_TIME_NETCDF(:)
       character ( len = 15 ) chrdate
       character ( len = 40 ) beginn_time
@@ -1317,12 +1317,7 @@
         ISTAT = nf90_get_att(WIND_NCID, ITIME_ID, 'units', beginn_time)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, ISTAT)
 
-        CHRDATE(1:4) = beginn_time(13:17)
-        CHRDATE(5:6) = beginn_time(18:19)
-        CHRDATE(7:8) = beginn_time(21:22)
-        CHRDATE(9:9)   = '.'
-        CHRDATE(10:15)= '000000'
-        CALL CT2MJD(CHRDATE,START_TIME)
+        CALL CF_EXTRACT_TIME(beginn_time, ConvertToDay, START_TIME)
 !
 ! check dimensions in the netcdf ... again it is assumed that this is not changing for all files ...
 !
