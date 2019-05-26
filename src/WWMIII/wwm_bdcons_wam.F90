@@ -52,7 +52,7 @@
       integer, allocatable :: ListDir_i(:), ListFreq_i(:)
       integer nbTotalNumberEntry
       LOGICAL IsFirst
-      character(len=140) eFile
+      character(len=281) FULL_FILE
       integer i, idir, ifreq, n
       integer nbdir_wam_read, nbfreq_wam_read
       integer freqScal, dirScal
@@ -104,9 +104,12 @@
         nbTotalNumberEntry=0
         IsFirst=.TRUE.
         DO IFILE_IN = 1, NUM_WAM_SPEC_FILES
-          eFile=WAM_SPEC_FILE_NAMES_BND(IFILE_IN)
-          CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(eFile))
-          CALL GRIB_OPEN_FILE(ifile, TRIM(eFile), 'r')
+!          Print *, 'PREFIX_WAVE_FILE=', TRIM(PREFIX_WAVE_FILE)
+!          Print *, 'WAM_SPEC_FILE_NAMES_BND(IFILE_IN)=', TRIM(WAM_SPEC_FILE_NAMES_BND(IFILE_IN))
+          FULL_FILE=TRIM(PREFIX_WAVE_FILE) // TRIM(WAM_SPEC_FILE_NAMES_BND(IFILE_IN))
+!          Print *, 'FULL_FILE=', TRIM(FULL_FILE)
+          CALL TEST_FILE_EXIST_DIE("Missing wam grib file 1: ", TRIM(FULL_FILE))
+          CALL GRIB_OPEN_FILE(ifile, TRIM(FULL_FILE), 'r')
           call grib_count_in_file(ifile,n)
           allocate(igrib(n))
           DO i=1,n
@@ -182,14 +185,14 @@
         IF (istat/=0) CALL WWM_ABORT('wwm_bdcons_wam, allocate error 9')
         idx=0
         DO IFILE_IN = 1, NUM_WAM_SPEC_FILES
-          eFile=WAM_SPEC_FILE_NAMES_BND(IFILE_IN)
+          FULL_FILE = TRIM(PREFIX_WAVE_FILE) // TRIM(WAM_SPEC_FILE_NAMES_BND(IFILE_IN))
 !          WRITE(STAT%FHNDL,*) 'iFile=', iFile
 !          WRITE(STAT%FHNDL,*) 'eFile=', TRIM(eFile)
 !          FLUSH(STAT%FHNDL)
-          CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(eFile))
+          CALL TEST_FILE_EXIST_DIE("Missing wam grib file 2: ", TRIM(FULL_FILE))
 !          WRITE(STAT%FHNDL,*) 'Debug GRID, step 1'
 !          FLUSH(STAT%FHNDL)
-          CALL GRIB_OPEN_FILE(ifile, TRIM(eFile), 'r')
+          CALL GRIB_OPEN_FILE(ifile, TRIM(FULL_FILE), 'r')
 !          WRITE(STAT%FHNDL,*) 'Debug GRID, step 2'
 !          FLUSH(STAT%FHNDL)
           call grib_count_in_file(ifile,n)
@@ -230,11 +233,12 @@
         shortName='2dfd'
         GRIB_TYPE=1 ! 1 for ECMWF
         IFILE_IN = 1
+        FULL_FILE = TRIM(PREFIX_WAVE_FILE) // TRIM(WAM_SPEC_FILE_NAMES_BND(IFILE_IN))
 !        WRITE(STAT%FHNDL,*) 'Before READ_GRID_INFO_FROM_GRIB'
 !        WRITE(STAT%FHNDL,*) 'IFILE_IN=', IFILE_IN
 !        WRITE(STAT%FHNDL,*) 'WAM_SPEC_FILE_NAMES=', WAM_SPEC_FILE_NAMES_BND(IFILE_IN)
 !        FLUSH(STAT%FHNDL)
-        CALL READ_GRID_INFO_FROM_GRIB(TheInfo, WAM_SPEC_FILE_NAMES_BND(IFILE_IN), shortName, GRIB_TYPE)
+        CALL READ_GRID_INFO_FROM_GRIB(TheInfo, TRIM(FULL_FILE), shortName, GRIB_TYPE)
 !        WRITE(STAT%FHNDL,*) 'After READ_GRID_INFO_FROM_GRIB'
 !        FLUSH(STAT%FHNDL)
 # ifdef MPI_PARALL_GRID
@@ -352,7 +356,7 @@
       !
       real(rkind) :: values(nx_wam*ny_wam)
       integer :: DirFreqStatus(nbdir_wam, nbfreq_wam)
-      character(len=140) eFile
+      character(len=281) FULL_FILE
       integer i, n
       integer eDiff
       integer idx, idir, ifreq
@@ -365,9 +369,9 @@
       real(rkind) eVal
 !      Print *, 'Begin READ_GRIB_WAM_BOUNDARY_WBAC_KERNEL_NAKED'
       DirFreqStatus=0
-      eFile=WAM_SPEC_FILE_NAMES_BND(IFILE_IN)
-      CALL TEST_FILE_EXIST_DIE("Missing grib file: ", TRIM(eFile))
-      CALL GRIB_OPEN_FILE(ifile, TRIM(eFile), 'r')
+      FULL_FILE=TRIM(PREFIX_WAVE_FILE) // TRIM(WAM_SPEC_FILE_NAMES_BND(IFILE_IN))
+      CALL TEST_FILE_EXIST_DIE("Missing wam grib file 3: ", TRIM(FULL_FILE))
+      CALL GRIB_OPEN_FILE(ifile, TRIM(FULL_FILE), 'r')
       call grib_count_in_file(ifile,n)
       allocate(igrib(n))
       WBAC_WAM=0

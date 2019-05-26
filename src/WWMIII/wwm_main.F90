@@ -79,8 +79,10 @@
          REAL(rkind) :: OUTPAR(OUTVARS), OUTWINDPAR(WINDVARS), WALOC(NUMSIG,NUMDIR)
          character(LEN=15) :: CALLFROM
 
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING WWM_II'
-         CALL FLUSH(STAT%FHNDL)
+         IF (PrintLOG) THEN
+           WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING WWM_II'
+           FLUSH(STAT%FHNDL)
+         END IF
 
 #ifdef TIMINGS
          TIME1 = mpi_wtime()
@@ -118,8 +120,10 @@
            IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN MAIN 2')
          ENDIF
 
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') ' ---- ALL CHECKS DONE'
-         CALL FLUSH(STAT%FHNDL)
+         IF (PrintLOG) THEN
+           WRITE(STAT%FHNDL,'("+TRACE...",A)') ' ---- ALL CHECKS DONE'
+           FLUSH(STAT%FHNDL)
+         END IF
 
          SIMUTIME = SIMUTIME + MAIN%DELT
          IF (.NOT. LWINDFROMWWM) THEN
@@ -232,8 +236,10 @@
            IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT('NAN IN MAIN 4')
          ENDIF
 
-         WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE'
-         CALL FLUSH(STAT%FHNDL)
+         IF (PrintLOG) THEN
+           WRITE(STAT%FHNDL,'("+TRACE...",A)') 'ENTERING COMPUTE'
+           FLUSH(STAT%FHNDL)
+         END IF
 
          CALLFROM='SCHISM'
          IF (LQSTEA) THEN
@@ -251,8 +257,10 @@
          TIME3 = mpi_wtime()
 #endif 
 
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'FINISHED COMPUTE nth call to WWM', SIMUTIME
-         CALL FLUSH(STAT%FHNDL)
+         IF (PrintLOG) THEN
+           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'FINISHED COMPUTE nth call to WWM', SIMUTIME
+           FLUSH(STAT%FHNDL)
+         END IF
 
          DO IP = 1, MNP
            WALOC = AC2(:,:,IP)
@@ -272,8 +280,10 @@
 
          IF (icou_elfe_wwm .eq. 0) OUTT_INTPAR = ZERO
 
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'FINISHED FILLING RESULTS', SIMUTIME
-         CALL FLUSH(STAT%FHNDL)
+         IF (PrintLOG) THEN
+           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'FINISHED FILLING RESULTS', SIMUTIME
+           FLUSH(STAT%FHNDL)
+         END IF
 
 #ifdef TIMINGS
          TIME4 = mpi_wtime()
@@ -302,8 +312,10 @@
          END IF 
 ! end modif AD
 
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'FINISHED FILLING VORTEX', SIMUTIME
-         CALL FLUSH(STAT%FHNDL)
+         IF (PrintLOG) THEN
+           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'FINISHED FILLING VORTEX', SIMUTIME
+           FLUSH(STAT%FHNDL)
+         END IF
 
 #ifdef TIMINGS
          TIME5 = mpi_wtime()
@@ -323,22 +335,25 @@
            IF (SUM(AC2) .NE. SUM(AC2)) CALL WWM_ABORT ('NAN IN MAIN 5')
          ENDIF
 
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'END OF COMPUTATIONS NOW RETURN TO SCHISM', SIMUTIME
-         CALL FLUSH(STAT%FHNDL)
+         IF (PrintLOG) THEN
+           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'END OF COMPUTATIONS NOW RETURN TO SCHISM', SIMUTIME
+           FLUSH(STAT%FHNDL)
+         END IF
 
 #ifdef TIMINGS
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----TOTAL TIMINGS-----'
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'PREPARATION        ', TIME2-TIME1
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'INTEGRATION        ', TIME3-TIME2
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'OUTPUT TO SCHISM   ', TIME4-TIME3
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'RADIATION STRESSES ', TIME5-TIME4
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'NAN CHECK          ', TIME6-TIME5
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'TOTAL TIME         ', TIME6-TIME1
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '------END-TIMINGS-  ---'
-         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'FINISHED WITH WWM', SIMUTIME
-         CALL FLUSH(STAT%FHNDL)
+         IF (PrintLOG) THEN
+           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----TOTAL TIMINGS-----'
+           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'PREPARATION        ', TIME2-TIME1
+           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'INTEGRATION        ', TIME3-TIME2
+           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'OUTPUT TO SCHISM   ', TIME4-TIME3
+           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'RADIATION STRESSES ', TIME5-TIME4
+           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'NAN CHECK          ', TIME6-TIME5
+           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'TOTAL TIME         ', TIME6-TIME1
+           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '------END-TIMINGS-  ---'
+           WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'FINISHED WITH WWM', SIMUTIME
+           FLUSH(STAT%FHNDL)
+         END IF
 #endif
- 
       END SUBROUTINE WWM_II
 !**********************************************************************
 !*                                                                    *
@@ -350,27 +365,27 @@
       DO IP = 1, MNP
         IF (WINDXY(IP,1) .NE. WINDXY(IP,1)) THEN
           WRITE(DBG%FHNDL,*) 'NaN in WINDX', IP, WINDXY(IP,1) 
-          CALL FLUSH(DBG%FHNDL)
+          FLUSH(DBG%FHNDL)
         END IF
         IF (WINDXY(IP,2) .NE. WINDXY(IP,2)) THEN
           WRITE(DBG%FHNDL,*) 'NaN in WINDY', IP, WINDXY(IP,2) 
-          CALL FLUSH(DBG%FHNDL)
+          FLUSH(DBG%FHNDL)
         END IF
         IF (WATLEV(IP) .NE. WATLEV(IP)) THEN
           WRITE(DBG%FHNDL,*) 'NaN in WATLEV', IP, WATLEV(IP) 
-          CALL FLUSH(DBG%FHNDL)
+          FLUSH(DBG%FHNDL)
         END IF
         IF (WATLEVOLD(IP) .NE. WATLEVOLD(IP)) THEN
           WRITE(DBG%FHNDL,*) 'NaN in WATLEV', IP, WATLEV(IP)
-          CALL FLUSH(DBG%FHNDL)
+          FLUSH(DBG%FHNDL)
         END IF
         IF (CURTXY(IP,1) .NE. CURTXY(IP,1)) THEN
           WRITE(DBG%FHNDL,*) 'NaN in CURTX', IP, CURTXY(IP,1)
-          CALL FLUSH(DBG%FHNDL)
+          FLUSH(DBG%FHNDL)
         END IF
         IF (CURTXY(IP,2) .NE. CURTXY(IP,2)) THEN
           WRITE(DBG%FHNDL,*) 'NaN in CURTY', IP, CURTXY(IP,2)
-          CALL FLUSH(DBG%FHNDL)
+          FLUSH(DBG%FHNDL)
         END IF
       END DO
       END SUBROUTINE SCHISM_NANCHECK_INPUT_A
@@ -385,20 +400,20 @@
         IF (SUM(OUTT_INTPAR(IP,:)) .NE. SUM(OUTT_INTPAR(IP,:))) THEN
           DO I = 1, SIZE(OUTT_INTPAR(IP,:))
             WRITE(DBG%FHNDL,*) 'NaN in OUTT_INTPAR', IP, I, OUTT_INTPAR(IP,I)
-            CALL FLUSH(DBG%FHNDL)
+            FLUSH(DBG%FHNDL)
           END DO
         END IF
         IF (SUM(WIND_INTPAR(IP,:)) .NE. SUM(WIND_INTPAR(IP,:))) THEN
           DO I = 1, SIZE(WIND_INTPAR(IP,:))
             WRITE(DBG%FHNDL,*) 'NaN in WIND_INTPAR', IP, I, WIND_INTPAR(IP,I)
-            CALL FLUSH(DBG%FHNDL)
+            FLUSH(DBG%FHNDL)
           END DO
         END IF
 !Error: force defined at side centers
         IF (SUM(WWAVE_FORCE(:,IP,:)) .NE. SUM(WWAVE_FORCE(:,IP,:))) THEN
           DO I = 1, SIZE(WWAVE_FORCE(1,:,IP)) ! loop over layers ...
             WRITE(DBG%FHNDL,*) 'NaN in WWAVE_FORCE', IP, I, WWAVE_FORCE(1,I,IP), WWAVE_FORCE(2,I,IP)
-            CALL FLUSH(DBG%FHNDL)
+            FLUSH(DBG%FHNDL)
           END DO
         END IF 
       END DO
@@ -491,9 +506,7 @@
       CALL MJD2CT(MAIN%TMJD, CTIME)
 
 #ifdef TIMINGS
-# ifdef MPI_PARALL_GRID
-      IF (myrank == 0) THEN
-# endif
+      IF (PrintLOG) THEN
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6,A20)') '-----SIMULATION TIME-----        ', MAIN%TMJD, CTIME
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----TOTAL RUN TIMES-----        '
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'PREPROCESSING                    ', TIME2-TIME1
@@ -504,12 +517,12 @@
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') 'TOTAL TIME                       ', TIME6-TIME1
         WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-------------TIMINGS-------------'
         FLUSH(STAT%FHNDL)
-# ifdef MPI_PARALL_GRID
       ENDIF
-# endif
 #endif
 
-      WRITE(STAT%FHNDL,'("+TRACE......",A)') 'LEAVING UN_STEADY'
+      IF (PrintLOG) THEN
+        WRITE(STAT%FHNDL,'("+TRACE......",A)') 'LEAVING UN_STEADY'
+      END IF
 
 101      FORMAT ('+STEP = ',I10,'/',I10,' ( TIME = ',F15.4,' DAYS)')
       END SUBROUTINE
@@ -748,7 +761,7 @@
 # if defined MODEL_COUPLING_ATM_WAV || defined MODEL_COUPLING_OCN_WAV
       USE coupling_var, only : WAV_COMM_WORLD, MyRankGlobal
 # endif
-      USE DATAPOOL, only: MAIN, STAT, LQSTEA, RKIND, LCALC
+      USE DATAPOOL, only: MAIN, STAT, LQSTEA, RKIND, LCALC, PrintLOG
 # ifdef MPI_PARALL_GRID
       USE datapool, only: comm, myrank, ierr, nproc,            &
      &      parallel_finalize
@@ -827,9 +840,11 @@
         END IF
         LCALC=.FALSE.
       END DO
-#ifdef TIMINGS
-       CALL WAV_MY_WTIME(TIME2)
-      WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----TOTAL TIME IN PROG-----', TIME2-TIME1
+# ifdef TIMINGS
+      CALL WAV_MY_WTIME(TIME2)
+      IF (PrintLOG) THEN
+        WRITE(STAT%FHNDL,'("+TRACE...",A,F15.6)') '-----TOTAL TIME IN PROG-----', TIME2-TIME1
+      END IF
 # endif
 
 # if defined MPI_PARALL_GRID && !defined ROMS_WWM_PGMCL_COUPLING && !defined MODEL_COUPLING_ATM_WAV && !defined MODEL_COUPLING_OCN_WAV

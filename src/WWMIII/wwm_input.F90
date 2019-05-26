@@ -703,14 +703,14 @@
          LOGICAL     :: PARAMWRITE
          NAMELIST /PROC/ PROCNAME, DIMMODE, LSTEA, LQSTEA, LSPHE,       &
      &      LNAUTIN, LNAUTOUT, LMONO_OUT, LMONO_IN,                     &
-     &      BEGTC, DELTC, UNITC, ENDTC, DMIN, MULTIPLE_OUT_INFO,        &
-     &      MODEL_OUT_TYPE, ABORT_BLOWUP, LEVEL_HS_BLOW
+     &      BEGTC, DELTC, UNITC, ENDTC, DMIN,                           &
+     &      MODEL_OUT_TYPE, ABORT_BLOWUP, LEVEL_HS_BLOW, LOGLEVEL
 
          NAMELIST /COUPL/ LCPL, LROMS, LTIMOR, LSHYFEM, RADFLAG,        &
      &      LETOT, NLVT, DTCOUP, IMET_DRY
 
-         NAMELIST /GRID/ LCIRD, LSTAG, MINDIR, MAXDIR, NUMDIR, FRLOW,      &
-     &      FRHIGH, NUMSIG, FILEGRID, IGRIDTYPE, LSLOP, SLMAX, LVAR1D,     &
+         NAMELIST /GRID/ LCIRD, LSTAG, MINDIR, MAXDIR, NUMDIR, FRLOW,   &
+     &      FRHIGH, NUMSIG, FILEGRID, IGRIDTYPE, LSLOP, SLMAX, LVAR1D,  &
      &      LOPTSIG, CART2LATLON, LATLON2CART, APPLY_DXP_CORR,          &
      &      USE_EXACT_FORMULA_SPHERICAL_AREA, LEXPORT_GRID_MOD_OUT
 
@@ -726,14 +726,15 @@
      &      BEGTC_OUT, DELTC_OUT, UNITC_OUT, ENDTC_OUT,                 &
      &      EXTRAPOLATION_ALLOWED,                                      &
      &      HACK_HARD_SET_IOBP, PARAMWRITE,                             &
-     &      NETCDF_IN_FILE, LEXPORT_BOUC_MOD_OUT, EXPORT_BOUC_DELTC
+     &      NETCDF_IN_FILE, LEXPORT_BOUC_MOD_OUT, EXPORT_BOUC_DELTC,    &
+     &      PREFIX_WAVE_FILE
 
          NAMELIST /WIND/ LSEWD, LSTWD, LCWIN, LWDIR, BEGTC, DELTC,      &
      &      UNITC, ENDTC, LINTERWD, WDIR, WVEL, CWINDX, CWINDY,         &
      &      FILEWIND, WINDFAC, IWINDFORMAT, LWINDFROMWWM,               &
      &      GRIB_FILE_TYPE, EXTRAPOLATION_ALLOWED, USE_STEPRANGE,       &
      &      MULTIPLE_IN, LEXPORT_WIND_MOD_OUT, EXPORT_WIND_DELTC,       &
-     &      LSAVE_INTERP_ARRAY
+     &      LSAVE_INTERP_ARRAY, PREFIX_WIND_FILE
 
          NAMELIST /CURR/ LSECU, BEGTC, DELTC, UNITC, ENDTC,             &
      &      LINTERCU, LSTCU, LCCUR, CCURTX, CCURTY, FILECUR,            &
@@ -746,28 +747,27 @@
      &      EXPORT_WALV_DELTC
 
          NAMELIST /ENGS/ ISOURCE, MESNL, MESIN, IFRIC, MESBF, FRICC,    &
-     &      MESBR, MEVEG, ICRIT, IBREAK, ALPBJ, BRHD,            &
+     &      MESBR, MEVEG, ICRIT, IBREAK, ALPBJ, BRHD,                   &
      &      LMAXETOT, MESDS, MESTR, TRICO, TRIRA, TRIURS
 
          NAMELIST /NUMS/ ICOMP, AMETHOD, SMETHOD, DMETHOD,              &
      &      IMPL_GEOADVECT,                                             &
      &      LITERSPLIT, LFILTERTH, MAXCFLTH, LTHBOUND, FMETHOD,         &
      &      LFILTERCXY, MAXCFLCXY, LFILTERSIG, MAXCFLSIG, LSIGBOUND,    &
-     &      MELIM, LIMFAK, &
+     &      MELIM,                                                      &
      &      LDIFR, IDIFFR, LADVTEST, LSOUBOUND, LGSE,                   &
-     &      LCFL, LCFL_CASD, RTHETA, LEXPIMP, FREQEXP, LVECTOR,IVECTOR, &
+     &      LCFL, LCFL_CASD, RTHETA, LEXPIMP, LVECTOR,IVECTOR,          &
      &      DTMIN_DYN, NDYNITER, DTMIN_SIN, DTMIN_SNL4,                 &
      &      DTMIN_SDS, DTMIN_SNL3, DTMIN_SBR, DTMIN_SBF,                &
      &      NDYNITER_SIN, NDYNITER_SNL4, NDYNITER_SDS, NDYNITER_SBR,    &
      &      NDYNITER_SNL3, NDYNITER_SBF, NB_BLOCK, MAXITER,             &
-     &      LNANINFCHK, PMIN,                              &
-     &      BLOCK_GAUSS_SEIDEL, LNONL,                   &
+     &      LNANINFCHK, PMIN, BLOCK_GAUSS_SEIDEL, LNONL,                &
      &      L_SOLVER_NORM, WAE_SOLVERTHR, ASPAR_LOCAL_LEVEL,            &
      &      WAE_JGS_CFL_LIM,                                            &
      &      JGS_CHKCONV, JGS_DIFF_SOLVERTHR,                            &
-     &      LCONV, LCHKCONV, NQSITER, QSCONV1, QSCONV2,                 &
-     &      QSCONV3, QSCONV4, QSCONV5, EPSH1, EPSH2, EPSH3, EPSH4,      &
-     &      EPSH5,                                                      &
+     &      LCONV, LCHKCONV, NQSITER,                                   &
+     &      QSCONV1, QSCONV2, QSCONV3, QSCONV4, QSCONV5,                &
+     &      EPSH1, EPSH2, EPSH3, EPSH4, EPSH5,                          &
      &      LZETA_SETUP, ZETA_METH, STP_SOLVERTHR
 
          NAMELIST /HOTFILE/ BEGTC, DELTC, UNITC, ENDTC, LHOTF,          &
@@ -778,7 +778,9 @@
      &      ListBEGTC, ListDELTC, ListUNITC, ListENDTC,                 &
      &      ListIGRIDTYPE, ListFILEGRID, ListFILEBOUND,                 &
      &      ListPrefix, L_HOTFILE, L_BOUC_PARAM, L_BOUC_SPEC
-     
+!
+!    *** Estimate various timings ...
+!
          READ( INP%FHNDL,  NML = PROC)
          wwm_print_namelist(PROC)
          FLUSH(CHK%FHNDL)
@@ -797,6 +799,12 @@
            END IF
          END IF
 #endif
+         PrintLOG=.FALSE.
+         IF ((LOGLEVEL.eq.2).or.((LOGLEVEL.eq.1).and.(myrank.eq.0))) THEN
+           PrintLOG=.TRUE.
+         END IF
+
+         
          READ( INP%FHNDL,  NML = COUPL)
          wwm_print_namelist(COUPL)
          FLUSH(CHK%FHNDL)
@@ -1320,7 +1328,7 @@
            WRITE(STAT%FHNDL,*) 'OUT_HISTORY%ENDT=',OUT_HISTORY%ENDT
            WRITE(STAT%FHNDL,*) 'OUT_HISTORY%BMJD=',OUT_HISTORY%BMJD
            WRITE(STAT%FHNDL,*) 'OUT_HISTORY%EMJD=',OUT_HISTORY%EMJD
-
+           FLUSH(STAT%FHNDL)
 !           Print *, 'OUT_HISTORY%BMJD=', OUT_HISTORY%BMJD
 !           Print *, 'OUT_HISTORY%EMJD=', OUT_HISTORY%EMJD
            CALL WWM_ABORT('CHECK OUTPUT HISTORY TIME STEPS BEGINN TIME STEP IS SMALLER THAN END TIME STEP')

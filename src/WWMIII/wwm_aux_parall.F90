@@ -496,9 +496,10 @@
       implicit NONE
       character(len=*), intent(in) :: string
       real(rkind) :: Lsum(NUMSIG,NUMDIR)
-!      WRITE(STAT%FHNDL,*) 'Direct sum(AC2)=', sum(AC2)
       CALL TOTAL_SUMMATION_AC(AC2, Lsum)
-      WRITE(STAT%FHNDL,*) 'sum(AC2)=', sum(Lsum),' at step:', TRIM(string)
+      IF (PrintLOG) THEN
+        WRITE(STAT%FHNDL,*) 'sum(AC2)=', sum(Lsum),' at step:', TRIM(string)
+      END IF
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *

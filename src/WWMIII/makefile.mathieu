@@ -1,4 +1,4 @@
-#include ${PETSC_DIR}/conf/variables
+#include ${PETSC_DIR}/lib/petsc/conf/variables
 #PROG = $(HOME)/bin/wwmadv
 PROG = wwmadv
 
@@ -13,13 +13,11 @@ NETCDF = on
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
 OPENMP =
 # Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
-DARKO =
-# Put OPENMP = on for compiling with openmp, nothing if no openmp is wished.
-SNL4_TSA = 
+SNL4_TSA =
 # Put GRIB = on for compiling with grib library, nothing if GRIB is not wished
 GRIB = on
-# Put TIMINGS = on for timings with
-TIME = on
+# Put TIMINGS = on for selecttimings with
+TIMINGS = on
 # Put PDLIB = on for using the pdlib library.
 PDLIB = on
 
@@ -63,9 +61,9 @@ F90 = $(WWM_COMPILER)
 
 OBJSELFE = elfe_glbl.o elfe_msgp.o solver_subs.o io_subs.o grid_subs.o misc_subs.o
 OBJWWM = wwm_datapl.o wwm_petscpool.o  wwm_petsc_seriell.o wwm_petsc_parallel.o \
-       wwm_petsc_block.o wwm_petsc_controller.o wwm_aux.o wwm_aux_parall.o wwm_mjdv2.o wwm_blasaux.o wwm_sparskit.o \
-       wwm_wind.o wwm_st4_local.o wwm_st6_local.o wwm_st4.o wwm_st6.o \
-       wwm_breaking.o wwm_friction.o wwm_cycle3.o wwm_dislin.o wwm_diclass.o \
+       wwm_petsc_block.o wwm_petsc_controller.o wwm_aux.o wwm_aux_parall.o wwm_mjdv2.o \
+       wwm_blasaux.o wwm_sparskit.o wwm_wind.o wwm_st4_local.o wwm_st6_local.o wwm_st4.o \
+       wwm_st6.o wwm_breaking.o wwm_friction.o wwm_cycle3.o wwm_dislin.o wwm_diclass.o \
        wwm_gridcf.o wwm_hotfile.o wwm_parall_solver.o wwm_m_constants.o wwm_m_fileio.o \
        wwm_splitinterpo.o \
        wwm_serv_xnl4v5.o wwm_mod_xnl4v5.o wwm_snl4_wrt.o \
@@ -74,8 +72,9 @@ OBJWWM = wwm_datapl.o wwm_petscpool.o  wwm_petsc_seriell.o wwm_petsc_parallel.o 
        wwm_specparam.o wwm_windinput.o wwm_snl3.o wwm_snl4.o wwm_snl4_tsa.o \
        wwm_specint.o wwm_nums1d.o wwm_numtheta.o wwm_numsigma.o wwm_fluctsplit.o \
        wwm_ecmwf.o wwm_deep.o wwm_shallow.o \
-       wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms_pipe.o wwm_coupl_roms_pgmcl.o wwm_jacobi.o wwm_coupl_shyfem.o wwm_coupl_selfe.o wwm_coupl_timor.o wwm_main.o wwm_export_ww3.o
-#       dislin.o diclass.o \
+       wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms_pipe.o \
+       wwm_coupl_roms_pgmcl.o wwm_jacobi.o wwm_coupl_shyfem.o \
+       wwm_coupl_selfe.o wwm_coupl_timor.o wwm_main.o wwm_export_ww3.o
 
 FFLAGS += -DWWM_SOLVER
 ifdef NETCDF
@@ -106,12 +105,12 @@ ifdef MPI
     OBJS= $(OBJSELFE) $(OBJWWM)
   endif
 else
-  MPIFLAG = 
+  MPIFLAG =
   OBJS= $(OBJWWM)
 endif
 
-ifdef OPENMP 
-  OPENMPFLAG  = -openmp 
+ifdef OPENMP
+  OPENMPFLAG  = -openmp
 endif
 
 ifdef GRIB
@@ -122,18 +121,14 @@ endif
 
 ifdef PETSC
   MPIFLAG += -DPETSC ${PETSC_FC_INCLUDES} -DDIRECT_METHOD
-  LIBS  += ${PETSC_LIB}  
+  LIBS  += ${PETSC_LIB}
 endif
 
-ifdef DARKO 
-  DARKOFLAG = -DDARKO 
-endif
-
-ifdef SNL4_TSA 
+ifdef SNL4_TSA
   SNL4_TSAFLAG = -DSNL4_TSA
 endif
 
-F90FLAGS = ${MPIFLAG} ${FFLAGS} ${F90OPTI} ${OPENMPFLAG} ${DARKOFLAG} ${SNL4_TSAFLAG}
+F90FLAGS = ${MPIFLAG} ${FFLAGS} ${F90OPTI} ${OPENMPFLAG} ${SNL4_TSAFLAG}
 
 NETC = NETC
 
@@ -142,7 +137,7 @@ $(NETC):
 	cp -f $(NETCDF_INCDIR)/typesizes.mod .
 
 $(PROG): $(OBJS)
-	$(F90) -o $(PROG) $(F90FLAGS)  $(OBJS) $(LIBS) 
+	$(F90) -o $(PROG) $(F90FLAGS)  $(OBJS) $(LIBS)
 
 clean:
 	rm -f *.o *.oo *.obj *.ipo *.mod *.map *__genmod.f90 *.ilk *.pdb $(PROG)
@@ -157,4 +152,3 @@ cleanall:
 
 .ftn.o:
 	$(F90) $(F90FLAGS) -c $<
-

@@ -88,13 +88,16 @@
 #ifndef SCHISM
 # ifndef PDLIB
 #  ifdef USE_SINGLE
-      integer,parameter :: rkind = 4
+        integer,parameter :: rkind = 4
 #  else
-      integer,parameter :: rkind = 8      ! Default real datatype
+        integer,parameter :: rkind = 8      ! Default real datatype
 #  endif
 # endif
 #endif
 
+        integer :: LOGLEVEL = 2
+        LOGICAL :: PrintLOG
+        
          INTEGER    :: NP_TOTAL, NE_TOTAL
 #ifdef MPI_PARALL_GRID
          REAL(rkind), allocatable           :: nwild_gb(:)
@@ -215,7 +218,7 @@
          REAL(rkind)       :: WINDFAC    = 1.0
          REAL(rkind)       :: SHIFT_WIND_TIME = 0.0_rkind
          REAL(rkind)       :: WALVFAC    = 1.0
-         REAL(rkind)       ::  CURFAC    = 1.0
+         REAL(rkind)       :: CURFAC     = 1.0
 
          REAL(rkind)       :: SLMAX      = 0.2
          REAL(rkind)       :: ALPHA_GSE(3) 
@@ -264,7 +267,7 @@
          LOGICAL    :: LSTAG       = .TRUE.
          LOGICAL    :: LVAR1D      = .FALSE.
          LOGICAL    :: LNAUTIN     = .FALSE.
-         LOGICAL    :: LNAUTOUT    = .TRUE.
+         LOGICAL    :: LNAUTOUT    = .FALSE.
          LOGICAL    :: LSTEA       = .FALSE.
          LOGICAL    :: LQSTEA      = .FALSE.
          LOGICAL    :: LCONV       = .FALSE.
@@ -322,7 +325,6 @@
          LOGICAL    :: MULTIPLE_IN_WIND = .TRUE.
          LOGICAL    :: MULTIPLE_IN_WATLEV = .TRUE.
          LOGICAL    :: MULTIPLE_IN_CURR = .TRUE.
-         LOGICAL    :: MULTIPLE_OUT_INFO = .TRUE.
 !
 ! SIN4 parameters
 !
@@ -521,6 +523,7 @@
          CHARACTER(LEN=140)     :: FILEWAVE
          CHARACTER(LEN=140)     :: FILEWIND
          CHARACTER(LEN=140)     :: FILESTAT
+         CHARACTER(LEN=140)     :: PREFIX_WAVE_FILE = ''
 
          REAL(rkind)            :: WBHS, WBTP, WBDM, WBDS, WBSS, WBDSMS, WBGAUSS, WBPKEN
 !
@@ -540,7 +543,6 @@
          REAL(rkind)      :: FDIR
          REAL(rkind)      :: MINDIR
          REAL(rkind)      :: MAXDIR
-         REAL(rkind)      :: FREQEXP
 !
 ! Triads
 !
@@ -769,6 +771,7 @@
 
          INTEGER                         :: NUM_GRIB_FILES
          CHARACTER(LEN=140), ALLOCATABLE :: GRIB_FILE_NAMES(:)
+         CHARACTER(LEN=140)              :: PREFIX_WIND_FILE = ''
 
          CHARACTER(LEN=40), ALLOCATABLE  :: NETCDF_FILE_NAMES(:)
          CHARACTER(LEN=40), ALLOCATABLE  :: NETCDF_FILE_NAMES_BND(:,:)
@@ -1177,7 +1180,6 @@
          REAL(rkind)          :: QSCONV3 = 0.97
          REAL(rkind)          :: QSCONV4 = 0.97
          REAL(rkind)          :: QSCONV5 = 0.97
-         REAL(rkind)          :: LIMFAK = 0.1
 
          INTEGER                :: NNZ
          INTEGER                :: MAXMNECON
