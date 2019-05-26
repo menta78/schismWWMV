@@ -2571,7 +2571,7 @@
         J = 0
         NNZ = 0
         DO IP = 1, MNP
-!AR: bug below ...
+!AR: bug below ... this is slow shit code ...
           ITMP(:) = 0
           DO I = 1, CCON(IP)
             J = J + 1

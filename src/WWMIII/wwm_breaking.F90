@@ -180,8 +180,7 @@
           SURFA1 = ZERO
         ENDIF
       ELSEIF (IBREAK == 4) THEN ! Janssen & Battjes ... 
-!        IF ( BETA2 .GT. SMALL  .AND. MyABS(BETA2 - QB) .GT. SMALL ) THEN
-         IF (ETOT .GT. THR) THEN
+        IF (ETOT .GT. THR) THEN
            HRMS    = SQRT(8*ETOT) 
            SQPI    = THREE*SQRT(PI)
            FAK     = (ONE+FOUR/SQPI*(BETA*BETA2+1.5*BETA)*exp(-BETA2)-ERF(BETA))
@@ -189,14 +188,11 @@
          ELSE
            SURFA0  = ZERO 
          ENDIF
-!        ELSE
-!          SURFA0 = ZERO
- !       END IF
         SURFA1 = SURFA0
       ENDIF
 !
 #ifdef DEBUG
-      IF (iplg(IP) .eq. 20506) THEN
+      IF (iplg(IP) .eq. TESTNODE) THEN
         WRITE(STAT%FHNDL, *) 'idxcall=', idxcall
         WRITE(STAT%FHNDL, *) 'SURFA0=', SURFA0, ' SURFA1=', SURFA1
         WRITE(STAT%FHNDL, *) 'IBREAK=', IBREAK, ' ICOMP=', ICOMP

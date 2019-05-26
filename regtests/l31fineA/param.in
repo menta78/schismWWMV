@@ -189,7 +189,7 @@
   rnday = 0.1 !total run time in days (0.5 hour)
   nramp = 0 !ramp-up option (1: on; 0: off)
   dramp = 0.1 !needed if nramp=1; ramp-up period in days
-  dt = 0.1 !Time step in sec
+  dt = 0.2 !Time step in sec
 
 !-----------------------------------------------------------------------
 ! Solver option. JCG is used presently.
