@@ -1243,7 +1243,7 @@
       REAL(rkind)   :: START_TIME, ConvertToDay
       REAL(rkind) , ALLOCATABLE :: WIND_TIME(:), WIND_TIME_NETCDF(:)
       character ( len = 15 ) chrdate
-      character ( len = 40 ) beginn_time
+      character ( len = 100 ) beginn_time
       CHARACTER(LEN=15) :: eTimeStr
       character (len = *), parameter :: CallFct="INIT_NETCDF_CRFS"
       integer, dimension(nf90_max_var_dims) :: dimIDs
