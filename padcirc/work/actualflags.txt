@@ -1,0 +1,3726 @@
+----------------------------------
+Tue May 24 14:50:05 UTC 2016
+building adcprep
+PPFC := ftn  -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ftn
+PFC := ftn  -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := cc 
+CCBE := cc 
+CFLAGS := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -Lodir_metis -lmetis -L/lib -lnetcdf  -L/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/lib -lnetcdff -lnetcdf -L/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/lib -lnetcdf -L/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/lib -lhdf5_hl -lhdf5hl_fortran -lhdf5 -lhdf5_fortran /usrx/local/prod/zlib/1.2.7/intel/haswell/lib/libz.a
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 16.0.3 20160415
+----------------------------------
+----------------------------------
+Tue May 24 14:50:40 UTC 2016
+building adcpost
+PPFC := ftn  -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ftn
+PFC := ftn  -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := cc 
+CCBE := cc 
+CFLAGS := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 16.0.3 20160415
+----------------------------------
+----------------------------------
+Tue May 24 14:50:57 UTC 2016
+building adcirc
+PPFC := ftn  -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ftn
+PFC := ftn  -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := cc 
+CCBE := cc 
+CFLAGS := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/lib -lnetcdf  -L/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/lib -lnetcdff -lnetcdf -L/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/lib -lnetcdf -L/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/lib -lhdf5_hl -lhdf5hl_fortran -lhdf5 -lhdf5_fortran /usrx/local/prod/zlib/1.2.7/intel/haswell/lib/libz.a
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 16.0.3 20160415
+----------------------------------
+----------------------------------
+Tue May 24 14:54:19 UTC 2016
+building adcprep
+PPFC := ftn  -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ftn
+PFC := ftn  -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := cc 
+CCBE := cc 
+CFLAGS := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -Lodir_metis -lmetis -L/lib -lnetcdf  -L/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/lib -lnetcdff -lnetcdf -L/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/lib -lnetcdf -L/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/lib -lhdf5_hl -lhdf5hl_fortran -lhdf5 -lhdf5_fortran /usrx/local/prod/zlib/1.2.7/intel/haswell/lib/libz.a
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 16.0.3 20160415
+----------------------------------
+----------------------------------
+Tue May 24 14:54:53 UTC 2016
+building adcpost
+PPFC := ftn  -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ftn
+PFC := ftn  -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := cc 
+CCBE := cc 
+CFLAGS := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 16.0.3 20160415
+----------------------------------
+----------------------------------
+Tue May 24 14:55:10 UTC 2016
+building adcirc
+PPFC := ftn  -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ftn
+PFC := ftn  -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := cc 
+CCBE := cc 
+CFLAGS := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/lib -lnetcdf  -L/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/lib -lnetcdff -lnetcdf -L/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/lib -lnetcdf -L/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/lib -lhdf5_hl -lhdf5hl_fortran -lhdf5 -lhdf5_fortran /usrx/local/prod/zlib/1.2.7/intel/haswell/lib/libz.a
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 16.0.3 20160415
+----------------------------------
+----------------------------------
+Tue May 24 14:56:14 UTC 2016
+building padcirc
+PPFC := ftn  -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ftn
+PFC := ftn  -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := cc 
+CCBE := cc 
+CFLAGS := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/lib -lnetcdf  -L/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/lib -lnetcdff -lnetcdf -L/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/lib -lnetcdf -L/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/lib -lhdf5_hl -lhdf5hl_fortran -lhdf5 -lhdf5_fortran /usrx/local/prod/zlib/1.2.7/intel/haswell/lib/libz.a
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 16.0.3 20160415
+----------------------------------
+----------------------------------
+Tue May 24 14:57:21 UTC 2016
+building hstime
+PPFC := ftn  -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ftn
+PFC := ftn  -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := cc 
+CCBE := cc 
+CFLAGS := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/lib -lnetcdf  -L/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/lib -lnetcdff -lnetcdf -L/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/lib -lnetcdf -L/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/lib -lhdf5_hl -lhdf5hl_fortran -lhdf5 -lhdf5_fortran /usrx/local/prod/zlib/1.2.7/intel/haswell/lib/libz.a
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 16.0.3 20160415
+----------------------------------
+----------------------------------
+Tue May 24 14:57:24 UTC 2016
+building aswip
+PPFC := ftn  -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ftn
+PFC := ftn  -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := cc 
+CCBE := cc 
+CFLAGS := -I . -I ../prep -I/gpfs/hps/usrx/local/prod/NetCDF/4.2/intel/haswell/include -I/gpfs/hps/usrx/local/prod/HDF5/1.8.9/serial/intel/haswell/include -I /usrx/local/prod/zlib/1.2.7/intel/haswell/include -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 16.0.3 20160415
+----------------------------------
+----------------------------------
+Thu May  9 19:22:43 CEST 2019
+building padcirc
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpicc -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I ../prep   -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I ../prep   -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I ../prep   -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := 
+CCBE :=  
+CFLAGS := -I . -I ../prep   -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/lib -lnetcdf     
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:23:48 CEST 2019
+building padcirc
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I ../prep   -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I ../prep   -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I ../prep   -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := 
+CCBE :=  
+CFLAGS := -I . -I ../prep   -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/lib -lnetcdf     
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:26:16 CEST 2019
+building padcirc
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I ../prep /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I ../prep /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I ../prep /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := 
+CCBE :=  
+CFLAGS := -I . -I ../prep /home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/lib -lnetcdf     
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:28:35 CEST 2019
+building adcprep
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I ../prep /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I ../prep /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I ../prep /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE :=  
+CFLAGS := -I . -I ../prep /home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -Lodir_metis -lmetis -L/lib -lnetcdf     
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:28:35 CEST 2019
+building adcpost
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I ../prep /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I ../prep /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I ../prep /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE :=  
+CFLAGS := -I . -I ../prep /home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:29:08 CEST 2019
+building adcprep
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I ../prep /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I ../prep /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I ../prep /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE :=  
+CFLAGS := -I . -I ../prep /home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -Lodir_metis -lmetis -L/lib -lnetcdf  /home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:29:08 CEST 2019
+building adcpost
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I ../prep /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I ../prep /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I ../prep /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE :=  
+CFLAGS := -I . -I ../prep /home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:31:15 CEST 2019
+building adcprep
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I /home/aron/padcirc/prep  /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I /home/aron/padcirc/prep  /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I /home/aron/padcirc/prep  /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE :=  
+CFLAGS := -I . -I /home/aron/padcirc/prep  /home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -Lodir_metis -lmetis -L/lib -lnetcdf  /home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:31:15 CEST 2019
+building adcpost
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I /home/aron/padcirc/prep  /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I /home/aron/padcirc/prep  /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I /home/aron/padcirc/prep  /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE :=  
+CFLAGS := -I . -I /home/aron/padcirc/prep  /home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:31:27 CEST 2019
+building adcprep
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE :=  
+CFLAGS := -I . -I/home/aron/padcirc/prep  /home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -Lodir_metis -lmetis -L/lib -lnetcdf  /home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:31:27 CEST 2019
+building adcpost
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  /home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE :=  
+CFLAGS := -I . -I/home/aron/padcirc/prep  /home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:31:47 CEST 2019
+building adcprep
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE :=  
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -Lodir_metis -lmetis -L/lib -lnetcdf  /home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:31:47 CEST 2019
+building adcpost
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE :=  
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:31:47 CEST 2019
+building adcirc
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := 
+CCBE :=  
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/lib -lnetcdf  /home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:35:10 CEST 2019
+building adcprep
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE :=  
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -Lodir_metis -lmetis -L/lib -lnetcdf  -L/home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:35:10 CEST 2019
+building adcpost
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE :=  
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:35:10 CEST 2019
+building adcirc
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := 
+CCBE :=  
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/lib -lnetcdf  -L/home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:35:25 CEST 2019
+building adcprep
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE :=  
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -Lodir_metis -lmetis -L/lib -lnetcdf  -L/home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:35:25 CEST 2019
+building adcpost
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE :=  
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:35:26 CEST 2019
+building adcirc
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := 
+CCBE :=  
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/lib -lnetcdf  -L/home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:35:51 CEST 2019
+building adcprep
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE :=  
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -Lodir_metis -lmetis -L/lib -lnetcdf  -L/home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:35:51 CEST 2019
+building adcpost
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE :=  
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:35:51 CEST 2019
+building adcirc
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := 
+CCBE :=  
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/lib -lnetcdf  -L/home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:36:16 CEST 2019
+building adcprep
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE :=  
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -Lodir_metis -lmetis -L/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:36:16 CEST 2019
+building adcpost
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE :=  
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:36:16 CEST 2019
+building adcirc
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := 
+CCBE :=  
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/lib -lnetcdf  -L/home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:36:29 CEST 2019
+building adcprep
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE :=  
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -Lodir_metis -lmetis -L/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:36:29 CEST 2019
+building adcpost
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE :=  
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:36:29 CEST 2019
+building adcirc
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := 
+CCBE :=  
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I  -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/lib -lnetcdf  -L/home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:41:07 CEST 2019
+building adcprep
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -Lodir_metis -lmetis -L/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:41:07 CEST 2019
+building adcpost
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:41:07 CEST 2019
+building adcirc
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/lib -lnetcdf  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:41:17 CEST 2019
+building adcprep
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -Lodir_metis -lmetis -L/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:41:17 CEST 2019
+building adcpost
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:41:17 CEST 2019
+building adcirc
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/lib -lnetcdf  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:42:57 CEST 2019
+building adcprep
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -Lodir_metis -lmetis -L/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:42:57 CEST 2019
+building adcpost
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:42:57 CEST 2019
+building adcirc
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/lib -lnetcdf  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:43:20 CEST 2019
+building adcprep
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -Lodir_metis -lmetis -L/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:43:20 CEST 2019
+building adcpost
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:43:21 CEST 2019
+building adcirc
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/lib -lnetcdf  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:43:43 CEST 2019
+building adcprep
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -Lodir_metis -lmetis -L/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:43:43 CEST 2019
+building adcpost
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:43:43 CEST 2019
+building adcirc
+PPFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/lib -lnetcdf  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:45:20 CEST 2019
+building adcprep
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -Lodir_metis -lmetis -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:45:20 CEST 2019
+building adcpost
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:45:20 CEST 2019
+building adcirc
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:45:20 CEST 2019
+building padcirc
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:46:30 CEST 2019
+building adcprep
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -Lodir_metis -lmetis -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:46:30 CEST 2019
+building adcpost
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:46:31 CEST 2019
+building adcirc
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:46:31 CEST 2019
+building padcirc
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:46:31 CEST 2019
+building hstime
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 19:46:32 CEST 2019
+building aswip
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 23:34:23 CEST 2019
+building adcprep
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -Lodir_metis -lmetis -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 23:34:23 CEST 2019
+building adcpost
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 23:34:23 CEST 2019
+building adcirc
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 23:35:05 CEST 2019
+building adcprep
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -Lodir_metis -lmetis -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 23:35:05 CEST 2019
+building adcpost
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 23:35:11 CEST 2019
+building adcirc
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 23:35:53 CEST 2019
+building padcirc
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 23:36:17 CEST 2019
+building hstime
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 23:36:18 CEST 2019
+building aswip
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 23:48:21 CEST 2019
+building adcswan
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 23:48:31 CEST 2019
+building adcswan
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 23:48:43 CEST 2019
+building adcswan
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 23:52:00 CEST 2019
+building adcswan
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 23:55:36 CEST 2019
+building adcprep
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -Lodir_metis -lmetis -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 23:55:36 CEST 2019
+building adcpost
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 23:55:42 CEST 2019
+building adcirc
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 23:56:26 CEST 2019
+building padcirc
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 23:56:50 CEST 2019
+building hstime
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 23:56:50 CEST 2019
+building aswip
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 23:59:25 CEST 2019
+building padcirc
+PPFC :=  -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC :=  -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 :=  -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 :=  -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 :=  -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := 
+DP := 
+DPRE := 
+IMODS := 
+CC := 
+CCBE := 
+CFLAGS := -O1 -xHost -axSSE4.2 -fPIC
+CLIBS := 
+LIBS := -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff 
+MSGLIBS := 
+compiler := intel
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Thu May  9 23:59:35 CEST 2019
+building padcirc
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 00:02:22 CEST 2019
+building adcprep
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -Lodir_metis -lmetis -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 00:02:22 CEST 2019
+building adcpost
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 00:02:28 CEST 2019
+building adcirc
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 00:03:10 CEST 2019
+building padcirc
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib  
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 00:04:21 CEST 2019
+building adcprep_be
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -Lodir_metis -lmetis -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 00:06:25 CEST 2019
+building adcprep_be
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 00:06:46 CEST 2019
+building adcprep_be
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 18:32:58 CEST 2019
+building adcprep_be
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 18:33:52 CEST 2019
+building adcprep_be
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 18:34:13 CEST 2019
+building adcprep_be
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 18:34:58 CEST 2019
+building adcprep_be
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 18:35:32 CEST 2019
+building adcprep_be
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 18:35:40 CEST 2019
+building adcprep_be
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib  -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 18:35:53 CEST 2019
+building adcprep_be
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lparmetis -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 18:36:01 CEST 2019
+building adcprep_be
+PPFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/home/aron/opt/netcdf_intel/lib/include  -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis -L/home/aron/opt/netcdf_intel/lib/lib -lnetcdf -lnetcdff  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib   
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := enable
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 18:36:10 CEST 2019
+building adcprep_be
+PPFC := mpif90 -DHAVE_NETCDF4 
+FC := ifort
+PFC := mpif90 -DHAVE_NETCDF4 
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DHAVE_NETCDF4 
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DHAVE_NETCDF4 
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DHAVE_NETCDF4 
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel -lmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := enable
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 18:36:15 CEST 2019
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel -lmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 18:36:21 CEST 2019
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel -lmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 18:36:31 CEST 2019
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel -lmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 18:41:14 CEST 2019
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel -lmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 18:42:14 CEST 2019
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 18:42:26 CEST 2019
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 18:43:12 CEST 2019
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 18:45:21 CEST 2019
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 18:45:33 CEST 2019
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 18:49:37 CEST 2019
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Fri May 10 18:50:01 CEST 2019
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat May 11 00:21:37 CEST 2019
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat May 11 00:27:28 CEST 2019
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat May 11 00:31:52 CEST 2019
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat May 11 00:36:22 CEST 2019
+building adcprep
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat May 11 00:36:23 CEST 2019
+building adcpost
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat May 11 00:36:26 CEST 2019
+building adcirc
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat May 11 00:36:36 CEST 2019
+building padcirc
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat May 11 00:36:47 CEST 2019
+building hstime
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat May 11 00:36:48 CEST 2019
+building aswip
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat May 11 12:43:56 CEST 2019
+building adcprep
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat May 11 12:43:56 CEST 2019
+building adcpost
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat May 11 12:43:59 CEST 2019
+building adcirc
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat May 11 12:44:08 CEST 2019
+building padcirc
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat May 11 12:44:19 CEST 2019
+building hstime
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat May 11 12:44:19 CEST 2019
+building aswip
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat May 11 12:44:37 CEST 2019
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Wed Nov 13 01:22:34 CET 2019
+building adcprep
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Wed Nov 13 01:22:34 CET 2019
+building adcpost
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Wed Nov 13 01:22:37 CET 2019
+building adcirc
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Wed Nov 13 01:22:47 CET 2019
+building padcirc
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Wed Nov 13 01:22:58 CET 2019
+building hstime
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Wed Nov 13 01:22:58 CET 2019
+building aswip
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Wed Jan  8 13:22:32 CET 2020
+building padcirc
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Wed Jan  8 13:22:56 CET 2020
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Wed Jan  8 13:25:31 CET 2020
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Wed Jan  8 13:26:34 CET 2020
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Wed Jan  8 13:26:43 CET 2020
+building padcirc
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------

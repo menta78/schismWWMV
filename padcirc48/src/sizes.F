@@ -97,6 +97,8 @@ C.....Default root working directory
 
       GBLINPUTDIR = ROOTDIR
 #ifdef CMPI
+      write(*,*) INPUTDIR, TRIM(ROOTDIR)//TRIM(PREFIX(1))//'/'//'fort.14'
+      write(*,*) INPUTDIR, TRIM(ROOTDIR)//TRIM(PREFIX(2))//'/'//'fort.14'
       iprefix = 0
       do i = 1, 2
         INQUIRE(file=TRIM(ROOTDIR)//TRIM(PREFIX(i))//'/'//'fort.14',

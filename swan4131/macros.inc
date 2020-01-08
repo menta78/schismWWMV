@@ -30,7 +30,7 @@ else
   LIBS_MPI =
   NCF_OBJS =
 endif
-O_DIR = /home/aron/git/wwmIII/padcirc48/work/odir4/
+O_DIR = /home/aron/git/wwmIII/padcirc/work/odir4/
 OUT = -o 
 EXTO = o
 MAKE = make

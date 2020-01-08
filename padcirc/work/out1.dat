@@ -1,0 +1,14 @@
+make BUILDTYPE=adcprep  metis            
+make[1]: Entering directory '/home/aron/padcirc/work'
+make[1]: Nothing to be done for 'metis'.
+make[1]: Leaving directory '/home/aron/padcirc/work'
+make BUILDTYPE=adcpost adcpost
+make[1]: Entering directory '/home/aron/padcirc/work'
+mpif90 -DADCNETCDF -I/include  -DHAVE_NETCDF4  -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4  -DREAL8 -DLINUX -DADCSWAN -I odir13/  -o adcpost odir13/global.o odir13/boundaries.o odir13/sizes.o odir13/version.o odir13/diffmerge.o odir13/post.o odir13/harm.o odir13/mesh.o odir13/machdep.o odir13/adcpost.o odir13/kdtree2.o odir13/post_global.o odir13/compare.o  
+make[1]: Leaving directory '/home/aron/padcirc/work'
+make BUILDTYPE=adcirc CC="mpicc" CFLAGS="-I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -m64 -DLINUX -fp-model strict" adcirc
+make[1]: Entering directory '/home/aron/padcirc/work'
+ifort -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -FI -assume byterecl -132 -assume buffered_io -fp-model strict -DADCNETCDF -I/include  -DHAVE_NETCDF4  -DREAL8 -DLINUX -DCSCA -I odir3/ -o adcirc odir3/globalio.o odir3/hstart.o odir3/boundaries.o odir3/mesh.o odir3/transport.o odir3/global.o odir3/couple2swan.o odir3/version.o odir3/vsmy.o odir3/netcdfio.o odir3/global_3dvs.o odir3/timestep.o odir3/vortex.o odir3/wind.o odir3/read_input.o odir3/kdtree2.o odir3/harm.o odir3/mkdir.o odir3/write_output.o odir3/owiwind.o odir3/nodalattr.o odir3/subdomain.o odir3/itpackv.o odir3/sizes.o odir3/owi_ice.o odir3/rs2.o odir3/driver.o odir3/cstart.o odir3/adcirc.o -L/lib -lnetcdf  -L/home/aron/opt/netcdf_intel/lib -L/home/aron/opt/netcdf_intel/lib   
+makefile:509: recipe for target 'adcirc' failed
+make[1]: Leaving directory '/home/aron/padcirc/work'
+makefile:433: recipe for target 'adcirc' failed

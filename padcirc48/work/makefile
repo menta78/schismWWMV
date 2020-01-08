@@ -1,5 +1,5 @@
 SHELL:=/bin/sh
-SRCDIR:=/home/aron/padcirc48
+SRCDIR:=/home/aron/git/wwmIII/padcirc48
 NETCDF=enable
 #
 #  Makefile to Build PADCIRC and its pre-processor 
@@ -70,9 +70,9 @@ ifeq ($(BUILDTYPE),adcprep_be)
   FFLAGS:= $(FFLAGS1) $(DPRE) $(IMODS) $(O_DIR) 
   VPATH :=  $(SRCDIR)/prep:$(SRCDIR)/src:$(SRCDIR) 
   ifeq ($(NETCDF),enable)
-    LIBS  := -Lodir_metis -lmetis -L$(NETCDFHOME)/lib -lnetcdf -lnetcdff
+    LIBS  := -L$(SRCDIR)/metis/Lib -lmetis -L$(NETCDFHOME)/lib -lnetcdf -lnetcdff
   else
-    LIBS  := -Lodir_metis_be -lmetis_be
+    LIBS  := -L$(SRCDIR)/metis/Lib -lmetis_be
   endif
   PMSG_OBJ:=
 endif
@@ -508,5 +508,3 @@ $(O_DIR)hstime.o     : hstime.F
 # netcdf output file initializer
 
 $(O_DIR)init.o       : init.F $(ADC_MOBJ) $(NC_MOBJ)
-
-

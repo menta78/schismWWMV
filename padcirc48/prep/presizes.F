@@ -617,6 +617,8 @@ C     sb46.28sb01 added NWS=12: OWI format
  29     READ(15,*) RDUM
         write(*,*) 'RDUM', RDUM 
         ENDDO
+
+        write(*,*) 'neta', NETA, MNBFR
       DO IL1=1,MNBFR
  40     READ(15,80) LINEI                          !SKIP OVER ALPHA 
         WRITE(*,*) IL1, MNBFR
@@ -625,7 +627,6 @@ C     sb46.28sb01 added NWS=12: OWI format
           IF(CHARI(I).NE.' ') GOTO 41
           END DO
         GOTO 40
-        write(*,*) 'neta', NETA
  41     DO IL2=1,NETA
           READ(15,*) RDUM                          !SKIP OVER BOUNDARY FORCINGS
           ENDDO

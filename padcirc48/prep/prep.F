@@ -4948,6 +4948,7 @@ C     If it does exist, open it
          ENDIF
       ELSE
 C     Give the user a chance to opt out of prepping this file.
+         RETURN
          IF (FileName .eq. skipstring) RETURN ! note the early RETURN
          WRITE(*,1010) FileName !not found
          GOTO 31
@@ -5080,6 +5081,7 @@ C     If it does exist, open it
          ENDIF
       ELSE
 C     Give the user a chance to opt out of prepping this file.
+         RETURN
          IF (FileName .eq. skipstring) RETURN ! note the early RETURN
          WRITE(*,1010) FileName !not found
          GOTO 31

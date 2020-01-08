@@ -22,7 +22,7 @@
 
 include macros.inc
 
-SWAN_EXE = swan.exe
+SWAN_EXE = ~/bin/punswan
 
 SWAN_OBJS = \
 swmod1.$(EXTO) \
