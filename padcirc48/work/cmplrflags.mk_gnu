@@ -1,0 +1,36 @@
+# SRCDIR is set in makefile or on the compile line
+INCDIRS := -I . -I $(SRCDIR)/prep
+########################################################################
+# Compiler flags for Linux operating system on x86_64-unknown-linux-gnu
+# IVICA  x86_64-unknown-linux-gnu
+#
+compiler=gnu
+# GNU compiler
+ifeq ($(compiler),gnu) 
+  PPFC	        :=  gfortran  
+  FC	        :=  gfortran   
+  PFC	        :=  /opt/openmpi-1.8.5/bin/mpif90
+  OPTLVL        := -O2  
+  ifeq ($(ADC_DEBUG),yes)
+    OPTLVL        :=  
+  endif
+  FFLAGS1	:=  $(INCDIRS) -g -O3  -ffixed-line-length-0 -std=legacy
+  FFLAGS2	:=  $(FFLAGS1) 
+  FFLAGS3	:=  $(FFLAGS1)
+  DA  	        :=  -DREAL8 -DLINUX -DCSCA
+  DP  	        :=  -DREAL8 -DLINUX -DCSCA -DCMPI
+  DPRE	        :=  -DREAL8 -DLINUX
+  IMODS 	:=  -I
+  CC            := /opt/openmpi-1.8.5/bin/mpicc
+  CCBE          := /opt/openmpi-1.8.5/bin/mpicc	
+  CFLAGS        := $(INCDIRS)-O2 -DLINUX 
+  CLIBS         := 
+  LIBS  	:=  
+  MSGLIBS	:=  
+  $(warning (INFO) Corresponding machine found in cmplrflags.mk.)
+  ifneq ($(FOUND),TRUE)
+     FOUND := TRUE
+  else 
+     MULTIPLE := TRUE
+  endif
+endif
