@@ -1352,9 +1352,9 @@
 
         DCOORD_WIND_Y = DCOORD_WIND_Y !+ 90.0_rkind
 
-        DO I = 1, NDX_WIND
-          DCOORD_WIND_X(I) = DCOORD_WIND_X(I) - 180.0_rkind
-        END DO
+!        DO I = 1, NDX_WIND
+!          DCOORD_WIND_X(I) = DCOORD_WIND_X(I) - 180.0_rkind
+!        END DO
 !
 ! estimate offset ...
 !

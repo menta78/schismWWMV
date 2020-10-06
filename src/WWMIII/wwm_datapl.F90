@@ -580,10 +580,9 @@
 #ifndef MPI_PARALL_GRID
          INTEGER   :: MNP
          INTEGER   :: MNE
-         INTEGER   :: NVRT
 #endif
 
-#ifndef SCHISM
+#if !defined SCHISM && !defined MPI_PARALL_GRID
         INTEGER, PARAMETER      :: NVRT = 10
 #endif
 
