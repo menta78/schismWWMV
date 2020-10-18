@@ -601,7 +601,7 @@
          IMPLICIT NONE
          INTEGER        :: IP, IS
          REAL(rkind)    :: DEPLOC
-         REAL(rkind)    :: WVK,WVCG,WVKDEP,WVN,WVC,SPSIGLOC
+         REAL(rkind)    :: WVK,WVCG,WVN,WVC,SPSIGLOC
 
          DO IP = 1, MNP
             DEPLOC = MAX(DMIN,DEP(IP))
@@ -657,7 +657,7 @@
         INTEGER :: I, IP, IE, IS, ID, NI(3)
         INTEGER :: IPCONV1, IPCONV2, IPCONV3, IPCONV4, IPCONV5, ISCONV(MNP)
         REAL(rkind)  :: SUMAC, WALOC(NUMSIG,NUMDIR)
-        REAL(rkind)  :: ETOT, EAD, DS, HS2, KD
+        REAL(rkind)  :: ETOT, EAD, DS, HS2
         REAL(rkind)  :: ETOTF3, ETOTF4, TP, KHS2, EFTOT, TM02
         REAL(rkind)  :: FP, CP, KPP, CGP, WNP, UXD, OMEG, OMEG2
         REAL(rkind)  :: CONVK1, CONVK2, CONVK3, CONVK4, CONVK5
@@ -1411,7 +1411,7 @@
          INTEGER                      :: IP
          REAL(rkind)                  :: Vtotal(np_total), Vlocal(MNP)
 #endif
-         INTEGER                      :: IC, IFSTAT, IDIM
+         INTEGER                      :: IC, IFSTAT
          CHARACTER(LEN=128)           :: HEADLN
 #ifdef MPI_PARALL_GRID
          IF (MULTIPLE_IN .or. (myrank .eq. 0)) THEN

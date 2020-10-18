@@ -485,7 +485,7 @@
         CALL MPI_SEND(Lsum,NUMSIG*NUMDIR,rtype, 0, 43, comm, ierr)
         CALL MPI_RECV(Lsum,NUMSIG*NUMDIR,rtype, 0, 13, comm, istatus, ierr)
       END IF
-#endif     
+#endif
 !      WRITE(STAT%FHNDL,*) 'At leaving, sum(Lsum)=', sum(Lsum)
       END SUBROUTINE
 !**********************************************************************
@@ -535,6 +535,7 @@
       integer, intent(in) :: NUMSIGeffect
       real(rkind), intent(in) :: ACw(NUMSIGeffect, NUMDIR, MNP)
       real(rkind), intent(out) :: Lerror
+#ifdef MPI_PARALL_GRID
       real(rkind), allocatable :: ACtotal(:,:,:)
       real(rkind), allocatable :: ACloc(:,:,:)
       real(rkind) :: rbuf_real(1)
@@ -542,6 +543,7 @@
       integer, allocatable :: eStatus(:)
       integer IP, iProc, IPglob, IS, ID
       integer MNPloc
+#endif
 #ifdef MPI_PARALL_GRID
       IF (myrank == 0) THEN
         Lerror=0
