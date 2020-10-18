@@ -2202,7 +2202,7 @@
           DO IVAR=1,nbVar
             eMax=maxval(OUTT(IVAR,:))
             WRITE(STAT%FHNDL,*) 'IVAR=', IVAR,  ' max=', eMax
-            DO IP=1,np_global
+            DO IP=1,np_total
               eVal=OUTT(IVAR,IP)
               IF (eVal .gt. eFact*eMax) THEN
                 WRITE(STAT%FHNDL,*) ' IP=', IP, ' val=', eVal
