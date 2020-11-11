@@ -53,23 +53,49 @@
 !                           Nielsen (1992)                           !
 !                                                                    !
 !            ***  Current history (former subroutines) ***           !
-!                                                                    !
+!
+!  2020/02 - B.Mengual : > Allocation of erosion/deposition fluxes,  !
+!                        porosity, morphological ramp value,         !
+!                        Elfrink variables, wave parameters,         !
+!                        bedload flux caused by wave acceleration    !
+!                        > Implementation of a morphological ramp    !
+!                        value read in imorphogrid.gr3 if sed_morph=1!
+!                        > Introduction of sedlay_ini_opt option for !
+!                        the initialization of layer thickness and   !
+!                        porosity                                    !
+!                        > Different porosity initialization         !
+!                        depending on poro_option                    !
+!  2020/07 - M.Pezerat,B.Mengual : introduction of tau_m for         !
+!                        bottom shear stress computations            !
 !                                                                    !
 !--------------------------------------------------------------------!
 
       USE sed_mod
 
-      USE schism_glbl, ONLY: nea,np,npa,mnei_p,ntrs,rkind,dav,dave,  &
-     &                     nvrt
-      USE schism_msgp, ONLY: myrank,parallel_abort
+      USE schism_glbl, ONLY: rkind,dav,dave,nea,npa,nvrt,mnei_p, &
+     &ntrs,irange_tr,ipgl,ielg,i34,elnode,np_global,  &
+     & ifile_char,ifile_len,area,np,nne,indel,iself,nnp,indnd,nxq,     &
+     & isbnd,rough_p,errmsg,xnd,ynd,xcj,ycj,xctr,yctr,elside,ics,xel,yel, &
+     &in_dir,out_dir,len_in_dir,len_out_dir
+      USE schism_msgp, ONLY: myrank,parallel_abort,exchange_p2d
 
       IMPLICIT NONE
 
 !- Local variables --------------------------------------------------!
 
-      INTEGER :: i
+      LOGICAL :: lexist
 
       REAL(rkind), PARAMETER :: IniVal = 0.0d0
+      CHARACTER(len=48) :: inputfile
+      INTEGER :: i,j,k,ie,jj,id,id1,id2,id3,nd,indx,m,nwild(3),nwild2(3)
+      INTEGER :: ised,ic,itmp,istat
+
+      REAL(rkind) :: aux1,aux2,xtmp,ytmp,tmp1,cff1,cff2,cff3,cff4,cff5,cff6
+      REAL(rkind) :: bed_frac_sum,ar1,ar2
+      real(rkind) :: signa
+
+      !swild98 used for exchange (deallocate immediately afterwards)
+      REAL(rkind),ALLOCATABLE :: swild98(:,:,:)
 
 !- Start Statement --------------------------------------------------!
 
@@ -106,12 +132,43 @@
         IF(i/=0) CALL parallel_abort('Sed: uorb allocation failure')
       ALLOCATE(uorbp(nea),stat=i)
         IF(i/=0) CALL parallel_abort('Sed: uorbp allocation failure')
+      ALLOCATE(dirpeak(nea),stat=i) !Anouk
+        IF(i/=0) CALL parallel_abort('Sed: dirpeak allocation failure')
+
+      ALLOCATE(tau_m(nea),stat=i)
+        IF(i/=0) CALL parallel_abort('Sed: tau_m allocation failure')
       ALLOCATE(tau_c(nea),stat=i)
         IF(i/=0) CALL parallel_abort('Sed: tau_c allocation failure')
       ALLOCATE(tau_w(nea),stat=i)
         IF(i/=0) CALL parallel_abort('Sed: tau_w allocation failure')
       ALLOCATE(tau_wc(nea),stat=i)
         IF(i/=0) CALL parallel_abort('Sed: tau_wc allocation failure')
+
+      !BM
+      ALLOCATE(wdir(nea),stat=i)
+        IF(i/=0) CALL parallel_abort('Sed: wdir allocation failure')
+      ALLOCATE(ubott(nea),stat=i)
+        IF(i/=0) CALL parallel_abort('Sed: ubott allocation failure')
+      ALLOCATE(vbott(nea),stat=i)
+        IF(i/=0) CALL parallel_abort('Sed: vbott allocation failure')
+      ALLOCATE(U_crest(nea),stat=i)
+        IF(i/=0) CALL parallel_abort('Sed: U_crest allocation failure')
+      ALLOCATE(U_trough(nea),stat=i)
+        IF(i/=0) CALL parallel_abort('Sed: U_trough allocation failure')
+      ALLOCATE(T_crest(nea),stat=i)
+        IF(i/=0) CALL parallel_abort('Sed: T_crest allocation failure')
+      ALLOCATE(T_trough(nea),stat=i)
+        IF(i/=0) CALL parallel_abort('Sed: T_trough allocation failure')
+      ALLOCATE(Qaccu(nea),stat=i)
+        IF(i/=0) CALL parallel_abort('Sed: acceleration-induced bedload')
+      ALLOCATE(Qaccv(nea),stat=i)
+        IF(i/=0) CALL parallel_abort('Sed: acceleration-induced bedload')
+      ALLOCATE(r_accu(nea),stat=i)
+        IF(i/=0) CALL parallel_abort('Sed: acceleration-induced bedload')
+      ALLOCATE(r_accv(nea),stat=i)
+        IF(i/=0) CALL parallel_abort('Sed: acceleration-induced bedload')
+
+
 
       !--------------------------------------------------------------!
       !* 2D arrays defined on elements
@@ -125,51 +182,75 @@
       ALLOCATE(sedcaty(nea,ntr_l),stat=i)                         !Tsinghua group:pick up sediment flux
         IF(i/=0) CALL parallel_abort('Sed: sedcaty allocation failure')
 
+      ! BM
+      ALLOCATE(eroflxel(nea,ntr_l),stat=i)
+        IF(i/=0) CALL parallel_abort('Sed: erosion flux at elem')
+      ALLOCATE(depflxel(nea,ntr_l),stat=i)
+        IF(i/=0) CALL parallel_abort('Sed: deposition flux at elem')
+      ALLOCATE(Uorbi_elfrink(nea,ech_uorb+1),stat=i)
+        IF(i/=0) CALL parallel_abort('Sed: Uorbi_elfrink alloc failure')
+
       !--------------------------------------------------------------!
       !* 3D arrays defined on elements
       !--------------------------------------------------------------!
       ALLOCATE(bed(Nbed,nea,MBEDP),stat=i)
-        IF(i/=0) CALL parallel_abort('Sed: bed allocation failure')
+      IF(i/=0) CALL parallel_abort('Sed: bed allocation failure')
       ALLOCATE(bed_frac(Nbed,nea,ntr_l),stat=i)
-        IF(i/=0) CALL parallel_abort('Sed: bed_frac allocation failure')
+      IF(i/=0) CALL parallel_abort('Sed: bed_frac allocation failure')
 
       !--------------------------------------------------------------!
       !* 4D arrays defined on elements
       !--------------------------------------------------------------!
       ALLOCATE(bed_mass(Nbed,nea,2,ntr_l),stat=i)
-        IF(i/=0) CALL parallel_abort('Sed: bed_mass allocation failure')
+      IF(i/=0) CALL parallel_abort('Sed: bed_mass allocation failure')
 
       !--------------------------------------------------------------!
       !* 1D arrays defined on nodes
       !--------------------------------------------------------------!
       ALLOCATE(vc_area(npa),stat=i)
-        IF(i/=0) CALL parallel_abort('sed_init: vc_area allocation failure')
+      IF(i/=0) CALL parallel_abort('sed_alloc: vc_area allocation failure')
       ALLOCATE(bedthick_overall(npa),bed_d50n(npa),stat=i)
-        IF(i/=0) CALL parallel_abort('sed_init: bed_d50n allocation failure')
+      IF(i/=0) CALL parallel_abort('sed_alloc: bed_d50n allocation failure')
       ALLOCATE(bed_taun(npa),stat=i)
-        IF(i/=0) CALL parallel_abort('sed_init: bed_taun allocation failure')
+      IF(i/=0) CALL parallel_abort('sed_alloc: bed_taun allocation failure')
       ALLOCATE(bed_rough(npa),stat=i)
-        IF(i/=0) CALL parallel_abort('sed_init: bed_rough allocation failure')
+      IF(i/=0) CALL parallel_abort('sed_alloc: bed_rough allocation failure')
       ALLOCATE(lbc_sed(npa),stat=i)
-        IF(i/=0) CALL parallel_abort('main: lbc_sed allocation failure')
+      IF(i/=0) CALL parallel_abort('sed_alloc: lbc_sed allocation failure')
       ALLOCATE(bc_sed(npa),stat=i)
-        IF(i/=0) CALL parallel_abort('main: bc_sed allocation failure')
+      IF(i/=0) CALL parallel_abort('sed_alloc: bc_sed allocation failure')
+
+      ! BM
+      ALLOCATE(poron(npa),stat=i)
+      IF(i/=0) CALL parallel_abort('sed_alloc: porosity at node')
+      ALLOCATE(eroflxn(npa),stat=i)
+      IF(i/=0) CALL parallel_abort('sed_alloc:: erosion flux at node')
+      ALLOCATE(depflxn(npa),stat=i)
+      IF(i/=0) CALL parallel_abort('sed_alloc: deposition flux at node')
+      ALLOCATE(Qaccun(npa),stat=i)
+      IF(i/=0) CALL parallel_abort('sed_alloc: Qacc at node')
+      ALLOCATE(Qaccvn(npa),stat=i)
+      IF(i/=0) CALL parallel_abort('sed_alloc: Qacc at node')
+      !morphological ramp value(-)
+      ALLOCATE(imnp(npa),stat=i)
+      IF(i/=0) CALL parallel_abort('sed_alloc: morphological ramp value')
+
 
       !--------------------------------------------------------------!
       !* 2D arrays defined on nodes
       !--------------------------------------------------------------!
       ALLOCATE(bedldu(npa,ntr_l),stat=i)
-        IF(i/=0) CALL parallel_abort('Sed: bedldu allocation failure')
+      IF(i/=0) CALL parallel_abort('sed_alloc: bedldu alloc failure')
       ALLOCATE(bedldv(npa,ntr_l),stat=i)
-        IF(i/=0) CALL parallel_abort('Sed: bedldv allocation failure')
+      IF(i/=0) CALL parallel_abort('sed_alloc: bedldv alloc failure')
       ALLOCATE(bed_fracn(npa,ntr_l),stat=i)
-        IF(i/=0) CALL parallel_abort('Sed: bed_fracn allocation failure')
+      IF(i/=0) CALL parallel_abort('sed_alloc: bed_fracn alloc failure')
 
       !--------------------------------------------------------------!
       !* Other 1D arrays
       !--------------------------------------------------------------!
       ALLOCATE ( isand(ntr_l), stat=i )
-        IF(i/=0) CALL parallel_abort('Main: allocation failure')
+      IF(i/=0) CALL parallel_abort('Main: allocation failure')
 
 !--------------------------------------------------------------------!
 !* Pre-initialization
@@ -190,9 +271,16 @@
       wlpeak(:)    = IniVal
       uorb(:)      = IniVal
       uorbp(:)     = IniVal
+      tau_m(:)     = IniVal
       tau_c(:)     = IniVal
       tau_w(:)     = IniVal
       tau_wc(:)    = IniVal
+
+      !BM
+      Qaccu(:)=IniVal
+      Qaccv(:)=IniVal
+      r_accu(:)=IniVal
+      r_accv(:)=IniVal
 
       !--------------------------------------------------------------!
       !* 2D arrays defined on elements
@@ -201,6 +289,10 @@
       Hz(:,:)     = IniVal
       bottom(:,:) = IniVal
       sedcaty(:,:)= IniVal                                           !Tsinghua group
+
+      !BM
+      eroflxel(:,:)=IniVal
+      depflxel(:,:)=IniVal
 
       !--------------------------------------------------------------!
       !* 3D arrays defined on elements
@@ -221,6 +313,16 @@
       bed_taun(:)  = IniVal
       bed_rough(:) = IniVal
 
+      ! BM
+      poron(:) = IniVal 
+      eroflxn(:)=IniVal
+      depflxn(:)=IniVal
+      Qaccun(:)=IniVal
+      Qaccvn(:)=IniVal
+
+      !morphological ramp value(-)
+      imnp(:)=1.d0
+
       !Special initializations
       bc_sed(:)    = -9999
       lbc_sed(:)   = .FALSE.
@@ -237,102 +339,6 @@
       !--------------------------------------------------------------!
       isand(:) = 1 ! init.
 
-      IF(myrank==0) write(16,*)'Leaving sed_alloc'
-!--------------------------------------------------------------------!
-      END SUBROUTINE sed_alloc      
-      
-      
-!=====================================================================
-!=====================================================================
-
-      SUBROUTINE sed_init()
-!--------------------------------------------------------------------!
-! This subroutine initialize variables and arrays for the sediment   ! 
-! model:                                                             !
-!        - computes coefficients for the jcg solver                  !
-!        - computes control volume area at nodes                     !
-!        - read bed fraction file (bed_frac_x.ic)                    !
-!        - mapping of bed fraction                                   !
-!        - checking sum of bed fraction                              !
-!        - initialize the bed model (layer thickness, age, porosity) !
-!        - initialize the bed mass                                   !
-!        - initialize exposed sediment layer properties              !
-!        - initialize sediment roughness length                      !
-!        - initialize total bed thickness                            !
-!        - initialization of arrays defined at nodes                 !
-!        - if debuging: write sediment initialization                !
-!                                                                    !
-! Adapted from former subroutines initialize_scalars,                !
-! initialize_ocean (former init_sed.F90), and sed_init (former       !
-! sed_init.F90) and other initializations formerly done within       !
-!schism_init.F90 were also moved within this subroutine.              !
-!                                                                    !
-! The former subroutine sed_init.F90 was adapted from ROMS routine   !
-! ana_sediment.h                                                     !
-! Copyright (c) 2002-2007 The ROMS/TOMS Group                        !
-!   Licensed under a MIT/X style license                             !
-!   See License_ROMS.txt                                             !
-!                                                                    !
-! Author: florian ganthy (fganthy@lnec.pt ; florian.ganthy@gmail.com)!
-! Date: 2013/06/07                                                   !
-!                                                                    !
-! History:                                                           !
-!            ***  Previous history (former subroutines) ***          !
-!                                                                    !
-!   2012/12 - F.Ganthy : form homogenisation of sediments  routines  !
-!   2012/12 - F.Ganthy : modifications for Bottom Composition        !
-!                        Generation (BCG) purpose (added output      !
-!                        files - bed median grain size, bed fraction)!
-!   2013/01 - F.Ganthy : Implementation of roughness predictor       !
-!   2013/03 - F.Ganthy : Implementation of wave-induced bedload      !
-!                        transport                                   !
-!   2013/04 - F.Ganthy : Implementation of wave-current bottom stress!
-!   2013/05 - F.Ganthy : Updates related to ripple predictor         !
-!   2013/05 - F.Ganthy : Added node-centered  volume control area    !
-!   2013/05 - F.Ganthy : Updates to the ripple predictor:            !
-!                         - Changes on the total bedform             !
-!                           roughness computation                    !
-!                         - Add wave-ripple computation from         !
-!                           Nielsen (1992)                           !
-!                                                                    !
-!            ***  Current history (former subroutines) ***           !
-!   2013/06 - F.Ganthy : Also removed old initializations currently  !
-!                        which can be found in former svn revision   !
-!
-!                                                                    !
-!                                                                    !
-!--------------------------------------------------------------------!      
-
-      USE sed_mod
-
-      USE schism_glbl, ONLY: nea,npa,mnei_p,ntrs,irange_tr,ipgl,ielg,i34,elnode,np_global,  &
-     &                     ifile_char,ifile_len,area,np,nne,indel,iself,nnp,indnd,nxq,     &
-     & isbnd,rough_p,errmsg,ihot,xnd,ynd,xcj,ycj,xctr,yctr,elside,ics,xel,yel
-      USE schism_msgp, ONLY: myrank,parallel_abort,exchange_p2d
-
-      IMPLICIT NONE
-
-      real(rkind) :: signa
-
-!- Local variables --------------------------------------------------!
-
-      INTEGER :: i,j,k,ie,jj,id,id1,id2,id3,nd,indx,m,nwild(3),nwild2(3)
-      INTEGER :: ised,ic,itmp,istat
-
-      REAL(rkind) :: aux1,aux2,xtmp,ytmp,tmp1,cff1,cff2,cff3,cff4,cff5,cff6
-      REAL(rkind) :: bed_frac_sum,ar1,ar2
-
-      REAL(rkind),DIMENSION(npa) :: bdfc
-
-      !swild98 used for exchange (deallocate immediately afterwards)
-      REAL(rkind),ALLOCATABLE :: swild98(:,:,:)
-
-      CHARACTER(len=48) :: inputfile
-
-!- Start Statement --------------------------------------------------!
-
-      IF(myrank==0) WRITE(16,*)'Entering sed_init'
-
 !--------------------------------------------------------------------!
 ! - Set tracer indices into 1:ntracers
 ! In SCHISM T and S are in different arrays from the tracers array...
@@ -347,7 +353,7 @@
 ! - Computes matrix coefficients for the JCG solver
 ! Used for the computation of depth variation induced by bedload
 !--------------------------------------------------------------------!
-      mcoefd = 0
+      mcoefd = 0.d0
       aux1=22.0d0/108.0d0
       aux2=7.0d0/108.0d0
       DO i=1,np !residents
@@ -383,16 +389,16 @@
               ar1=signa(xnd(i),xcj(elside(id3,ie)),xctr(ie),ynd(i),ycj(elside(id3,ie)),yctr(ie)) 
               ar2=signa(xnd(i),xctr(ie),xcj(elside(id2,ie)),ynd(i),yctr(ie),ycj(elside(id2,ie)))
             else !ll
-              cff1=(xel(id,ie)+xel(id1,ie))/2 !xcj(elside(id3,ie))
-              cff2=(yel(id,ie)+yel(id1,ie))/2 !ycj(elside(id3,ie))
-              cff3=sum(xel(1:4,ie))/4 !xctr
-              cff4=sum(yel(1:4,ie))/4 !yctr
-              cff5=(xel(id,ie)+xel(id3,ie))/2 !xcj(elside(id2,ie))
-              cff6=(yel(id,ie)+yel(id3,ie))/2 !ycj(elside(id2,ie))
+              cff1=(xel(id,ie)+xel(id1,ie))/2.d0 !xcj(elside(id3,ie))
+              cff2=(yel(id,ie)+yel(id1,ie))/2.d0 !ycj(elside(id3,ie))
+              cff3=sum(xel(1:4,ie))/4.d0 !xctr
+              cff4=sum(yel(1:4,ie))/4.d0 !yctr
+              cff5=(xel(id,ie)+xel(id3,ie))/2.d0 !xcj(elside(id2,ie))
+              cff6=(yel(id,ie)+yel(id3,ie))/2.d0 !ycj(elside(id2,ie))
               ar1=signa(xel(id,ie),cff1,cff3,yel(id,ie),cff2,cff4)
               ar2=signa(xel(id,ie),cff3,cff5,yel(id,ie),cff4,cff6)
             endif !ics
-            if(ar1<=0.or.ar2<=0) call parallel_abort('SED_INIT:area<=0')
+            if(ar1<=0.d0.or.ar2<=0.d0) call parallel_abort('SED_INIT:area<=0')
             mcoefd(0,i)=mcoefd(0,i)+(ar1+ar2)*7./12 !diagonal
 
             !Find indices
@@ -451,7 +457,7 @@
       CALL exchange_p2d(vc_area)
 
 !     Read in total bed thickness at nodes
-      OPEN(10,FILE='bedthick.ic',STATUS='OLD')
+      OPEN(10,FILE=in_dir(1:len_in_dir)//'bedthick.ic',STATUS='OLD')
       READ(10,*); READ(10,*)
       DO i = 1,np_global
         READ(10,*) itmp,xtmp,ytmp,tmp1
@@ -460,8 +466,29 @@
       ENDDO !i=1,np_global
       CLOSE(10)
 
+
+!     BM: read morphological ramp value(-) in imorphogrid.gr3
+      IF (sed_morph==1) THEN
+        INQUIRE(FILE='imorphogrid.gr3',EXIST=lexist)
+        IF (lexist) THEN
+          OPEN(10,FILE='imorphogrid.gr3',STATUS='OLD')
+          READ(10,*)
+          READ(10,*) j,itmp
+          IF(itmp/=np_global) CALL parallel_abort('sed3d: Check np_global in imorphogrid.gr3')
+          DO i = 1,np_global
+            READ(10,*) itmp,xtmp,ytmp,tmp1
+            IF(tmp1<0.or.tmp1>1) CALL parallel_abort('sed3d: local imorpho <0 or >1!')
+            IF(ipgl(i)%rank == myrank) imnp(ipgl(i)%id) = tmp1
+          ENDDO !np_global
+          CLOSE(10)
+        ELSE
+          CALL parallel_abort('sed_morph=1 requires imorphogrid.gr3')
+        ENDIF !lexist
+      ENDIF !sed_morph
+
+
 !     For cold start only
-      if(ihot==0) then
+      !if(ihot==0) then
 !========================================================
 !--------------------------------------------------------------------!
 ! - Reading bed_frac files and convert bed_fraction from nodes to 
@@ -474,7 +501,7 @@
           WRITE(ifile_char,'(i03)')ised
           ifile_char=ADJUSTL(ifile_char); ifile_len=LEN_TRIM(ifile_char)
           inputfile='bed_frac_'//ifile_char(1:ifile_len)//'.ic'
-          OPEN(10,FILE=inputfile,STATUS='OLD')
+          OPEN(10,FILE=in_dir(1:len_in_dir)//inputfile,STATUS='OLD')
           READ(10,*) !read in first line, no need to store it
           READ(10,*) !read in second line, no need to store it
           DO i = 1,np_global
@@ -519,15 +546,135 @@
 !--------------------------------------------------------------------!
 ! - Initialize the bed model (layer thickness, age and porosity)
 !--------------------------------------------------------------------!
-        DO i=1,Nbed
-          DO j=1,nea
-            bed(i,j,ithck) = sum(bedthick_overall(elnode(1:i34(j),j)))/i34(j)/real(Nbed) !>=0
+!        DO i=1,Nbed
+!          DO j=1,nea
+!            bed(i,j,ithck) = sum(bedthick_overall(elnode(1:i34(j),j)))/i34(j)/real(Nbed) !>=0
+!            bed(i,j,iaged) = 0.0d0            
+!            IF (poro_option .EQ. 2) THEN ! porosity=f(geom std dev d50)
+!              CALL sed_comp_poro_noncoh(bed_frac(i,j,:),porosity)
+!            END IF
+!            bed(i,j,iporo) = porosity
+!          ENDDO ! End loop Nbed
+!        ENDDO !End loop nea
+
+
+! > BM rewrite and introduce sedlay_ini_opt (see sediment.in)
+        DO j=1,nea
+          DO i=1,Nbed
+            IF (sedlay_ini_opt==1 .AND. Nbed > 1) THEN
+              IF (i==1) THEN
+                bed(i,j,ithck) = toplay_inithick
+              ELSE
+                bed(i,j,ithck) = sum(bedthick_overall(elnode(1:i34(j),j))-toplay_inithick)/i34(j)/real(Nbed-1) !>=0
+              END IF
+            ELSE
+              bed(i,j,ithck) = sum(bedthick_overall(elnode(1:i34(j),j)))/i34(j)/real(Nbed) !>=0
+            END IF
             bed(i,j,iaged) = 0.0d0
+            IF (poro_option .EQ. 2) THEN ! porosity=f(geom std dev d50)
+              CALL sed_comp_poro_noncoh(bed_frac(i,j,:),porosity)
+            END IF
             bed(i,j,iporo) = porosity
           ENDDO ! End loop Nbed
         ENDDO !End loop nea
 !========================================================
-      endif !ihot==0
+!      endif !ireset
+
+      IF(myrank==0) write(16,*)'Leaving sed_alloc'
+!--------------------------------------------------------------------!
+      END SUBROUTINE sed_alloc      
+      
+      
+!=====================================================================
+!=====================================================================
+
+      SUBROUTINE sed_init
+!--------------------------------------------------------------------!
+! This subroutine initialize variables and arrays for the sediment   ! 
+! model:                                                             !
+!        - computes coefficients for the jcg solver                  !
+!        - computes control volume area at nodes                     !
+!        - read bed fraction file (bed_frac_x.ic)                    !
+!        - mapping of bed fraction                                   !
+!        - checking sum of bed fraction                              !
+!        - initialize the bed model (layer thickness, age, porosity) !
+!        - initialize the bed mass                                   !
+!        - initialize exposed sediment layer properties              !
+!        - initialize sediment roughness length                      !
+!        - initialize total bed thickness                            !
+!        - initialization of arrays defined at nodes                 !
+!        - if debuging: write sediment initialization                !
+!                                                                    !
+! Adapted from former subroutines initialize_scalars,                !
+! initialize_ocean (former init_sed.F90), and sed_init (former       !
+! sed_init.F90) and other initializations formerly done within       !
+!schism_init.F90 were also moved within this subroutine.              !
+!                                                                    !
+! The former subroutine sed_init.F90 was adapted from ROMS routine   !
+! ana_sediment.h                                                     !
+! Copyright (c) 2002-2007 The ROMS/TOMS Group                        !
+!   Licensed under a MIT/X style license                             !
+!   See License_ROMS.txt                                             !
+!                                                                    !
+! Author: florian ganthy (fganthy@lnec.pt ; florian.ganthy@gmail.com)!
+! Date: 2013/06/07                                                   !
+!                                                                    !
+! History:                                                           !
+!            ***  Previous history (former subroutines) ***          !
+!                                                                    !
+!   2012/12 - F.Ganthy : form homogenisation of sediments  routines  !
+!   2012/12 - F.Ganthy : modifications for Bottom Composition        !
+!                        Generation (BCG) purpose (added output      !
+!                        files - bed median grain size, bed fraction)!
+!   2013/01 - F.Ganthy : Implementation of roughness predictor       !
+!   2013/03 - F.Ganthy : Implementation of wave-induced bedload      !
+!                        transport                                   !
+!   2013/04 - F.Ganthy : Implementation of wave-current bottom stress!
+!   2013/05 - F.Ganthy : Updates related to ripple predictor         !
+!   2013/05 - F.Ganthy : Added node-centered  volume control area    !
+!   2013/05 - F.Ganthy : Updates to the ripple predictor:            !
+!                         - Changes on the total bedform             !
+!                           roughness computation                    !
+!                         - Add wave-ripple computation from         !
+!                           Nielsen (1992)                           !
+!                                                                    !
+!            ***  Current history (former subroutines) ***           !
+!   2013/06 - F.Ganthy : Also removed old initializations currently  !
+!                        which can be found in former svn revision   !
+!                                                                    !
+!   2020/02 - B.Mengual : Active layer thickness initialized as the  !
+!                         the minimum between the top layer one and  !
+!                         actv_max (max thickness input parameter)   !
+!                                                                    !
+!--------------------------------------------------------------------!      
+
+      USE sed_mod
+
+      USE schism_glbl, ONLY: nea,npa,mnei_p,ntrs,irange_tr,ipgl,ielg,i34,elnode,np_global,  &
+     & ifile_char,ifile_len,area,np,nne,indel,iself,nnp,indnd,nxq,     &
+     & isbnd,rough_p,errmsg,xnd,ynd,xcj,ycj,xctr,yctr,elside,ics,xel,yel, &
+     &in_dir,out_dir,len_in_dir,len_out_dir
+      USE schism_msgp, ONLY: myrank,parallel_abort,exchange_p2d
+
+      IMPLICIT NONE
+
+      real(rkind) :: signa
+
+!- Local variables --------------------------------------------------!
+
+      INTEGER :: i,j,k,ie,jj,id,id1,id2,id3,nd,indx,m,nwild(3),nwild2(3)
+      INTEGER :: ised,ic,itmp,istat
+
+      REAL(rkind) :: aux1,aux2,xtmp,ytmp,tmp1,cff1,cff2,cff3,cff4,cff5,cff6
+      REAL(rkind) :: bed_frac_sum,ar1,ar2
+
+      REAL(rkind),DIMENSION(npa) :: bdfc
+
+      CHARACTER(len=48) :: inputfile
+
+!- Start Statement --------------------------------------------------!
+
+      IF(myrank==0) WRITE(16,*)'Entering sed_init'
 
 !--------------------------------------------------------------------!
 ! - Initialize the bed mass ([kg/m2]=[m]*[kg.m-3]*[-])
@@ -568,7 +715,9 @@
         if(cff5<0) then
           call parallel_abort('SED_INIT: cff5<0 (1)')
         else if(cff5==0) then !care-takers for all-eroded case
-          WRITE(12,*)'SED_INIT: all eroded at elem. ',ielg(j)
+          IF (sed_debug .EQ. 1) THEN
+            WRITE(12,*)'SED_INIT: all eroded at elem. ',ielg(j)
+          END IF
           bottom(j,isd50) = Sd50(1)
           bottom(j,idens) = Srho(1)
           bottom(j,iwsed) = Wsed(1)
@@ -582,7 +731,8 @@
       ENDDO ! j
 
       !Init. active layer thickness
-      bottom(:,iactv)=bed(1,:,ithck)
+      !bottom(:,iactv)=bed(1,:,ithck)
+      bottom(:,iactv)=MIN(actv_max,bed(1,:,ithck)) ! BM
 !--------------------------------------------------------------------!
 ! - Initialize sediment main roughness length and bedform predictor
 ! related roughness length
@@ -688,6 +838,4 @@
       IF(myrank==0) write(16,*)'Leaving sed_init'
 !--------------------------------------------------------------------!
       END SUBROUTINE sed_init
-
-
 

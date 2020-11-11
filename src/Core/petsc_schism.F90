@@ -27,6 +27,16 @@ module petsc_schism
 #include "petsc/finclude/petscpcdef.h"
 #include "petsc/finclude/petscisdef.h"
 #include "petsc/finclude/petscaodef.h"
+#elif PETSCV==3
+!v3.10
+#include "finclude/petsc.h"
+#include "petsc/finclude/petscsys.h"
+#include "petsc/finclude/petscmat.h"
+#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petscksp.h"
+#include "petsc/finclude/petscpc.h"
+#include "petsc/finclude/petscis.h"
+#include "petsc/finclude/petscao.h"
 #endif
 !#include "petscversion.h"
 

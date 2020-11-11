@@ -25,6 +25,10 @@ module schism_glbl
 !  integer,parameter :: rkind = 4  
 !#else
   integer,parameter :: rkind = 8      ! Default real datatype
+
+!iwp*: working precision of single/double real option for some code
+  integer,parameter :: iwp= 8      ! for ICM
+
 !#endif
 #ifdef DOUBLE_REAL_OUT
   integer,parameter::out_rkind=8
@@ -38,20 +42,21 @@ module schism_glbl
   integer,parameter :: nthfiles=5 !# of type I (ASCII) .th files (for dimensioning)
   integer,parameter :: nthfiles2=5 !# of *3D.th files (for dimensioning)
   integer,parameter :: nthfiles3=3 !# of source/sink .th (for dimensioning)
-  real(rkind),parameter :: small1=1.d-6 !small non-negative number
-  real(rkind),parameter :: small2=small1*100 !slightly larger number
-  real(rkind),parameter :: pi=3.141592653589793d0
-  real(rkind),parameter :: grav=9.81d0
-!  real(rkind),parameter :: rho0=1000.d0 !1025. 
-!  real(rkind),parameter :: shw=4184.d0 !Specific heat of water (C_p); dimension J/kg/K
-!  real(rkind),parameter :: rearth=6378206.4d0 !earth radius
-  real(rkind),parameter :: omega_e=7.292d-5 !angular freq. of earth rotation
+  real(rkind),parameter :: small1=real(1.d-6,rkind) !small non-negative number
+  real(rkind),parameter :: small2=small1*100._rkind !slightly larger number
+  real(rkind),parameter :: pi=3.141592653589793_rkind
+  real(rkind),parameter :: grav=9.81_rkind
+  real(rkind),parameter :: omega_e=real(7.292d-5,rkind) !angular freq. of earth rotation
   !For water quality model
   integer,parameter :: NDTWQ=1   !add by YC
 
   !# of threads in openMP. Note that this is the # at the start of run (thus the 'default'), but
   !you can change # of threads in some loops (after that, it should revert to default)
   integer,save :: nthreads
+
+  !In/out dirs
+  character(len=1000) :: in_dir,out_dir
+  integer,save :: len_in_dir,len_out_dir
 
   ! For timing
   integer,parameter :: mxtimer=20          ! Max number of wallclock timers
@@ -75,16 +80,21 @@ module schism_glbl
                       ubs0,ubs1,ubs2,ubs4,ubs5,ubs6, &
                       a2_cm03,schk,schpsi
 
-  integer,parameter :: natrm=11 !# of _available_ tracer models at the moment (including T,S)
-  !Parameters from param.in
-  integer,save :: ipre,indvel,imm,ihot,ics,iwbl,iharind,nws,iwindoff, &
+  integer,parameter :: natrm=12 !# of _available_ tracer models at the moment (including T,S)
+  integer,parameter :: mntracers=30 !max # of tracers, used only for dimensioning btrack arrays. Must >=ntracers
+
+  !Parameters from param.nml
+  integer,save :: ipre,ipre2,indvel,imm,ihot,ics,iwbl,iharind,nws,impose_net_flux,iwindoff, &
                   &ibc,nrampbc,nrampwind,nrampwafo,nramp,nramp_ss,ibdef,ihorcon,nstep_wwm,icou_elfe_wwm, &
                   &iwind_form,irec_nu,itur,ihhat,inu_elev, &
                   &inu_uv,ibcc_mean,iflux,iout_sta,nspool_sta,nhot,nhot_write, &
                   &moitn0,mxitn0,nchi,ibtrack_test,nramp_elev,islip,ibtp,inunfl,shorewafo, &
                   &inv_atm_bnd,ieos_type,ieos_pres,iupwind_mom,inter_mom,ishapiro,isav, &
-                  &nstep_ice
-  integer,save :: ntrs(natrm)
+                  &nstep_ice,niter_shap,iunder_deep,ibtrack_openbnd,flag_fib,ielm_transport,max_subcyc, &
+                  &itransport_only
+  integer,save :: ntrs(natrm),nnu_pts(natrm),mnu_pts
+  integer,save,dimension(:),allocatable :: iof_hydro,iof_wwm,iof_gen,iof_age,iof_sed,iof_eco, &
+     &iof_icm,iof_cos,iof_fib,iof_sed2d,iof_ice,iof_ana,iof_marsh,iof_dvd,iadjust_mass_consv
 
   real(rkind),save :: dt,h0,drampbc,drampwind,drampwafo,dramp,dramp_ss,wtiminc,npstime,npstiminc, &
                       &surf_time1,surf_time2,time_nu,step_nu,time_nu_tr,step_nu_tr,dzb_min,vdmax_pp1, &
@@ -93,21 +103,24 @@ module schism_glbl
                       &vnh1,vnh2,vnf1,vnf2,rnday,btrack_nudge,hmin_man, &
                       &prmsl_ref,hmin_radstress,dzb_decay,eos_a,eos_b,eps1_tvd_imp,eps2_tvd_imp, &
                       &xlsc0,rearth_pole,rearth_eq,hvis_coef0,disch_coef(10),hw_depth,hw_ratio, &
-                      &slr_rate,rho0,shw,sav_cd,gen_wsett,turbinj
+                      &slr_rate,rho0,shw,sav_cd,gen_wsett,turbinj,h1_bcc,h2_bcc,vclose_surf_frac, &
+                      &hmin_airsea_ex
 
   ! Misc. variables shared between routines
   integer,save :: nz_r,ieqstate,kr_co, &
-                  &ihconsv,isconsv,ihdif,ntracers, & 
+                  &ihconsv,isconsv,i_hmin_airsea_ex,ihdif,ntracers, & 
                   &ihydraulics,irouse_test,iwbl_itmax,nettype,nfltype, &
                   &ntetype,nsatype,ntrtype1(natrm),nettype2,nnode_et,nfltype2,nnode_fl, &
                   &ntetype2,nsatype2,nnode_tr2(natrm),inu_tr(natrm), &
                   &nvar_sta,nout_sta,ntip,nbfr,itr_met,if_source,mass_source,nsources,nsinks, &
-                  &max_flreg,irange_tr(2,natrm)
+                  &max_flreg,irange_tr(2,natrm),nea_wwm,mnei_wwm,ne_wwm,neg_wwm,max_iadjust_mass_consv
 
   real(rkind),save :: q2min,tempmin,tempmax,saltmin,saltmax, &
                       &vis_coe1,vis_coe2,h_bcc1,velmin_btrack,h_tvd,rmaxvel1,rmaxvel2, &
                       &difnum_max_l2,wtime1,wtime2,fluxsu00,srad00,cmiu0, &
-                      &cpsi2,rpub,rmub,rnub,cpsi1,psimin,eps_min,tip_dp
+                      &cpsi2,rpub,rmub,rnub,cpsi1,psimin,eps_min,tip_dp,sav_di0,sav_h0,sav_nv0, &
+                      &dtb_min_transport
+
 !  logical,save :: lm2d !2D or 3D model
   logical,save :: lhas_quad=.false. !existence of quads
   logical,save :: lflbc !flag to indicate existence of ifltype/=0
@@ -116,7 +129,7 @@ module schism_glbl
 
   ! Variables for global output files
   integer, parameter :: nbyte=4          !# bytes for output record size
-  integer, parameter :: mnout=200        !max. # of output files
+!  integer, parameter :: mnout=200        !max. # of output files
 !  integer, parameter :: mirec=1109000000 !max. record # to prevent output ~> 4GB
 !  character(len=11), parameter :: fileopenformat='unformatted'
 !  integer,save :: iwrite
@@ -124,22 +137,23 @@ module schism_glbl
   integer,save        :: start_year  = -9999
   integer,save        :: start_month = -9999
   integer,save        :: start_day   = -9999
-  real(rkind),save :: start_hour  = -9999.0
-  real(rkind),save :: utc_start   = -9999.0
+  real(rkind),save :: start_hour  = -9999._rkind
+  real(rkind),save :: utc_start   = -9999._rkind
 
   character(len=12),save :: ifile_char
-  character(len=48),save,dimension(mnout) :: outfile,variable_nm,variable_dim
+!  character(len=48),save,dimension(mnout) :: outfile !,variable_nm,variable_dim
   integer,save :: ihfskip,nrec,nspool,ifile,ifile_len, &
                   &noutput,it_main,iths_main,id_out_var(2000)
-  integer,save,dimension(mnout) :: ichan,iof !,mrec,irec
-  integer,save,allocatable :: ichan_ns(:),iof_ns(:)
+!  integer,save,dimension(mnout) :: iof 
+!  integer,save,allocatable :: ichan_ns(:),iof_ns(:)
   real(rkind) :: time_stamp !simulation time in sec
   character(len=48),save,allocatable :: outfile_ns(:) !,varnm_ns(:)
   character(len=48),save :: a_48
   character(len=16),save :: a_16
   character(len= 8),save :: a_8
   character(len= 4),save :: a_4
-  integer,save :: ncid_nu(natrm),ncid_tr3D(natrm),ncid_elev2D,ncid_uv3D
+  integer,save :: ncid_nu(natrm),ncid_tr3D(natrm),ncid_elev2D,ncid_uv3D,ncid_schout, &
+ &nstride_schout,nrec2_schout,istack0_schout
         
   ! ADT for global-to-local linked-lists
   type :: llist_type
@@ -165,7 +179,7 @@ module schism_glbl
     real(rkind) :: rt2        ! time remaining from left-over from previous subdomain 
     real(rkind) :: ut,vt,wt  ! Current backtracking sub-step velocity
     real(rkind) :: xt,yt,zt  ! Current backtracking sub-step point
-    real(rkind) :: sclr(4)     ! Backtracked values for some tracers
+    real(rkind) :: sclr(4+mntracers)     ! Backtracked values for tracers etc
     real(rkind) :: gcor0(3)  ! global coord. of the starting pt (for ics=2)
     real(rkind) :: frame0(3,3) ! frame tensor at starting pt (for ics=2)
   end type bt_type
@@ -204,10 +218,9 @@ module schism_glbl
   integer,save :: ixi_n(4),iet_n(4)          !local coord. of 4 vertices of quads
   integer,save,allocatable :: i34(:)           !elem. type (3 or 4)
   integer,save,allocatable :: elnode(:,:)      ! Element-node tables
-!  integer,save,allocatable :: nmgb(:,:)  ! Global element-node tables;
+  integer,save,allocatable :: elnode_wwm(:,:)      ! Element-node tables after splitting quads (for WWM)
   integer,save,allocatable :: iself(:,:)          ! Index of node in element-node table
   integer,save,allocatable :: ic3(:,:)            ! Element-side-element tables
-!  integer,save,allocatable :: ic3gb(:,:)          ! Global element-side-element table
   integer,save,allocatable :: elside(:,:)             ! Element-side tables
   real(rkind),save,allocatable :: ssign(:,:)      ! Sign associated with each side of an element
   real(rkind),save,allocatable :: area(:)        ! Element areas
@@ -215,7 +228,7 @@ module schism_glbl
   ! Cartesian coordinates of element centers; see comments for xnd
   real(rkind),save,allocatable :: xctr(:),yctr(:),zctr(:) 
   real(rkind),save,allocatable :: xlon_el(:),ylat_el(:) ! Element center lat/lon coordinates in degrees
-  real(rkind),save,allocatable :: dpe(:)          ! Depth at element centers
+  real(rkind),save,allocatable :: dpe(:)          ! Depth at element (min of all nodes)
   integer,save,allocatable :: kbe(:)       ! Element bottom vertical indices
   integer,save,allocatable :: idry_e(:)       ! wet/dry flag
   integer,save,allocatable :: idry_e_2t(:)       ! wet/dry flag including 2-tier ghost zone
@@ -268,12 +281,13 @@ module schism_glbl
 !  integer,save,allocatable :: ibad(:)             ! Reliable bndry elevation flag
 !  integer,save,allocatable :: nnegb(:),inegb(:,:) ! Global node-element tables
   integer,save,allocatable :: nne(:),indel(:,:)     ! Node-element tables
+  integer,save,allocatable :: nne_wwm(:)     ! Node-element tables for WWM (temp use)
   integer,save,allocatable :: nnp(:),indnd(:,:)     ! Node-node tables (exlcuding the node itself)
   integer,save,allocatable :: isbnd(:,:)        ! local node to _global_ open bndry segment flags
   integer,save,allocatable :: ibnd_ext_int(:)        ! interior (-1) /exterior (1) bnd node flag for an aug. node (0: not on bnd) 
 !  real(rkind),save,allocatable :: edge_angle(:,:) !angles (orientation) at a bnd node of 2 adjacent sides
 !  integer,save,allocatable :: isbnd_global(:) ! Node to open bndry segment flags (global)
-  integer,save,allocatable :: kfp(:),kbp(:),kbp00(:),kbp_e(:) ! Node surface & bottom vertical indices; kfp used only for sflux routines
+  integer,save,allocatable :: kbp(:),kbp00(:),kbp_e(:) ! Node surface & bottom vertical indices
   integer,save,allocatable :: idry(:)        ! wet/dry flag
 !  integer,save,allocatable :: iback(:)        ! back-up flag for abnormal cases in S-coord.
   real(rkind),save,allocatable :: hmod(:)        ! constrained depth
@@ -350,10 +364,10 @@ module schism_glbl
                                   &tnf(:),tfreq(:),tear(:),amig(:),ff(:),face(:), &
                                   &emo(:,:,:),efa(:,:,:),umo(:,:,:),ufa(:,:,:), &
                                   &vmo(:,:,:),vfa(:,:,:),eth(:,:), &
-                                  &qthcon(:),uth(:,:),vth(:,:),uthnd(:,:,:),vthnd(:,:,:), &
+                                  &qthcon(:),uthnd(:,:,:),vthnd(:,:,:), &
                                   &ath(:,:,:,:),carea(:),clen(:),eta_mean(:),q_block(:),vnth_block(:,:), &
                                   &dir_block(:,:),q_block_lcl(:),ath3(:,:,:,:)
-  real(4),save,allocatable :: ath2(:,:,:,:,:)
+  real(4),save,allocatable :: ath2(:,:,:,:,:) !used to read *.nc for b.c. time series
 
   ! Land boundary segment data
   integer,save :: nland_global                 ! Global number of land bndry segments
@@ -381,6 +395,7 @@ module schism_glbl
   real(rkind),save,allocatable :: flx_bt(:,:) !bottom b.c.
   real(rkind),save,allocatable :: hdif(:,:) !horizontal diffusivity
   real(rkind),save,allocatable :: tr_nd0(:,:,:) ! Initial tracer conc. at nodes
+  real(rkind),save,allocatable :: rkai_num(:,:,:) !DVD (numerical mixing) [C^2]/sec
   real(rkind),save,allocatable :: eta1(:)   ! Elevation at nodes at previous timestep
   real(rkind),save,allocatable :: eta2(:)   ! Elevation at nodes at current timestep
   !Vertical velocity at element centers & whole levels, along local vertical direction (element frame)
@@ -389,13 +404,14 @@ module schism_glbl
   !model, this is the same as we(); for non-hydrostatic model, this is only used in upwind transport
 !  real(rkind),save,allocatable :: we_fv(:,:) 
   real(rkind),save,allocatable :: flux_adv_vface(:,:,:) !unmodified vertical fluxes (positive upward)
+  real(rkind),save,allocatable :: total_mass_error(:) !(ntracers) Total mass error after advection step for mass correction
   !x & y-component of velocity at side centers & whole levels
   !For ics=1, these are defined in the global frame
   !For ics=2, these are defined in the ll frame
   real(rkind),save,allocatable :: su2(:,:),sv2(:,:) 
   !velocity at nodes in an element. In ll if ics=2
   !ufg(1:4,1:nvrt,1:nea)
-  real(rkind),save,allocatable :: ufg(:,:,:),vfg(:,:,:)
+  !real(rkind),save,allocatable :: ufg(:,:,:),vfg(:,:,:)
   real(rkind),save,allocatable :: prho(:,:) ! Density at whole levels and either nodes or elements
   real(rkind),save,allocatable :: q2(:,:)   ! Turbulent kinetic energy at sides & half levels
   real(rkind),save,allocatable :: xl(:,:)   ! Turbulent mixing length at sides & half levels
@@ -424,13 +440,13 @@ module schism_glbl
                                   !WARNING: airt[12] are in C not K. The
                                   !original air T in sflux_air*.nc is in K but
                                   !get_wind() converts it to C
-                                  &tau(:,:),windfactor(:),pr1(:),airt1(:), &
+                                  &tau(:,:),tau_bot_node(:,:),windfactor(:),pr1(:),airt1(:), &
                                   &shum1(:),pr2(:),airt2(:),shum2(:),pr(:), &
                                   &sflux(:),srad(:),tauxz(:),tauyz(:),fluxsu(:), &
                                   &fluxlu(:),hradu(:),hradd(:),cori(:), & !chi(:)
-                                  &Cd(:),rough_p(:),erho(:,:),hvis_coef(:,:),d2uv(:,:,:), &
-                                  &sparsem(:,:),bcc(:,:,:), & !t_nudge(:),s_nudge(:), &
-                                  &tr_nudge(:,:),dr_dxy(:,:,:),fun_lat(:,:), &
+                                  &Cd(:),rough_p(:),erho(:,:),hvis_coef(:,:), &
+                                  &sparsem(:,:), & 
+                                  &tr_nudge(:,:),fun_lat(:,:), &
                                   &elev_nudge(:),uv_nudge(:),fluxprc(:),fluxevp(:), &
                                   &dav(:,:),elevmax(:),dav_max(:,:),dav_maxmag(:), & 
                                   &etaic(:),diffmax(:),diffmin(:),dfq1(:,:),dfq2(:,:) 
@@ -450,10 +466,6 @@ module schism_glbl
   !weno>
   integer,save,allocatable :: isbe(:) !(ne): bnd seg flags, isbe(ie)=1 if any node of element ie lies on bnd; isbe(ie)=0 otherwise
   logical,save,allocatable :: is_inter(:)  !identifier of interface sides (between two ranks), for debugging only
-  integer,save,allocatable :: iremove1(:,:)  !(3 x mnweno1, ne), keep a record of the p1 stencils removed due to small determinants
-  integer,save,allocatable :: nremove1(:)  !size: ne, number of p1 stencils removed at each element
-  integer,save,allocatable :: iremove2(:,:)  !(6 x mnweno2, ne), keep a record of the p2 stencils removed due to small determinants
-  integer,save,allocatable :: nremove2(:)  !size: ne, number of p2 stencils removed at each element
   integer,save,allocatable :: iside_table(:) !a record of all interface sides within the current rank
   integer, save :: ip_weno !order of the polynomials used for weno stencils, see param.in.sample
   real(rkind),save :: courant_weno !Courant number for weno transport
@@ -465,6 +477,7 @@ module schism_glbl
   integer, save :: ntd_weno !(1) one-level, reduces to Euler; (2) not implemented yet; (3) 3rd-order Runge-Kutta temporal discretization (Shu and Osher, 1988)
   !Elad filter
   integer, save :: ielad_weno !switch for elad filter, not used at the moment
+  integer, save :: i_prtnftl_weno !switch for printing invalid T/S to nonfatal_*
   real(rkind),save :: small_elad !criteria for ELAD, not used at the moment
 
   real(rkind),save,allocatable :: xqp(:,:),yqp(:,:)  !quadrature point coordinates
@@ -489,10 +502,21 @@ module schism_glbl
   real(rkind),save,allocatable :: wts2(:,:,:,:) 
   !coefficients used in smoother calculation (3,ne)
   real(rkind),save,allocatable :: fwts2(:,:) 
+  !diagnostic variables
+  integer,save,allocatable :: ie_all_stencils1(:,:,:),n_all_stencils1(:) !(3,mnweno1,ne), (ne), keep a record of all p1 stencils
+  real(rkind),save,allocatable :: det_all_stencils1(:,:) !matrix determinants of all p1 stencils
+  integer,save,allocatable :: iremove1(:,:)  !(3 x mnweno1, ne), keep a record of the p1 stencils removed due to small determinants
+  integer,save,allocatable :: nremove1(:)  !size: ne, number of p1 stencils removed at each element
+  real(rkind),save,allocatable :: rremove1(:,:)  !size: ne, determinants (under local coordinates) of p1 stencils removed at each element
+  integer,save,allocatable :: ie_all_stencils2(:,:,:),n_all_stencils2(:) !(6,mnweno2,ne), (ne), keep a record of all p2 stencils
+  real(rkind),save,allocatable :: det_all_stencils2(:,:)  !matrix determinants of all p2 stencils 
+  integer,save,allocatable :: iremove2(:,:)  !(6 x mnweno2, ne), keep a record of the p2 stencils removed due to small determinants
+  integer,save,allocatable :: nremove2(:)  !size: ne, number of p2 stencils removed at each element
+  real(rkind),save,allocatable :: rremove2(:,:)  !size: ne, determinants (under local coordinates) of p2 stencils removed at each element
   !<weno
 
-  ! Non-hydrostatic arrays
-  real(rkind),save,allocatable :: qnon(:,:)   
+  ! Non-hydrostatic arrays (not used)
+!  real(rkind),save,allocatable :: qnon(:,:)   
 !  integer,save,allocatable :: ihydro(:)
 
   ! Station and other output arrays
@@ -525,8 +549,15 @@ module schism_glbl
   !             will assume wsett(:,kbe|nvrt,:)=0 to accumulate mass there.
   real(rkind),save,allocatable :: wsett(:,:,:) 
   integer,save,allocatable :: iwsett(:) !iwsett(ntracers)
+  integer,save,allocatable :: inu_pts_gb(:,:)
 
   !Declarations for other modules
+! ANALYSIS
+  real(rkind),save,allocatable :: dtbe(:)
+
+! vertical flux diversion closure fraction applied at surface
+!  real(rkind) :: vclose_surf_frac   ! 1.0:flux applied at surface, 0.5:half at top half at bottom
+
 ! WWM
 !#ifdef USE_WWM
   integer,save :: msc2,mdc2
@@ -546,10 +577,13 @@ module schism_glbl
 !#endif /*USE_TIMOR*/
 
 !#ifdef USE_SED
-  real(rkind),save,allocatable :: dave(:)
+  real(rkind),save,allocatable :: dave(:),total_sus_conc(:,:)
   INTEGER :: ddensed ! activation key for sediment density effects on water density
 !#endif
 
+!USE_AGE
+  integer,save,allocatable :: nelem_age(:),ielem_age(:,:),level_age(:)
+  
 !NAPZD
 !#ifdef USE_NAPZD
   real(rkind),save,allocatable :: Bio_bdef(:,:)  ! biological deficit for NAPZD model
@@ -563,12 +597,6 @@ module schism_glbl
   real(rkind),save,allocatable :: XVELAV(:),YVELAV(:),XVELVA(:),YVELVA(:),ELAV(:),ELVA(:)
 !#endif
 
-!ICM added by YC
-!#ifdef USE_ICM
-! arrays for waterquality model added by YC
-!  real(rkind),save,allocatable :: WSRP(:),WSLP(:),WSPB1(:),WSPB2(:),WSPB3(:),turb(:),WRea(:),PSQ(:)
-!  integer,save,allocatable :: PSK(:)
-!#endif
 
 !#ifdef USE_ECO 
 !...  MFR, Nov/2015 - Updated, ECO uses nws=2 
@@ -587,43 +615,12 @@ module schism_glbl
   integer,save,allocatable     :: imarsh(:),ibarrier_m(:)
 
 ! SAV
-  real(rkind),save,allocatable     :: sav_alpha(:),sav_h(:),sav_nv(:)
+  real(rkind),save,allocatable     :: sav_alpha(:),sav_h(:),sav_nv(:),sav_di(:)
 
-!Tsinghua group for 2-phase-mixture flow 
-!  integer,save :: inflow_mth                  !Tsinghua group !1120:close
-!  INTEGER,save :: im_pick_up                  !Tsinghua group:bottom pick-up option flag
-!  INTEGER,save :: Two_phase_mix               !TWO PHASE MIXTURE THEORY OPTION
-!  REAL(rkind),save :: diffmin_m               ! Minimum diff of sediment flow   
-!  REAL(rkind),save :: diffmax_m               ! Maximum diff of sediment flow
-!  REAL(rkind),save :: alphd                   ! alphd is correction coefficient of sed deposition
-!  REAL(rkind),save :: refht                   ! *D50   reference height of pick-up flux for zhong formulation
-!  REAL(rkind),save :: Tbp                     ! Nodimesional bursting period Cao(1997) 
 !Tsinghua group:0825
   REAL(rkind),save :: Cbeta,beta0,c_miu,Cv_max,ecol,ecol1,sigf,sigepsf,Ceps1,Ceps2,Ceps3,Acol,sig_s,fi_c,ksi_c,kpz !1013+kpz
   REAL(rkind),save,ALLOCATABLE :: Dpzz(:,:)     !at nodes & whole levels 
   REAL(rkind),save,ALLOCATABLE :: Tpzz(:,:)     !at nodes & whole levels 
-!0825
-!  REAL(rkind),save,ALLOCATABLE :: phai_m(:,:,:)         !tsinghua-lxn-setteing factor !1120:close
-!  REAL(rkind),save,ALLOCATABLE :: beta_m(:,:,:)         !diffusion factor
-!  REAL(rkind),save,ALLOCATABLE :: Tpxyz_m(:,:,:,:)      !stress of mixture 
-!  REAL(rkind),save,ALLOCATABLE :: Dpxyz_m(:,:,:,:)      !diffusion coefficient of particle
-!  REAL(rkind),save,ALLOCATABLE :: Vpxyz_m(:,:,:)        !viscous coefficient of mixture in horizontal
-!  REAL(rkind),save,ALLOCATABLE :: drfv_m(:,:,:,:,:)     !drift velocity at element in three directions at n/n-1 step
-!  REAL(rkind),save,ALLOCATABLE :: volv_m(:,:,:,:,:)     !volume velocity at element in three directions at n/n-1 step
-!  REAL(rkind),save,ALLOCATABLE :: vwater_m(:,:,:)       !water velocity in three directions
-!  REAL(rkind),save,ALLOCATABLE :: vsed_m(:,:,:,:)       !sediment velocity in three directions
-!  REAL(rkind),save,ALLOCATABLE :: drfvx_nd(:,:,:)       !drift velocity at node in x
-!  REAL(rkind),save,ALLOCATABLE :: drfvy_nd(:,:,:)       !drift velocity at node in y
-!  REAL(rkind),save,ALLOCATABLE :: drfvz_nd(:,:,:)       !drift velocity at node in z
-!  REAL(rkind),save,ALLOCATABLE :: vwaterx_nd(:,:)       !water velocity at node in x
-!  REAL(rkind),save,ALLOCATABLE :: vwatery_nd(:,:)       !water velocity at node in y
-!  REAL(rkind),save,ALLOCATABLE :: vwaterz_nd(:,:)       !water velocity at node in z
-!  REAL(rkind),save,ALLOCATABLE :: vsedx_nd(:,:,:)       !sediment velocity at node in x
-!  REAL(rkind),save,ALLOCATABLE :: vsedy_nd(:,:,:)       !sediment velocity at node in y
-!  REAL(rkind),save,ALLOCATABLE :: vsedz_nd(:,:,:)       !sediment velocity at node in z
-!  REAL(rkind),save,ALLOCATABLE :: dis_m(:,:)            !element center to side center (i34,nea)
-!  REAL(rkind),save,ALLOCATABLE :: ratiodis_m(:,:)       !weight of dis_m 
-!0821    
   REAL(rkind),save,ALLOCATABLE :: Vpx(:,:)      !x drift velocity at side centers & whole levels 
   REAL(rkind),save,ALLOCATABLE :: Vpy(:,:)      !y drift velocity at side centers & whole levels
   REAL(rkind),save,ALLOCATABLE :: Vpx2(:,:),Vpy2(:,:),Vpz2(:,:) !x,y,z drift velocity at nodes & whole levels 0927.1 1006
@@ -635,7 +632,7 @@ module schism_glbl
   REAL(rkind),save,ALLOCATABLE :: taufp_t(:,:)  !at nodes & whole levels 
   REAL(rkind),save,ALLOCATABLE :: ws(:,:)       !Ws at nodes & whole levels
   REAL(rkind),save,ALLOCATABLE :: epsf(:,:)     !epsf at nodes & whole levels
-  REAL(rkind),save,ALLOCATABLE :: q2fp(:,:)     !kfp at nodes & whole levels
+  REAL(rkind),save,ALLOCATABLE :: q2fp(:,:)     !at nodes & whole levels
   REAL(rkind),save,ALLOCATABLE :: q2p(:,:)      !kp at nodes & whole levels
   REAL(rkind),save,ALLOCATABLE :: q2f(:,:)      !kp at nodes & whole levels
   REAL(rkind),save,ALLOCATABLE :: kppian(:,:)   !at nodes & whole levels

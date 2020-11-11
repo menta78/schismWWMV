@@ -1,0 +1,80 @@
+# DO NOT DELETE THIS LINE - used by make depend
+o/svn.ARON.WWM/hydraulic_structures.o: o/svn.ARON.WWM/schism_glbl.mod o/svn.ARON.WWM/schism_msgp.mod
+o/svn.ARON.WWM/misc_modules.o: o/svn.ARON.WWM/schism_glbl.mod o/svn.ARON.WWM/schism_msgp.mod
+o/svn.ARON.WWM/schism_io.o: o/svn.ARON.WWM/schism_glbl.mod o/svn.ARON.WWM/schism_msgp.mod
+o/svn.ARON.WWM/schism_msgp.o: o/svn.ARON.WWM/schism_glbl.mod
+o/svn.ARON.WWM/schism_driver.o: o/svn.ARON.WWM/schism_msgp.mod
+o/svn.ARON.WWM/bktrk_subs.o: o/svn.ARON.WWM/hydraulic_structures.mod o/svn.ARON.WWM/schism_glbl.mod o/svn.ARON.WWM/schism_msgp.mod
+o/svn.ARON.WWM/grid_subs.o: o/svn.ARON.WWM/schism_glbl.mod o/svn.ARON.WWM/schism_io.mod o/svn.ARON.WWM/schism_msgp.mod
+o/svn.ARON.WWM/misc_subs.o: o/svn.ARON.WWM/hydraulic_structures.mod o/svn.ARON.WWM/schism_glbl.mod o/svn.ARON.WWM/schism_msgp.mod
+o/svn.ARON.WWM/schism_finalize.o: o/svn.ARON.WWM/hydraulic_structures.mod
+o/svn.ARON.WWM/schism_finalize.o: o/svn.ARON.WWM/schism_glbl.mod o/svn.ARON.WWM/schism_io.mod
+o/svn.ARON.WWM/schism_finalize.o: o/svn.ARON.WWM/schism_msgp.mod
+o/svn.ARON.WWM/schism_init.o: o/svn.ARON.WWM/hydraulic_structures.mod
+o/svn.ARON.WWM/schism_init.o: o/svn.ARON.WWM/misc_modules.mod
+o/svn.ARON.WWM/schism_init.o: o/svn.ARON.WWM/schism_glbl.mod o/svn.ARON.WWM/schism_io.mod o/svn.ARON.WWM/schism_msgp.mod
+o/svn.ARON.WWM/schism_step.o: o/svn.ARON.WWM/hydraulic_structures.mod
+o/svn.ARON.WWM/schism_step.o: o/svn.ARON.WWM/misc_modules.mod o/svn.ARON.WWM/schism_glbl.mod o/svn.ARON.WWM/schism_io.mod
+o/svn.ARON.WWM/schism_step.o: o/svn.ARON.WWM/schism_msgp.mod
+o/svn.ARON.WWM/sflux_9c.o: o/svn.ARON.WWM/schism_glbl.mod o/svn.ARON.WWM/schism_msgp.mod
+o/svn.ARON.WWM/single_netcdf.o: o/svn.ARON.WWM/schism_glbl.mod o/svn.ARON.WWM/schism_msgp.mod
+o/svn.ARON.WWM/solver_subs.o: o/svn.ARON.WWM/schism_glbl.mod o/svn.ARON.WWM/schism_msgp.mod
+o/svn.ARON.WWM/transport_TVD.o: o/svn.ARON.WWM/misc_modules.mod o/svn.ARON.WWM/schism_glbl.mod o/svn.ARON.WWM/schism_msgp.mod
+o/svn.ARON.WWM/transport_TVD_imp.o: o/svn.ARON.WWM/misc_modules.mod o/svn.ARON.WWM/schism_glbl.mod o/svn.ARON.WWM/schism_msgp.mod
+o/svn.ARON.WWM/combine_hotstart7.o: o/svn.ARON.WWM/argparse.mod
+o/svn.ARON.WWM/combine_output10.o: o/svn.ARON.WWM/argparse.mod
+o/svn.ARON.WWM/combine_output11.o: o/svn.ARON.WWM/argparse.mod
+o/svn.ARON.WWM/interpolate_variables7.o: o/svn.ARON.WWM/compute_zcor.mod o/svn.ARON.WWM/extract_mod.mod o/svn.ARON.WWM/pt_in_poly_test.mod
+o/svn.ARON.WWM/ptrack3.o: o/svn.ARON.WWM/compute_zcor.mod
+o/svn.ARON.WWM/compute_alongchannel_vel.o: o/svn.ARON.WWM/compute_zcor.mod o/svn.ARON.WWM/pt_in_poly_test.mod
+o/svn.ARON.WWM/compute_average3.o: o/svn.ARON.WWM/compute_zcor.mod o/svn.ARON.WWM/extract_mod.mod
+o/svn.ARON.WWM/compute_fluxes_ns.o: o/svn.ARON.WWM/compute_zcor.mod
+o/svn.ARON.WWM/read_output8_allnodes.o: o/svn.ARON.WWM/compute_zcor.mod o/svn.ARON.WWM/extract_mod.mod
+o/svn.ARON.WWM/read_output8_allnodes_simple.o: o/svn.ARON.WWM/compute_zcor.mod o/svn.ARON.WWM/extract_mod.mod
+o/svn.ARON.WWM/read_output9_transect.o: o/svn.ARON.WWM/compute_zcor.mod o/svn.ARON.WWM/extract_mod.mod o/svn.ARON.WWM/pt_in_poly_test.mod
+o/svn.ARON.WWM/read_output9_xyt.o: o/svn.ARON.WWM/compute_zcor.mod o/svn.ARON.WWM/extract_mod.mod o/svn.ARON.WWM/pt_in_poly_test.mod
+o/svn.ARON.WWM/read_output9_xyz.o: o/svn.ARON.WWM/compute_zcor.mod o/svn.ARON.WWM/extract_mod.mod o/svn.ARON.WWM/pt_in_poly_test.mod
+o/svn.ARON.WWM/read_output9_xyzt.o: o/svn.ARON.WWM/compute_zcor.mod o/svn.ARON.WWM/extract_mod.mod o/svn.ARON.WWM/pt_in_poly_test.mod
+o/svn.ARON.WWM/stat3.o: o/svn.ARON.WWM/stat_pool.mod
+o/svn.ARON.WWM/wwm_ardhuin_old.o: o/svn.ARON.WWM/schism_msgp.mod
+o/svn.ARON.WWM/wwm_bdcons.o: o/svn.ARON.WWM/schism_glbl.mod
+o/svn.ARON.WWM/wwm_coupl_selfe.o: o/svn.ARON.WWM/schism_glbl.mod o/svn.ARON.WWM/schism_msgp.mod
+o/svn.ARON.WWM/wwm_datapl.o: o/svn.ARON.WWM/schism_glbl.mod o/svn.ARON.WWM/schism_msgp.mod
+o/svn.ARON.WWM/wwm_friction.o: o/svn.ARON.WWM/schism_glbl.mod
+o/svn.ARON.WWM/wwm_initio.o: o/svn.ARON.WWM/schism_glbl.mod o/svn.ARON.WWM/schism_msgp.mod
+o/svn.ARON.WWM/wwm_input.o: o/svn.ARON.WWM/schism_glbl.mod
+o/svn.ARON.WWM/wwm_lpp_filter.o: o/svn.ARON.WWM/schism_glbl.mod o/svn.ARON.WWM/schism_msgp.mod
+o/svn.ARON.WWM/wwm_main.o: o/svn.ARON.WWM/schism_glbl.mod o/svn.ARON.WWM/schism_msgp.mod
+o/svn.ARON.WWM/algorithm.mod: o/svn.ARON.WWM/wwm_petscpool.o
+o/svn.ARON.WWM/argparse.mod: o/svn.ARON.WWM/argparse.o
+o/svn.ARON.WWM/compute_zcor.mod: o/svn.ARON.WWM/compute_zcor.o
+o/svn.ARON.WWM/datapool.mod: o/svn.ARON.WWM/wwm_datapl.o
+o/svn.ARON.WWM/extract_mod.mod: o/svn.ARON.WWM/extract_mod.o
+o/svn.ARON.WWM/global.mod: o/svn.ARON.WWM/ptrack3.o
+o/svn.ARON.WWM/hydraulic_structures.mod: o/svn.ARON.WWM/hydraulic_structures.o
+o/svn.ARON.WWM/kind_par.mod: o/svn.ARON.WWM/ptrack3.o
+o/svn.ARON.WWM/m_constants.mod: o/svn.ARON.WWM/wwm_m_constants.o
+o/svn.ARON.WWM/m_fileio.mod: o/svn.ARON.WWM/wwm_m_fileio.o
+o/svn.ARON.WWM/m_xnldata.mod: o/svn.ARON.WWM/wwm_mod_xnl4v5.o
+o/svn.ARON.WWM/misc_modules.mod: o/svn.ARON.WWM/misc_modules.o
+o/svn.ARON.WWM/netcdf_io.mod: o/svn.ARON.WWM/sflux_9c.o
+o/svn.ARON.WWM/netcdf_var_names.mod: o/svn.ARON.WWM/netcdf_var_names.o
+o/svn.ARON.WWM/petsc_block.mod: o/svn.ARON.WWM/wwm_petsc_block.o
+o/svn.ARON.WWM/petsc_controller.mod: o/svn.ARON.WWM/wwm_petsc_controller.o
+o/svn.ARON.WWM/petsc_parallel.mod: o/svn.ARON.WWM/wwm_petsc_parallel.o
+o/svn.ARON.WWM/petsc_seriell.mod: o/svn.ARON.WWM/wwm_petsc_seriell.o
+o/svn.ARON.WWM/petscpool.mod: o/svn.ARON.WWM/wwm_petscpool.o
+o/svn.ARON.WWM/pt_in_poly_test.mod: o/svn.ARON.WWM/pt_in_poly_test.o
+o/svn.ARON.WWM/schism_geometry_mod.mod: o/svn.ARON.WWM/schism_geometry.o
+o/svn.ARON.WWM/schism_glbl.mod: o/svn.ARON.WWM/schism_glbl.o
+o/svn.ARON.WWM/schism_io.mod: o/svn.ARON.WWM/schism_io.o
+o/svn.ARON.WWM/schism_msgp.mod: o/svn.ARON.WWM/schism_msgp.o
+o/svn.ARON.WWM/sdsbabanin.mod: o/svn.ARON.WWM/wwm_babanin.o
+o/svn.ARON.WWM/serv_xnl4v5.mod: o/svn.ARON.WWM/wwm_serv_xnl4v5.o
+o/svn.ARON.WWM/single_netcdf.mod: o/svn.ARON.WWM/single_netcdf.o
+o/svn.ARON.WWM/stat_pool.mod: o/svn.ARON.WWM/stat_pool.o
+o/svn.ARON.WWM/stringtools.mod: o/svn.ARON.WWM/wwm_petscpool.o
+o/svn.ARON.WWM/w3src4md.mod: o/svn.ARON.WWM/wwm_ardhuin_new.o
+o/svn.ARON.WWM/w3src4md_old.mod: o/svn.ARON.WWM/wwm_ardhuin_old.o
+o/svn.ARON.WWM/wwm_hotfile_mod.mod: o/svn.ARON.WWM/wwm_hotfile.o
+o/svn.ARON.WWM/wwmaocn_pgmcl.mod: o/svn.ARON.WWM/wwm_coupl_roms_pgmcl.o

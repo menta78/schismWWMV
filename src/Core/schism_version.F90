@@ -15,12 +15,13 @@
 
 module schism_version
 
-character(LEN=32),parameter :: schism_rev = '5.6.1 or later'
-character(LEN=32),parameter :: svn_rev = 'No SVN Revision Info' 
+character(LEN=32),parameter :: schism_rev = 'develop'
+character(LEN=64),parameter :: git_rev = '6276043' 
 
 contains
 subroutine print_version
-print *,"schism ",trim(schism_rev),"; svn revision ",trim(svn_rev)
+print *,"schism ",trim(schism_rev)
+print *,"git hash ",trim(git_rev)
 end subroutine
 
 end module schism_version

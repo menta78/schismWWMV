@@ -34,8 +34,6 @@
 
 ##########
 
-
-
 ########### Ensure that the user's Make.defs.local exists and include it
 
 make_defs_local_exists := $(wildcard ../mk/Make.defs.local)
@@ -73,6 +71,10 @@ ifeq ($(PETSC_VERSION),v1) #v3.5
 else
   ifeq ($(PETSC_VERSION),v2) ##v3.6, 3.7
     PPFLAGS := $(PPFLAGS) $(IBMCPP)-DPETSCV=2
+    include ${PETSC_DIR}/lib/petsc/conf/variables
+  endif
+  ifeq ($(PETSC_VERSION),v3) #v3.10
+    PPFLAGS := $(PPFLAGS) $(IBMCPP)-DPETSCV=3 -I${PETSC_DIR}/include/petsc
     include ${PETSC_DIR}/lib/petsc/conf/variables
   endif
 endif
@@ -124,11 +126,6 @@ ifdef USE_PETSC
 else
   PETSCLIBS =
   PETSCMOD =
-endif
-
-ifdef USE_FABM
-  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_FABM
-  OBJS := $(OBJS) fabm_schism.o
 endif
 
 ifdef USE_PREC_EVAP
@@ -237,24 +234,35 @@ ifdef USE_SED
 
 endif
 
+ifdef USE_FABM
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_FABM
+  FABMINSTALLDIR = ./Fabm/build
+  FABMLIBS = -L$(FABMINSTALLDIR)/lib -lfabm
+  OBJS := $(OBJS) fabm_schism.o
+  FCPFLAGS += -I$(FABMINSTALLDIR)/include
+endif
+
+ifdef USE_DVD
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_DVD
+endif
+
 ifdef USE_OIL
   PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_OIL
 endif
 
 ifdef USE_WWM
-  PPFLAGS := $(PPFLAGS) -DUSE_WWM -DNCDF -DST42 -DWWM_SOLVER # -DDEBUG_SOURCE_TERM -DDEBUG_SOLVER -DDEBUG 
-OBJS := $(OBJS) wwm_datapl.o wwm_petscpool.o  wwm_petsc_seriell.o wwm_petsc_parallel.o \
-         wwm_petsc_block.o wwm_petsc_controller.o wwm_aux.o wwm_aux_parall.o wwm_mjdv2.o wwm_blasaux.o wwm_sparskit.o \
-         wwm_wind.o wwm_breaking.o wwm_friction.o wwm_cycle3.o \
-         wwm_gridcf.o wwm_hotfile.o wwm_parall_solver.o wwm_m_constants.o \
-         wwm_m_fileio.o wwm_serv_xnl4v5.o wwm_mod_xnl4v5.o wwm_snl4_wrt.o \
-         wwm_wave_setup.o wwm_ecmwf_local.o wwm_st4_local.o wwm_st6_local.o wwm_initio.o wwm_netcdf.o wwm_input.o wwm_grid.o\
-         wwm_ecmwf.o wwm_deep.o wwm_shallow.o wwm_st4.o wwm_st6.o wwm_snl4.o \
-         wwm_bdcons_init.o wwm_bdcons.o wwm_bdcons_wam.o wwm_nesting.o \
-         wwm_specparam.o wwm_windinput.o wwm_snl3.o wwm_vegdiss.o\
-         wwm_specint.o wwm_nums1d.o wwm_numtheta.o wwm_numsigma.o wwm_fluctsplit.o \
-         wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms_pipe.o wwm_coupl_roms_pgmcl.o\
-         wwm_jacobi.o wwm_coupl_shyfem.o wwm_coupl_selfe.o wwm_coupl_timor.o wwm_main.o wwm_export_ww3.o
+# please take care we have now ST41 (ardhuin_old) and ST42 (ardhuin_new)
+  PPFLAGS := $(PPFLAGS) -DUSE_WWM -DNCDF -DST42 -DWWM_SOLVER 
+  OBJS := $(OBJS) wwm_datapl.o wwm_petscpool.o  wwm_petsc_seriell.o wwm_petsc_parallel.o \
+       wwm_petsc_block.o wwm_petsc_controller.o wwm_aux.o wwm_aux_parall.o wwm_mjdv2.o wwm_blasaux.o wwm_sparskit.o \
+       wwm_ardhuin_old.o wwm_wind.o wwm_ardhuin_new.o wwm_breaking.o wwm_friction.o wwm_cycle3.o  \
+       wwm_gridcf.o wwm_hotfile.o wwm_parall_solver.o wwm_m_constants.o wwm_m_fileio.o wwm_serv_xnl4v5.o wwm_mod_xnl4v5.o wwm_snl4_wrt.o \
+       wwm_wave_setup.o wwm_initio.o wwm_netcdf.o wwm_input.o wwm_grid.o \
+       wwm_bdcons_init.o wwm_bdcons.o wwm_bdcons_wam.o wwm_nesting.o wwm_export_ww3.o \
+       wwm_specparam.o wwm_windinput.o wwm_dissipation.o wwm_snl3.o wwm_snl4.o wwm_snl42.o wwm_babanin.o wwm_sourceterms.o \
+       wwm_specint.o wwm_nums1d.o wwm_numtheta.o wwm_numsigma.o wwm_fluctsplit.o \
+       wwm_snonlin.o wwm_snonlin_local.o wwm_stress.o wwm_stresso.o wwm_stresso_local.o wwm_sbottom.o wwm_sdiss_ardh_vec.o wwm_sdiss_ardh_vec_local.o wwm_sinput.o wwm_sinput_local.o wwm_sinput_ard.o wwm_sinput_ard_local.o wwm_wsigstar.o wwm_wsigstar_local.o wwm_tauhf.o wwm_airsea.o wwm_airsea_local.o wwm_jafu.o wwm_nlweigt.o wwm_buildstress.o wwm_inisnonlin.o wwm_fkmean.o wwm_fkmean_local.o wwm_frcutindex.o wwm_frcutindex_local.o wwm_femeanws.o wwm_femeanws_local.o wwm_sdissip.o wwm_sdissip_local.o wwm_implsch.o wwm_implsch_local.o wwm_implsch2.o \
+       wwm_output.o wwm_compute.o wwm_diffrac.o wwm_coupl_roms_pipe.o wwm_coupl_roms_pgmcl.o wwm_jacobi.o wwm_coupl_shyfem.o wwm_coupl_selfe.o wwm_coupl_timor.o wwm_vegdiss.o wwm_main.o
 endif
 
 ifdef USE_ICE
@@ -265,6 +273,10 @@ endif
 
 ifdef USE_MARSH
   PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_MARSH
+endif
+
+ifdef USE_ANALYSIS
+  PPFLAGS := $(PPFLAGS) $(IBMCPP)-DUSE_ANALYSIS
 endif
 
 ifdef USE_SED2D
@@ -291,11 +303,32 @@ CONFIG_OBJS :=  $(addprefix o/$(config)/, $(OBJS))
 # Names of source files with relative path as found on $VPATH
 FULLSRC := $(foreach f,$(subst .o,.F90,$(OBJS)),$(firstword $(wildcard $(VPATH:%=%$f) not-found:$f)))
 
+##PARMETISDIR := ./ParMetis-3.1-Sep2010
+PARMETISDIR := ./ParMetis-4.0.3
+ifeq ($(ENV),EDISON)
+    PARMETISDIR := $(PARMETISDIR).cray
+endif
+ifeq ($(ENV),CORI2)
+    PARMETISDIR := $(PARMETISDIR).cray
+endif
+ifeq ($(ENV),BEBOP)
+    PARMETISDIR := $(PARMETISDIR).mpiicc
+endif
+ifeq ($(ENV),ANVIL)
+    PARMETISDIR := $(PARMETISDIR).mpiicc
+endif
+ifeq ($(ENV),COMET)
+    PARMETISDIR := $(PARMETISDIR).mpiicc
+endif
+ifeq ($(ENV),STAMPEDE2)
+    PARMETISDIR := $(PARMETISDIR).mpiicc
+endif
 
 ################################################################################
 # Library list
 ################################################################################
-LIBS = $(MTSLIBS) $(CDFLIBS) $(GTMLIBS) $(PETSCLIBS)
+MTSLIBS= -L$(PARMETISDIR) -lparmetis -lmetis
+LIBS = $(MTSLIBS) $(FABMLIBS) $(CDFLIBS) $(GTMLIBS) $(PETSCLIBS)
 
 ################################################################################
 # Build commands for SCHISM
@@ -328,26 +361,21 @@ psc: $(EXEC) o/$(config)/.dummy
 all: pschism utility
 
 
-PARMETISDIR := ./ParMetis-3.1-Sep2010
-ifeq ($(ENV),CORI)
-    PARMETISDIR := ./ParMetis-3.1-Sep2010.cray
-endif
-ifeq ($(ENV),CORI2)
-    PARMETISDIR := ./ParMetis-3.1-Sep2010.cray
-endif
-
 # This is the main executable target
-$(EXEC): $(CONFIG_OBJS) $(PARMETISDIR)/parmetis.a $(PARMETISDIR)/metis.a
+$(EXEC): $(CONFIG_OBJS) $(PARMETISDIR)/parmetis.a 
 	$(FLD) $(FLDFLAGS) $(CONFIG_OBJS) $(LIBS) ${MODULEOUTDIR}. -I. -o $@
+	ar -ru libschism.a $(CONFIG_OBJS)
 
 
-$(PARMETISDIR)/%.a:
+$(PARMETISDIR)/parmetis.a:
+##	+$(MAKE) distclean --directory=$(PARMETISDIR)
+	+$(MAKE) config --directory=$(PARMETISDIR)
 	+$(MAKE) --directory=$(PARMETISDIR)
 
-.PHONY: parmetis
-parmetis:
-	+$(MAKE) clean --directory=$(PARMETISDIR)
-	+$(MAKE) --directory=$(PARMETISDIR)
+#.PHONY: parmetis
+#parmetis:
+#	+$(MAKE) clean --directory=$(PARMETISDIR)
+#	+$(MAKE) --directory=$(PARMETISDIR)
 
 
 .PHONY: depend
@@ -377,7 +405,11 @@ endif
 o/$(config)/%.o: %.F90 o/$(config)/.dummy o/$(config)/.depend
 	$(QUIET)$(FCP) -c $(FCPFLAGS)  ${MODULEOUTDIR}o/$(config) -Io/$(config) $(GTMMOD) $(CDFMOD) $(PETSCMOD) $< -o $@
 
+o/$(config)/fabm_schism.o: $(FABMINSTALLDIR)/lib/libfabm.a
 
+$(FABMINSTALLDIR)/lib/libfabm.a:
+	mkdir -p $(FABMINSTALLDIR)
+	cd $(FABMINSTALLDIR) && cmake $(FABM_BASE)/src -DCMAKE_Fortran_COMPILER=$(FCP) -DFABM_HOST=schism -DCMAKE_INSTALL_PREFIX=. && make install
 
 ################# Utility
 # The utility directory contains a lot of single-file executables plus a few that rely on shared subroutines
@@ -484,11 +516,12 @@ o/$(config)/.dummy:
 .PHONY: clean
 clean:
 	$(QUIET)rm -f $(EXEC)
+	$(QUIET)rm -f libschism.a
 	$(QUIET)rm -rf o/*
 	$(QUIET)rm -rf ../bin/*
 	$(QUIET)rm -rf WWMIII/*.mod
 	$(QUIET)rm -rf WWMIII/*.o
-###	$(QUIET)rm -rf $(PARMETISDIR)/*.a
-	(cd $(PARMETISDIR)/METISLib ; make realclean )
-	(cd $(PARMETISDIR)/ParMETISLib ; make realclean )
+	(cd $(PARMETISDIR); make distclean; rm -f *.a )
+	##(cd $(PARMETISDIR)/ParMETISLib ; make realclean )
+	$(QUIET)rm -rf $(FABMINSTALLDIR)
 
