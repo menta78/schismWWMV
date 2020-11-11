@@ -3724,3 +3724,1029 @@ NETCDF4_COMPRESSION :=
 XDMF := 
 ifort (IFORT) 19.0.0.117 20180804
 ----------------------------------
+----------------------------------
+Sat Feb  8 12:57:27 CET 2020
+building adcprep
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 12:57:27 CET 2020
+building adcpost
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 12:57:31 CET 2020
+building adcirc
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 12:57:41 CET 2020
+building padcirc
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 12:57:53 CET 2020
+building hstime
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 12:57:53 CET 2020
+building aswip
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:09:46 CET 2020
+building adcprep
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:09:46 CET 2020
+building adcpost
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:09:49 CET 2020
+building adcirc
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:09:59 CET 2020
+building padcirc
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:10:10 CET 2020
+building hstime
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:10:10 CET 2020
+building aswip
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:12:25 CET 2020
+building adcprep
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:12:25 CET 2020
+building adcpost
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:12:26 CET 2020
+building adcirc
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:13:19 CET 2020
+building adcprep
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:13:20 CET 2020
+building adcpost
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:13:20 CET 2020
+building adcirc
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:13:37 CET 2020
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:17:24 CET 2020
+building adcprep
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:17:24 CET 2020
+building adcpost
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:17:24 CET 2020
+building adcirc
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:17:41 CET 2020
+building adcprep
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:17:41 CET 2020
+building adcpost
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:17:44 CET 2020
+building adcirc
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:17:54 CET 2020
+building padcirc
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:18:05 CET 2020
+building hstime
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:18:06 CET 2020
+building aswip
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := icc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:19:49 CET 2020
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:23:12 CET 2020
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:23:37 CET 2020
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:23:49 CET 2020
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:24:22 CET 2020
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:24:32 CET 2020
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:24:55 CET 2020
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:25:31 CET 2020
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:27:48 CET 2020
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------
+----------------------------------
+Sat Feb  8 13:30:34 CET 2020
+building adcprep_be
+PPFC := mpif90
+FC := ifort
+PFC := mpif90
+FFLAGS1 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS2 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+FFLAGS3 := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+DA := -DREAL8 -DLINUX -DCSCA
+DP := -DREAL8 -DLINUX -DCSCA -DCMPI
+DPRE := -DREAL8 -DLINUX -DADCSWAN -DADCSWAN
+IMODS := -I
+CC := mpicc
+CCBE := mpicc
+CFLAGS := -I . -I/home/aron/padcirc/prep  -I/home/aron/opt/netcdf_intel/include  -I -g -O0 -march=k8 -m64 -mcmodel=medium -DLINUX
+CLIBS := 
+LIBS := -L/home/aron/opt/parmetis_intel/lib -lmetis -lparmetis 
+MSGLIBS := 
+compiler := ncep
+MACHINENAME := 
+NETCDF := false
+NETCDF4 := false
+NETCDF4_COMPRESSION := 
+XDMF := 
+ifort (IFORT) 19.0.0.117 20180804
+----------------------------------

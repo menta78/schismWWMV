@@ -458,7 +458,7 @@ C
       INTEGER,ALLOCATABLE :: ELEM_LG(:)
       INTEGER,ALLOCATABLE :: LWEIR_LG(:),LWEIRD_LG(:)
 C
-      VTMAX = 24*MNP
+      VTMAX = 8*MNP
       ALLOCATE ( ITVECT(VTMAX) )
       ALLOCATE ( NODE_LG(MNP) )
       ALLOCATE ( NODE_GL1(MNP) )
@@ -709,6 +709,7 @@ C
         RRA = RA(L)
       ELSE
         RRA=RA(IR)
+        write(*,*) IR, RA(IR), RA(1) 
         RA(IR)=RA(1)
         IR=IR-1
         IF (IR.EQ.1) THEN

@@ -17,9 +17,9 @@ ifeq ($(compiler),ncep)
   FC            := ifort#${COMP}
   PFC           := mpif90#${COMP_MPI} 
   INCDIRS       := $(INCDIRS) -I${NETCDF_INCDIR} ${HDF5_INCDIR} -I${Z_INC}
-  FFLAGS1       :=  $(INCDIRS) -FI -assume byterecl -132 -assume buffered_io -fp-model strict
+  FFLAGS1       :=  $(INCDIRS) -FI -assume byterecl -132 -assume buffered_io -fp-model strict -traceback -check all -warn interfaces,nouncalled -gen-interface
   ifeq ($(DEBUG),full)
-     FFLAGS1       :=  $(INCDIRS) -g -O0 -traceback -debug -check all -i-dynamic -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
+     FFLAGS1       :=  $(INCDIRS) -g -O0 -traceback -check all -warn interfaces,nouncalled -gen-interface -FI -assume byterecl -132 -DALL_TRACE -DFULL_STACK -DFLUSH_MESSAGES
   endif
   FFLAGS2       :=  $(FFLAGS1)
   FFLAGS3       :=  $(FFLAGS1)
