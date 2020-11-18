@@ -1411,7 +1411,7 @@
          INTEGER                      :: IP
          REAL(rkind)                  :: Vtotal(np_total), Vlocal(MNP)
 #endif
-         INTEGER                      :: IC, IFSTAT
+         INTEGER                      :: IC, IFSTAT, IDIM
          CHARACTER(LEN=128)           :: HEADLN
 #ifdef MPI_PARALL_GRID
          IF (MULTIPLE_IN .or. (myrank .eq. 0)) THEN
@@ -1442,7 +1442,7 @@
              SEVAL(IP,:) = SEVAL2(IPLG(IP),:)
            END DO
          ELSE
-           DO IDIM=1,DIMS
+           DO IDIM = 1, DIMS
              IF (myrank .eq. 0) THEN
                Vtotal=SEVAL2(:,IDIM)
              END IF
