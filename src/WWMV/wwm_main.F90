@@ -709,7 +709,9 @@
 #if !defined SCHISM && !defined PDLIB && defined MPI_PARALL_GRID
       SUBROUTINE SIMPLE_PRE_READ
       USE DATAPOOL
-      USE schism_glbl, only : NUMSIG2, NUMDIR2, ics
+     !MENTA
+     !USE schism_glbl, only : NUMSIG2, NUMDIR2, ics
+      USE schism_glbl, only : MSC2, MDC2, ics
       IMPLICIT NONE
       CHARACTER(LEN=20) :: BEGTC, UNITC, ENDTC
       REAL(rkind) DELTC
@@ -741,8 +743,11 @@
       IF (CART2LATLON .and. LATLON2CART) THEN
         CALL WWM_ABORT('You cannot have both CART2LATLON and CART2LONLAT')
       END IF
-      NUMSIG2=NUMSIG
-      NUMDIR2=NUMDIR
+     !MENTA
+     !NUMSIG2=NUMSIG
+     !NUMDIR2=NUMDIR
+      MSC2=NUMSIG
+      MDC2=NUMDIR
       END SUBROUTINE
 #endif
 !**********************************************************************
