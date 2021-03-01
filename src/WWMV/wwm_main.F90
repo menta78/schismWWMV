@@ -304,11 +304,17 @@
            !YJZ: I changed the following to SBF
            SBF=ZERO
          ELSE 
-           IF (RADFLAG == 'VOR') THEN
-             CALL STOKES_STRESS_INTEGRAL_SCHISM
-           ELSE
-             CALL RADIATION_STRESS_SCHISM_NOT_VOR
+           !MENTA: updated to the calls implemented btw schism and WWMIII
+           IF (RADFLAG == 'VOR') THEN                  ! Vortex force formalism as described in Bennis (2011)
+             CALL STOKES_STRESS_INTEGRAL_SCHISM        ! Compute Stokes drift velocities and pressure terms 
+             CALL COMPUTE_CONSERVATIVE_VF_TERMS_SCHISM ! Conservative terms (relative to Stokes drift advection, Coriolis and pressure head: Eq. 17, 19 and 20 from Bennis 2011)
+             CALL COMPUTE_BREAKING_VF_TERMS_SCHISM     ! Sink of momentum due to wave breaking and update wwave_force
+           ELSE ! Radiation stress formalism (Longuet-Higgins and Stewart, 1962 and 1964) as described in Battjes (1974)
+             CALL RADIATION_STRESS_SCHISM
+             
            ENDIF
+           IF(SHOREWAFO == 1) CALL SHORELINE_WAVE_FORCES
+           !!! end modif MENTA
          END IF 
 ! end modif AD
 

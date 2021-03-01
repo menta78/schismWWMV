@@ -17,12 +17,12 @@
 #else
 # if defined(SCHISM) || defined(WWM_MPI)
       use schism_msgp ! , only: comm,             & ! MPI communicator
-      use schism_glbl, only    : MNE => nea,       & ! Elements of the augmented domain
+      use schism_glbl, only    : MNE => nea_wwm,       & ! Elements of the augmented domain
      &                         MNP => npa,       & ! Nodes in the augmented domain
      &                         NP_RES => np,     & ! Local number of resident nodes
      &                         np,               &
      &                         npg,              & ! nuber of ghost nodes
-     &                         MNEI => mnei,     & ! Max number of neighboring elements surrounding a node, nodes is mnei+1!
+     &                         MNEI => mnei_wwm,     & ! Max number of neighboring elements surrounding a node, nodes is mnei+1!
      &                         DEP8 => dp,       & ! depth in the augmented domain
      &                         XLON=>xlon,       & !longitude (in radians)
      &                         YLAT=>ylat,       &
@@ -30,7 +30,7 @@
      &                         YPTMP => ynd,     &
      &                         NE_GLOBAL => ne_global, &! Global number of elements
      &                         NP_GLOBAL => np_global, &! Global number of nodes
-     &                         INETMP => elnode, &! Element connection table of the augmented domain?
+     &                         INETMP => elnode_wwm, &! Element connection table of the augmented domain?
      &                         iplg,             & ! node local to global mapping
      &                         ipgl,             & ! node global to local mapping
      &                         ielg,             & ! element local to global maping
@@ -68,7 +68,9 @@
      &                         WIND_INTPAR=>out_wwm_windpar, & ! boundary layer stuff from wwm ...
      &                         ISBND,                        & !bnd flags
      &                         RKIND,                        &
-     &                         STOKES_VEL,JPRESS,SBR,SBF,    & !for vortex formulation
+     &                         JPRESS,SBR,SBF,               &
+     &                         STOKES_VEL,STOKES_VEL_SD,STOKES_W_ND,    & !for vortex formulation
+     &                         SHOREWAFO,                     & ! wave forces at the shoreline
      &                         SAV_ALPHA, SAV_H
 # endif
 #endif
