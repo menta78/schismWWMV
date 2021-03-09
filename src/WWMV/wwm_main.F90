@@ -360,6 +360,11 @@
            FLUSH(STAT%FHNDL)
          END IF
 #endif
+ 
+        ! menta: to avoid 'nan from wwm' errors
+        WHERE(WWAVE_FORCE /= WWAVE_FORCE)
+          WWAVE_FORCE = 0
+        END WHERE
       END SUBROUTINE WWM_II
 !**********************************************************************
 !*                                                                    *
