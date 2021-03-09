@@ -11,8 +11,8 @@ shared     = not-set
 # MENTA: setting the right compiler
 #cc         = mpicc.mpich
 #cxx        = mpicxx.mpich
-cc         = /ADAPTATION/mentalo/usr/mpich_gnu/mpich-3.2.1/bin/mpicc
-cxx        = /ADAPTATION/mentalo/usr/mpich_gnu/mpich-3.2.1/bin/mpicxx
+cc         = mpicc.mpich
+cxx        = mpicxx.mpich
 ############################
 
 
