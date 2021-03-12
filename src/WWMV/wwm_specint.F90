@@ -42,7 +42,8 @@
 !*                                                                    *
 !**********************************************************************
       SUBROUTINE COMPUTE_PHI_DPHI(IP,WALOC,PHI,DPHIDN)
-      USE DATAPOOL
+      USE DATAPOOL 
+      USE W3UOSTMD
       IMPLICIT NONE
       INTEGER, INTENT(IN)      :: IP
       INTEGER                  :: IS, ID
@@ -60,6 +61,7 @@
       REAL(rkind) :: SSBR(NUMSIG,NUMDIR),DSSBR(NUMSIG,NUMDIR)
       REAL(rkind) :: SSBRL(NUMSIG,NUMDIR)
       REAL(rkind) :: SSBF(NUMSIG,NUMDIR),DSSBF(NUMSIG,NUMDIR)
+      REAL(rkind) :: SSUO(NUMSIG,NUMDIR),SDUO(NUMSIG,NUMDIR)
 
 #ifdef DEBUG
       REAL(rkind)              :: SSINL_WW3(NUMSIG,NUMDIR), SSINE_WW3(NUMSIG,NUMDIR)
@@ -76,6 +78,7 @@
       SSBR   = ZERO; DSSBR  = ZERO
       SSBF   = ZERO; DSSBF  = ZERO
       SSINL  = ZERO
+      SSUO   = ZERO; SDUO   = ZERO
 
 #ifdef DEBUG
       IF (IP .eq. TESTNODE) THEN
@@ -95,6 +98,8 @@
       END IF
 #endif
 !
+      IF (MESUO .GE. 1) CALL UOST_SRCTRM(IP, WALOC, CG(:,IP), SSUO, SDUO)     
+
       IF (ISHALLOW(IP) .EQ. 1) CALL SHALLOW_WATER(IP, WALOC, PHI, DPHIDN, SSBR, DSSBR, SSBF, DSSBF, SSNL3, DSSNL3)
 
 !      WRITE(*,*) 'SUMS', SUM(PHI), SUM(DPHIDN)

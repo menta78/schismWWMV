@@ -524,6 +524,7 @@
       USE W3SRC4MD
 #endif
       USE W3SRC6MD
+      USE W3UOSTMD
       IMPLICIT NONE
       INTEGER        :: I, J
 
@@ -801,6 +802,10 @@
           FLUSH(STAT%FHNDL)
         END IF
         CALL PREPARE_ST6
+      ENDIF
+
+      IF ( MESUO .GT. 0) THEN
+        CALL UOST_INIT
       ENDIF
       
       IF (PrintLOG) THEN

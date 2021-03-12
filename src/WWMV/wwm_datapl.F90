@@ -935,6 +935,7 @@
          INTEGER                :: MESBF   = 1
          INTEGER                :: MESTR   = 0 
          INTEGER                :: MEVEG   = 0
+         INTEGER                :: MESUO   = 0
          INTEGER                :: MELIM   = 1
          INTEGER                :: ICRIT   = 1
          INTEGER                :: IBREAK  = 1
