@@ -278,7 +278,9 @@
            END IF
          END DO
 
-         IF (icou_elfe_wwm .eq. 0) OUTT_INTPAR = ZERO
+        ! menta
+        !removing the line below, otherwise with icou_elfe_wwm the the output will be always 0
+        !IF (icou_elfe_wwm .eq. 0) OUTT_INTPAR = ZERO
 
          IF (PrintLOG) THEN
            WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'FINISHED FILLING RESULTS', SIMUTIME
