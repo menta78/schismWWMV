@@ -84,6 +84,7 @@ class wwmTestTemplate(unittest.TestCase):
   def setUp(self):
     # this method is invoked before the run of each test
     # it prepares the run directory on the basis of the conf directory
+    print('  running the tests in ' + self.__class__.__module__)
     self.prepareRunDirectory()
     self.launchDir = os.getcwd()
     # setting the working directory
