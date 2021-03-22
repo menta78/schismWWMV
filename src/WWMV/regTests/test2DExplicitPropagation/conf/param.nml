@@ -17,7 +17,7 @@
   ibtp = 0 
 
 ! rnday = 0.25 !total run time in days
-  rnday = 5
+  rnday = 10
   dt = 400 !Time step in sec
 
 ! Grid for WWM (USE_WWM)
@@ -40,10 +40,10 @@
 ! Optional parameters 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ! Starting time
-  start_year = 1994 !int
-  start_month = 10 !int
-  start_day = 12 !int
-  start_hour = 17 !double
+  start_year = 2000 !int
+  start_month = 1 !int
+  start_day = 1 !int
+  start_hour = 0 !double
   utc_start = 0 !double
 
 !-----------------------------------------------------------------------
