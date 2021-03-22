@@ -1,3 +1,4 @@
+      ! author: Lorenzo Mentaschi
       MODULE W3UOSTMD
 
       USE DATAPOOL

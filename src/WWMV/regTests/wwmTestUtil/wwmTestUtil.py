@@ -85,9 +85,13 @@ class wwmTestTemplate(unittest.TestCase):
     # this method is invoked before the run of each test
     # it prepares the run directory on the basis of the conf directory
     self.prepareRunDirectory()
+    self.launchDir = os.getcwd()
+    # setting the working directory
+    os.chdir(self.getRunDir())
 
   def tearDown(self):
     # this method is invoked after the run of each test
+    os.chdir(self.launchDir)
     try:
       # getting the test outcome: maybe there were errors of some kind
       rslt = self.defaultTestResult()
@@ -99,6 +103,8 @@ class wwmTestTemplate(unittest.TestCase):
     if doCleanUp:
       # cleaning up the run directory only if the run succeeds
       self.cleanupRunDirectory()
+    else:
+      print('   ### TEST FAILED. THE RUN DIRECTORY WON''T BE CLEANED UP')
 
 
 

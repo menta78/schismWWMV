@@ -1,3 +1,5 @@
+# SETUP FILE FOR SCHISMWWM REGRESSION TESTS
+
 # python used to launch the test suite.
 # The packages netCDF4 and numpy are needed
 export SCWWM_PY=/home/lmentaschi/usr/miniconda3/bin/python
