@@ -40,6 +40,7 @@
 !   Guillaume Dodet (IFREMER, Brest, France),
 !   Kai Li (XXX), 
 !   Jean Bidlot (ECMWF, Reading, U.K.)
+!   Lorenzo Mentaschi
 !				
 ! Copyright: 2008 - 2014 (Aron Roland, Jian-Ming Liau, Tai-Wen Hsu, Ulrich Zanke)
 ! All Rights Reserved                                     
