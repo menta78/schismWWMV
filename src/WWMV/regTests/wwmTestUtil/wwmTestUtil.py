@@ -24,6 +24,13 @@ def getCombineCommand(bgnParam=1, endParam=2):
   return combineCmd
 
 
+def getCombineHotstartCommand(iTimeStep=-1):
+  combineExe = getCombineHotfileExecutable()
+  combineCmd = 'cd outputs; ' + combineExe + ' -i ' + str(iTimeStep)
+  print('  hotstart combine command: \n' + combineCmd)
+  return combineCmd
+
+
 def getMpirunExecutable():
   # returns the path of the mpirun executable
   if not mpirunEnvVar in os.environ:
