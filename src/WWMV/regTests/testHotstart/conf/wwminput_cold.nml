@@ -451,10 +451,10 @@ ASPAR_LOCAL_LEVEL = 0               ! locality level 0 - a lot of memory 10 - no
 &HOTFILE
  LHOTF          = T ! Write hotfile
  BEGTC          = '20000101.000000'   ! Starting time of hotfile writing
- DELTC          = 43200      ! time between hotfile writes
+ DELTC          = 21600      ! time between hotfile writes
  UNITC          = 'SEC'  ! unit used above
  ENDTC          = '20000102.000000'  ! Ending time of hotfile writing
- LCYCLEHOT      = T ! Applies only to netcdf
+ LCYCLEHOT      = F ! Applies only to netcdf
                     ! If T then hotfile contains 2 last records.
                     ! If F then hotfile contains N record if N outputs
                     ! have been done

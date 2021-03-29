@@ -17,7 +17,7 @@
  BEGTC          = '20000101.120000'  ! Time for start the simulation, ex:yyyymmdd. hhmmss
  DELTC          = 400                 ! Time step 
  UNITC          = 'SEC'              ! Unity of time step
- ENDTC          = '20000102.000000'  ! Time for stop the simulation, ex:yyyymmdd. hhmmss
+ ENDTC          = '20000102.120000'  ! Time for stop the simulation, ex:yyyymmdd. hhmmss
  DMIN           = 0.0001              ! Minimum water depth. This is not used in selfe; with selfe this is set automatically to h0 in param.in
 /
 
@@ -451,9 +451,9 @@ ASPAR_LOCAL_LEVEL = 0               ! locality level 0 - a lot of memory 10 - no
 &HOTFILE
  LHOTF          = T ! Write hotfile
  BEGTC          = '20000101.120000'   ! Starting time of hotfile writing
- DELTC          = 12      ! time between hotfile writes
- UNITC          = 'HR'  ! unit used above
- ENDTC          = '20000102.000000'  ! Ending time of hotfile writing
+ DELTC          = 21600      ! time between hotfile writes
+ UNITC          = 'SEC'  ! unit used above
+ ENDTC          = '20000102.120000'  ! Ending time of hotfile writing
  LCYCLEHOT      = T ! Applies only to netcdf
                     ! If T then hotfile contains 2 last records.
                     ! If F then hotfile contains N record if N outputs

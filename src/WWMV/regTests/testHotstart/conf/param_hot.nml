@@ -17,7 +17,7 @@
   ibtp = 0 
 
 ! rnday = 0.25 !total run time in days
-  rnday = 1
+  rnday = 1.5
   dt = 400 !Time step in sec
 
 ! Grid for WWM (USE_WWM)
