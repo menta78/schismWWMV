@@ -8216,6 +8216,11 @@
         icount=icount+1
         if(iof_wwm(icount)==1) call writeout_nc(id_out_var(noutput+4), &
      &'wave_force',8,nvrt,nsa,wwave_force(1,:,:),wwave_force(2,:,:))
+
+        noutput=noutput+1
+        icount=icount+1
+        if(iof_wwm(icount)==1) call writeout_nc(id_out_var(noutput+4), &
+     &'ice_conc',8,nvrt,nsa,dble(out_wwm(:,32)))
 #endif
 
 #ifdef USE_MARSH

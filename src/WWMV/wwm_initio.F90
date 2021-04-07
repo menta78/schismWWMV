@@ -776,6 +776,10 @@
         CALL INIT_WATLEV_INPUT
       END IF
 #endif
+
+      IF (MEICE.EQ.1 .AND. LICEFROMWWM) THEN
+        CALL INIT_ICE_INPUT
+      END IF
      
 
       IF (PrintLOG) THEN

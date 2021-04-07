@@ -748,7 +748,7 @@
 
          NAMELIST /ENGS/ ISOURCE, MESNL, MESIN, IFRIC, MESBF, FRICC,    &
      &      MESBR, MEVEG, ICRIT, IBREAK, ALPBJ, BRHD,                   &
-     &      LMAXETOT, MESDS, MESTR, TRICO, TRIRA, TRIURS, MESUO
+     &      LMAXETOT, MESDS, MESTR, TRICO, TRIRA, TRIURS, MESUO, MEICE
 
          NAMELIST /NUMS/ ICOMP, AMETHOD, SMETHOD, DMETHOD,              &
      &      IMPL_GEOADVECT,                                             &
@@ -1102,6 +1102,11 @@
 
          CALL CU2SEC(SEWL%UNIT, SEWL%DELT)
          SEWL%TMJD = 0.0
+
+!
+!     *** Ice section
+!
+         CALL READ_ICE_SETTINGS
 !
 !     *** ENGS section
 !
@@ -1306,6 +1311,18 @@
       
       
       END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE READ_ICE_SETTINGS
+      USE DATAPOOL
+      IMPLICIT NONE
+      NAMELIST /ICE/ LICEFROMWWM, ICE_NETCDF_FILE, ICENCVAR, EXTRAPOLATION_ALLOWED_ICE
+
+      READ(INP%FHNDL, NML = ICE)
+      wwm_print_namelist(ICE)
+      ICEIN%FNAME = ICE_NETCDF_FILE
+      END SUBROUTINE READ_ICE_SETTINGS
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************

@@ -641,6 +641,11 @@
         END IF
       END IF
 #endif
+
+      IF (MEICE.EQ.1 .AND. LICEFROMWWM) THEN
+        CALL UPDATE_ICE(K)
+      END IF
+
 #ifndef SCHISM
       IF (LBCSE) THEN
         CALL SET_WAVE_BOUNDARY_CONDITION

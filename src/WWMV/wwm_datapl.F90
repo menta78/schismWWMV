@@ -494,6 +494,7 @@
      &                             WIN,                                  &
      &                             WINLIST,                              &
      &                             CUR,                                  &
+     &                             ICEIN,                                &
      &                             WAT,                                  &
      &                             WAV,                                  &
      &                             HOTIN,                                &
@@ -623,6 +624,8 @@
          REAL(rkind), ALLOCATABLE         :: tmp_curr2(:,:)
          REAL(rkind), ALLOCATABLE         :: tmp_watlev1(:)
          REAL(rkind), ALLOCATABLE         :: tmp_watlev2(:)
+         REAL(rkind), ALLOCATABLE         :: tmp_ice1(:)
+         REAL(rkind), ALLOCATABLE         :: tmp_ice2(:)
          REAL(rkind)                      :: TimeWAT_old, TimeWAT_new
          REAL(rkind), ALLOCATABLE         :: cf_a(:)
          REAL(rkind), ALLOCATABLE         :: cf_b(:)
@@ -641,10 +644,12 @@
          INTEGER                    :: REC1_curr_new, REC2_curr_new
          INTEGER                    :: REC1_watlev_old, REC2_watlev_old
          INTEGER                    :: REC1_watlev_new, REC2_watlev_new
+         INTEGER                    :: REC1_ice_old, REC2_ice_old
+         INTEGER                    :: REC1_ice_new, REC2_ice_new
 !
 ! This is the variable type for the direct 
 !
-         TYPE(VAR_NETCDF_CF) :: eVAR_WIND, eVAR_CURR, eVAR_WATLEV
+         TYPE(VAR_NETCDF_CF) :: eVAR_WIND, eVAR_CURR, eVAR_WATLEV, eVAR_ICE
 ! END CF comppliant wind PART I.J.
 
          TYPE GridInformation
@@ -936,6 +941,7 @@
          INTEGER                :: MESTR   = 0 
          INTEGER                :: MEVEG   = 0
          INTEGER                :: MESUO   = 0
+         INTEGER                :: MEICE     = 0
          INTEGER                :: MELIM   = 1
          INTEGER                :: ICRIT   = 1
          INTEGER                :: IBREAK  = 1
@@ -1233,6 +1239,23 @@
          REAL(rkind)                 :: EPSH3 = 0.01d0
          REAL(rkind)                 :: EPSH4 = 0.01d0
          REAL(rkind)                 :: EPSH5 = 0.01d0
+
+!
+!  ice stuff
+!
+         LOGICAL    :: LICEFROMWWM = .TRUE.
+         CHARACTER(LEN=140) :: ICE_NETCDF_FILE = "iceconc.nc"
+         character(len=50) :: ICENCVAR = "SICONC"
+         LOGICAL    :: EXTRAPOLATION_ALLOWED_ICE = .FALSE.
+
+         INTEGER    :: MNP_ICE
+         REAL(rkind), allocatable :: XP_ICE(:), YP_ICE(:)
+         integer NDX_ICE_FD, NDY_ICE_FD
+         INTEGER, ALLOCATABLE       :: CF_IX_ICE(:), CF_IY_ICE(:)
+         real(rkind), allocatable :: CF_COEFF_ICE(:,:)
+         REAL(rkind), ALLOCATABLE :: ICECONC_FD(:,:)
+         REAL(rkind), allocatable :: ICECONC(:) ! sea ice concentration
+
 !
 ! Dislin
 !

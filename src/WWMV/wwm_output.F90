@@ -1320,6 +1320,7 @@
          OUTPAR(29) = CD(IP)    ! Drag coefficient
          OUTPAR(30) = WINDXY(IP,1) ! windx
          OUTPAR(31) = WINDXY(IP,2) ! windy
+         OUTPAR(32) = ICECONC(IP) ! ice concentration
 
 !         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH INTPAR'
 !         FLUSH(STAT%FHNDL)
