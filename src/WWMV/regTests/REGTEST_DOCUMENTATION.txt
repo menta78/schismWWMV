@@ -17,7 +17,7 @@ To work the suite needs to know:
 - the python executable to be used (by default python3)
 - the path of the schismWWM executable
 - the path of the combine_outputXX executable
-- the path of the combine_hotstartXX executable (soon a test on the warm start will be added).
+- the path of the combine_hotstartXX executable (needed by the test of warm start).
 This info is provided by editing the file set_environ.sh, and adding the corresponding environment variables (see the example in this directory).
 The file set_environ.sh can also be used to set the necessary runtime paths (e.g. variables PATH or LD_LIBRARY_PATH).
 
