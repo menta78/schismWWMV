@@ -34,7 +34,7 @@
         allocate(ICECONC(MNP_ICE), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_icenc, allocate error 1')
         ICECONC=0
-        CALL INIT_DIRECT_NETCDF_CF(eVAR_ICE, .FALSE., ICEIN%FNAME, ICENCVAR)
+        CALL INIT_DIRECT_NETCDF_CF_ICE(eVAR_ICE, .FALSE., ICEIN%FNAME, ICENCVAR)
 
         ISTAT = nf90_open(ICEIN%FNAME, nf90_nowrite, fid)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
@@ -104,7 +104,7 @@
 
         ALLOCATE(tmp_ice1(MNP),tmp_ice2(MNP), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_icenc, allocate error 1')
-        CALL GET_CF_TIME_INDEX(eVAR_ICE, REC1_ice_new,REC2_ice_new,cf_w1,cf_w2)
+        CALL GET_CF_TIME_INDEX_ICE(eVAR_ICE, REC1_ice_new,REC2_ice_new,cf_w1,cf_w2)
         CALL READ_INTERP_NETCDF_CF_WWM_ICE(REC1_ice_new,tmp_ice1)
         IF (cf_w1.NE.1) THEN
           CALL READ_INTERP_NETCDF_CF_WWM_ICE(REC2_ice_new,tmp_ice2)
@@ -138,7 +138,7 @@
           REC1_ice_old = 0
           REC2_ice_old = 0
         END IF
-        CALL GET_CF_TIME_INDEX(eVAR_ICE, REC1_ice_new,REC2_ice_new,cf_w1,cf_w2)
+        CALL GET_CF_TIME_INDEX_ICE(eVAR_ICE, REC1_ice_new,REC2_ice_new,cf_w1,cf_w2)
         IF (REC1_ice_new.NE.REC1_ice_old) THEN
           CALL READ_INTERP_NETCDF_CF_WWM_ICE(REC1_ice_new,tmp_ice1)
         END IF
@@ -422,6 +422,8 @@
           ic=ic + CF_COEFF_ICE(J,I)*ICECONC_FD(IX+SHIFTXY(J,1),IY+SHIFTXY(J,2))
         END DO
         outice(I)=ic*cf_scale_factor + cf_add_offset
+        IF (outice(I).GT.1) outice(I) = 1
+        IF (outice(I).LT.0) outice(I) = 0
       END DO
       IF (PrintLOG) THEN
         WRITE(STAT%FHNDL,*) 'KERNEL_INTERP_ICEFD'
@@ -429,4 +431,242 @@
         WRITE(STAT%FHNDL,*) 'ice interp, min/max=', minval(outice), maxval(outice)
         FLUSH(STAT%FHNDL)
       END IF
+      END SUBROUTINE
+!****************************************************************************
+!*                                                                          *
+!****************************************************************************
+      SUBROUTINE INIT_DIRECT_NETCDF_CF_ICE(eVAR, MULTIPLE_IN, eFileName, eString)
+      USE NETCDF
+      USE DATAPOOL
+      IMPLICIT NONE
+      TYPE(VAR_NETCDF_CF), intent(inout) :: eVAR
+      logical, intent(in) :: MULTIPLE_IN
+      character(len=100), intent(in) :: eFileName
+      character(len=*), intent(in) :: eString
+!
+      INTEGER           :: fid, varid
+      INTEGER           :: dimidsB(nf90_max_var_dims), dimids(nf90_max_var_dims)
+      integer nbChar
+      character (len=20) :: eTimeStr
+      character(len=100) :: CHRERR
+      character (len = *), parameter :: CallFct="INIT_DIRECT_NETCDF_CF"
+      character (len=100) :: eStrUnitTime
+      real(rkind) :: ConvertToDay
+      real(rkind) :: eTimeStart
+      real(rkind) :: cf_scale_factor, cf_add_offset
+      integer nbtime_mjd
+      real(rkind), allocatable :: ice_time_mjd(:)
+      integer eInt(1)
+      real(rkind) :: eReal(2)
+      integer IPROC
+      integer np_file, NumberDim
+      eVAR % MULTIPLE_IN = .FALSE.
+      IF (myrank .eq. 0) THEN
+        ISTAT = nf90_open(TRIM(eFileName), nf90_nowrite, fid)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
+
+        ! Reading ice attributes
+
+        WRITE(STAT%FHNDL,*), 'eString=', TRIM(eString)
+        WRITE(STAT%FHNDL,*), 'FNAME=', TRIM(eFileName)
+        ISTAT = nf90_inq_varid(fid, TRIM(eString), varid)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, ISTAT)
+
+        ISTAT = nf90_inquire_variable(fid, varid, dimids=dimidsB)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, ISTAT)
+
+        ISTAT = nf90_inquire_variable(fid, varid, ndims=NumberDim)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 3, ISTAT)
+
+
+
+        ISTAT = nf90_inquire_dimension(fid, dimidsB(1), len=np_file)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, ISTAT)
+        IF (NumberDim .eq. 2) THEN
+          IF (np_file .ne. np_total) THEN
+            Print *, 'We have np_file=', np_file
+            Print *, '   But np_total=', np_total
+            CALL WWM_ABORT("Direct forcing file seems to have wrong dimension")
+          END IF
+        END IF
+
+        ISTAT = nf90_inquire_dimension(fid, dimidsB(NumberDim), name=eTimeStr)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, ISTAT)
+        IF (PrintLOG) THEN
+          WRITE(STAT%FHNDL,*) 'ice: variable used for time=', TRIM(eTimeStr)
+          FLUSH(STAT%FHNDL)
+        END IF
+
+        ISTAT = nf90_get_att(fid, varid, "scale_factor", cf_scale_factor)
+        IF (ISTAT /= 0) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          IF (PrintLOG) THEN
+            WRITE(STAT%FHNDL,*) 'CHRERR=', TRIM(CHRERR)
+          END IF
+          cf_scale_factor=ONE
+        ENDIF
+        IF (PrintLOG) THEN
+          WRITE(STAT%FHNDL,*) 'cf_scale_factor=', cf_scale_factor
+          FLUSH(STAT%FHNDL)
+        END IF
+
+        ISTAT = nf90_get_att(fid, varid, "add_offset", cf_add_offset)
+        IF (ISTAT /= 0) THEN
+          CHRERR = nf90_strerror(ISTAT)
+          IF (PrintLOG) THEN
+            WRITE(STAT%FHNDL,*) 'CHRERR=', TRIM(CHRERR)
+          END IF
+          cf_add_offset=ZERO
+        ENDIF
+        IF (PrintLOG) THEN
+          WRITE(STAT%FHNDL,*) 'cf_add_offset=', cf_add_offset
+          FLUSH(STAT%FHNDL)
+        END IF
+
+        ! Reading time
+
+        ISTAT = nf90_inq_varid(fid, eTimeStr, varid)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, ISTAT)
+
+        ISTAT = nf90_inquire_attribute(fid, varid, "units", len=nbChar)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, ISTAT)
+
+        ISTAT = nf90_get_att(fid, varid, "units", eStrUnitTime)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, ISTAT)
+        CALL CF_EXTRACT_TIME(eStrUnitTime, ConvertToDay, eTimeStart)
+        IF (PrintLOG) THEN
+          WRITE(STAT%FHNDL,*) 'eTimeStart=', eTimeStart
+          FLUSH(STAT%FHNDL)
+        END IF
+
+        ISTAT = nf90_inquire_variable(fid, varid, dimids=dimids)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, ISTAT)
+
+        ISTAT = nf90_inquire_dimension(fid, dimids(1), len=nbtime_mjd)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, ISTAT)
+
+        allocate(ice_time_mjd(nbtime_mjd), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_icenc, allocate error 48')
+
+        ISTAT = nf90_get_var(fid, varid, ice_time_mjd)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, ISTAT)
+
+        ISTAT = nf90_close(fid)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, ISTAT)
+
+        ice_time_mjd(:) = ice_time_mjd(:)*ConvertToDay + eTimeStart
+        CALL CHECK_ICE_TIME(nbtime_mjd, ICE_TIME_MJD)
+      END IF
+
+      IF (myrank .eq. 0) THEN
+        eInt(1)=nbtime_mjd
+        DO IPROC=2,nproc
+          CALL MPI_SEND(eInt,1,itype, iProc-1, 811, comm, ierr)
+        END DO
+        eReal(1)=cf_scale_factor
+        eReal(2)=cf_add_offset
+        DO IPROC=2,nproc
+          CALL MPI_SEND(eReal,2,rtype, iProc-1, 813, comm, ierr)
+        END DO
+        DO IPROC=2,nproc
+          CALL MPI_SEND(ICE_TIME_MJD,nbtime_mjd,rtype, iProc-1, 812, comm, ierr)
+        END DO
+      ELSE
+        CALL MPI_RECV(eInt,1,itype, 0, 811, comm, istatus, ierr)
+        nbtime_mjd=eInt(1)
+        CALL MPI_RECV(eReal,2,rtype, 0, 813, comm, istatus, ierr)
+        cf_scale_factor=eReal(1)
+        cf_add_offset=eReal(2)
+        ALLOCATE(ICE_TIME_MJD(nbtime_mjd), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_icenc, allocate error 3')
+        CALL MPI_RECV(ICE_TIME_MJD,nbtime_mjd,rtype, 0, 812, comm, istatus, ierr)
+      END IF
+
+      eVAR % cf_scale_factor = cf_scale_factor
+      eVAR % cf_add_offset = cf_add_offset
+      eVAR % nbTime = nbtime_mjd
+      allocate(eVAR % ListTime(nbtime_mjd))
+      eVAR % ListTime = ICE_TIME_MJD
+      eVAR % eFileName = eFileName
+      eVAR % eString = eString
+      eVAR % idVar = 1
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE CHECK_ICE_TIME(nbtime_mjd, ICE_TIME_MJD)
+      USE DATAPOOL, only : SEWI, STAT, rkind, THR, wwmerr
+      IMPLICIT NONE
+      integer, intent(in) :: nbtime_mjd
+      real(rkind), intent(in) :: ICE_TIME_MJD(nbtime_mjd)
+      CHARACTER(LEN=15) :: eTimeStr
+      real(rkind) DiffTime
+      real(rkind) :: tolDay = 0.00001
+      IF (SEWI%BMJD .LT. minval(ICE_TIME_MJD) - tolDay) THEN
+        WRITE(STAT%FHNDL,*) 'END OF RUN'
+        WRITE(STAT%FHNDL,*) 'ICE START TIME is outside CF ice_time range!'
+        CALL MJD2CT(SEWI%BMJD,eTimeStr)
+        WRITE(STAT%FHNDL,*) 'SEWI%BMJD=', SEWI%BMJD, ' date=', eTimeStr
+        CALL MJD2CT(SEWI%EMJD,eTimeStr)
+        WRITE(STAT%FHNDL,*) 'SEWI%EMJD=', SEWI%EMJD, ' date=', eTimeStr
+        CALL MJD2CT(minval(ICE_TIME_MJD),eTimeStr)
+        WRITE(STAT%FHNDL,*) 'min(ICE_TIME_MJD)=', minval(ICE_TIME_MJD), ' date=', eTimeStr
+        CALL MJD2CT(maxval(ICE_TIME_MJD),eTimeStr)
+        WRITE(STAT%FHNDL,*) 'max(ICE_TIME_MJD)=', maxval(ICE_TIME_MJD), ' date=', eTimeStr
+        FLUSH(STAT%FHNDL)
+        WRITE(wwmerr, *) 'Error in ICE_TIME_MJD 1, read ', TRIM(STAT%FNAME)
+        CALL WWM_ABORT(wwmerr)
+      END IF
+      IF (SEWI%EMJD .GT. maxval(ICE_TIME_MJD) + tolDay) THEN
+        WRITE(STAT%FHNDL,*) 'END OF RUN'
+        WRITE(STAT%FHNDL,*) 'ICE END TIME is outside CF ice_time range!'
+        DiffTime=maxval(ICE_TIME_MJD) + THR - SEWI%EMJD
+        WRITE(STAT%FHNDL,*) 'DiffTime=', DiffTime
+        CALL MJD2CT(SEWI%BMJD,eTimeStr)
+        WRITE(STAT%FHNDL,*) 'SEWI%BMJD=', SEWI%BMJD, ' date=', eTimeStr
+        CALL MJD2CT(SEWI%EMJD,eTimeStr)
+        WRITE(STAT%FHNDL,*) 'SEWI%EMJD=', SEWI%EMJD, ' date=', eTimeStr
+        CALL MJD2CT(minval(ICE_TIME_MJD),eTimeStr)
+        WRITE(STAT%FHNDL,*) 'min(ICE_TIME_MJD)=', minval(ICE_TIME_MJD), ' date=', eTimeStr
+        CALL MJD2CT(maxval(ICE_TIME_MJD),eTimeStr)
+        WRITE(STAT%FHNDL,*) 'max(ICE_TIME_MJD)=', maxval(ICE_TIME_MJD), ' date=', eTimeStr
+        FLUSH(STAT%FHNDL)
+        WRITE(wwmerr, *) 'Error in ICE_TIME_MJD 2, read ', TRIM(STAT%FNAME)
+        CALL WWM_ABORT(wwmerr)
+      END IF
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE GET_CF_TIME_INDEX_ICE(eVAR, REC1, REC2, w1, w2)
+      ! For given wwm_time and ice_time return records to get and weights for time
+      ! interpolation F(wwm_time)=F(rec1)*w1 + F(rec2)*w2
+      !
+      USE DATAPOOL
+      IMPLICIT NONE
+      TYPE(VAR_NETCDF_CF), intent(in)           :: eVAR
+      REAL(rkind), INTENT(OUT)            :: w1, w2
+      INTEGER, INTENT(OUT)                :: REC1, REC2
+      REAL(rkind) :: eTime1, eTime2
+      INTEGER  :: iTime
+
+      DO iTime=2,eVAR % nbTime
+        eTime1=eVAR % ListTime(iTime-1)
+        eTime2=eVAR % ListTime(iTime)
+        IF ((eTime1 .le. MAIN%TMJD).and.(MAIN%TMJD .le. eTime2)) THEN
+          REC2=iTime
+          REC1=iTime-1
+          w2=(MAIN % TMJD - eTime1)/(eTime2-eTime1)
+          w1=(eTime2 - MAIN % TMJD)/(eTime2-eTime1)
+          RETURN
+        END IF
+      END DO
+      IF (PrintLOG) THEN
+        WRITE(STAT%FHNDL,*) 'Time error in wind for CF'
+        WRITE(STAT%FHNDL,*) 'MAIN % TMJD=', MAIN%TMJD
+        WRITE(STAT%FHNDL,*) 'min(ice_time_mjd)=', minval(eVAR % ListTime)
+        WRITE(STAT%FHNDL,*) 'max(ice_time_mjd)=', maxval(eVAR % ListTime)
+        FLUSH(STAT%FHNDL)
+      END IF
+      CALL WWM_ABORT('Error in CF ice forcing time setup')
       END SUBROUTINE
