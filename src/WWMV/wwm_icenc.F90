@@ -133,7 +133,7 @@
         WRITE(STAT%FHNDL,*) 'MAIN%TMJD=', MAIN%TMJD
         WRITE(STAT%FHNDL,*) 'SEWI(TMJD,EMJD)=', SEWI%TMJD, SEWI%EMJD
       END IF
-      IF ( LSEWD .AND. (MAIN%TMJD .ge. SEWI%TMJD-1.E-8) .AND. (MAIN%TMJD .le. SEWI%EMJD+1.e-8) ) THEN
+      IF ( (MAIN%TMJD .ge. SEWI%TMJD-1.E-8) .AND. (MAIN%TMJD .le. SEWI%EMJD+1.e-8) ) THEN
         IF (K.EQ.1) THEN
           REC1_ice_old = 0
           REC2_ice_old = 0

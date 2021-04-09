@@ -17,6 +17,7 @@ def plotMapAtTime(ncfilepath, timeIndex):
   ys = np.array([msh.nodes[k][1] for k in ndid])
   hs[hs.mask] = 0
   
+  plt.figure()
   levels = np.arange(0., np.max(hs.flatten())*1.05, .02)
   cf = plt.tricontourf(xs, ys, hs, levels)
  #cf = bm.contourf(xs, ys, hs, tri=True)
@@ -25,12 +26,16 @@ def plotMapAtTime(ncfilepath, timeIndex):
  #cf.set_clim(0, 1.6)
   plt.colorbar()
  #plt.savefig('plt_t=' + str(timeIndex) + '.png')
-  plt.show()
 
 
 if __name__ == '__main__':
-  ncfilepath = 'outputs/schout_0000_4.nc'
-  timeIndex = -1
+  ncfilepath = 'outputs/schout_0000_1.nc'
+  timeIndex = 0
   import pdb; pdb.set_trace()
   plotMapAtTime(ncfilepath, timeIndex)
+  ncfilepath = 'outputs/schout_0000_4.nc'
+  timeIndex = -1
+  plotMapAtTime(ncfilepath, timeIndex)
+
+  plt.show()
 
