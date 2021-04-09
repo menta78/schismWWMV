@@ -28,14 +28,17 @@
       IF (myrank .eq. 0) THEN
         allocate(XP_ICE(MNP_ICE), YP_ICE(MNP_ICE), stat=istat)
         IF (istat/=0) CALL WWM_ABORT('wwm_icenc, allocate error 1')
-        XP_ICE=XP
-        YP_ICE=YP
+        XP_ICE=XPtotal
+        YP_ICE=YPtotal
 
-        allocate(ICECONC(MNP_ICE), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_icenc, allocate error 1')
-        ICECONC=0
-        CALL INIT_DIRECT_NETCDF_CF_ICE(eVAR_ICE, .FALSE., ICEIN%FNAME, ICENCVAR)
+      ENDIF
 
+      allocate(ICECONC(MNP), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_icenc, allocate error 1')
+      ICECONC=0
+      CALL INIT_DIRECT_NETCDF_CF_ICE(eVAR_ICE, .FALSE., ICEIN%FNAME, ICENCVAR)
+
+      IF (myrank .eq. 0) THEN
         ISTAT = nf90_open(ICEIN%FNAME, nf90_nowrite, fid)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, ISTAT)
 
@@ -101,17 +104,17 @@
         DEALLOCATE(CF_LON, CF_LAT)
         CALL COMPUTE_CF_COEFFICIENTS_ICE(TheInfo)
         Deallocate(TheInfo % LON, TheInfo % LAT)
+      END IF
 
-        ALLOCATE(tmp_ice1(MNP),tmp_ice2(MNP), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_icenc, allocate error 1')
-        CALL GET_CF_TIME_INDEX_ICE(eVAR_ICE, REC1_ice_new,REC2_ice_new,cf_w1,cf_w2)
-        CALL READ_INTERP_NETCDF_CF_WWM_ICE(REC1_ice_new,tmp_ice1)
-        IF (cf_w1.NE.1) THEN
-          CALL READ_INTERP_NETCDF_CF_WWM_ICE(REC2_ice_new,tmp_ice2)
-          ICECONC(:) = cf_w1*tmp_ice1(:)+cf_w2*tmp_ice2(:)
-        ELSE
-          ICECONC(:) = cf_w1*tmp_ice1(:)
-        END IF
+      ALLOCATE(tmp_ice1(MNP),tmp_ice2(MNP), stat=istat)
+      IF (istat/=0) CALL WWM_ABORT('wwm_icenc, allocate error 1')
+      CALL GET_CF_TIME_INDEX_ICE(eVAR_ICE, REC1_ice_new,REC2_ice_new,cf_w1,cf_w2)
+      CALL READ_INTERP_NETCDF_CF_WWM_ICE(REC1_ice_new,tmp_ice1)
+      IF (cf_w1.NE.1) THEN
+        CALL READ_INTERP_NETCDF_CF_WWM_ICE(REC2_ice_new,tmp_ice2)
+        ICECONC(:) = cf_w1*tmp_ice1(:)+cf_w2*tmp_ice2(:)
+      ELSE
+        ICECONC(:) = cf_w1*tmp_ice1(:)
       END IF
 
       END SUBROUTINE INIT_ICE_INPUT
