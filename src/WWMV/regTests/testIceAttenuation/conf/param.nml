@@ -32,7 +32,7 @@
 
 ! Global output controls
   nspool = 9 !output step spool. Saving every hour
-  ihfskip = 216 !stack spool; every ihfskip steps will be put into 1_*, 2_*, etc...
+  ihfskip = 108 !stack spool; every ihfskip steps will be put into 1_*, 2_*, etc... 108 is 12 hours
 /
 
 &OPT
@@ -601,21 +601,21 @@
 ! Outputs from WWM (USE_WWM must be on in Makefile)
 !-----------------------------------------------------------------------
   iof_wwm(1)  = 1 !sig. height (m)
-  iof_wwm(2)  = 1 !Mean average period (sec) - TM01
-  iof_wwm(3)  = 1 !Zero down crossing period for comparison with buoy (s) - TM02
+  iof_wwm(2)  = 0 !Mean average period (sec) - TM01
+  iof_wwm(3)  = 0 !Zero down crossing period for comparison with buoy (s) - TM02
   iof_wwm(4)  = 0 !Average period of wave runup/overtopping - TM10
   iof_wwm(5)  = 0 !Mean wave number (1/m)
   iof_wwm(6)  = 0 !Mean wave length (m)
-  iof_wwm(7)  = 1 !Mean average energy transport direction (degr) - MWD in NDBC?
-  iof_wwm(8) = 1 !Mean directional spreading (degr)
-  iof_wwm(9) = 1 !Discrete peak period (sec) - Tp
-  iof_wwm(10) = 1 !Continuous peak period based on higher order moments (sec)
-  iof_wwm(11) = 1 !Peak phase vel. (m/s)
+  iof_wwm(7)  = 0 !Mean average energy transport direction (degr) - MWD in NDBC?
+  iof_wwm(8) = 0 !Mean directional spreading (degr)
+  iof_wwm(9) = 0 !Discrete peak period (sec) - Tp
+  iof_wwm(10) = 0 !Continuous peak period based on higher order moments (sec)
+  iof_wwm(11) = 0 !Peak phase vel. (m/s)
   iof_wwm(12) = 0 !Peak n-factor
   iof_wwm(13) = 0 !Peak group vel. (m/s)
   iof_wwm(14) = 0 !Peak wave number
   iof_wwm(15) = 0 !Peak wave length
-  iof_wwm(16) = 1 !Peak (dominant) direction (degr)
+  iof_wwm(16) = 0 !Peak (dominant) direction (degr)
   iof_wwm(17) = 0 !Peak directional spreading
   iof_wwm(18) = 0 !Discrete peak direction (radian?)
   iof_wwm(19) = 0 !Orbital vel. (m/s)

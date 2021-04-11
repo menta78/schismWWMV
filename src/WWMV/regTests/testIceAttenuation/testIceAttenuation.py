@@ -16,31 +16,64 @@ class testIceAttenuation(util.wwmTestTemplate):
     exitCode = os.system(launchCmd)
     if exitCode != 0:
       self.fail('schismWWM did not end correctly. Failing')
-    # combining the output
-    combineCmd = util.getCombineCommand(bgnParam=4, endParam=4)
+    # combining the output for the first 3 hours of the first day
+    combineCmd = util.getCombineCommand(bgnParam=1, endParam=1)
     exitCode = os.system(combineCmd)
     if exitCode != 0:
       self.fail('combine_outputXX did not end correctly. Failing')
-    self.fail('ah')
+    # combining the output for the last 3 hours of the last day
+    combineCmd = util.getCombineCommand(bgnParam=8, endParam=8)
+    exitCode = os.system(combineCmd)
+    if exitCode != 0:
+      self.fail('combine_outputXX did not end correctly. Failing')
 
     ###########################
     ### CHECKING THE OUTPUT ###
     ###########################
-    ds = nc.Dataset('outputs/schout_10.nc')
+    # 1st file
+    ds = nc.Dataset('outputs/schout_1.nc')
+    # checking the time
+    tmnc = ds.variables['time']
+    lasttime = nc.num2date(tmnc[2], tmnc.units, 'standard')
+    self.assertEqual(datetime(2000, 1, 1, 3, 0, 0), lasttime)
+    
+    # checking that ice is loaded correctly
+    icec = ds.variables['WWM_ice_conc'][-1,:]
+    xs = ds.variables['SCHISM_hgrid_node_x'][:]
+    ys = ds.variables['SCHISM_hgrid_node_y'][:]
+    ycond = np.logical_and(ys >= 33, ys <= 35)
+    xcondNoIce = xs <= 4.5
+    xcondAttenuated = xs >= 6.6
+    self.assertTrue(np.all(icec[np.logical_and(ycond, xcondNoIce)] <= .000001))
+    self.assertTrue(np.all(icec[np.logical_and(ycond, xcondAttenuated)] > .999))
+    
+    # checking that hs is attenuated where there is ice
+   #hs = ds.variables['WWM_1'][-1,:]
+   #self.assertTrue(np.all(hs[np.logical_and(ycond, xcondFull)] > 3.6))
+   #self.assertTrue(np.all(hs[np.logical_and(ycond, xcondAttenuated)] < 1))
+    ds.close()
+    
+    # last file
+    ds = nc.Dataset('outputs/schout_8.nc')
     # checking the time
     tmnc = ds.variables['time']
     lasttime = nc.num2date(tmnc[-1], tmnc.units, 'standard')
-    self.assertEqual(datetime(2000, 1, 11), lasttime)
+    self.assertEqual(datetime(2000, 1, 5, 0, 0, 0), lasttime)
     
-    # checking that hs is (approximately) uniform in the last time step
-    hs = ds.variables['WWM_1'][-1,:]
-    self.assertTrue(np.all(hs < 3.9))
-    self.assertTrue(np.all(hs > 3.6))
-   
-    # checking that tm01 is (approximately) uniform in the last time step
-    tm = ds.variables['WWM_2'][-1,:]
-    self.assertTrue(np.all(tm < 6.95))
-    self.assertTrue(np.all(tm > 6.90))
+    # checking that ice is loaded correctly
+    icec = ds.variables['WWM_ice_conc'][-1,:]
+    xs = ds.variables['SCHISM_hgrid_node_x'][:]
+    ys = ds.variables['SCHISM_hgrid_node_y'][:]
+    ycond = np.logical_and(ys >= 33, ys <= 35)
+    xcondNoIce = xs <= 6
+    xcondAttenuated = xs >= 8.5
+    self.assertTrue(np.all(icec[np.logical_and(ycond, xcondNoIce)] <= .001))
+    self.assertTrue(np.all(icec[np.logical_and(ycond, xcondAttenuated)] > .999))
+    
+    # checking that hs is attenuated where there is ice
+   #hs = ds.variables['WWM_1'][-1,:]
+   #self.assertTrue(np.all(hs[np.logical_and(ycond, xcondFull)] > 3.6))
+   #self.assertTrue(np.all(hs[np.logical_and(ycond, xcondAttenuated)] < 1))
 
     # closing the file
     ds.close()
