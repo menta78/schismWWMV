@@ -12,9 +12,7 @@
       INTEGER           :: fid, varid, dimids(nf90_max_var_dims)
       REAL(rkind), ALLOCATABLE :: CF_LON(:,:), CF_LAT(:,:)
       character (len = *), parameter :: CallFct="INIT_NETCDF_CF"
-      character (len=200) :: CoordString
       character (len=100) :: Xname, Yname
-      integer posBlank, alen
       type(FD_FORCING_GRID) TheInfo
       integer IX, IY
       REAL(rkind) :: cf_w1, cf_w2
@@ -45,12 +43,14 @@
         ISTAT = nf90_inq_varid(fid, ICENCVAR, varid)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, ISTAT)
 
-        ISTAT = nf90_get_att(fid, varid, "coordinates", CoordString)
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, ISTAT)
-        alen=LEN_TRIM(CoordString)
-        posBlank=INDEX(CoordString(1:alen), ' ')
-        Xname=CoordString(1:posBlank-1)
-        Yname=CoordString(posBlank+1:alen)
+        ISTAT = nf90_inq_varid(fid, ICEXNCVAR, varid)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, ISTAT)
+
+        ISTAT = nf90_inq_varid(fid, ICEYNCVAR, varid)
+        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 2, ISTAT)
+
+        Xname=ICEXNCVAR
+        Yname=ICEYNCVAR
         IF (PrintLOG) THEN
           WRITE(STAT%FHNDL,*) 'Xname=', TRIM(Xname)
           WRITE(STAT%FHNDL,*) 'Yname=', TRIM(Yname)

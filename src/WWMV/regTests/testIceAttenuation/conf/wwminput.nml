@@ -152,6 +152,8 @@
  LICEFROMWWM               = T
  ICE_NETCDF_FILE           = 'ice.nc' ! file from where the ice concentration is read. Must have a "coordinates" attribute with the names of the x y coordinates. E.g. "lon lat". The coordinates must be defined on squared matrices
  ICENCVAR                  = 'siconc'
+ ICEXNCVAR                  = 'lon' ! x coordinate in the ice file
+ ICEYNCVAR                  = 'lat' ! y coordinate in the ice file
  EXTRAPOLATION_ALLOWED_ICE = T
 /
 

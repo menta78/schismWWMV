@@ -1246,6 +1246,8 @@
          LOGICAL    :: LICEFROMWWM = .TRUE.
          CHARACTER(LEN=140) :: ICE_NETCDF_FILE = "iceconc.nc"
          character(len=50) :: ICENCVAR = "SICONC"
+         character(len=50) :: ICEXNCVAR = "longitude"
+         character(len=50) :: ICEYNCVAR = "latitude"
          LOGICAL    :: EXTRAPOLATION_ALLOWED_ICE = .FALSE.
 
          INTEGER    :: MNP_ICE
