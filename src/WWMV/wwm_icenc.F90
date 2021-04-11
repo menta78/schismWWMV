@@ -9,8 +9,8 @@
       USE DATAPOOL
 
       IMPLICIT NONE
-      INTEGER           :: fid, varid, dimids(nf90_max_var_dims)
-      REAL(rkind), ALLOCATABLE :: CF_LON(:,:), CF_LAT(:,:)
+      INTEGER           :: fid, varid, ndims, dimids(nf90_max_var_dims)
+      REAL(rkind), ALLOCATABLE :: CF_LON(:,:), CF_LAT(:,:), CF_LON_1D(:), CF_LAT_1D(:)
       character (len = *), parameter :: CallFct="INIT_NETCDF_CF"
       character (len=100) :: Xname, Yname
       type(FD_FORCING_GRID) TheInfo
@@ -62,35 +62,73 @@
         ISTAT = nf90_inq_varid(fid, Xname, varid)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, ISTAT)
 
-        ISTAT = nf90_inquire_variable(fid, varid, dimids=dimids)
+        ISTAT = nf90_inquire_variable(fid, varid, ndims=ndims, dimids=dimids)
         CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, ISTAT)
 
-        ISTAT = nf90_inquire_dimension(fid, dimids(1), len=NDX_ICE_FD)
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, ISTAT)
+        IF (ndims.EQ.2) THEN
+          ISTAT = nf90_inquire_dimension(fid, dimids(1), len=NDX_ICE_FD)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, ISTAT)
 
-        ISTAT = nf90_inquire_dimension(fid, dimids(2), len=NDY_ICE_FD)
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, ISTAT)
+          ISTAT = nf90_inquire_dimension(fid, dimids(2), len=NDY_ICE_FD)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 9, ISTAT)
 
-        IF (PrintLOG) THEN
-          WRITE(STAT%FHNDL,*) 'NDX_ICE_FD=', NDX_ICE_FD
-          WRITE(STAT%FHNDL,*) 'NYX_ICE_FD=', NDY_ICE_FD
-          FLUSH(STAT%FHNDL)
+          IF (PrintLOG) THEN
+            WRITE(STAT%FHNDL,*) 'NDX_ICE_FD=', NDX_ICE_FD
+            WRITE(STAT%FHNDL,*) 'NYX_ICE_FD=', NDY_ICE_FD
+            FLUSH(STAT%FHNDL)
+          END IF
+
+          allocate(CF_LON(NDX_ICE_FD, NDY_ICE_FD), CF_LAT(NDX_ICE_FD, NDY_ICE_FD), ICECONC_FD(NDX_ICE_FD, NDY_ICE_FD), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_icenc, allocate error 47')
+
+          ISTAT = nf90_inq_varid(fid, Xname, varid)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, ISTAT)
+
+          ISTAT = nf90_get_var(fid, varid, CF_LON)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, ISTAT)
+
+          ISTAT = nf90_inq_varid(fid, Yname, varid)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 12, ISTAT)
+
+          ISTAT = nf90_get_var(fid, varid, CF_LAT)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, ISTAT)
+        ELSE IF (ndims.EQ.1) THEN
+          ISTAT = nf90_inquire_dimension(fid, dimids(1), len=NDX_ICE_FD)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 14, ISTAT)
+
+          ALLOCATE(CF_LON_1D(NDX_ICE_FD))
+          IF (istat/=0) CALL WWM_ABORT('wwm_icenc, allocate error 47')
+          ISTAT = nf90_get_var(fid, varid, CF_LON_1D)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, ISTAT)
+
+          ISTAT = nf90_inq_varid(fid, Yname, varid)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 15, ISTAT)
+
+          ISTAT = nf90_inquire_variable(fid, varid, ndims=ndims, dimids=dimids)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 16, ISTAT)
+          IF (ndims.NE.1) CALL WWM_ABORT('wwm_icenc, x and y must be both 2d or both 1d')
+
+          ISTAT = nf90_inquire_dimension(fid, dimids(1), len=NDY_ICE_FD)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 17, ISTAT)
+
+          ALLOCATE(CF_LAT_1D(NDY_ICE_FD))
+          IF (istat/=0) CALL WWM_ABORT('wwm_icenc, allocate error 47')
+          ISTAT = nf90_get_var(fid, varid, CF_LAT_1D)
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 18, ISTAT)
+
+          allocate(CF_LON(NDX_ICE_FD, NDY_ICE_FD), CF_LAT(NDX_ICE_FD, NDY_ICE_FD), ICECONC_FD(NDX_ICE_FD, NDY_ICE_FD), stat=istat)
+          IF (istat/=0) CALL WWM_ABORT('wwm_icenc, allocate error 47')
+
+          DO IX=1,NDX_ICE_FD
+            DO IY=1,NDY_ICE_FD
+              CF_LON(IX,IY) = CF_LON_1D(IX)
+              CF_LAT(IX,IY) = CF_LAT_1D(IY)
+            END DO
+          END DO
+        ELSE
+          ! x and y must be 1-d or 2-d
+          CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 555, ISTAT)
         END IF
-
-        allocate(CF_LON(NDX_ICE_FD, NDY_ICE_FD), CF_LAT(NDX_ICE_FD, NDY_ICE_FD), ICECONC_FD(NDX_ICE_FD, NDY_ICE_FD), stat=istat)
-        IF (istat/=0) CALL WWM_ABORT('wwm_icenc, allocate error 47')
-
-        ISTAT = nf90_inq_varid(fid, Xname, varid)
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 10, ISTAT)
-
-        ISTAT = nf90_get_var(fid, varid, CF_LON)
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 11, ISTAT)
-
-        ISTAT = nf90_inq_varid(fid, Yname, varid)
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 12, ISTAT)
-
-        ISTAT = nf90_get_var(fid, varid, CF_LAT)
-        CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 13, ISTAT)
         TheInfo % nx_dim = NDX_ICE_FD
         TheInfo % ny_dim = NDY_ICE_FD
         allocate(TheInfo%LON(NDX_ICE_FD, NDY_ICE_FD), TheInfo%LAT(NDX_ICE_FD, NDY_ICE_FD), stat=istat)

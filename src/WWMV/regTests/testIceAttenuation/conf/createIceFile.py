@@ -4,6 +4,7 @@ import netCDF4 as nc
 from alphaBetaLab import abTriangularMesh as tri
 
 outFlName = 'ice.nc'
+lonlat2d = False
 
 msh = tri.loadFromGr3File('hgrid.gr3')
 xs = np.array([xy[1][0] for xy in msh.nodes.items()])
@@ -23,15 +24,26 @@ lon_dim = fl.createDimension('x', len(xsice)) # longitude axis
 time_dim = fl.createDimension('time', None) # unlimited axis (can be appended to).
 fl.title = 'test ice data'
 
-lat = fl.createVariable('lat', np.float32, ('y', 'x'))
-lat.units = 'degrees_north'
-lat.long_name = 'latitude'
-lat[:] = ysmtx
-
-lon = fl.createVariable('lon', np.float32, ('y', 'x'))
-lon.units = 'degrees_north'
-lon.long_name = 'longitude'
-lon[:] = xsmtx
+if lonlat2d:
+  lat = fl.createVariable('lat', np.float32, ('y', 'x'))
+  lat.units = 'degrees_north'
+  lat.long_name = 'latitude'
+  lat[:] = ysmtx
+  
+  lon = fl.createVariable('lon', np.float32, ('y', 'x'))
+  lon.units = 'degrees_north'
+  lon.long_name = 'longitude'
+  lon[:] = xsmtx
+else:
+  lat = fl.createVariable('lat', np.float32, ('y'))
+  lat.units = 'degrees_north'
+  lat.long_name = 'latitude'
+  lat[:] = ysice
+  
+  lon = fl.createVariable('lon', np.float32, ('x'))
+  lon.units = 'degrees_north'
+  lon.long_name = 'longitude'
+  lon[:] = xsice
 
 tmnc = fl.createVariable('time', np.float32, ('time',))
 tmnc.units = 'days since 2000-01-01'
