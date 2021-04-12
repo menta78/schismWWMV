@@ -1,4 +1,5 @@
       ! author: Lorenzo Mentaschi
+      !  First order approximation of the wave attenuation due to ice concentration.
       !  Based on UOST (Mentaschi et al. 2015, 2018, 2020)
       !  
       !  From the ice concentration an isotropic transparency coefficient is estimated.

@@ -30,6 +30,7 @@ class testIceAttenuation(util.wwmTestTemplate):
     ###########################
     ### CHECKING THE OUTPUT ###
     ###########################
+
     # 1st file
     ds = nc.Dataset('outputs/schout_1.nc')
     # checking the time
@@ -37,20 +38,20 @@ class testIceAttenuation(util.wwmTestTemplate):
     lasttime = nc.num2date(tmnc[2], tmnc.units, 'standard')
     self.assertEqual(datetime(2000, 1, 1, 3, 0, 0), lasttime)
     
-    # checking that ice is loaded correctly
+    # checking that ice is loaded correctly and hs is duely attenuated
     icec = ds.variables['WWM_ice_conc'][-1,:]
+    hs = ds.variables['WWM_1'][-1,:]
     xs = ds.variables['SCHISM_hgrid_node_x'][:]
     ys = ds.variables['SCHISM_hgrid_node_y'][:]
     ycond = np.logical_and(ys >= 33, ys <= 35)
     xcondNoIce = xs <= 4.5
     xcondAttenuated = xs >= 6.6
+    # icec
     self.assertTrue(np.all(icec[np.logical_and(ycond, xcondNoIce)] <= .000001))
     self.assertTrue(np.all(icec[np.logical_and(ycond, xcondAttenuated)] > .999))
-    
-    # checking that hs is attenuated where there is ice
-   #hs = ds.variables['WWM_1'][-1,:]
-   #self.assertTrue(np.all(hs[np.logical_and(ycond, xcondFull)] > 3.6))
-   #self.assertTrue(np.all(hs[np.logical_and(ycond, xcondAttenuated)] < 1))
+    # hs
+    self.assertTrue(np.all(hs[np.logical_and(ycond, xcondNoIce)] >= 3.5))
+    self.assertTrue(np.all(hs[np.logical_and(ycond, xcondAttenuated)] < .01))
     ds.close()
     
     # last file
@@ -60,22 +61,20 @@ class testIceAttenuation(util.wwmTestTemplate):
     lasttime = nc.num2date(tmnc[-1], tmnc.units, 'standard')
     self.assertEqual(datetime(2000, 1, 5, 0, 0, 0), lasttime)
     
-    # checking that ice is loaded correctly
+    # checking that ice is loaded correctly and hs is duely attenuated
     icec = ds.variables['WWM_ice_conc'][-1,:]
+    hs = ds.variables['WWM_1'][-1,:]
     xs = ds.variables['SCHISM_hgrid_node_x'][:]
     ys = ds.variables['SCHISM_hgrid_node_y'][:]
     ycond = np.logical_and(ys >= 33, ys <= 35)
-    xcondNoIce = xs <= 6
+    xcondNoIce = xs <= 5.8
     xcondAttenuated = xs >= 8.5
+    # icec
     self.assertTrue(np.all(icec[np.logical_and(ycond, xcondNoIce)] <= .001))
     self.assertTrue(np.all(icec[np.logical_and(ycond, xcondAttenuated)] > .999))
-    
-    # checking that hs is attenuated where there is ice
-   #hs = ds.variables['WWM_1'][-1,:]
-   #self.assertTrue(np.all(hs[np.logical_and(ycond, xcondFull)] > 3.6))
-   #self.assertTrue(np.all(hs[np.logical_and(ycond, xcondAttenuated)] < 1))
-
-    # closing the file
+    # hs
+    self.assertTrue(np.all(hs[np.logical_and(ycond, xcondNoIce)] >= 3.5))
+    self.assertTrue(np.all(hs[np.logical_and(ycond, xcondAttenuated)] < .01))
     ds.close()
     
 
