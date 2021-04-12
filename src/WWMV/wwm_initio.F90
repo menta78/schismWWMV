@@ -777,8 +777,12 @@
       END IF
 #endif
 
-      IF (MEICE.EQ.1 .AND. LICEFROMWWM) THEN
-        CALL INIT_ICE_INPUT
+      IF (MEICE.EQ.1) THEN
+        IF (LICEFROMWWM) THEN
+          CALL INIT_ICE_INPUT
+        ELSE
+          CALL WWM_ABORT('For now only LICEFROMWWM==T is supported')
+        END IF
       END IF
      
 
