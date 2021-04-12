@@ -1,6 +1,6 @@
 #include "wwm_functions.h"
 ! author: Lorenzo Mentaschi
-! the ice concentration is loaded from a netcdf on a regular grid
+! for now, the ice concentration is loaded from a netcdf on a rectangular grid (regular or rotated or curvilinear)
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
