@@ -1249,6 +1249,7 @@
          character(len=50) :: ICEXNCVAR = "longitude"
          character(len=50) :: ICEYNCVAR = "latitude"
          LOGICAL    :: EXTRAPOLATION_ALLOWED_ICE = .FALSE.
+         LOGICAL    :: LSAVE_INTERP_ARRAY_ICE = .TRUE.
 
          INTEGER    :: MNP_ICE
          REAL(rkind), allocatable :: XP_ICE(:), YP_ICE(:)

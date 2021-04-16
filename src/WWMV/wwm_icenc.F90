@@ -219,10 +219,10 @@
       allocate(CF_IX_ICE(MNP_ICE), CF_IY_ICE(MNP_ICE), CF_COEFF_ICE(4,MNP_ICE), stat=istat)
       IF (istat/=0) CALL WWM_ABORT('wwm_icenc, allocate error 52')
       IF (PrintLOG) THEN
-        WRITE(STAT%FHNDL,*) 'LSAVE_INTERP_ARRAY=', LSAVE_INTERP_ARRAY
+        WRITE(STAT%FHNDL,*) 'LSAVE_INTERP_ARRAY_ICE=', LSAVE_INTERP_ARRAY_ICE
       END IF
 
-      IF (LSAVE_INTERP_ARRAY) THEN
+      IF (LSAVE_INTERP_ARRAY_ICE) THEN
         CALL LOAD_INTERP_ARRAY_ICE(FileSave, success)
         IF (PrintLOG) THEN
           WRITE(STAT%FHNDL,*) 'success=', success
@@ -252,7 +252,7 @@
         IF (EXTRAPO_OUT) nbExtrapolation = nbExtrapolation + 1
       END DO
 
-      IF (LSAVE_INTERP_ARRAY) THEN
+      IF (LSAVE_INTERP_ARRAY_ICE) THEN
         CALL SAVE_INTERP_ARRAY_ICE(FileSave)
       END IF
 
