@@ -25,8 +25,9 @@
 
          INTEGER, INTENT(IN) :: IP ! this is the node id in the local partition
          REAL(rkind), INTENT(IN) :: SPEC(NUMSIG, NUMDIR)
-         REAL(rkind), INTENT(INOUT) :: S(NUMSIG, NUMDIR), D(NUMSIG, NUMDIR)
-         REAL(rkind) :: ICEC, FREESURF, BETA, CELLAREA, CELLSIZE, CGI, GAM
+         REAL(rkind), INTENT(OUT) :: S(NUMSIG, NUMDIR), D(NUMSIG, NUMDIR)
+         REAL(rkind) :: ICEC, FREESURF, BETA, CELLAREA, CELLSIZE,& 
+             DEG2M, CGI, GAM
          REAL(rkind) :: GAMMAUP = 20
          INTEGER  :: IK
    
@@ -39,9 +40,10 @@
          FREESURF = MAX(MIN(1-ICEC, 1.), 0.)
          BETA = SQRT(FREESURF)
 
-         IF (BETA .EQ. 1) RETURN
+         IF (BETA .GE. 1-THR) RETURN
 
-         CELLAREA = SI(IP)
+         DEG2M = REARTH*PI/180._rkind
+         CELLAREA = SI(IP)*DEG2M*DEG2M ! cell area in meters
          ! cellsize computed as the diameter of the equivalent circle
          CELLSIZE = SQRT(4/PI*CELLAREA) 
 
