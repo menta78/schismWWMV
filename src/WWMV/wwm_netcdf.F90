@@ -144,7 +144,7 @@
         !
         ! Sec
         lenSec=LEN_TRIM(YnameSec)
-        IF (lenSec .gt. 2) THEN ! in ecmwf data this can be 00.0
+        IF (lenSec .ge. 2) THEN ! in ecmwf data this can be 00.0
           eStrTime(14:14)=YnameSec( 1: 1)
           eStrTime(15:15)=YnameSec( 2: 2)
         ELSE
