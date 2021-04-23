@@ -941,7 +941,7 @@
          INTEGER                :: MESTR   = 0 
          INTEGER                :: MEVEG   = 0
          INTEGER                :: MESUO   = 0
-         INTEGER                :: MEICE     = 0
+         INTEGER                :: MESIC     = 0
          INTEGER                :: MELIM   = 1
          INTEGER                :: ICRIT   = 1
          INTEGER                :: IBREAK  = 1

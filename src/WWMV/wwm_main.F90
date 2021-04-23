@@ -642,7 +642,7 @@
       END IF
 #endif
 
-      IF (MEICE.EQ.1 .AND. LICEFROMWWM) THEN
+      IF (MESIC.EQ.1 .AND. LICEFROMWWM) THEN
         CALL UPDATE_ICE(K)
       END IF
 

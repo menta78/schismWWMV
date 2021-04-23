@@ -777,7 +777,7 @@
       END IF
 #endif
 
-      IF (MEICE.EQ.1) THEN
+      IF (MESIC.EQ.1) THEN
         IF (LICEFROMWWM) THEN
           CALL INIT_ICE_INPUT
         ELSE

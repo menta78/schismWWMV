@@ -105,7 +105,7 @@
          DPHIDN = DPHIDN + SDUO
       ENDIF
 
-      IF (MEICE .GT. 0) THEN
+      IF (MESIC .GT. 0) THEN
          CALL ICEDISSIP_SRCTRM(IP, WALOC, SSIC, SDIC)
          PHI = PHI + SSIC
          DPHIDN = DPHIDN + SDIC

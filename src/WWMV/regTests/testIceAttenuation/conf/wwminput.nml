@@ -165,7 +165,7 @@
  FRICC          = 0.067              ! Cjon - Bottom friction coefficient (always positive)
  MESBR          = 0                  ! Shallow water wave breaking; 0: no; 1: BJ78 (Default at 1)
  MESUO          = 0                  ! Unresolved Obstacles Source Term
- MEICE          = 1                  ! Ice, energy attenuation
+ MESIC          = 1                  ! Ice, energy attenuation
  ICRIT          = 0                  ! Wave breaking criterion: set as 1 - SWAN, 2 - Dingemans - default = 2
  ALPBJ          = 1.                 ! Dissipation proportionality coefficient (0.5 is default)
  BRHD           = 0.73               ! Wave breaking coefficient for Const. type wave breaking criterion; range: 0.6-0.83 (suggested 0.78)
