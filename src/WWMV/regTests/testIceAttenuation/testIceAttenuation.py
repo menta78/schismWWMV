@@ -45,13 +45,13 @@ class testIceAttenuation(util.wwmTestTemplate):
     ys = ds.variables['SCHISM_hgrid_node_y'][:]
     ycond = np.logical_and(ys >= 33, ys <= 35)
     xcondNoIce = xs <= 4.5
-    xcondAttenuated = xs >= 6.6
+    xcondAttenuated = xs >= 7
     # icec
     self.assertTrue(np.all(icec[np.logical_and(ycond, xcondNoIce)] <= .000001))
     self.assertTrue(np.all(icec[np.logical_and(ycond, xcondAttenuated)] > .999))
     # hs
     self.assertTrue(np.all(hs[np.logical_and(ycond, xcondNoIce)] >= 3.5))
-    self.assertTrue(np.all(hs[np.logical_and(ycond, xcondAttenuated)] < .01))
+    self.assertTrue(np.all(hs[np.logical_and(ycond, xcondAttenuated)] < .3))
     ds.close()
     
     # last file
@@ -67,14 +67,14 @@ class testIceAttenuation(util.wwmTestTemplate):
     xs = ds.variables['SCHISM_hgrid_node_x'][:]
     ys = ds.variables['SCHISM_hgrid_node_y'][:]
     ycond = np.logical_and(ys >= 33, ys <= 35)
-    xcondNoIce = xs <= 5.8
-    xcondAttenuated = xs >= 8.5
+    xcondNoIce = xs <= 5.5
+    xcondAttenuated = xs >= 9.5
     # icec
     self.assertTrue(np.all(icec[np.logical_and(ycond, xcondNoIce)] <= .001))
     self.assertTrue(np.all(icec[np.logical_and(ycond, xcondAttenuated)] > .999))
     # hs
     self.assertTrue(np.all(hs[np.logical_and(ycond, xcondNoIce)] >= 3.5))
-    self.assertTrue(np.all(hs[np.logical_and(ycond, xcondAttenuated)] < .01))
+    self.assertTrue(np.all(hs[np.logical_and(ycond, xcondAttenuated)] < .1))
     ds.close()
     
 
