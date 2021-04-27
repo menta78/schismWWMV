@@ -26,26 +26,28 @@
          INTEGER, INTENT(IN) :: IP ! this is the node id in the local partition
          REAL(rkind), INTENT(IN) :: SPEC(NUMSIG, NUMDIR)
          REAL(rkind), INTENT(OUT) :: S(NUMSIG, NUMDIR), D(NUMSIG, NUMDIR)
-         REAL(rkind) :: ICEC, FREESURF, BETA, CELLAREA, CELLSIZE,& 
+         REAL(rkind) :: ICEC, OBSTSECTION, BETA, CELLAREA, CELLSIZE,& 
              DEG2M, CGI, GAM
-         REAL(rkind) :: GAMMAUP = 20
+         REAL(rkind) :: GAMMAUP = 100
          INTEGER  :: IK
    
          S = 0
          D = 0
-         ICEC = ICECONC(IP)
-         ! computing the transparency coefficient
-         ! the total transparency coefficient alpha is given by sqrt(1-concentration)
-         ! here we assume that beta==alpha
-         FREESURF = MAX(MIN(1-ICEC, 1.), 0.)
-         BETA = SQRT(FREESURF)
+         ICEC = MAX(MIN(ICECONC(IP), 1.), 0.)
 
-         IF (BETA .GE. 1-THR) RETURN
+         IF (ICEC .LE. THR) RETURN
+
+         ! computing the transparency coefficient
+         ! the total obstruction coefficient is given by sqrt(1-concentration)
+         ! the total transparency alpha is given by 1-obstruction
+         ! here we assume that beta==alpha
+         OBSTSECTION = SQRT(ICEC)
+         BETA = 1-OBSTSECTION
 
          DEG2M = REARTH*PI/180._rkind
          CELLAREA = SI(IP)*DEG2M*DEG2M ! cell area in meters
-         ! cellsize computed as the diameter of the equivalent circle
-         CELLSIZE = SQRT(4/PI*CELLAREA) 
+         ! cellsize computed as the ray of the equivalent circle
+         CELLSIZE = SQRT(CELLAREA/PI) 
 
          GAM = (1 - BETA)/BETA
          GAM = MIN(GAM, GAMMAUP)
