@@ -45,7 +45,8 @@
          BETA = 1-OBSTSECTION
 
          DEG2M = REARTH*PI/180._rkind
-         CELLAREA = SI(IP)*DEG2M*DEG2M ! cell area in meters
+         CELLAREA = SI(IP)
+         IF (LSPHE) CELLAREA = CELLAREA*DEG2M*DEG2M ! converting cell area to meters
          ! cellsize computed as the ray of the equivalent circle
          CELLSIZE = SQRT(CELLAREA/PI) 
 
