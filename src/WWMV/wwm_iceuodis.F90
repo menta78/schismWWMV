@@ -1,5 +1,6 @@
       ! author: Lorenzo Mentaschi
-      !  First order approximation of the wave attenuation due to ice concentration.
+      !  Zero-order approximation of the wave attenuation due to ice concentration.
+      !  ICEUODIS stands for Ice Unresolved Obstacles Dissipation
       !  Based on UOST (Mentaschi et al. 2015, 2018, 2020)
       !  
       !  From the ice concentration an isotropic transparency coefficient is estimated.
@@ -18,7 +19,7 @@
       !  - local wave growth could be taken into account (see the psi function in UOST)
       !  - if there is information on the size of the ice flows, the transparency coeff. 
       !  could be made frequency-dependent.
-      SUBROUTINE ICEDISSIP_SRCTRM(IP, SPEC, S, D)
+      SUBROUTINE ICEUODIS_SRCTRM(IP, SPEC, S, D)
          USE DATAPOOL
 
          IMPLICIT NONE
@@ -59,6 +60,6 @@
          END DO
          S = D*SPEC
          
-      END SUBROUTINE ICEDISSIP_SRCTRM
+      END SUBROUTINE ICEUODIS_SRCTRM
 
      
