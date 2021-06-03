@@ -1322,7 +1322,7 @@
          OUTPAR(30) = WINDXY(IP,1) ! windx
          OUTPAR(31) = WINDXY(IP,2) ! windy
          IF (MESIC.EQ.1) OUTPAR(32) = ICECONC(IP) ! ice concentration
-         IF (LSAVE_SPECTRAL_PARTS) CALL SET_SPART_OUT(WALOC, 33, ILASTINDX, OUTPAR)
+         IF (DOCOMPUTE_SPECTRAL_PARTS) CALL SET_SPART_OUT(WALOC, 33, ILASTINDX, OUTPAR)
 
 !         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH INTPAR'
 !         FLUSH(STAT%FHNDL)
@@ -1503,7 +1503,8 @@
       ENDIF
       OUTPAR(64) = MyREAL(NumberIterationSolver(IP))
       OUTPAR(65) = HMAX(IP)
-      IF (LSAVE_SPECTRAL_PARTS) CALL SET_SPART_OUT(WALOC, 66, ILASTINDX, OUTPAR)
+      IF (MESIC.EQ.1) OUTPAR(66) = ICECONC(IP) ! ice concentration
+      IF (DOCOMPUTE_SPECTRAL_PARTS) CALL SET_SPART_OUT(WALOC, 67, ILASTINDX, OUTPAR)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                     *

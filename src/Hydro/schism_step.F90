@@ -254,6 +254,7 @@
 
 #ifdef USE_WWM
       CHARACTER(LEN=3) :: RADFLAG
+      integer :: firstPartIndx, pindx
 #endif /*USE_WWM*/
 
 #ifdef USE_FABM
@@ -625,7 +626,7 @@
 !         9) = ALPHA_CH(IP) ! Charnock Parameter gz0/ustar**2
 !        10) = CD(IP)       ! Drag Coefficient
 
-!       out_wwm(npa,35): output variables from WWM (all 2D); see names in NVARS() in the routine
+!       out_wwm(npa,50): output variables from WWM (all 2D); see names in NVARS() in the routine
 !                      BASIC_PARAMETER() in wwm_initio.F90 for details; below is a snapshot from there:
          !OUTPAR(1)   = HS       ! Significant wave height
          !OUTPAR(2)   = TM01     ! Mean average period
@@ -658,6 +659,19 @@
          !OUTPAR(29)  = WINDXY(IP,1) ! windx
          !OUTPAR(30)  = WINDXY(IP,2) ! windy
          !OUTPAR(31)  = CD(IP)       ! Drag coefficient
+         !OUTPAR(32)  = SICONC       ! Ice concentration as loaded from WWM
+         !OUTPAR(33)  = P1HS         ! Hs of the first partition (requires LCOMPUTE_SPECTRAL_PARTS=.TRUE.)
+         !OUTPAR(34)  = P1TM01       ! Mean period of the first partition (requires LCOMPUTE_SPECTRAL_PARTS=.TRUE.)
+         !OUTPAR(35)  = P1DM         ! Hs of the first partition (requires LCOMPUTE_SPECTRAL_PARTS=.TRUE.)
+         !OUTPAR(36)  = P1DSPR       ! Directional spread of the first partition (requires LCOMPUTE_SPECTRAL_PARTS=.TRUE.)
+         !OUTPAR(37)  = P2HS         ! Hs of the second partition (requires LCOMPUTE_SPECTRAL_PARTS=.TRUE.)
+         !OUTPAR(38)  = P2TM01       ! Mean period of the second partition (requires LCOMPUTE_SPECTRAL_PARTS=.TRUE.)
+         !OUTPAR(39)  = P2DM         ! Hs of the second partition (requires LCOMPUTE_SPECTRAL_PARTS=.TRUE.)
+         !OUTPAR(40)  = P2DSPR       ! Directional spread of the second partition (requires LCOMPUTE_SPECTRAL_PARTS=.TRUE.)
+         !OUTPAR(41)  = P3HS         ! Hs of the third partition (requires LCOMPUTE_SPECTRAL_PARTS=.TRUE.)
+         !OUTPAR(42)  = P3TM01       ! Mean period of the third partition (requires LCOMPUTE_SPECTRAL_PARTS=.TRUE.)
+         !OUTPAR(43)  = P3DM         ! Hs of the third partition (requires LCOMPUTE_SPECTRAL_PARTS=.TRUE.)
+         !OUTPAR(44)  = P3DSPR       ! Directional spread of the third partition (requires LCOMPUTE_SPECTRAL_PARTS=.TRUE.)
          !...
 
         if(myrank==0) write(16,*)'WWM-RS part took (sec) ',mpi_wtime()-wtmp1
@@ -8205,10 +8219,6 @@
           if(iof_wwm(icount)==1) call writeout_nc(id_out_var(noutput+4), &
      &'WWM_'//it_char(1:lit),1,1,npa,dble(out_wwm(:,i)))
         enddo !i
-        noutput=noutput+1
-        icount=icount+1
-        if(iof_wwm(32)==1) call writeout_nc(id_out_var(noutput+4), &
-     &'WWM_ice_conc',1,1,npa,dble(out_wwm(:,32)))
 
         !Deal with vectors
         noutput=noutput+1
@@ -8220,6 +8230,34 @@
         icount=icount+1
         if(iof_wwm(icount)==1) call writeout_nc(id_out_var(noutput+4), &
      &'wave_force',8,nvrt,nsa,wwave_force(1,:,:),wwave_force(2,:,:))
+  
+        ! ice concentration loaded by WWM
+        noutput=noutput+1
+        icount=icount+1
+        if(iof_wwm(32)==1) call writeout_nc(id_out_var(noutput+4), &
+     &'WWM_ice_conc',1,1,npa,dble(out_wwm(:,32)))
+
+        ! first 3 spectral partitions
+        firstPartIndx = 33
+        do i=1,3
+          pindx = firstPartIndx + 4*(i-1)
+          noutput=noutput+1
+          icount=icount+1
+          if(iof_wwm(pindx)==1) call writeout_nc(id_out_var(noutput+4), &
+              &'WWM_P'//char(i)//'HS',1,1,npa,dble(out_wwm(:,pindx)))
+          noutput=noutput+1
+          icount=icount+1
+          if(iof_wwm(pindx+1)==1) call writeout_nc(id_out_var(noutput+4), &
+              &'WWM_P'//char(i)//'TM01',1,1,npa,dble(out_wwm(:,pindx+1)))
+          noutput=noutput+1
+          icount=icount+1
+          if(iof_wwm(pindx+2)==1) call writeout_nc(id_out_var(noutput+4), &
+              &'WWM_P'//char(i)//'DM',1,1,npa,dble(out_wwm(:,pindx+2)))
+          noutput=noutput+1
+          icount=icount+1
+          if(iof_wwm(pindx+3)==1) call writeout_nc(id_out_var(noutput+4), &
+              &'WWM_P'//char(i)//'DSPR',1,1,npa,dble(out_wwm(:,pindx+3)))
+        enddo
 #endif
 
 #ifdef USE_MARSH

@@ -30,7 +30,7 @@
          USE DATAPOOL, only : WriteOutputProcess_his
          USE DATAPOOL, only : WriteOutputProcess_stat
          USE DATAPOOL, only : HISTORY_XFN, HISTORY_NC, HISTORY_SHP
-         USE DATAPOOL, only : LSAVE_SPECTRAL_PARTS
+         USE DATAPOOL, only : LCOMPUTE_SPECTRAL_PARTS, DOCOMPUTE_SPECTRAL_PARTS
 
          IMPLICIT NONE
          CHARACTER(LEN=40)  :: FILEOUT
@@ -79,7 +79,7 @@
      &      STOKESSURFX, STOKESSURFY, STOKESBAROX, STOKESBAROY,         &
      &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3, ZETA_SETUP,             &
      &      CFL_CASD1, CFL_CASD2, CFL_CASD3, CFL_CASD4, NB_ITER_SOLV,   &
-     &      HMAX, ICECNC,                                               &
+     &      HMAX, ICECNC, LCOMPUTE_SPECTRAL_PARTS,                      &
      &      P1HS, P1TM01, P1DM, P1DSPR,                                 &
      &      P2HS, P2TM01, P2DM, P2DSPR,                                 &
      &      P3HS, P3TM01, P3DM, P3DSPR                                   
@@ -184,6 +184,7 @@
          NB_ITER_SOLV=.FALSE.
          HMAX=.FALSE.
          ICECNC=.FALSE.
+         LCOMPUTE_SPECTRAL_PARTS=.FALSE.
          P1HS=.FALSE.
          P1TM01=.FALSE.
          P1DM=.FALSE.
@@ -380,7 +381,7 @@
          LVAR_READ(76)=P3TM01
          LVAR_READ(77)=P3DM
          LVAR_READ(78)=P3DSPR
-         LSAVE_SPECTRAL_PARTS = SUM(MERGE(1,0,LVAR_READ(67:78))).GT.0
+         DOCOMPUTE_SPECTRAL_PARTS = LCOMPUTE_SPECTRAL_PARTS .OR. (SUM(MERGE(1,0,LVAR_READ(67:78))).GT.0)
          VAROUT_HISTORY%LVAR=LVAR_READ
          CALL DETERMINE_NEEDED_COMPUTATION(VAROUT_HISTORY)
          IF (.not. LCFL) THEN

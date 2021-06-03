@@ -1770,7 +1770,7 @@
 !     Wave model arrays
 #ifdef  USE_WWM
       if(iorder==0) then
-        allocate(wwave_force(2,nvrt,nsa), out_wwm(npa,35), out_wwm_windpar(npa,10), &
+        allocate(wwave_force(2,nvrt,nsa), out_wwm(npa,50), out_wwm_windpar(npa,10), &
                & stokes_vel(2,nvrt,npa), jpress(npa), sbr(2,npa), sbf(2,npa), &
                & stokes_w_nd(nvrt,npa), stokes_vel_sd(2,nvrt,nsa),nne_wwm(np), stat=istat)
         if(istat/=0) call parallel_abort('MAIN: WWM allocation failure')

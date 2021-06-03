@@ -1,1 +1,1 @@
-CMakeLists.txt_menta_hpcjrc
+CMakeLists.txt_menta
