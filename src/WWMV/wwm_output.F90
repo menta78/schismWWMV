@@ -1266,6 +1266,7 @@
          REAL(rkind)                   :: HS,TM01,TM02,TM10,KLM,WLM
          REAL(rkind)                   :: TPP,FPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKD,DPEAK,TPPD,KPPD,CGPD,CPPD
          REAL(rkind)                   :: UBOT,ORBITAL,BOTEXPER,TMBOT,URSELL,ETOTS,ETOTC,DM,DSPR
+         INTEGER                       :: ILASTINDX
 
          OUTPAR    = 0.
 
@@ -1321,10 +1322,38 @@
          OUTPAR(30) = WINDXY(IP,1) ! windx
          OUTPAR(31) = WINDXY(IP,2) ! windy
          IF (MESIC.EQ.1) OUTPAR(32) = ICECONC(IP) ! ice concentration
+         IF (LSAVE_SPECTRAL_PARTS) CALL SET_SPART_OUT(WALOC, 33, ILASTINDX, OUTPAR)
 
 !         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH INTPAR'
 !         FLUSH(STAT%FHNDL)
 
+      END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE SET_SPART_OUT(WALOC, IFIRSTINDX, ILASTINDX, OUTPAR)
+         USE DATAPOOL, ONLY : rkind, NUMSIG, NUMDIR
+         USE WWM_PARTMD 
+         REAL(rkind)   , INTENT(IN)    :: WALOC(NUMSIG,NUMDIR)
+         INTEGER, INTENT(IN) :: IFIRSTINDX
+         REAL(rkind)   , INTENT(INOUT)   :: OUTPAR(*)
+         INTEGER, INTENT(OUT) :: ILASTINDX
+
+         INTEGER :: PARTITIONS_NUMBER, IPART, INX
+
+         CALL WWM_PART(IP, WALOC, PARTITIONS_NUMBER)
+
+         PARTITIONS_NUMBER = MIN(PARTITIONS_NUMBER, NPOUTMAX)
+    
+         DO IPART = 1,PARTITIONS_NUMBER
+           INDX = IFIRSTINDX + 4*(IPART-1)
+           OUTPAR(INDX+0) = SPART_PARAMS(1,IPART) ! Hs
+           OUTPAR(INDX+1) = SPART_PARAMS(2,IPART) ! TM01
+           OUTPAR(INDX+2) = SPART_PARAMS(5,IPART) ! mean direction
+           OUTPAR(INDX+3) = SPART_PARAMS(6,IPART) ! directional spread
+         ENDDO
+    
+         ILASTINDX = INDX + 3
       END SUBROUTINE
 !**********************************************************************
 !*                                                                    *
@@ -1368,6 +1397,8 @@
       REAL(rkind)                   :: STOKESSURFX,STOKESSURFY
       REAL(rkind)                   :: STOKESBAROX,STOKESBAROY
       REAL(rkind)                   :: STOKESBOTTX,STOKESBOTTY
+
+      INTEGER                       :: ILASTINDX
 
       OUTPAR    = 0.
 !      WRITE(740+myrank,*) 'IP=', IP
@@ -1472,6 +1503,7 @@
       ENDIF
       OUTPAR(64) = MyREAL(NumberIterationSolver(IP))
       OUTPAR(65) = HMAX(IP)
+      IF (LSAVE_SPECTRAL_PARTS) CALL SET_SPART_OUT(WALOC, 66, ILASTINDX, OUTPAR)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                     *

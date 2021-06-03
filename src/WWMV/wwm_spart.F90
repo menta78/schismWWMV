@@ -9,42 +9,38 @@
 !
       PUBLIC
 !
-      INTEGER, PUBLIC              :: NPOUTMAX = 5 ! maximum number of stored peaks
-      INTEGER, PUBLIC              :: DIMP = 6 ! number of parameters in partition (setting a high value)
+      INTEGER, PUBLIC, PARAMETER   :: NPOUTMAX = 3 ! maximum number of stored peaks
+      INTEGER, PUBLIC, PARAMETER   :: DIMP = 6 ! number of parameters in partition (setting a high value)
+      REAL, PUBLIC                :: SPART_PARAMS(DIMP,NPOUTMAX) ! array used to store the output partition parameters
 
       INTEGER, PRIVATE              :: MK = -1, MTH = -1
       INTEGER, ALLOCATABLE, PRIVATE :: NEIGH(:,:)
 
-      INTEGER, PRIVATE              :: IHMAX = 100 ! number of levels used in the watershed algorithm
+      INTEGER, PRIVATE              :: IHMAX = 50 ! number of levels used in the watershed algorithm
       INTEGER, PRIVATE              :: HSPMIN = 0.05 ! minimum Hs of a partition (for values below this threshold the peak parameters are put to UNDEF)
       
       CONTAINS
 
 
 
-      SUBROUTINE WWM_PART ( IP, SPEC, DEPTH, WN, NP, XP )
+      SUBROUTINE WWM_PART ( IP, SPEC, NP )
 !     Parameter list
 !     ----------------------------------------------------------------
 !       IP             I   IP of the current node
 !       SPEC    R.A.   I   2-D spectrum E(f,theta).
-!       DEPTH   Real   I   Water depth.
-!       WN      R.A.   I   Wavenumebers for each frequency.
 !       NP      Int.   O   Number of partitions.
 !                           -1 : Spectrum without minumum energy.
 !                            0 : Spectrum with minumum energy.
 !                                but no partitions.
-!       XP      R.A.   O   Parameters describing partitions.
-!                          Entry '0' contains entire spectrum. XP(DIMP, NPOUTMAX)
 !     ----------------------------------------------------------------
 !
-      USE DATAPOOL, ONLY: NUMSIG, NUMDIR, NSPEC
+      USE DATAPOOL, ONLY: NUMSIG, NUMDIR, NSPEC, rkind
 !
       IMPLICIT NONE
 !
       INTEGER, INTENT(IN)           :: IP
       INTEGER, INTENT(OUT)          :: NP
-      REAL, INTENT(IN)              :: SPEC(NUMSIG,NUMDIR), WN(NUMSIG), DEPTH
-      REAL, INTENT(OUT)             :: XP(DIMP,0:NPOUTMAX)
+      REAL(rkind), INTENT(IN)              :: SPEC(NUMSIG,NUMDIR)
 !/
 !/ ------------------------------------------------------------------- /
 !/ Local parameters
@@ -57,8 +53,6 @@
       REAL                    :: ZP(NSPEC), ZMIN, ZMAX, Z(NSPEC),     &
                                  FACT, WSMAX, HSMAX
       REAL                    :: TP(DIMP,NPOUTMAX)
-      INTEGER                 :: IK, WIND_PART    ! ChrisB; added for new
-      REAL                    :: C, UPAR, SIGCUT  ! UKMO partioning methods
 !/
 !/ ------------------------------------------------------------------- /
 ! 0.  Initializations
@@ -66,7 +60,7 @@
 !/S      CALL STRACE (IENT, 'W3PART')
 !
       NP     = 0
-      XP     = 0.
+      SPART_PARAMS     = 0.
 
       NK = NUMSIG
       NTH = NUMDIR
@@ -108,8 +102,7 @@
 ! 2.c Compute parameters per partition
 !     NP and NX initialized inside routine.
 !
-      CALL PTMEAN ( NP_MAX, IMO, IP, SPEC, DEPTH, WN,           &
-                    NP, XP )
+      CALL PTMEAN ( NP_MAX, IMO, IP, SPEC, NP )
 !
       RETURN
 
@@ -680,11 +673,11 @@
 
 
 
-      SUBROUTINE PTMEAN ( NPI, IMO, IP, SPEC, DEPTH, WN,        &
-                          NPO, XP )
+      SUBROUTINE PTMEAN ( NPI, IMO, IP, SPEC, NPO )
 !  1. Purpose :
 !
 !     Compute mean parameters per partition.
+!     The output is stored in the array SPART_PARAMS
 !
 !  3. Parameters :
 !
@@ -694,10 +687,7 @@
 !       IMO     I.A.   I   Partition map.
 !       IP      Int.   I   Id of the current node
 !       SPEC      R.A.   I   Input spectrum.
-!       DEPTH   Real   I   Water depth.
-!       WN      R.A.   I   Wavenumebers for each frequency.
 !       NPO     Int.   O   Number of partitions with mean parameters.
-!       XP      R.A.   O   Array with output parameters.
 !     ----------------------------------------------------------------
 !
 !  4. Subroutines used :
@@ -712,7 +702,7 @@
 !/ ------------------------------------------------------------------- /
 !
 !
-      USE DATAPOOL, ONLY: NUMSIG, NUMDIR, NSPEC
+      USE DATAPOOL, ONLY: NUMSIG, NUMDIR, NSPEC, rkind
 !
       IMPLICIT NONE
 !/
@@ -721,19 +711,18 @@
 !/
       INTEGER, INTENT(IN)     :: NPI, IMO(NSPEC), IP
       INTEGER, INTENT(OUT)    :: NPO
-      REAL, INTENT(IN)        :: SPEC(NUMSIG,NUMDIR), DEPTH, WN(NUMSIG)
-      REAL, INTENT(OUT)       :: XP(DIMP,1:NPOUTMAX)
+      REAL(rkind), INTENT(IN)        :: SPEC(NUMSIG,NUMDIR)
 
       INTEGER  :: IC_LABEL, MSK(NUMSIG,NUMDIR)
       REAL     :: IMO2D(NUMSIG,NUMDIR), PSPEC(NUMSIG,NUMDIR)
       INTEGER                 :: IK, ITH, ISP, IPART, IFPMAX(0:NPI), INDX(1)
       REAL                    :: HS,TM01,TM02,KLM,WLM,TM10
       REAL                    :: ETOTS,ETOTC,DM,DSPR
-      REAL                    :: XPALL(DIMP,1:NPI)
+      REAL                    :: XPALL(DIMP,NPI)
 
 
       NPO = MIN(NPI, NPOUTMAX)
-      XP = 0
+      SPART_PARAMS = 0
 
       IF ( NPO .EQ. 0 ) RETURN
 !
@@ -758,7 +747,7 @@
 ! sorting by HS and getting the first NPO peaks
       DO IPART=1, NPO
         INDX          = MAXLOC(XPALL(1,1:NPI))
-        XP(:,IPART)    = XPALL(:,INDX(1))
+        SPART_PARAMS(:,IPART)    = XPALL(:,INDX(1))
         XPALL(:,INDX) = -1
       END DO
 

@@ -1197,6 +1197,58 @@
         eStr="HMAX"
         eStrFullName="Wave breaking height"
         eStrUnit="meter"
+      ELSE IF (IDX.eq.66) THEN
+        eStr="SICONC"
+        eStrFullName="Ice concentration"
+        eStrUnit="non-dimensional, [0-1]"
+      ELSE IF (IDX.eq.67) THEN
+        eStr="P1HS"
+        eStrFullName="Hs of the 1st spectral partition"
+        eStrUnit="m"
+      ELSE IF (IDX.eq.68) THEN
+        eStr="P1TM01"
+        eStrFullName="Mean period of the 1st spectral partition"
+        eStrUnit="s"
+      ELSE IF (IDX.eq.69) THEN
+        eStr="P1DM"
+        eStrFullName="Mean direction of the 1st spectral partition"
+        eStrUnit="deg"
+      ELSE IF (IDX.eq.70) THEN
+        eStr="P1DSPR"
+        eStrFullName="Directional of the 1st spectral partition"
+        eStrUnit="deg"
+      ELSE IF (IDX.eq.71) THEN
+        eStr="P2HS"
+        eStrFullName="Hs of the 2nd spectral partition"
+        eStrUnit="m"
+      ELSE IF (IDX.eq.72) THEN
+        eStr="P2TM01"
+        eStrFullName="Mean period of the 2nd spectral partition"
+        eStrUnit="s"
+      ELSE IF (IDX.eq.73) THEN
+        eStr="P2DM"
+        eStrFullName="Mean direction of the 2nd spectral partition"
+        eStrUnit="deg"
+      ELSE IF (IDX.eq.74) THEN
+        eStr="P2DSPR"
+        eStrFullName="Directional of the 2nd spectral partition"
+        eStrUnit="deg"
+      ELSE IF (IDX.eq.75) THEN
+        eStr="P3HS"
+        eStrFullName="Hs of the 3rd spectral partition"
+        eStrUnit="m"
+      ELSE IF (IDX.eq.76) THEN
+        eStr="P3TM01"
+        eStrFullName="Mean period of the 3rd spectral partition"
+        eStrUnit="s"
+      ELSE IF (IDX.eq.77) THEN
+        eStr="P3DM"
+        eStrFullName="Mean direction of the 3rd spectral partition"
+        eStrUnit="deg"
+      ELSE IF (IDX.eq.78) THEN
+        eStr="P3DSPR"
+        eStrFullName="Directional of the 3rd spectral partition"
+        eStrUnit="deg"
       ELSE
         CALL WWM_ABORT('Wrong Number')
       END IF

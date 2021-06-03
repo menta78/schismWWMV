@@ -941,7 +941,7 @@
          INTEGER                :: MESTR   = 0 
          INTEGER                :: MEVEG   = 0
          INTEGER                :: MESUO   = 0
-         INTEGER                :: MESIC     = 0
+         INTEGER                :: MESIC   = 0
          INTEGER                :: MELIM   = 1
          INTEGER                :: ICRIT   = 1
          INTEGER                :: IBREAK  = 1
@@ -986,12 +986,12 @@
 !
 ! ... output parameter ... wwmDoutput.mod
 !
-         INTEGER, PARAMETER     :: OUTVARS  = 35 
+         INTEGER, PARAMETER     :: OUTVARS  = 50 
          INTEGER, PARAMETER     :: CURRVARS = 5
          INTEGER, PARAMETER     :: WINDVARS = 10 
 !AR: potential bug to selfe in the trunk it is 59
 
-         INTEGER, PARAMETER     :: OUTVARS_COMPLETE  = 65
+         INTEGER, PARAMETER     :: OUTVARS_COMPLETE  = 80
          LOGICAL                :: PARAMWRITE_HIS = .TRUE.
          LOGICAL                :: PARAMWRITE_BOUC = .TRUE.
          LOGICAL                :: PARAMWRITE_STAT = .TRUE.
@@ -1014,6 +1014,7 @@
          END TYPE
          TYPE (VAROUT)  :: VAROUT_HISTORY, VAROUT_STATION
          LOGICAL LVAR_READ(OUTVARS_COMPLETE)
+         LOGICAL :: LSAVE_SPECTRAL_PARTS = .FALSE.
 
 #ifdef NCDF
          INTEGER        :: NF90_OUTTYPE_BOUC
