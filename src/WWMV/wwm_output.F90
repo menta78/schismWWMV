@@ -1322,7 +1322,7 @@
          OUTPAR(30) = WINDXY(IP,1) ! windx
          OUTPAR(31) = WINDXY(IP,2) ! windy
          IF (MESIC.EQ.1) OUTPAR(32) = ICECONC(IP) ! ice concentration
-         IF (DOCOMPUTE_SPECTRAL_PARTS) CALL SET_SPART_OUT(WALOC, 33, ILASTINDX, OUTPAR)
+         IF (DOCOMPUTE_SPECTRAL_PARTS) CALL SET_SPART_OUT(IP, WALOC, 33, ILASTINDX, OUTPAR)
 
 !         WRITE(STAT%FHNDL,'("+TRACE...",A,4F15.4)') 'FINISHED WITH INTPAR'
 !         FLUSH(STAT%FHNDL)
@@ -1331,12 +1331,12 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SET_SPART_OUT(WALOC, IFIRSTINDX, ILASTINDX, OUTPAR)
-         USE DATAPOOL, ONLY : rkind, NUMSIG, NUMDIR
+      SUBROUTINE SET_SPART_OUT(IP, WALOC, IFIRSTINDX, ILASTINDX, OUTPAR)
+         USE DATAPOOL, ONLY : rkind, NUMSIG, NUMDIR, OUTVARS
          USE WWM_PARTMD 
          REAL(rkind)   , INTENT(IN)    :: WALOC(NUMSIG,NUMDIR)
-         INTEGER, INTENT(IN) :: IFIRSTINDX
-         REAL(rkind)   , INTENT(INOUT)   :: OUTPAR(*)
+         INTEGER, INTENT(IN) :: IP, IFIRSTINDX
+         REAL(rkind)   , INTENT(INOUT)   :: OUTPAR(OUTVARS)
          INTEGER, INTENT(OUT) :: ILASTINDX
 
          INTEGER :: PARTITIONS_NUMBER, IPART, INX
@@ -1504,7 +1504,7 @@
       OUTPAR(64) = MyREAL(NumberIterationSolver(IP))
       OUTPAR(65) = HMAX(IP)
       IF (MESIC.EQ.1) OUTPAR(66) = ICECONC(IP) ! ice concentration
-      IF (DOCOMPUTE_SPECTRAL_PARTS) CALL SET_SPART_OUT(WALOC, 67, ILASTINDX, OUTPAR)
+      IF (DOCOMPUTE_SPECTRAL_PARTS) CALL SET_SPART_OUT(IP, WALOC, 67, ILASTINDX, OUTPAR)
       END SUBROUTINE
 !**********************************************************************
 !*                                                                     *

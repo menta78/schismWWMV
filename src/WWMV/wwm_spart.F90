@@ -7,11 +7,12 @@
 !
 !     Lorenzo Mentaschi adapted it to WWM
 !
+      USE DATAPOOL, ONLY: rkind
       PUBLIC
 !
       INTEGER, PUBLIC, PARAMETER   :: NPOUTMAX = 3 ! maximum number of stored peaks
       INTEGER, PUBLIC, PARAMETER   :: DIMP = 6 ! number of parameters in partition (setting a high value)
-      REAL, PUBLIC                :: SPART_PARAMS(DIMP,NPOUTMAX) ! array used to store the output partition parameters
+      REAL(rkind), PUBLIC                :: SPART_PARAMS(DIMP,NPOUTMAX) ! array used to store the output partition parameters
 
       INTEGER, PRIVATE              :: MK = -1, MTH = -1
       INTEGER, ALLOCATABLE, PRIVATE :: NEIGH(:,:)
@@ -50,9 +51,9 @@
                                  IT(1),        &
                                  IPW, IPT, ISP, NK, NTH
 !/S      INTEGER, SAVE           :: IENT = 0
-      REAL                    :: ZP(NSPEC), ZMIN, ZMAX, Z(NSPEC),     &
+      REAL(rkind)                :: ZP(NSPEC), ZMIN, ZMAX, Z(NSPEC),     &
                                  FACT, WSMAX, HSMAX
-      REAL                    :: TP(DIMP,NPOUTMAX)
+      REAL(rkind)                :: TP(DIMP,NPOUTMAX)
 !/
 !/ ------------------------------------------------------------------- /
 ! 0.  Initializations
@@ -421,7 +422,7 @@
 !/
       INTEGER, INTENT(IN)     :: IMI(NSPEC), IND(NSPEC)
       INTEGER, INTENT(OUT)    :: IMO(NSPEC), NPART
-      REAL, INTENT(IN)        :: ZP(NSPEC)
+      REAL(rkind), INTENT(IN) :: ZP(NSPEC)
 !/
 !/ ------------------------------------------------------------------- /
 !/ Local parameters
@@ -432,7 +433,7 @@
                                  JL, JN, IPT, J
       INTEGER                 :: IQ(NSPEC), IQ_START, IQ_END
 !/S      INTEGER, SAVE           :: IENT = 0
-      REAL                    :: ZPMAX, EP1, DIFF
+      REAL(rkind)             :: ZPMAX, EP1, DIFF
 !/
 !/S      CALL STRACE (IENT, 'PT_FLD')
 !
@@ -714,11 +715,11 @@
       REAL(rkind), INTENT(IN)        :: SPEC(NUMSIG,NUMDIR)
 
       INTEGER  :: IC_LABEL, MSK(NUMSIG,NUMDIR)
-      REAL     :: IMO2D(NUMSIG,NUMDIR), PSPEC(NUMSIG,NUMDIR)
+      REAL(rkind)     :: IMO2D(NUMSIG,NUMDIR), PSPEC(NUMSIG,NUMDIR)
       INTEGER                 :: IK, ITH, ISP, IPART, IFPMAX(0:NPI), INDX(1)
-      REAL                    :: HS,TM01,TM02,KLM,WLM,TM10
-      REAL                    :: ETOTS,ETOTC,DM,DSPR
-      REAL                    :: XPALL(DIMP,NPI)
+      REAL(rkind)                    :: HS,TM01,TM02,KLM,WLM,TM10
+      REAL(rkind)                    :: ETOTS,ETOTC,DM,DSPR
+      REAL(rkind)                    :: XPALL(DIMP,NPI)
 
 
       NPO = MIN(NPI, NPOUTMAX)
@@ -731,6 +732,7 @@
       END DO
 
 ! computing the parameters for all the peaks
+      XPALL = 0
       DO IC_LABEL=1, NPI
         MSK = MERGE(1,0,IMO2D.EQ.IC_LABEL)
         PSPEC = SPEC*MSK
@@ -743,7 +745,12 @@
         XPALL(5,IC_LABEL) = DM
         XPALL(6,IC_LABEL) = DSPR
       ENDDO
+     ! substituting nan with 0
+      WHERE(XPALL /= XPALL)
+        XPALL = 0
+      END WHERE
 
+      SPART_PARAMS = 0
 ! sorting by HS and getting the first NPO peaks
       DO IPART=1, NPO
         INDX          = MAXLOC(XPALL(1,1:NPI))

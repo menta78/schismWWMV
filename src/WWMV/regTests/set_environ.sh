@@ -8,8 +8,8 @@ export SCWWM_PY=/home/lmentaschi/usr/miniconda3/bin/python
 export SCWWM_MPIRUN=mpirun.mpich
 
 # schismWWM executables
-export SCWWM_EXE=/home/lmentaschi/src/git/wwmv/wwm_menta_dvlp/src/schism.ex_VL_WWM
-#export SCWWM_EXE=/home/lmentaschi/src/git/wwmv/wwm_menta_dvlp/src/schism_dbg.ex_VL_WWM
+#export SCWWM_EXE=/home/lmentaschi/src/git/wwmv/wwm_menta_dvlp/src/schism.ex_VL_WWM
+export SCWWM_EXE=/home/lmentaschi/src/git/wwmv/wwm_menta_dvlp/src/schism_dbg.ex_VL_WWM
 export SCWWM_COMBOUTPUT_EXE=/home/lmentaschi/src/git/wwmv/wwm_menta_dvlp/src/Utility/Combining_Scripts/combine_output11
 export SCWWM_COMBHOTSTART_EXE=/home/lmentaschi/src/git/wwmv/wwm_menta_dvlp/src/Utility/Combining_Scripts/combine_hotstart7
 
