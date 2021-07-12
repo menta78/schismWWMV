@@ -17,7 +17,7 @@ class testSPart(util.wwmTestTemplate):
     if exitCode != 0:
       self.fail('schismWWM did not end correctly. Failing')
     # combining the output
-    combineCmd = util.getCombineCommand(bgnParam=10, endParam=10)
+    combineCmd = util.getCombineCommand(bgnParam=1, endParam=1)
     exitCode = os.system(combineCmd)
     if exitCode != 0:
       self.fail('combine_outputXX did not end correctly. Failing')

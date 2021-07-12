@@ -8243,20 +8243,22 @@
           pindx = firstPartIndx + 4*(i-1)
           noutput=noutput+1
           icount=icount+1
+          write(it_char,'(i72)')i
+          it_char=adjustl(it_char); lit=len_trim(it_char)
           if(iof_wwm(pindx)==1) call writeout_nc(id_out_var(noutput+4), &
-              &'WWM_P'//char(i)//'HS',1,1,npa,dble(out_wwm(:,pindx)))
+              &'WWM_P'//it_char(1:lit)//'HS',1,1,npa,dble(out_wwm(:,pindx)))
           noutput=noutput+1
           icount=icount+1
           if(iof_wwm(pindx+1)==1) call writeout_nc(id_out_var(noutput+4), &
-              &'WWM_P'//char(i)//'TM01',1,1,npa,dble(out_wwm(:,pindx+1)))
+              &'WWM_P'//it_char(1:lit)//'TM01',1,1,npa,dble(out_wwm(:,pindx+1)))
           noutput=noutput+1
           icount=icount+1
           if(iof_wwm(pindx+2)==1) call writeout_nc(id_out_var(noutput+4), &
-              &'WWM_P'//char(i)//'DM',1,1,npa,dble(out_wwm(:,pindx+2)))
+              &'WWM_P'//it_char(1:lit)//'DM',1,1,npa,dble(out_wwm(:,pindx+2)))
           noutput=noutput+1
           icount=icount+1
           if(iof_wwm(pindx+3)==1) call writeout_nc(id_out_var(noutput+4), &
-              &'WWM_P'//char(i)//'DSPR',1,1,npa,dble(out_wwm(:,pindx+3)))
+              &'WWM_P'//it_char(i:lit)//'DSPR',1,1,npa,dble(out_wwm(:,pindx+3)))
         enddo
 #endif
 

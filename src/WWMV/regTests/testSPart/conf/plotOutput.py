@@ -29,7 +29,7 @@ def plotMapAtTime(ncfilepath, timeIndex):
 
 
 if __name__ == '__main__':
-  ncfilepath = 'outputs/schout_0000_5.nc'
+  ncfilepath = 'outputs/schout_1.nc'
   timeIndex = -1
   import pdb; pdb.set_trace()
   plotMapAtTime(ncfilepath, timeIndex)

@@ -14,10 +14,10 @@
  LMONO_IN       = F
  LMONO_OUT      = F
  LNAUTOUT       = T                  ! Nautical output of all quantities in degrees
- BEGTC          = '19980901.000000'  ! Time for start the simulation, ex:yyyymmdd. hhmmss
+ BEGTC          = '20000101.000000'  ! Time for start the simulation, ex:yyyymmdd. hhmmss
  DELTC          = 900                 ! Time step 
  UNITC          = 'SEC'              ! Unity of time step
- ENDTC          = '19980902.000000'  ! Time for stop the simulation, ex:yyyymmdd. hhmmss
+ ENDTC          = '20000102.000000'  ! Time for stop the simulation, ex:yyyymmdd. hhmmss
  DMIN           = 0.0001              ! Minimum water depth. This is not used in selfe; with selfe this is set automatically to h0 in param.in
 /
 
@@ -41,8 +41,8 @@
  MINDIR         = 0.                 ! Minimum direction for simulation (unit: degrees; nautical convention; 0: from N; 90: from E); not used if LCIRD = .T.
  MAXDIR         = 360.               ! Maximum direction for simulation (unit: degrees); may be < MINDIR; not used if LCIRD = .T.
  NUMDIR = 24                 ! Number of directional bins
- FRLOW          = 0.1               ! Low frequency limit of the discrete wave period (Hz; 1/period)
- FRHIGH         = 0.6                 ! High frequency limit of the discrete wave period.
+ FRLOW          = 0.05               ! Low frequency limit of the discrete wave period (Hz; 1/period)
+ FRHIGH         = 1                 ! High frequency limit of the discrete wave period.
  NUMSIG = 25                 ! Number of frequency bins
  IGRIDTYPE      = 3                  ! Gridtype used. 1 ~ XFN, 2 ~ WWM-PERIODIC, 3 ~ SELFE, 4 ~ OLD WWM GRID
  FILEGRID       = 'hgrid.gr3'        ! Name of the grid file. hgrid.gr3 or hgrid.ll if IGRIDTYPE = 3 (SELFE)
@@ -69,10 +69,10 @@
  LBSP1D         = F                  ! 1D (freq. space only) format for FILEWAVE if LBCSP=T and LINHOM=F
  LBSP2D         = F                  ! not functional (freq. + directional space)
 
- BEGTC          = '19980901.000000'  ! Begin time of the wave boundary file (FILEWAVE)
+ BEGTC          = '20000101.000000'  ! Begin time of the wave boundary file (FILEWAVE)
  DELTC          = 1                  ! Time step in FILEWAVE
  UNITC          = 'HR'               ! Unit
- ENDTC          = '19981002.000000'  ! End time
+ ENDTC          = '20000102.000000'  ! End time
  FILEBOUND      = 'wwmbnd.gr3'       ! Boundary file defining boundary and Neumann nodes.
                                      ! Flag 0: not on bnd; 3: Neumann (0 gradient);
                                      ! 2: active bnd (Direchlet). Bnd flags imported from SELFE:
@@ -81,11 +81,11 @@
                                      ! For WW3 boundary input also set LINHOM=T, LBCSE=T and this works only for spherical coordinates
                                      ! LMONO_IN = F ! incident wave is defined as monochromatic wave height, which is Hmono = sqrt(2) * Hs
                                      ! The following are needed only if LBCWA=T and LINHOM=F
- WBHS           = 4.                 ! Hs at the boundary for parametric spectra
+ WBHS           = 1.                 ! Hs at the boundary for parametric spectra
  WBSS           = 2.                 ! 1 or -1: Pierson-Moskowitz, 2 or -2: JONSWAP, 3 or -3: all in one BIN,
                                      ! 4: Gauss. The sign decides whether WBTP below is
                                      ! peak (+) or mean period (-)
- WBTP           = 8.                 ! Tp at the boundary (sec); mean or peak depending on the sign of WBSS
+ WBTP           = 12.                 ! Tp at the boundary (sec); mean or peak depending on the sign of WBSS
  WBDM           = -90.               ! Avg. Wave Direction at the boundary
  WBDSMS         = 1.                 ! Directional spreading value in degrees (1) or as exponent (2)
  WBDS           = 20.                 ! Directioanl spreading at the boundary (degrees/exponent)
@@ -113,7 +113,7 @@
  WDIR           = 120.0              ! Wind direction if LWDIR=T
  WVEL           = 0.0               ! Wind velocity ...
  CWINDX         = 0.0               ! wind x-vec if LWDIR=F
- CWINDY         = 20                ! wind y-vec
+ CWINDY         = 8                ! wind y-vec
  FILEWIND       = 'wind.dat'         ! wind input data file; input file format: write(*,*) curtx; write(*,*) curty
  IWINDFORMAT    = 1                  ! ! 1 - ASCII, 2 - DWD_NETCDF, 3 - NOAA CFRS, 4 - NOAA - NARR; everything in NETCDF except ascii files
 /
@@ -347,12 +347,12 @@ ASPAR_LOCAL_LEVEL = 0               ! locality level 0 - a lot of memory 10 - no
 
 ! output of statistical variables over the whole domain at specified times.
 &HISTORY
- BEGTC          = '19980901.000000'  ! Start output time, yyyymmdd. hhmmss;
+ BEGTC          = '20000101.000000'  ! Start output time, yyyymmdd. hhmmss;
                                      ! must fit the simulation time otherwise no output.
                                      ! Default is same as PROC%BEGTC
  DELTC          = 1                ! Time step for output; if smaller than simulation time step, the latter is used (output every step for better 1D 2D spectra analysis)
  UNITC          = 'SEC'              ! Unit
- ENDTC          = '19980910.000000'  ! Stop time output, yyyymmdd. hhmmss
+ ENDTC          = '20000102.000000'  ! Stop time output, yyyymmdd. hhmmss
 
  LCOMPUTE_SPECTRAL_PARTS = T
 
@@ -428,25 +428,25 @@ ASPAR_LOCAL_LEVEL = 0               ! locality level 0 - a lot of memory 10 - no
 /
 
 &STATION
- BEGTC          = '19980901.000000'  ! Start simulation time, yyyymmdd. hhmmss; must fit the simulation time otherwise no output
+ BEGTC          = '20000101.000000'  ! Start simulation time, yyyymmdd. hhmmss; must fit the simulation time otherwise no output
                                      ! Default is same as PROC%BEGTC
- DELTC          =  1,                ! Time step for output; if smaller than simulation time step, the latter is used (output every step for better 1D 2D spectra analysis)
+ DELTC          =  3600,                ! Time step for output; if smaller than simulation time step, the latter is used (output every step for better 1D 2D spectra analysis)
  UNITC          = 'SEC'              ! Unit
- ENDTC          = '20081101.000000'  ! Stop time simulation, yyyymmdd. hhmmss
+ ENDTC          = '20000102.000000'  ! Stop time simulation, yyyymmdd. hhmmss
                                      ! Default is same as PROC%ENDC
  OUTSTYLE       = 'STE'              ! output option - use 'NO' to maximize efficiency during parallel run when using MPI
  FILEOUT        = 'station.dat'
  LOUTITER       = F
- LLOUTS         = F                  ! station output flag
+ LLOUTS         = T                  ! station output flag
  ILOUTS         = 1                  ! Number of output stations
  NLOUTS         = 'P-1',             ! Name of output locations
  IOUTS          = 1
  NOUTS          = 'P-1',
- XOUTS          = 1950.,             ! X-Coordinate of output locations
- YOUTS          = 304.,            ! Y-Coordinate of output locations
+ XOUTS          = 6.,             ! X-Coordinate of output locations
+ YOUTS          = 34.,            ! Y-Coordinate of output locations
  CUTOFF         = 8*0.44             ! cutoff freq (Hz) for each station - consistent with buoys
  LSP1D          = F                  ! 1D spectral station output
- LSP2D          = F                  ! 2D spectral station output
+ LSP2D          = T                  ! 2D spectral station output
  LSIGMAX        = T                  ! Adjust the cut-freq. for the output (e.g. consistent with buoy cut-off freq.)
 /
 
