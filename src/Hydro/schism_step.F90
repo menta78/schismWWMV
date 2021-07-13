@@ -8258,7 +8258,7 @@
           noutput=noutput+1
           icount=icount+1
           if(iof_wwm(pindx+3)==1) call writeout_nc(id_out_var(noutput+4), &
-              &'WWM_P'//it_char(i:lit)//'DSPR',1,1,npa,dble(out_wwm(:,pindx+3)))
+              &'WWM_P'//it_char(1:lit)//'DSPR',1,1,npa,dble(out_wwm(:,pindx+3)))
         enddo
 #endif
 
