@@ -11,8 +11,8 @@ shared     = not-set
 # MENTA: setting the right compiler
 #cc         = mpicc.mpich
 #cxx        = mpicxx.mpich
-cc         = mpicc.mpich
-cxx        = mpicxx.mpich
+cc         = mpicc
+cxx        = mpicxx
 ############################
 
 

@@ -5,8 +5,6 @@ from datetime import datetime
 import xarray as xr
 from matplotlib.tri import Triangulation, LinearTriInterpolator
 
-from alphaBetaLab import abTriangularMesh as trmsh
-
 
 
 def getSpecAtDate(specBinFileName, dateToLoad):
@@ -58,13 +56,9 @@ def getPeaksAtPoint(wwmOutNc, timeIndex, pt):
   p1dspr = ds['WWM_P1DSPR'][timeIndex,:].values
   p2dspr = ds['WWM_P2DSPR'][timeIndex,:].values
   p3dspr = ds['WWM_P3DSPR'][timeIndex,:].values
+  xs = ds['SCHISM_hgrid_node_x'][:].values
+  ys = ds['SCHISM_hgrid_node_y'][:].values
   ds.close()
-  
-  msh = trmsh.loadFromGr3File('hgrid.gr3')
-  ndid = list(msh.nodes.keys())
-  ndid.sort()
-  xs = np.array([msh.nodes[k][0] for k in ndid])
-  ys = np.array([msh.nodes[k][1] for k in ndid])
 
   triObj = Triangulation(xs,ys)
   intpltr = LinearTriInterpolator(triObj, p1hs)
