@@ -287,7 +287,7 @@
              MAXDAC(IS) = PHILMAXDAC
            ELSE IF (ISOURCE .EQ. 2) THEN ! Hersbach & Janssen 
              USFM       = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
-             MAXDAC(IS) = USFM * DELFL(IS)/PI2/SPSIG(IS)
+             MAXDAC(IS) = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))*COFRM4*DT4S/PI2/SPSIG(IS)
            ELSE IF (ISOURCE .EQ. 10) THEN ! Roland, 2018
              USFM       = UFRIC(IP)*MAX(FMEANWS(IP),FMEAN(IP))
              MAXDAC(IS) = MAX(PHILMAXDAC,USFM*DELFL(IS)/PI2/SPSIG(IS))
