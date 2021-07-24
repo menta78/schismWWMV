@@ -536,7 +536,7 @@ clean:
 	$(QUIET)rm -rf ../bin/*
 	$(QUIET)rm -rf WWMIII/*.mod
 	$(QUIET)rm -rf WWMIII/*.o
-	(cd $(PARMETISDIR); make distclean; rm -f *.a )
+	#(cd $(PARMETISDIR); make distclean; rm -f *.a )
 	##(cd $(PARMETISDIR)/ParMETISLib ; make realclean )
 	$(QUIET)rm -rf $(FABMINSTALLDIR)
 
