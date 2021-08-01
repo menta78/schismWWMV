@@ -113,7 +113,11 @@
         DO ID = 1, NUMDIR
           DO IS = 1, NUMSIG
             NEWDAC = PHI(IS,ID) * DT4A / (ONE-DT4A*MIN(ZERO,DPHIDN(IS,ID)))
-            RATIO  = ONE/MAX(ONE,ABS(NEWDAC/MAXDAC(IS)))
+            IF (MAXDAC(IS) .GT. ZERO) THEN
+              RATIO = ONE/MAX(ONE,ABS(NEWDAC/MAXDAC(IS)))
+            ELSE
+              RATIO = ONE 
+            ENDIF
 !            WRITE(*,*) IS, ID, RATIO, MAXDAC(IS), NEWDAC, PHI(IS,ID), DPHIDN(IS,ID), SUM(PHI), SUM(DPHIDN)
             PHI(IS,ID) = RATIO * PHI(IS,ID)
           END DO
@@ -197,7 +201,7 @@
          REAL(rkind),INTENT(OUT)   :: WACNEW(NUMSIG,NUMDIR)
 
          IF (ISOURCE == 1) THEN
-           CALL ST4_POST(IP,WACOLD, WACNEW)
+           !CALL ST4_POST(IP,WACOLD, WACNEW)
          ELSE IF (ISOURCE == 2) THEN
            CALL ECMWF_POST(IP, WACNEW)
          ELSE IF (ISOURCE == 3) THEN

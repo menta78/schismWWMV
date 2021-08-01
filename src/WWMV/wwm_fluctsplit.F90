@@ -2267,7 +2267,8 @@
          I_DIAG = 0
 
          IF (LVECTOR .and. (AMETHOD .eq. 1) .and. (ICOMP.eq.0)) THEN
-           ALLOCATE(FLALLGL(NUMSIG,NUMDIR,3,MNE), stat=istat)
+           ALLOCATE(FLALLGL(NUMSIG,NUMDIR,3,MNE), stat=istat); FLALLGL = ZERO 
+           ALLOCATE(KELEMGL(NUMSIG,NUMDIR,3,MNE), stat=istat); KELEMGL = ZERO 
            IF (istat/=0) CALL WWM_ABORT('wwm_fluctsplit, allocate error 3')
          END IF
         
