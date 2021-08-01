@@ -37,7 +37,7 @@ F90 = mpiifort
 #F90OPTI =  -traceback -g -fpe0 -check uninit -check bounds -check pointers -warn interfaces,nouncalled
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -fstack-protector -assume protect_parens
 #F90OPTI = -O1 -axSSE4.2 -traceback -g
-F90OPTI = -O3 -ipo -axCORE-AVX2 -ffinite-math-only -unroll-aggressive -no-prec-div -qopt-prefetch -g -traceback -no-wrap-margin
+#F90OPTI = -O3 -ipo -axCORE-AVX2 -ffinite-math-only -unroll-aggressive -no-prec-div -qopt-prefetch -g -traceback -no-wrap-margin
 #F90OPTI = -g -fpp -O2 -stand f03 -assume realloc_lhs -fstack-protector -assume protect_parens
 #F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check all
 
