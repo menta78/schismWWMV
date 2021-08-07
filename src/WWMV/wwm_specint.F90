@@ -103,9 +103,7 @@
          PHI = PHI + SSUO
          DPHIDN = DPHIDN + SDUO
       ENDIF
-
-      IF (ISHALLOW(IP) .EQ. 1) CALL SHALLOW_WATER(IP, WALOC, PHI, DPHIDN, SSBR, DSSBR, SSBF, DSSBF, SSNL3, DSSNL3)
-
+!
 !      WRITE(*,*) 'SUMS', SUM(PHI), SUM(DPHIDN)
 !
       IF (MELIM .GT. 0) THEN
@@ -123,6 +121,8 @@
           END DO
         END DO
       ENDIF
+
+      IF (ISHALLOW(IP) .EQ. 1) CALL SHALLOW_WATER(IP, WALOC, PHI, DPHIDN, SSBR, DSSBR, SSBF, DSSBF, SSNL3, DSSNL3)
 
 #ifdef DEBUG
       IF (IP .eq. TESTNODE) THEN
@@ -464,4 +464,3 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-
