@@ -25,7 +25,7 @@ PDLIB = on
 
 
 #F90 = gfortran
-F90 = mpif90
+F90 = mpiifort
 #F90 = mpif90-vt
 #F90 = ifort
 #F90 = $(FLINKER)
@@ -34,9 +34,10 @@ F90 = mpif90
 
 #INTEL
 #debugging flags
-#F90OPTI =  -traceback -g -check all,noarg_temp_created  -warn interfaces,nouncalled -gen-interface -no-wrap-margin -qopt-report-phase=all -fpe0
+#F90OPTI =  -traceback -g -fpe0 -check uninit -check bounds -check pointers -warn interfaces,nouncalled
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -fstack-protector -assume protect_parens
-F90OPTI = -O1 -axSSE4.2 -traceback -g
+#F90OPTI = -O1 -axSSE4.2 -traceback -g
+#F90OPTI = -O3 -ipo -axCORE-AVX2 -ffinite-math-only -unroll-aggressive -no-prec-div -qopt-prefetch -g -traceback -no-wrap-margin
 #F90OPTI = -g -fpp -O2 -stand f03 -assume realloc_lhs -fstack-protector -assume protect_parens
 #F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check all
 
@@ -95,7 +96,7 @@ OBJWWM = wwm_datapl.o wwm_petscpool.o  wwm_petsc_seriell.o wwm_petsc_parallel.o 
 FFLAGS += -DWWM_SOLVER
 ifdef NETCDF
   all: $(NETC) $(PROG)
-  LIBS += $(NETCDF_FORTRAN_LINK)
+  LIBS += -L$(NETCDF_FORTRAN_LINK)
   FFLAGS +=  -DNCDF -I$(NETCDF_INCDIR)
 else
   all: $(PROG)

@@ -354,7 +354,7 @@ ASPAR_LOCAL_LEVEL = 0               ! locality level 0 - a lot of memory 10 - no
  UNITC          = 'SEC'              ! Unit
  ENDTC          = '20000102.000000'  ! Stop time output, yyyymmdd. hhmmss
 
- LCOMPUTE_SPECTRAL_PARTS = T
+ LCOMPUTE_SPECTRAL_PARTS = T         ! Compute spectral partition
 
                                      ! Default is same as PROC%ENDC
  DEFINETC       = 86400              ! Time for definition of history files

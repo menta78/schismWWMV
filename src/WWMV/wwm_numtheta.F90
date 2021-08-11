@@ -672,6 +672,7 @@
          IF (LFILTERTH) THEN
             DO IS = 1, NUMSIG
               CFL = MAXVAL(ABS(CAD(IS,:)))*DT4D/DDIR 
+             ! VELMAX = MAXVAL(ABS(CAD(IS,:))) ! max. vel. for this freq. bin in all directions ...
               IF (CFL .GT. MAXCFLTH) THEN
                 DO ID = 1, NUMDIR
                   CAD(IS,ID) = MAXCFLTH/CFL*CAD(IS,ID)

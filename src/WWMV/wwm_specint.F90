@@ -113,6 +113,7 @@
 
       IF (ISHALLOW(IP) .EQ. 1) CALL SHALLOW_WATER(IP, WALOC, PHI, DPHIDN, SSBR, DSSBR, SSBF, DSSBF, SSNL3, DSSNL3)
 
+!
 !      WRITE(*,*) 'SUMS', SUM(PHI), SUM(DPHIDN)
 !
       IF (MELIM .GT. 0) THEN
@@ -120,12 +121,18 @@
         DO ID = 1, NUMDIR
           DO IS = 1, NUMSIG
             NEWDAC = PHI(IS,ID) * DT4A / (ONE-DT4A*MIN(ZERO,DPHIDN(IS,ID)))
-            RATIO  = ONE/MAX(ONE,ABS(NEWDAC/MAXDAC(IS)))
+            IF (MAXDAC(IS) .GT. ZERO) THEN
+              RATIO = ONE/MAX(ONE,ABS(NEWDAC/MAXDAC(IS)))
+            ELSE
+              RATIO = ONE 
+            ENDIF
 !            WRITE(*,*) IS, ID, RATIO, MAXDAC(IS), NEWDAC, PHI(IS,ID), DPHIDN(IS,ID), SUM(PHI), SUM(DPHIDN)
             PHI(IS,ID) = RATIO * PHI(IS,ID)
           END DO
         END DO
       ENDIF
+
+      IF (ISHALLOW(IP) .EQ. 1) CALL SHALLOW_WATER(IP, WALOC, PHI, DPHIDN, SSBR, DSSBR, SSBF, DSSBF, SSNL3, DSSNL3)
 
 #ifdef DEBUG
       IF (IP .eq. TESTNODE) THEN
@@ -204,7 +211,7 @@
          REAL(rkind),INTENT(OUT)   :: WACNEW(NUMSIG,NUMDIR)
 
          IF (ISOURCE == 1) THEN
-           CALL ST4_POST(IP,WACOLD, WACNEW)
+           !CALL ST4_POST(IP,WACOLD, WACNEW)
          ELSE IF (ISOURCE == 2) THEN
            CALL ECMWF_POST(IP, WACNEW)
          ELSE IF (ISOURCE == 3) THEN
@@ -299,12 +306,12 @@
 
          DO IS = 1, NUMSIG
            PHILMAXDAC = 0.0081*0.1/(TWO*SPSIG(IS)*WK(IS,IP)*WK(IS,IP)*WK(IS,IP)*CG(IS,IP)) ! Phillips limiter following Komen et al. 
-           IF (ISOURCE .NE. 2) THEN  ! Phillips 
+           IF (MELIM == 1 ) THEN  ! Phillips 
              MAXDAC(IS) = PHILMAXDAC
-           ELSE IF (ISOURCE .EQ. 2) THEN ! Hersbach & Janssen 
-             USFM       = USNEW(IP)*MAX(FMEANWS(IP),FMEAN(IP))
-             MAXDAC(IS) = USFM * DELFL(IS)/PI2/SPSIG(IS)
-           ELSE IF (ISOURCE .EQ. 10) THEN ! Roland, 2018
+           ELSE IF (MELIM == 2) THEN ! Hersbach & Janssen 
+             USFM       = UFRIC(IP)*MAX(FMEANWS(IP),FMEAN(IP))
+             MAXDAC(IS) = USFM*COFRM4(IS)*DT4S/PI2/SPSIG(IS)
+           ELSE IF (MELIM == 3) THEN ! Roland, 2018
              USFM       = UFRIC(IP)*MAX(FMEANWS(IP),FMEAN(IP))
              MAXDAC(IS) = MAX(PHILMAXDAC,USFM*DELFL(IS)/PI2/SPSIG(IS))
            END IF
@@ -467,4 +474,3 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-
