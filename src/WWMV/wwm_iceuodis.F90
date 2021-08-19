@@ -30,7 +30,7 @@
          REAL(rkind), INTENT(OUT) :: S(NUMSIG, NUMDIR), D(NUMSIG, NUMDIR)
          REAL(rkind) :: ICEC, OBSTSECTION, BETA, CELLAREA, CELLSIZE,& 
              DEG2M, CGI, GAM
-         REAL(rkind) :: GAMMAUP = 100
+         REAL(rkind) :: GAMMAUP = 200
          INTEGER  :: IK
    
          S = 0

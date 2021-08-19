@@ -643,15 +643,15 @@
             eSum=eSum/ASPAR_DIAG
 
             IF (BLOCK_GAUSS_SEIDEL) THEN
-              AC2(:,:,IP)=eSum
+              AC2(:,:,IP) = eSum
             ELSE
-              U_JACOBI(:,:,IP)=eSum
+              U_JACOBI(:,:,IP) = eSum
             END IF
 
             IF (JGS_CHKCONV) THEN
               Sum_new = sum(eSum)
               if (Sum_new .gt. thr8) then
-                DiffNew=sum(abs(WALOC - eSum))
+                DiffNew = sum(abs(WALOC - eSum))
                 p_is_converged = DiffNew/Sum_new
               else
                 p_is_converged = zero
@@ -720,7 +720,12 @@
 ! The termination criterions several can be chosen
 !
         IF (PrintLOG) THEN
-          WRITE(STAT%FHNDL,'(A10,4I10,E30.20,F10.5)') 'solver', nbiter, nbPassive, is_converged(1), np_total-is_converged(1), p_is_converged, pmin
+          !DO IP = 1, NP_RES
+          !  IF (.not. LCONVERGED(IP)) THEN
+          !    WRITE(*,*) IP, LCONVERGED(IP)
+          !  ENDIF
+          !ENDDO
+          WRITE(STAT%FHNDL,'(A10,4I10,2F10.5)') 'solver', nbiter, nbPassive, is_converged(1), np_total-is_converged(1), p_is_converged, pmin
         END IF
         !
         ! Number of iterations. If too large the exit.

@@ -34,7 +34,7 @@ F90 = mpif90
 
 #INTEL
 #debugging flags
-#F90OPTI =  -traceback -g -fpe0 -check uninit -check bounds -check pointers -warn interfaces,nouncalled
+#F90OPTI =  -traceback -g -check all,noarg_temp_created  -warn interfaces,nouncalled -gen-interface -no-wrap-margin -qopt-report-phase=all -fpe0
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -fstack-protector -assume protect_parens
 F90OPTI = -O1 -axSSE4.2 -traceback -g
 #F90OPTI = -g -fpp -O2 -stand f03 -assume realloc_lhs -fstack-protector -assume protect_parens
@@ -81,7 +81,7 @@ OBJWWM = wwm_datapl.o wwm_petscpool.o  wwm_petsc_seriell.o wwm_petsc_parallel.o 
        wwm_blasaux.o wwm_sparskit.o wwm_wind.o wwm_st4_local.o wwm_st6_local.o wwm_st4.o \
        wwm_st6.o wwm_breaking.o wwm_friction.o wwm_cycle3.o wwm_dislin.o wwm_diclass.o \
        wwm_gridcf.o wwm_hotfile.o wwm_parall_solver.o wwm_m_constants.o wwm_m_fileio.o \
-       wwm_splitinterpo.o \
+       wwm_splitinterpo.o wwm_uost.o \
        wwm_serv_xnl4v5.o wwm_mod_xnl4v5.o wwm_snl4_wrt.o \
        wwm_wave_setup.o wwm_initio.o wwm_netcdf.o wwm_input.o wwm_grid.o \
        wwm_bdcons_init.o wwm_bdcons.o wwm_bdcons_wam.o wwm_nesting.o wwm_ecmwf_local.o \

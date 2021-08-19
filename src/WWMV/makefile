@@ -1,1 +1,1 @@
-makefile.menta_pcmenta_debug
+makefile.menta_pcmenta

@@ -30,6 +30,7 @@
          USE DATAPOOL, only : WriteOutputProcess_his
          USE DATAPOOL, only : WriteOutputProcess_stat
          USE DATAPOOL, only : HISTORY_XFN, HISTORY_NC, HISTORY_SHP
+         USE DATAPOOL, only : LCOMPUTE_SPECTRAL_PARTS, DOCOMPUTE_SPECTRAL_PARTS
 
          IMPLICIT NONE
          CHARACTER(LEN=40)  :: FILEOUT
@@ -57,7 +58,10 @@
      &      STOKESSURFX, STOKESSURFY, STOKESBAROX, STOKESBAROY,         &
      &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3, ZETA_SETUP,             &
      &      CFL_CASD1, CFL_CASD2, CFL_CASD3, CFL_CASD4, NB_ITER_SOLV,   &
-     &      HMAX
+     &      HMAX, ICECNC,                                               &
+     &      P1HS, P1TM01, P1DM, P1DSPR,                                 &
+     &      P2HS, P2TM01, P2DM, P2DSPR,                                 &
+     &      P3HS, P3TM01, P3DM, P3DSPR                                   
 
          NAMELIST /HISTORY/ BEGTC, DELTC, UNITC, ENDTC, DEFINETC,       &
      &      OUTSTYLE, FILEOUT, LOUTITER, IOBPD, CG,                     &
@@ -75,7 +79,10 @@
      &      STOKESSURFX, STOKESSURFY, STOKESBAROX, STOKESBAROY,         &
      &      RSXX, RSXY, RSYY, CFL1, CFL2, CFL3, ZETA_SETUP,             &
      &      CFL_CASD1, CFL_CASD2, CFL_CASD3, CFL_CASD4, NB_ITER_SOLV,   &
-     &      HMAX
+     &      HMAX, ICECNC, LCOMPUTE_SPECTRAL_PARTS,                      &
+     &      P1HS, P1TM01, P1DM, P1DSPR,                                 &
+     &      P2HS, P2TM01, P2DM, P2DSPR,                                 &
+     &      P3HS, P3TM01, P3DM, P3DSPR                                   
 
          NAMELIST /STATION/ BEGTC, DELTC, UNITC, ENDTC, DEFINETC,       &
      &      OUTSTYLE, USE_SINGLE_OUT, MULTIPLEOUT, PARAMWRITE,          &
@@ -176,6 +183,20 @@
          CFL_CASD4=.FALSE.
          NB_ITER_SOLV=.FALSE.
          HMAX=.FALSE.
+         ICECNC=.FALSE.
+         LCOMPUTE_SPECTRAL_PARTS=.FALSE.
+         P1HS=.FALSE.
+         P1TM01=.FALSE.
+         P1DM=.FALSE.
+         P1DSPR=.FALSE.
+         P2HS=.FALSE.
+         P2TM01=.FALSE.
+         P2DM=.FALSE.
+         P2DSPR=.FALSE.
+         P3HS=.FALSE.
+         P3TM01=.FALSE.
+         P3DM=.FALSE.
+         P3DSPR=.FALSE.
          BEGTC = MAIN%BEGT
          DELTC = -1
          UNITC = MAIN%UNIT
@@ -347,6 +368,20 @@
          LVAR_READ(63)=CFL_CASD4
          LVAR_READ(64)=NB_ITER_SOLV
          LVAR_READ(65)=HMAX
+         LVAR_READ(66)=ICECNC
+         LVAR_READ(67)=P1HS
+         LVAR_READ(68)=P1TM01
+         LVAR_READ(69)=P1DM
+         LVAR_READ(70)=P1DSPR
+         LVAR_READ(71)=P2HS
+         LVAR_READ(72)=P2TM01
+         LVAR_READ(73)=P2DM
+         LVAR_READ(74)=P2DSPR
+         LVAR_READ(75)=P3HS
+         LVAR_READ(76)=P3TM01
+         LVAR_READ(77)=P3DM
+         LVAR_READ(78)=P3DSPR
+         DOCOMPUTE_SPECTRAL_PARTS = LCOMPUTE_SPECTRAL_PARTS .OR. (SUM(MERGE(1,0,LVAR_READ(67:78))).GT.0)
          VAROUT_HISTORY%LVAR=LVAR_READ
          CALL DETERMINE_NEEDED_COMPUTATION(VAROUT_HISTORY)
          IF (.not. LCFL) THEN

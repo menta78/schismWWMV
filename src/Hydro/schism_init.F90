@@ -415,7 +415,7 @@
       !just add the output statements in _step and flags in param.nml (same
       !order). Flags for modules other than hydro are only used inside USE_*
       if(iorder==0) then
-        allocate(iof_hydro(40),iof_wwm(32),iof_gen(max(1,ntracer_gen)),iof_age(max(1,ntracer_age)),level_age(ntracer_age/2), &
+        allocate(iof_hydro(40),iof_wwm(44),iof_gen(max(1,ntracer_gen)),iof_age(max(1,ntracer_age)),level_age(ntracer_age/2), &
      &iof_sed(3*sed_class+20),iof_eco(max(1,eco_class)),iof_icm(180),iof_cos(20),iof_fib(5), &
      &iof_sed2d(14),iof_ice(10),iof_ana(20),iof_marsh(2),iof_dvd(max(1,ntrs(12))),stat=istat)
         if(istat/=0) call parallel_abort('INIT: iof failure')
@@ -1770,7 +1770,7 @@
 !     Wave model arrays
 #ifdef  USE_WWM
       if(iorder==0) then
-        allocate(wwave_force(2,nvrt,nsa), out_wwm(npa,35), out_wwm_windpar(npa,10), &
+        allocate(wwave_force(2,nvrt,nsa), out_wwm(npa,50), out_wwm_windpar(npa,10), &
                & stokes_vel(2,nvrt,npa), jpress(npa), sbr(2,npa), sbf(2,npa), &
                & stokes_w_nd(nvrt,npa), stokes_vel_sd(2,nvrt,nsa),nne_wwm(np), stat=istat)
         if(istat/=0) call parallel_abort('MAIN: WWM allocation failure')
