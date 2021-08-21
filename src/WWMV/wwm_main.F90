@@ -102,7 +102,7 @@
          DT_SCHISM      = DT_SCHISM0
 
 #ifdef TIMINGS
-         T1 = MyREAL(IT_SCHISM-NSTEPWWM)*DT_SELFE0 ! Beginn time step ...
+         T1 = MyREAL(IT_SCHISM-NSTEPWWM)*DT_SELFE0 ! Beginn time step ...STOKES_VEL
          T2 = MyREAL(IT_SCHISM)*DT_SELFE0          ! End of time time step ...
 #endif 
 
@@ -301,23 +301,32 @@
            WWAVE_FORCE = ZERO
            !STOKES_X=ZERO
            !STOKES_Y=ZERO
-           STOKES_VEL=0
-           JPRESS=ZERO
-           SBR=ZERO
+           !STOKES_VEL=0
+           !JPRESS=ZERO
+           !SBR=ZERO
            !YJZ: I changed the following to SBF
-           SBF=ZERO
+           !SBF=ZERO
          ELSE 
            !MENTA: updated to the calls implemented btw schism and WWMIII
            IF (RADFLAG == 'VOR') THEN                  ! Vortex force formalism as described in Bennis (2011)
              CALL STOKES_STRESS_INTEGRAL_SCHISM        ! Compute Stokes drift velocities and pressure terms 
              CALL COMPUTE_CONSERVATIVE_VF_TERMS_SCHISM ! Conservative terms (relative to Stokes drift advection, Coriolis and pressure head: Eq. 17, 19 and 20 from Bennis 2011)
-             CALL COMPUTE_BREAKING_VF_TERMS_SCHISM     ! Sink of momentum due to wave breaking and update wwave_force
+             IF (fwvor_breaking == 1) THEN ! BM
+               CALL COMPUTE_BREAKING_VF_TERMS_SCHISM     ! Sink of momentum due to wave breaking and update wwave_force
+             END IF
            ELSE ! Radiation stress formalism (Longuet-Higgins and Stewart, 1962 and 1964) as described in Battjes (1974)
              CALL RADIATION_STRESS_SCHISM
              
            ENDIF
            IF(SHOREWAFO == 1) CALL SHORELINE_WAVE_FORCES
-           !!! end modif MENTA
+
+           ! Apply ramp on wave forces if wafo_obcramp == 1 (in
+           ! param.nml)
+           IF (wafo_obcramp == 1) CALL APPLY_WAFO_OPBND_RAMP
+	   IF (.false.) THEN	   
+             WRITE(STAT%FHNDL,'("+TRACE...",A,F15.4)') 'FINISHED FILLING VORTEX', SIMUTIME
+             CALL FLUSH(STAT%FHNDL)
+           END IF
          END IF 
 ! end modif AD
 
@@ -684,7 +693,9 @@
         IF (LCFL_CASD) THEN
           CALL CFLSPEC
         ENDIF
-        IF (LMAXETOT .AND. MESBR == 0) CALL SET_HMAX
+        IF (LMAXETOT .AND. MESBR == 0) THEN ! Needed for certain tests without sources terms, where only the depth limiter is acting
+          CALL SET_HMAX
+        ENDIF
       END IF
       END SUBROUTINE
 !**********************************************************************

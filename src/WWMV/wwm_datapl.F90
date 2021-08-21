@@ -68,10 +68,19 @@
      &                         WIND_INTPAR=>out_wwm_windpar, & ! boundary layer stuff from wwm ...
      &                         ISBND,                        & !bnd flags
      &                         RKIND,                        &
-     &                         JPRESS,SBR,SBF,               &
-     &                         STOKES_VEL,STOKES_VEL_SD,STOKES_W_ND,    & !for vortex formulation
+     &                         JPRESS,SBR,SBF,SROL, & !for vortex formulation
+     &                         STOKES_HVEL, STOKES_HVEL_SIDE, & !horizontal Stokes drift velocities (u,v)
+     &                         STOKES_WVEL, STOKES_WVEL_SIDE, & !vertical Stokes drift velocities
+     &                         ROLLER_STOKES_HVEL,ROLLER_STOKES_HVEL_SIDE, & ! horizontal Stokes drift velocities (u,v)for the surface rollers
      &                         SHOREWAFO,                     & ! wave forces at the shoreline
-     &                         SAV_ALPHA, SAV_H
+     &                         SAV_ALPHA, SAV_H,              & 
+     &                         fwvor_advxy_stokes,            & ! BM: accounting (1) or not (0) for the different 
+     &                         fwvor_advz_stokes,             & ! terms involved in the vortex force formalism (RADFLAG='VOR')
+     &                         fwvor_gradpress,               &
+     &                         fwvor_breaking,                &
+     &                         wafo_obcramp                   ! BM: flag (0/1:off/on) to apply a ramp on wave forces at open boundary
+!     &                         wafo_opbnd_ramp                  ! The corresponding ramp value defined at sides
+
 # endif
 #endif
       IMPLICIT NONE
@@ -710,6 +719,11 @@
          REAL(rkind), ALLOCATABLE        :: AC1(:,:,:)
          REAL(rkind), ALLOCATABLE        :: AC2(:,:,:)
 !
+! ... wave roller action arrays
+!
+         REAL(rkind), ALLOCATABLE        :: RAC1(:,:,:)  ! Roller
+         REAL(rkind), ALLOCATABLE        :: RAC2(:,:,:)  ! Roller
+!
 ! ... implicit splitting
 !
          REAL(rkind), ALLOCATABLE      :: DAC_ADV(:,:,:,:)
@@ -914,6 +928,8 @@
          LOGICAL                          :: LMONO_OUT = .FALSE.
 
          CHARACTER(LEN=3)                 :: RADFLAG  = 'LON'
+         LOGICAL                          :: LPP_FILT_FLAG = .FALSE.
+         REAL(rkind)                      :: LPP_FRAC = 0.50
 
          INTEGER                          :: ICPLT = 1
          INTEGER                          :: NLVT
@@ -940,7 +956,12 @@
          INTEGER                :: ICRIT   = 1
          INTEGER                :: IBREAK  = 1
          INTEGER                :: IFRIC   = 1
-          
+         ! MP: Parameterization for the breaking coefficient
+         INTEGER                :: BR_COEF_METHOD = 1
+         INTEGER                :: BC_BREAK = 1
+         INTEGER                :: IROLLER = 0
+         INTEGER                :: ZPROF_BREAK = 1
+
 
          REAL(rkind)             :: FRICC = -0.067
          REAL(rkind)             :: TRICO = 0.05
@@ -1136,11 +1157,13 @@
 
          REAL(rkind), ALLOCATABLE ::   RSXX(:), RSXY(:), RSYY(:), FORCEXY(:,:)
          REAL(rkind), ALLOCATABLE ::   SXX3D(:,:), SXY3D(:,:), SYY3D(:,:)
+         REAL(rkind), ALLOCATABLE ::   BETAROLLER(:)
 !
 ! switch for the numerics ... wwmDnumsw.mod
 !
          INTEGER                :: AMETHOD = 1
          INTEGER                :: SMETHOD = 1
+         INTEGER                :: ROLMETHOD = 2
          INTEGER                :: DMETHOD = 2
          INTEGER                :: FMETHOD = 1
          INTEGER                :: IVECTOR = 2
