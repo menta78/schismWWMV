@@ -81,19 +81,11 @@
          DPHIDNA = zero
        END IF
 
+        ALLOCATE( A_BR_COEF(MNP), BRCRIT(MNP), stat=istat)
+        A_BR_COEF = zero 
+        BRCRIT    = zero 
 !       WRITE(STAT%FHNDL,*) 'INIT_ARRAYS, step 8'
 !       FLUSH(STAT%FHNDL)
-
-!       ALLOCATE(SBR(2,MNP),SBF(2,MNP), stat=istat)
-!       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 10a')
-!       SBR = ZERO
-!       SBF = ZERO
-
-!       ALLOCATE(STOKES_X(NLVT,MNP), STOKES_Y(NLVT,MNP), JPRESS(MNP), stat=istat)
-!       IF (istat/=0) CALL WWM_ABORT('wwm_initio, allocate error 10b')
-!       STOKES_X = ZERO
-!       STOKES_Y = ZERO
-!       JPRESS = ZERO
 
        IF ((ICOMP .eq. 3).and.(AMETHOD .eq. 7).AND.(ASPAR_LOCAL_LEVEL .eq. 0)) THEN
 #ifdef WWM_SOLVER

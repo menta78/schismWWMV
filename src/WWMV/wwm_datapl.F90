@@ -144,6 +144,7 @@
          REAL(rkind), PARAMETER             :: INVPI2    = ONE/PI2
          REAL(rkind), PARAMETER             :: TPI       = PI2
          REAL(rkind), PARAMETER             :: INVTPI    = INVPI2
+         REAL(rkind), PARAMETER             :: SQRTPI    = SQRT(PI)
          REAL(rkind), PARAMETER             :: G9        = 9.806_rkind
          REAL(rkind), PARAMETER             :: CONST_ECMWF = -2.0*0.076/G9
 
@@ -967,18 +968,22 @@
          REAL(rkind)             :: TRICO = 0.05
          REAL(rkind)             :: TRIRA = 2.5
          REAL(rkind)             :: TRIURS = 0.1
-         REAL(rkind)             :: ALPBJ
-         REAL(rkind)             :: BRHD = 0.78
+         REAL(rkind)             :: ALPBJ = 1.0
+         REAL(rkind)             :: BRCR = 0.78
+         REAL(rkind)             :: A_BRCR = 0.78
+         REAL(rkind)             :: B_BRCR = 0.78
+         REAL(rkind)             :: A_BIPH = 0.2
+         REAL(rkind)             :: MIN_BRCR = 0.d0
+         REAL(rkind)             :: MAX_BRCR = 2.d0 
 
          REAL(rkind), ALLOCATABLE      :: ETRIAD(:), SATRIAD(:,:)
 
-         INTEGER          :: ISPTR, ISP1TR, ISMTR, ISM1TR
-         REAL(rkind)             :: WISPTR, WISP1TR, WISMTR, WISM1TR
+         INTEGER                       :: ISPTR, ISP1TR, ISMTR, ISM1TR
+         REAL(rkind)                   :: WISPTR, WISP1TR, WISMTR, WISM1TR
 
          REAL(rkind)                   :: TAIL_ARR(8), PSHAP(6), PBOTF(6), PTRIAD(5), TRI_ARR(5)
          REAL(rkind)                   :: PSURF(6), PGIVE(8)
-
-         REAL(rkind), ALLOCATABLE      :: QBLOCAL(:) !, SBR(:,:), SBF(:,:)
+         REAL(rkind), ALLOCATABLE      :: QBLOCAL(:), A_BR_COEF(:), BRCRIT(:) 
 #ifndef SCHISM
          REAL(rkind), allocatable      :: STOKES_X(:,:), STOKES_Y(:,:), JPRESS(:)
 #endif
