@@ -661,10 +661,8 @@
 #endif
 !              WRITE(STAT%FHNDL,*) 'p_is_converged=', p_is_converged
               IF (IPstatus(IP) .eq. 1) THEN
-                IF (p_is_converged .LT. THR) THEN ! not real ... mostly never touched point or whatorever ...
-                  LCONVERGED(IP) = .FALSE. 
-                ELSE IF (.NOT. p_is_converged .LT. THR .AND. p_is_converged .LT. jgs_diff_solverthr) THEN
-                  !write(*,*) ip, p_is_converged, jgs_diff_solverthr
+                IF (p_is_converged .LT. jgs_diff_solverthr) THEN
+                  write(*,*) ip, p_is_converged, jgs_diff_solverthr
                   LCONVERGED(IP) = .TRUE.
                   is_converged(1) = is_converged(1) + 1
                   IF (WAE_JGS_CFL_LIM) THEN
