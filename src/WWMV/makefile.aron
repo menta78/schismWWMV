@@ -34,9 +34,9 @@ F90 = mpif90
 
 #INTEL
 #debugging flags
-F90OPTI =  -traceback -g -check all,noarg_temp_created  -warn interfaces,nouncalled -gen-interface -no-wrap-margin -qopt-report-phase=all -fpe0
+#F90OPTI =  -traceback -g -check all,noarg_temp_created  -warn interfaces,nouncalled -gen-interface -no-wrap-margin -qopt-report-phase=all -fpe0
 #F90OPTI = -fpp -O2 -stand f03 -assume realloc_lhs -fstack-protector -assume protect_parens
-#F90OPTI = -O1 -axSSE4.2 -traceback -g
+#F90OPTI = -O3 -axSSE4.2 -traceback -g
 #F90OPTI = -g -fpp -O2 -stand f03 -assume realloc_lhs -fstack-protector -assume protect_parens
 #F90OPTI = -warn interfaces,nouncalled -fpp -gen-interface -g -traceback -check all
 

@@ -2,7 +2,7 @@
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************
-      SUBROUTINE SHALLOW_WATER (IP, WALOC, PHI, DPHIDN, SSBR, DSSBR, SSBF, DSSBF, SSNL3, DSSNL3)
+      SUBROUTINE SHALLOW_WATER (IP, WALOC, LMERGE, PHI, DPHIDN, SSBR, DSSBR, SSBF, DSSBF, SSNL3, DSSNL3)
          USE DATAPOOL
          IMPLICIT NONE
 
@@ -21,6 +21,8 @@
          REAL(rkind)  :: RATIO,LIMDAC,NEWDACDT
          REAL(rkind)  :: MAXDAC, SC, SP
 
+         LOGICAL, INTENT(IN)   :: LMERGE
+
          SSNL3 = ZERO; DSSNL3 = ZERO
          SSBR  = ZERO; DSSBR  = ZERO
          SSBF  = ZERO; DSSBF  = ZERO
@@ -33,8 +35,10 @@
 !
 !        All terms are entering the solution with their real signs ... 
 !
-         PHI    = PHI    +  SSBR  + SSNL3  + SSBF
-         DPHIDN = DPHIDN + DSSBR + DSSNL3 + DSSBF
+         IF (LMERGE) THEN
+           PHI    = PHI    +  SSBR  + SSNL3  + SSBF
+           DPHIDN = DPHIDN + DSSBR + DSSNL3 + DSSBF
+         ENDIF
 
       END SUBROUTINE
 !**********************************************************************

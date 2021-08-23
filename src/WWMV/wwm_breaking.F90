@@ -132,7 +132,6 @@
          !*************************
          ! Battjes and Janssen (1978)
          !*************************
-         ! Compute the fraction of breaking waves QB
          HMAX_LOC = BRCRIT(IP) * DEP(IP)
          IF ( (HMAX_LOC .GT. VERYSMALL) .AND. (ETOT .GT. VERYSMALL) ) THEN
            BETA  = SQRT(8. * ETOT / HMAX_LOC**2D0)
@@ -160,13 +159,13 @@
          QBLOCAL(IP) = QB
          ! Implicit solver
          ! Source terms are linearized using a Newton-Raphson approach
-         IF (ICOMP .GE. 2) THEN
-           IF ( BETA2 .GT. 10.E-10  .AND. MyABS(BETA2 - QB) .GT. 10.E-10 ) THEN
-             IF ( BETA2 .LT. ONE - 10.E-10) THEN
+         IF (.false.) THEN!ICOMP .GE. 2) THEN
+           IF ( BETA2 .GT. VERYSMALL  .AND. MyABS(BETA2 - QB) .GT. VERYSMALL ) THEN
+             IF ( BETA2 .LT. ONE - VERYSMALL) THEN
                WS  = (BR_COEF / PI) *  QB * SME / BETA2
                SbrD = WS * (ONE - QB) / (BETA2 - QB)
              ELSE
-               WS  =  (BR_COEF / PI) * SME !
+               WS  =  (BR_COEF / PI) * SME * BETA2**2
                SbrD = ZERO 
              END IF
              SURFA0 = SbrD
@@ -181,7 +180,7 @@
              IF ( BETA2 .LT. ONE - VERYSMALL) THEN
                SURFA0  = - BR_COEF / PI * QB * SME / BETA2 
              ELSE
-               SURFA0  = - BR_COEF / PI * SME 
+               SURFA0  = - BR_COEF / PI * SME * BETA2**2 ! degeneraive regime not covered by BJ78, all energy must vansh 
              END IF
            ELSE
              SURFA0 = 0D0
@@ -361,8 +360,9 @@
       DO IS = 1, NUMSIG
         DO ID = 1, NUMDIR
           IF (ICOMP .GE. 2) THEN
-            DSSBR(IS,ID)  = SURFA1
+            DSSBR(IS,ID)  = SURFA0 ! get rid of the stupid underrelaxation 
             SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID)
+            !IF (ABS(SURFA1) .GT. ZERO) WRITE(*,*) SURFA1, SURFA0
           ELSE IF (ICOMP .LT. 2) THEN
             DSSBR(IS,ID)  = SURFA0
             SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID)
