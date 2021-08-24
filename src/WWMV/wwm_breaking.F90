@@ -161,7 +161,7 @@
          ! Source terms are linearized using a Newton-Raphson approach
          IF (.false.) THEN!ICOMP .GE. 2) THEN
            IF ( BETA2 .GT. VERYSMALL  .AND. MyABS(BETA2 - QB) .GT. VERYSMALL ) THEN
-             IF ( BETA2 .LT. ONE - VERYSMALL) THEN
+             IF ( BETA2 .LT. ONE) THEN
                WS  = (BR_COEF / PI) *  QB * SME / BETA2
                SbrD = WS * (ONE - QB) / (BETA2 - QB)
              ELSE
@@ -176,8 +176,8 @@
            END IF
          ! Explicit solver
          ELSE 
-           IF ( BETA2 .GT. VERYSMALL  .AND. MyABS(BETA2 - QB) .GT. VERYSMALL ) THEN
-             IF ( BETA2 .LT. ONE - VERYSMALL) THEN
+           IF ( BETA2 .GT. ZERO  .AND. MyABS(BETA2 - QB) .GT. ZERO ) THEN
+             IF ( BETA2 .LT. ONE) THEN
                SURFA0  = - BR_COEF / PI * QB * SME / BETA2 
              ELSE
                SURFA0  = - BR_COEF / PI * SME * BETA2**2 ! degeneraive regime not covered by BJ78, all energy must vansh 
@@ -360,9 +360,8 @@
       DO IS = 1, NUMSIG
         DO ID = 1, NUMDIR
           IF (ICOMP .GE. 2) THEN
-            DSSBR(IS,ID)  = SURFA0 ! get rid of the stupid underrelaxation 
+            DSSBR(IS,ID)  = SURFA0 
             SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID)
-            !IF (ABS(SURFA1) .GT. ZERO) WRITE(*,*) SURFA1, SURFA0
           ELSE IF (ICOMP .LT. 2) THEN
             DSSBR(IS,ID)  = SURFA0
             SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID)

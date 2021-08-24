@@ -815,7 +815,7 @@
 !
       BSIDE =     eVal * (PHI - MIN(ZERO,DPHIDN) * Acin2(:,:,IP))
       DIAG  =   - eVal * MIN(ZERO,DPHIDN) ! AR: The minus put the DHPIDN on the left side of the equation as diagonal contributions with the right sign ... it inverts the sign ... however this is wrong now for IBREAK = 2 the SWAN stuff 
-!
+
 #ifdef DEBUG_SOURCE_TERM
       WRITE(STAT%FHNDL,'(I10,10G20.10,A40)') IP, SUM(ACin1), SUM(ACin2), SUM(PHI), SUM(DPHIDN), SUM(BSIDE), SUM(DIAG), SUM(BLOC), eval, 'GET_BSIDE_DIAG'
 #endif

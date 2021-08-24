@@ -80,8 +80,8 @@
       SSNL4  = ZERO; DSSNL4 = ZERO
       SSBR   = ZERO; DSSBR  = ZERO
       SSBF   = ZERO; DSSBF  = ZERO
-      SSINL  = ZERO
       SSUO   = ZERO; SDUO   = ZERO
+      SSINL  = ZERO
 
 
 #ifdef DEBUG
@@ -107,9 +107,7 @@
          PHI = PHI + SSUO
          DPHIDN = DPHIDN + SDUO
       ENDIF
-!
-!      WRITE(*,*) 'SUMS', SUM(PHI), SUM(DPHIDN)
-!
+
       IF (ISHALLOW(IP) .EQ. 1) THEN
         CALL SHALLOW_WATER(IP, WALOC, LMERGE, PHI, DPHIDN, SSBR, DSSBR, SSBF, DSSBF, SSNL3, DSSNL3)
       ENDIF
@@ -128,14 +126,8 @@
         END DO
         DO ID = 1, NUMDIR
           DO IS = 1, NUMSIG
-            IF (SSBR(IS,ID) .gt. ZERO) THEN 
-              SSBR(IS,ID) =  2 * SSBR(IS,ID)
-              DSSBR(IS,ID) = - DSSBR(IS,ID)
-              STOP 'IMPOSSIBLE' 
-            ELSE
-              SSBR(IS,ID)  = - SSBR(IS,ID)
-              DSSBR(IS,ID) = 2 * DSSBR(IS,ID)
-            ENDIF
+            SSBR(IS,ID)  =      SSBR(IS,ID)
+            DSSBR(IS,ID) = 2 * DSSBR(IS,ID)
           END DO
         END DO
       ENDIF
