@@ -842,7 +842,7 @@
          REAL(rkind)                     :: DX_BND, DY_BND
 
          INTEGER                         :: IWINDFORMAT  = 1
-         LOGICAL                         :: EXTRAPOLATION_ALLOWED_WIND = .FALSE.
+         LOGICAL                         :: EXTRAPOLATION_ALLOWED_WIND = .TRUE.
          LOGICAL                         :: LSAVE_INTERP_ARRAY = .FALSE.
          LOGICAL                         :: USE_STEPRANGE = .TRUE.
          INTEGER                         :: IBOUNDFORMAT = 1
