@@ -45,7 +45,7 @@
 !       idry
 !       nvrt
 !       ivcor
-!       xlon
+!       xlon 
 !       ylat
 !       ipgl()
 !       errmsg
@@ -323,6 +323,8 @@
 !        adjusted in sflux_inputs.txt. Besides those in netcdf_io, 
 !        max_file_times (max. # of time records in each nc file) in routine get_times_etc () 
 !        may need to be adjusted as well. Actual of time records>=2.
+!   (6) make sure the longitude range is consistent btw hgrid.ll and the
+!   sflux grid! (e.g. both in [-180,180])
 
 !-----------------------------------------------------------------------
 !
@@ -1648,7 +1650,7 @@
           call read_coord (file_name, data_name, info%lat, &
      &                     info%nx, info%ny)
 
-! confine lon to -180->180 range, convert lon/lat to radians
+! convert lon/lat to radians, and optionally convert to -180->180 for lon
           call fix_coords (info%lon, info%lat, info%nx, info%ny)
 
 ! get the number of nodes and elements for the sflux grid
@@ -2473,12 +2475,15 @@
         pi = 4.0d0 * atan(1.0_rkind)
         deg_to_rad = pi / 180.0d0
 
-! confine lon to -180->180 range
-        do j = 1, ny
-          do i = 1, nx
-            if (lon(i,j) .gt. 180.0d0) lon(i,j) = lon(i,j) - 360.0d0
-          enddo
-        enddo
+! confine lon to -180->180 range. No need for this as long as longitude
+! ranges are consistent with hgrid.ll
+!        if(lon_jump_loc==2) then
+!          do j = 1, ny
+!            do i = 1, nx
+!              if (lon(i,j) .gt. 180.0d0) lon(i,j) = lon(i,j) - 360.0d0
+!            enddo
+!          enddo
+!        endif !lon_jump_loc
 
 ! convert degrees to radians
         do j = 1, ny

@@ -16,7 +16,11 @@
 module schism_version
 
 character(LEN=32),parameter :: schism_rev = 'develop'
+<<<<<<< HEAD
 character(LEN=64),parameter :: git_rev = '16ebd0f' 
+=======
+character(LEN=64),parameter :: git_rev = 'c4ede486' 
+>>>>>>> b439711c3e28bca3759e668cfda732f9464dab53
 
 contains
 subroutine print_version

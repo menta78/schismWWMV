@@ -84,14 +84,15 @@ module schism_glbl
   integer,parameter :: mntracers=30 !max # of tracers, used only for dimensioning btrack arrays. Must >=ntracers
 
   !Parameters from param.nml
-  integer,save :: ipre,ipre2,indvel,imm,ihot,ics,iwbl,iharind,nws,impose_net_flux,iwindoff, &
+  integer,save :: ipre,ipre2,indvel,imm,ihot,ics,iwbl,iharind,nws,impose_net_flux, &
                   &ibc,nrampbc,nrampwind,nrampwafo,nramp,nramp_ss,ibdef,ihorcon,nstep_wwm,icou_elfe_wwm, &
-                  &iwind_form,irec_nu,itur,ihhat,inu_elev, &
+                  &fwvor_advxy_stokes,fwvor_advz_stokes,fwvor_gradpress,fwvor_breaking, &
+                  &cur_wwm,wafo_obcramp,iwind_form,irec_nu,itur,ihhat,inu_elev, &
                   &inu_uv,ibcc_mean,iflux,iout_sta,nspool_sta,nhot,nhot_write, &
                   &moitn0,mxitn0,nchi,ibtrack_test,nramp_elev,islip,ibtp,inunfl,shorewafo, &
                   &inv_atm_bnd,ieos_type,ieos_pres,iupwind_mom,inter_mom,ishapiro,isav, &
-                  &nstep_ice,niter_shap,iunder_deep,ibtrack_openbnd,flag_fib,ielm_transport,max_subcyc, &
-                  &itransport_only
+                  &nstep_ice,niter_shap,iunder_deep,flag_fib,ielm_transport,max_subcyc, &
+                  &itransport_only,meth_sink,iloadtide,nc_out
   integer,save :: ntrs(natrm),nnu_pts(natrm),mnu_pts
   integer,save,dimension(:),allocatable :: iof_hydro,iof_wwm,iof_gen,iof_age,iof_sed,iof_eco, &
      &iof_icm,iof_cos,iof_fib,iof_sed2d,iof_ice,iof_ana,iof_marsh,iof_dvd,iadjust_mass_consv
@@ -101,9 +102,9 @@ module schism_glbl
                       &vdmin_pp1,tdmin_pp1,vdmax_pp2,vdmin_pp2,tdmin_pp2, &
                       &h1_pp,h2_pp,dtb_min,dtb_max,thetai,theta2,rtol0, &
                       &vnh1,vnh2,vnf1,vnf2,rnday,btrack_nudge,hmin_man, &
-                      &prmsl_ref,hmin_radstress,dzb_decay,eos_a,eos_b,eps1_tvd_imp,eps2_tvd_imp, &
+                      &prmsl_ref,hmin_radstress,eos_a,eos_b,eps1_tvd_imp,eps2_tvd_imp, &
                       &xlsc0,rearth_pole,rearth_eq,hvis_coef0,disch_coef(10),hw_depth,hw_ratio, &
-                      &slr_rate,rho0,shw,sav_cd,gen_wsett,turbinj,h1_bcc,h2_bcc,vclose_surf_frac, &
+                      &slr_rate,rho0,shw,gen_wsett,turbinj,h1_bcc,h2_bcc,vclose_surf_frac, &
                       &hmin_airsea_ex
 
   ! Misc. variables shared between routines
@@ -153,7 +154,7 @@ module schism_glbl
   character(len= 8),save :: a_8
   character(len= 4),save :: a_4
   integer,save :: ncid_nu(natrm),ncid_tr3D(natrm),ncid_elev2D,ncid_uv3D,ncid_schout, &
- &nstride_schout,nrec2_schout,istack0_schout
+ &nstride_schout,nrec2_schout,istack0_schout,ncid_source
         
   ! ADT for global-to-local linked-lists
   type :: llist_type
@@ -361,13 +362,14 @@ module schism_glbl
                              &jspc(:)          
   integer,save,allocatable :: isblock_nd(:,:),isblock_el(:),iq_block_lcl(:),iq_block(:)
   real(rkind),save,allocatable :: trobc(:,:),vobc1(:),vobc2(:),tamp(:), &
-                                  &tnf(:),tfreq(:),tear(:),amig(:),ff(:),face(:), &
+                                  &tnf(:),tfreq(:),tear(:),amig(:),ff(:),face(:),rloadtide(:,:,:), &
                                   &emo(:,:,:),efa(:,:,:),umo(:,:,:),ufa(:,:,:), &
                                   &vmo(:,:,:),vfa(:,:,:),eth(:,:), &
                                   &qthcon(:),uthnd(:,:,:),vthnd(:,:,:), &
                                   &ath(:,:,:,:),carea(:),clen(:),eta_mean(:),q_block(:),vnth_block(:,:), &
-                                  &dir_block(:,:),q_block_lcl(:),ath3(:,:,:,:)
+                                  &dir_block(:,:),q_block_lcl(:)
   real(4),save,allocatable :: ath2(:,:,:,:,:) !used to read *.nc for b.c. time series
+  real(4),save,allocatable :: ath3(:,:,:,:) !used to read source/sink inputs
 
   ! Land boundary segment data
   integer,save :: nland_global                 ! Global number of land bndry segments
@@ -440,7 +442,7 @@ module schism_glbl
                                   !WARNING: airt[12] are in C not K. The
                                   !original air T in sflux_air*.nc is in K but
                                   !get_wind() converts it to C
-                                  &tau(:,:),tau_bot_node(:,:),windfactor(:),pr1(:),airt1(:), &
+                                  &tau(:,:),tau_bot_node(:,:),pr1(:),airt1(:), &
                                   &shum1(:),pr2(:),airt2(:),shum2(:),pr(:), &
                                   &sflux(:),srad(:),tauxz(:),tauyz(:),fluxsu(:), &
                                   &fluxlu(:),hradu(:),hradd(:),cori(:), & !chi(:)
@@ -561,9 +563,14 @@ module schism_glbl
 ! WWM
 !#ifdef USE_WWM
   integer,save :: msc2,mdc2
-  real(rkind),save,allocatable :: wwave_force(:,:,:), jpress(:), sbr(:,:), sbf(:,:)
-  real(rkind),save,allocatable :: stokes_vel(:,:,:), stokes_w_nd(:,:), stokes_vel_sd(:,:,:) 
-  real,save,allocatable :: out_wwm(:,:), out_wwm_windpar(:,:)
+  real(rkind),save,allocatable :: wwave_force(:,:,:), jpress(:), sbr(:,:), sbf(:,:), srol(:,:)
+  real(rkind),save,allocatable :: stokes_hvel(:,:,:), stokes_wvel(:,:), stokes_hvel_side(:,:,:), stokes_wvel_side(:,:)
+  real(rkind),save,allocatable :: roller_stokes_hvel(:,:,:), roller_stokes_hvel_side(:,:,:)
+  !real(rkind),save,allocatable :: stokes_vel(:,:,:), stokes_w_nd(:,:), stokes_vel_sd(:,:,:) 
+  real,save,allocatable :: out_wwm(:,:), out_wwm_rol(:,:), out_wwm_windpar(:,:)
+  real(rkind),save,allocatable :: tanbeta_x(:), tanbeta_y(:) ! MP from KM: bottom slope
+  real(rkind),save,allocatable :: curx_wwm(:),cury_wwm(:)  !BM: coupling current
+  real(rkind),save,allocatable :: wafo_opbnd_ramp(:) !BM: ramp on wave forces at open boundary
 !#endif
 
 ! TIMOR
@@ -615,7 +622,7 @@ module schism_glbl
   integer,save,allocatable     :: imarsh(:),ibarrier_m(:)
 
 ! SAV
-  real(rkind),save,allocatable     :: sav_alpha(:),sav_h(:),sav_nv(:),sav_di(:)
+  real(rkind),save,allocatable     :: sav_alpha(:),sav_h(:),sav_nv(:),sav_di(:),sav_cd(:)
 
 !Tsinghua group:0825
   REAL(rkind),save :: Cbeta,beta0,c_miu,Cv_max,ecol,ecol1,sigf,sigepsf,Ceps1,Ceps2,Ceps3,Acol,sig_s,fi_c,ksi_c,kpz !1013+kpz

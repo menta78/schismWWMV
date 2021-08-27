@@ -64,6 +64,9 @@
       REAL(rkind) :: SSUO(NUMSIG,NUMDIR),SDUO(NUMSIG,NUMDIR)
       REAL(rkind) :: SSIC(NUMSIG,NUMDIR),SDIC(NUMSIG,NUMDIR)
 
+      LOGICAL     :: LMERGE = .FALSE. 
+      LOGICAL     :: LRELAX = .TRUE. 
+
 #ifdef DEBUG
       REAL(rkind)              :: SSINL_WW3(NUMSIG,NUMDIR), SSINE_WW3(NUMSIG,NUMDIR)
       REAL(rkind)              :: SSBRL_WW3(NUMSIG,NUMDIR), SSDS_WW3(NUMSIG,NUMDIR)
@@ -78,8 +81,9 @@
       SSNL4  = ZERO; DSSNL4 = ZERO
       SSBR   = ZERO; DSSBR  = ZERO
       SSBF   = ZERO; DSSBF  = ZERO
-      SSINL  = ZERO
       SSUO   = ZERO; SDUO   = ZERO
+      SSINL  = ZERO
+
 
 #ifdef DEBUG
       IF (IP .eq. TESTNODE) THEN
@@ -105,6 +109,7 @@
          DPHIDN = DPHIDN + SDUO
       ENDIF
 
+<<<<<<< HEAD
       IF (MESIC .GT. 0) THEN
          CALL ICEDISSIP_SRCTRM(IP, WALOC, SSIC, SDIC)
          PHI = PHI + SSIC
@@ -116,6 +121,32 @@
 !
 !      WRITE(*,*) 'SUMS', SUM(PHI), SUM(DPHIDN)
 !
+=======
+      IF (ISHALLOW(IP) .EQ. 1) THEN
+        CALL SHALLOW_WATER(IP, WALOC, LMERGE, PHI, DPHIDN, SSBR, DSSBR, SSBF, DSSBF, SSNL3, DSSNL3)
+      ENDIF
+
+      IF (LRELAX) THEN
+        DO ID = 1, NUMDIR
+          DO IS = 1, NUMSIG
+            IF (SSNL3(IS,ID) .gt. ZERO) THEN 
+              SSNL3(IS,ID) =  2 * SSNL3(IS,ID)
+              DSSNL3(IS,ID) = - DSSNL3(IS,ID) 
+            ELSE
+              SSNL3(IS,ID) =  SSNL3(IS,ID)
+              DSSNL3(IS,ID) = 2 * DSSNL3(IS,ID)
+            ENDIF
+          END DO
+        END DO
+        DO ID = 1, NUMDIR
+          DO IS = 1, NUMSIG
+            SSBR(IS,ID)  =      SSBR(IS,ID)
+            DSSBR(IS,ID) = 2 * DSSBR(IS,ID)
+          END DO
+        END DO
+      ENDIF
+
+>>>>>>> b439711c3e28bca3759e668cfda732f9464dab53
       IF (MELIM .GT. 0) THEN
         CALL GET_MAXDAC(IP,MAXDAC)
         DO ID = 1, NUMDIR
@@ -124,15 +155,29 @@
             IF (MAXDAC(IS) .GT. ZERO) THEN
               RATIO = ONE/MAX(ONE,ABS(NEWDAC/MAXDAC(IS)))
             ELSE
-              RATIO = ONE 
+              RATIO = ONE
             ENDIF
 !            WRITE(*,*) IS, ID, RATIO, MAXDAC(IS), NEWDAC, PHI(IS,ID), DPHIDN(IS,ID), SUM(PHI), SUM(DPHIDN)
             PHI(IS,ID) = RATIO * PHI(IS,ID)
           END DO
         END DO
+        DO ID = 1, NUMDIR
+          DO IS = 1, NUMSIG
+            NEWDAC = SSNL3(IS,ID) * DT4A / (ONE-DT4A*MIN(ZERO,DSSNL3(IS,ID)))
+            IF (MAXDAC(IS) .GT. ZERO) THEN
+              RATIO = ONE/MAX(ONE,ABS(NEWDAC/MAXDAC(IS)))
+            ELSE
+              RATIO = ONE
+            ENDIF
+!            WRITE(*,*) IS, ID, RATIO, MAXDAC(IS), NEWDAC, PHI(IS,ID), DPHIDN(IS,ID), SUM(PHI), SUM(DPHIDN)
+            SSNL3(IS,ID) = RATIO * SSNL3(IS,ID)
+          END DO
+        END DO
       ENDIF
 
-      IF (ISHALLOW(IP) .EQ. 1) CALL SHALLOW_WATER(IP, WALOC, PHI, DPHIDN, SSBR, DSSBR, SSBF, DSSBF, SSNL3, DSSNL3)
+      PHI    = PHI     + SSBR  + SSBF  + SSNL3
+      DPHIDN = DPHIDN + DSSBR + DSSBF + DSSNL3
+
 
 #ifdef DEBUG
       IF (IP .eq. TESTNODE) THEN
