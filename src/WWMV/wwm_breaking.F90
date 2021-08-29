@@ -1,232 +1,428 @@
 #include "wwm_functions.h"
 !**********************************************************************
-!*                                                                    *
+! Sept. 2020 : MP updates                                             *
+!   - Restructuration of the code to account for various dissipation  *
+!     models and associated breaking criterion                        *
+!   - New adaptive breaking coefficient                               *
 !**********************************************************************
-!AR: This can remain ...
-      SUBROUTINE PEAK_PARAMETER_BREAK(IP,WALOC,LPP)
-         USE DATAPOOL
-         IMPLICIT NONE
-         INTEGER, INTENT(IN)           :: IP
-         REAL(rkind), INTENT(IN)       :: WALOC(NUMSIG,NUMDIR)
-         REAL(rkind), INTENT(OUT)      :: LPP
-         REAL(rkind)                   :: KPP, FPP, CPP, WNPP, CGPP, TPP
-
-         INTEGER                       :: IS, ID, ISIGMP
-         REAL(rkind)                   :: HQUOT, HQUOTP, ETOTF3, ETOTF4, WKDEPD, WNPD
-         REAL(rkind)                   :: DEG, VEC2DEG, MAXAC, E1, E2, DS, EAD, CPWN
-!
-! Peak period continues version... Taken from Thesis Henriques Alves ... correct citation is given there ... :)
-!
-       MAXAC = MAXVAL(WALOC)
-
-       IF (MAXAC .gt. VERYSMALL .AND.  DEP(IP) .GT. DMIN) THEN
-
-         ETOTF3 = ZERO
-         ETOTF4 = ZERO
-         DO IS = 1, NUMSIG
-           DO ID = 1, NUMDIR
-             HQUOT  = WALOC(IS,ID)/MAXAC
-             HQUOTP = HQUOT**4
-             ETOTF3 = ETOTF3 + SPSIG(IS) * HQUOTP * DS_BAND(IS)
-             ETOTF4 = ETOTF4 +             HQUOTP * DS_BAND(IS)
-           END DO
-         END DO
-
-         IF(ETOTF4 .GT. VERYSMALL .AND. ETOTF4 .GT. VERYSMALL) THEN
-           FPP    = ETOTF3/ETOTF4*PI2
-           CALL WAVEKCG(DEP(IP), FPP, WNPP, CPP, KPP, CGPP)
-           TPP    = PI2/FPP
-           LPP    = PI2/KPP
-
-         ELSE 
-           LPP = ZERO
-         END IF
-       ELSE
-         LPP = ZERO
-       END IF
-      END SUBROUTINE
-!**********************************************************************
-!*                                                                    *
-!**********************************************************************
-      SUBROUTINE SDS_SWB(IP, SME, KME, ETOT, HS, WALOC, SSBR, DSSBR)
+      SUBROUTINE SDS_SWB(IP, SME, KME, ETOT, HS, ACLOC, SSBR, DSSBR)
       USE DATAPOOL
       IMPLICIT NONE
 
-      INTEGER, INTENT(IN)   :: IP
+      INTEGER, INTENT(IN) :: IP
 
-      REAL(rkind), INTENT(IN)   :: WALOC(NUMSIG,NUMDIR), SME, KME, ETOT, HS
+      REAL(rkind), INTENT(IN) :: ACLOC(NUMSIG,NUMDIR), SME, KME, ETOT, HS
 
-      REAL(rkind), INTENT(INOUT)     :: SSBR(NUMSIG,NUMDIR), DSSBR(NUMSIG,NUMDIR)
-      REAL(rkind)   :: LPP
-
+      REAL(rkind), INTENT(OUT) :: SSBR(NUMSIG,NUMDIR), DSSBR(NUMSIG,NUMDIR)
+      
+      REAL(rkind) :: FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD
+      REAL(rkind) :: BR_COEF
+      REAL(rkind) :: HMAX_LOC
       REAL(rkind) :: BETA, QQ, QB, BETA2, ARG
-      REAL(rkind) :: S0
-#ifdef DEBUG
-      integer, save :: idxcall = 0
-#endif
-      REAL(rkind) :: AUX     
-#ifdef SCHISM
-      REAL(rkind) :: COST, SINT
-#endif
-      REAL(rkind) :: GAMMA_WB, COEFF_A 
-      REAL(rkind) :: SBRD, WS, SURFA0, SURFA1, COEFF_B, SURFSEL
-
+      REAL(rkind) :: BIPH,Ur,S0
+      REAL(rkind) :: SBRD, WS, SURFA0, SURFA1
+      REAL(rkind) :: ERF_BETA
+      REAL(rkind) :: WAVEDIR, DPDW
+      
+      INTEGER :: ie,inne,icount
       INTEGER :: IS, ID
-      REAL(rkind) :: BJALFA, SDBC1, CBJ, TM01, TM02, FMEANloc, SQPI, HRMS, FAK
-!
-!     Compute breaking fraction 
-!
+
+#ifdef SCHISM
+      SBR(:,IP) = ZERO
+#endif
+
+!---------------------------------------
+!     1. Defining the breaking criterion
+!---------------------------------------
       SELECT CASE(ICRIT)
-       CASE(1) ! simple breaking coefficient
-         HMAX(IP) = BRHD * DEP(IP)
-       CASE(2) ! Suggestion of Dingemans 
+       CASE(1)
+         ! Constant breaking index (gamma) or gamma_TG
+         BRCRIT(IP) = BRCR
+         
+       CASE(2)
+         ! AR
+         ! gamma based on local steepness adapted from Battjes and Stive (1985)
+         ! MP : introduce min_BRCR, max_BRCR instead of switching to BRCR ?
          IF (KME .GT. VERYSMALL) THEN
            S0    = HS / (PI2/KME) 
-           GAMMA_WB  = 0.5_rkind + 0.4_rkind * MyTANH(33._rkind * S0)
-           HMAX(IP)  = GAMMA_WB * DEP(IP)
+           BRCRIT(IP) = 0.5_rkind + 0.4_rkind * MyTANH(33._rkind * S0)
          ELSE
-           HMAX(IP)  = BRHD * DEP(IP)
+           BRCRIT(IP) = BRCR
          END IF
-       CASE(3) ! D. based on peak steepness 
-         CALL PEAK_PARAMETER_BREAK(IP,WALOC,LPP)
+         
+       CASE(3) 
+         ! Breaking criterion based on the biphase (van der Westhuysen, 2010)
+         ! Check that the user chose the correct formulation for breaking
+         IF (IBREAK .NE. 4) CALL WWM_ABORT('THE BIPHASE CRITERION CAN ONLY BE USED WITH IBREAK = 4')
+         CALL URSELL_NUMBER( HS, SME, DEP(IP), Ur)
+         ! Default a_BIPH = 0.2D0
+         BIPH     = 0.5D0*PI * ( -1.D0 + TANH(a_BIPH/max(0D-6,Ur)) )
+         IF (BRCR .GT. 0D0) THEN
+           CALL WWM_ABORT('THE BIPHASE REF IS IN [-PI/2,0]')
+         ELSE
+           BRCRIT(IP) = BIPH / BRCR
+         END IF
+         
+       CASE(4)
+         ! Adaptative gamma_TG with bottom slope : BRCRIT = a_BRCR*slope + b_BRCR 
+         ! (e.g. Sallenger and Holman, 1985)
+         ! lower and upper limit values prescribed in wwminput.nml
+         CALL PEAK_PARAMETER(IP,ACLOC,NUMSIG,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
+         WAVEDIR = PEAKDM * PI / 180.d0 + PI / 2.d0 !conversion naut. to math. and in rad.
+#ifdef SCHISM 
+         DPDW = tanbeta_x(IP)*COS(WAVEDIR) + tanbeta_y(IP)*SIN(WAVEDIR)
+#endif
+         BRCRIT(IP) = a_BRCR*dpdw + b_BRCR
+         IF (BRCRIT(IP) < min_BRCR) BRCRIT(IP) = min_BRCR
+         IF (BRCRIT(IP) > max_BRCR) BRCRIT(IP) = max_BRCR
+         
+       CASE(5)
+         ! Adaptive gamma with non dimensional depth : BRCRIT = a_BRCR*kph + b_BRCR 
+         ! (e.g. Ruessink et al., 2003)
+         ! lower and upper limit values prescribed in wwminput.nml
+         CALL PEAK_PARAMETER(IP,ACLOC,NUMSIG,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
+         BRCRIT(IP) = a_BRCR*KPP*DEP(IP)+b_BRCR
+         IF (BRCRIT(IP) < min_BRCR) BRCRIT(IP) = min_BRCR
+         IF (BRCRIT(IP) > max_BRCR) BRCRIT(IP) = max_BRCR
+         
+       CASE(6)
+         ! AR
+         ! Same as ICRIT = 2 but based on peak steepness
+         ! MP : introduce min_BRCR, max_BRCR instead of switching to BRCR ?
+         CALL PEAK_PARAMETER(IP,ACLOC,NUMSIG,FPP,TPP,CPP,WNPP,CGPP,KPP,LPP,PEAKDSPR,PEAKDM,DPEAK,TPPD,KPPD,CGPD,CPPD)
          IF (LPP .GT. VERYSMALL) THEN
            S0    = HS/LPP
-           GAMMA_WB =  0.5_rkind + 0.4_rkind * MyTANH(33._rkind * S0)
-           HMAX(IP) = GAMMA_WB * DEP(IP)
+           BRCRIT(IP) =  0.5_rkind + 0.4_rkind * MyTANH(33._rkind * S0)
          ELSE
-           HMAX(IP) = BRHD * DEP(IP)
+           BRCRIT(IP) = BRCR
          END IF
        CASE DEFAULT
          CALL WWM_ABORT('ICRIT HAS A WRONG VALUE')
       END SELECT
-!
-!     Transform to monochromatic waves 
-!
+
+      !! Conversion to monochromatic waves if needed
       IF (LMONO_IN) HMAX(IP) = HMAX(IP) * SQRT(TWO)
-!
-!     Compute beta ratio 
-! 
-      IF ( (HMAX(IP) .GT. VERYSMALL) .AND. (ETOT .GT. VERYSMALL) ) THEN
-        BETA  = SQRT(8.*ETOT) / HMAX(IP)
-        BETA2 = BETA**2
+      
+!-----------------------------------------
+!     2. Defining the breaking coefficient
+!-----------------------------------------
+      
+      ! Breaking coefficient parameterization
+      IF (BR_COEF_METHOD == 1) THEN
+        ! Constant
+        SELECT CASE(IBREAK)
+         CASE(1,5)
+           BR_COEF = ALPBJ
+         CASE(2,3,4,6)
+           BR_COEF = ALPBJ**3D0
+        END SELECT
+      ELSE IF (BR_COEF_METHOD == 2) THEN
+        ! Adaptive with bottom slope (Pezerat et al., 2020 - under review)
+        BR_COEF = A_BR_COEF(IP)
       ELSE
-        BETA  = ZERO 
-        BETA2 = ZERO 
+        CALL WWM_ABORT('BR_COEF_METHOD HAS A WRONG VALUE')
       END IF
 
-      IF (BETA <= 0.5_RKIND) THEN
-        QQ = ZERO 
-      ELSE IF (BETA <= ONE) THEN
-        QQ = (TWO*BETA-ONE)**2
-      END IF
-!
-!     Compute breaking fraction based on the idea of Henrique Alves 
-!
-      IF ( BETA .LT. 0.2_rkind ) THEN
-        QB     = ZERO
-      ELSE IF ( BETA .LT. ONE ) THEN
-        ARG    = EXP  (( QQ - ONE ) / BETA2 )
-        QB     = QQ - BETA2 * ( QQ - ARG ) / ( BETA2 - ARG )
-        DO IS = 1, 3
-          QB     = EXP((QB-ONE)/BETA2)
-        END DO
-      ELSE
-        QB = ONE - SMALL
-      ENDIF
-! 
-      QBLOCAL(IP) = QB
-!
-      IF (IBREAK == 1) THEN ! Battjes & Janssen
-        IF ( BETA2 .GT. SMALL  .AND. MyABS(BETA2 - QB) .GT. SMALL ) THEN
-          IF ( BETA2 .LT. ONE - SMALL) THEN
-            SURFA0  = - ( ALPBJ / PI) *  QB * SME / BETA2
-          ELSE
-            SURFA0  = - (ALPBJ/PI) * SME * BETA2
-          END IF
-        ELSE
-          SURFA0 = ZERO
-        END IF
-        SURFA1 = SURFA0 
-      ELSEIF (IBREAK == 2) THEN ! Battjes & Janssen SWAN code works only for implicit since it is linearized and both terms are positive the explanation is given in the SWAN code  
-        IF ( BETA2 .GT. SMALL  .AND. MyABS(BETA2 - QB) .GT. SMALL ) THEN
-          IF ( BETA2 .LT. ONE - SMALL) THEN
-            WS   = (ALPBJ / PI) *  QB * SME / BETA2
-            SbrD = WS * (ONE - QB) / (BETA2 - QB)
-          ELSE
-            WS   = (ALPBJ/PI) * SME 
-            SbrD = ZERO 
-          END IF
-          SURFA0 = SbrD ! right hand side is positive to balance left hand side underelax by SbrD ! explicit schemes cannot works since this term is positive!!!
-          SURFA1 = - WS + SbrD ! will be inverted in the implicit integration ... 
-        ELSE
-          SURFA0 = ZERO 
-          SURFA1 = ZERO 
-        END IF
-      ELSEIF (IBREAK == 3) THEN ! Thornton & Guza 1983
-        COEFF_A = 0.42_rkind
-        COEFF_B = 4.0_rkind
-        IF ( BETA2 .GT. ZERO ) THEN
-          IF ( BETA2 .LT. ONE ) THEN
-            WS   = 75.0_rkind-2*COEFF_A*(ALPBJ**3)*SME*BETA2**(0.5*(COEFF_B + ONE))/MyREAL(SQRT(PI))
-            SbrD = 5.0_rkind - MyREAL(3.0_rkind+COEFF_B)*WS
-          ELSE
-            WS   = 75.0_rkind-2*COEFF_A*ALPBJ**3*SME/MyREAL(SQRT(PI))
-            SbrD = WS
-          ENDIF
-          SURFA0 = SbrD - WS
-          SURFA1 = SbrD
-        ELSE
-          SURFA0 = ZERO
-          SURFA1 = ZERO
-        ENDIF
-      ELSEIF (IBREAK == 4) THEN ! Janssen & Battjes ... 
-        IF (ETOT .GT. THR) THEN
-           HRMS    = SQRT(8*ETOT) 
-           SQPI    = THREE*SQRT(PI)
-           FAK     = (ONE+FOUR/SQPI*(BETA*BETA2+1.5*BETA)*exp(-BETA2)-ERF(BETA))
-           SURFA0  = -ALPBJ*SQPI/16.*SME/PI2*HRMS**3/DEP(IP)/ETOT
+!----------------------------------------------------
+!     3. Computing momentum sink due to wave breaking
+!----------------------------------------------------
+
+      SELECT CASE(IBREAK)
+       CASE(1)
+         !*************************
+         ! Battjes and Janssen (1978)
+         !*************************
+         HMAX_LOC = BRCRIT(IP) * DEP(IP)
+         IF ( (HMAX_LOC .GT. VERYSMALL) .AND. (ETOT .GT. VERYSMALL) ) THEN
+           BETA  = SQRT(8. * ETOT / HMAX_LOC**2D0)
+           BETA2 = BETA**2D0
          ELSE
-           SURFA0  = ZERO 
+           BETA = ZERO
+           BETA2 = ZERO 
+         END IF
+         IF (BETA <= 0.5D0) THEN
+           QQ = ZERO 
+         ELSE IF (BETA <= ONE) THEN
+           QQ = (TWO*BETA-ONE)**2
+         END IF
+         IF (BETA .LT. 0.2D0) THEN
+           QB     = ZERO
+         ELSE IF (BETA .LT. ONE) THEN
+           ARG = EXP((QQ - ONE) / BETA2)
+           QB  = QQ - BETA2 * (QQ - ARG)/(BETA2 - ARG)
+           DO IS = 1, 3
+             QB = EXP((QB-ONE)/BETA2)
+           END DO
+         ELSE
+           QB = ONE - SMALL
          ENDIF
-        SURFA1 = SURFA0
-      ENDIF
-!
-#ifdef DEBUG
-      IF (iplg(IP) .eq. TESTNODE) THEN
-        WRITE(STAT%FHNDL, *) 'idxcall=', idxcall
-        WRITE(STAT%FHNDL, *) 'SURFA0=', SURFA0, ' SURFA1=', SURFA1
-        WRITE(STAT%FHNDL, *) 'IBREAK=', IBREAK, ' ICOMP=', ICOMP
-        WRITE(STAT%FHNDL, *) 'ICRIT=', ICRIT, ' QB=', QB
-        WRITE(STAT%FHNDL, *) 'SME=', SME, 'ALPBJ=', ALPBJ
-        WRITE(STAT%FHNDL, *) 'BETA2=', BETA2, ' HMAX=', HMAX(IP)
-        WRITE(STAT%FHNDL, *) 'WS=', WS, ' Sbrd=', Sbrd
-        idxcall=idxcall+1
-      END IF
-#endif
-!
-!     Copy Right hand side and diagonal term 
+         QBLOCAL(IP) = QB
+         ! Implicit solver
+         ! Source terms are linearized using a Newton-Raphson approach
+         IF (.false.) THEN!ICOMP .GE. 2) THEN
+           IF ( BETA2 .GT. VERYSMALL  .AND. MyABS(BETA2 - QB) .GT. VERYSMALL ) THEN
+             IF ( BETA2 .LT. ONE) THEN
+               WS  = (BR_COEF / PI) *  QB * SME / BETA2
+               SbrD = WS * (ONE - QB) / (BETA2 - QB)
+             ELSE
+               WS  =  (BR_COEF / PI) * SME * BETA2**2
+               SbrD = ZERO 
+             END IF
+             SURFA0 = SbrD
+             SURFA1 = WS + SbrD
+           ELSE
+             SURFA0 = ZERO 
+             SURFA1 = ZERO 
+           END IF
+         ! Explicit solver
+         ELSE 
+           IF ( BETA2 .GT. ZERO  .AND. MyABS(BETA2 - QB) .GT. ZERO ) THEN
+             IF ( BETA2 .LT. ONE) THEN
+               SURFA0  = - BR_COEF / PI * QB * SME / BETA2 
+             ELSE
+               SURFA0  = - BR_COEF / PI * SME * BETA2**2 ! degeneraive regime not covered by BJ78, all energy must vansh 
+             END IF
+           ELSE
+             SURFA0 = 0D0
+           END IF
+         END IF
 
-      !IF (ABS(SURFA0) .GT. 0. .AND. BETA .GE. 0.1) WRITE(*,'(4F20.10)') SURFA0, SURFA1, BETA, QB
-!
+       CASE(2)
+         !**********************************************
+         ! Thornton and Guza (1983) - Saturation concept
+         !**********************************************
+         IF ( (DEP(IP) .GT. VERYSMALL) .AND. (ETOT .GT. VERYSMALL) ) THEN
+           BETA  = SQRT(8. * ETOT / (BRCRIT(IP)*DEP(IP))**2D0)
+           BETA2 = BETA**2D0
+         ELSE
+           BETA = ZERO
+           BETA2 = ZERO
+         END IF
+         ! Implicit solver
+         ! Source terms are linearized using a Newton-Raphson approach
+         IF (ICOMP .GE. 2) THEN
+           IF ( BETA.GT.0D0 ) THEN 
+             IF ( BETA.LT.1D0 ) THEN ! AR: need to put the parameters of the breaking function in the input file 
+               WS   = 75D-2*0.42d0*BR_COEF*SME*BETA2**INT(0.5*(3.d0+1.d0))/SQRTPI
+               SbrD = 5D-1*(3.+7.)*WS
+             ELSE
+               WS   = 75D-2*0.42*BR_COEF*SME/SQRTPI
+               SbrD = WS
+             END IF
+             SURFA0 = SbrD - WS
+             SURFA1 = SbrD
+           ELSE
+             SURFA0 = 0D0
+             SURFA1 = 0D0
+           END IF
+         ! Explicit solver
+         ELSE
+           IF ( BETA .GT. 0D0 ) THEN
+             IF ( BETA .LT. 1D0 ) THEN
+               SURFA0 = - 0.75D0 * BR_COEF * SME / SQRTPI * BRCRIT(IP) * BETA**5D0 
+             ELSE
+               SURFA0 = - 0.75D0 * BR_COEF * SME / SQRTPI * BRCRIT(IP)
+             END IF
+           ELSE
+             SURFA0 = 0D0
+           END IF
+         END IF
+        
+       CASE(3)
+         !*******************************************************
+         ! Thornton and Guza (1983) - Skewed breaking probability
+         !*******************************************************
+         IF ( (DEP(IP) .GT. VERYSMALL) .AND. (ETOT .GT. VERYSMALL) ) THEN
+           BETA  = SQRT(8. * ETOT / (BRCRIT(IP)*DEP(IP))**2D0)
+           BETA2 = BETA**2D0
+         ELSE
+           BETA = ZERO
+           BETA2 = ZERO
+         END IF
+         ! Implicit solver
+         ! TO DO
+         IF (ICOMP .GE. 2) THEN
+           CALL WWM_ABORT('IBREAK=3 not yet implemented in implicit')
+         ! Explicit Solver
+         ELSE
+           IF ( BETA .GT. 0D0 ) THEN
+             IF ( BETA .LT. 1D0 ) THEN
+               SURFA0 = - 0.75D0 * BR_COEF * SME / SQRTPI * BRCRIT(IP) & 
+                      & * BETA**3D0 * (1D0 - (1D0 + BETA2)**(-5D0 / 2D0))
+             ELSE
+               SURFA0 = - 0.75D0 * BR_COEF * SME / SQRTPI * BRCRIT(IP) &
+                      & * (1 - 2**(-5D0 / 2D0))
+             END IF
+           ELSE
+             SURFA0 = 0.D0
+           END IF
+         END IF
+       
+       CASE(4)
+         !*******************
+         ! Westhuysen (2010)
+         !*******************
+         IF ((DEP(IP) .GT. VERYSMALL) .AND. (ETOT .GT. VERYSMALL)) THEN
+           BETA = SQRT(8D0 * ETOT) / DEP(IP)
+         ELSE
+           BETA = ZERO
+         END IF
+         ! Implicit solver
+         ! TO DO
+         IF (ICOMP .GE. 2) THEN
+           CALL WWM_ABORT('IBREAK=4 not yet implemented in implicit')
+         ! Explicit Solver
+         ELSE
+           IF ( BRCRIT(IP) .GT. 0D0 ) THEN
+             IF ( BRCRIT(IP) .LT. 1D0 ) THEN
+               SURFA0 = - 0.75D0 * BR_COEF * SME / SQRTPI * BRCRIT(IP)**2.5D0 * BETA
+             ELSE
+               SURFA0 = - 0.75D0 * BR_COEF * SME / SQRTPI * BETA
+             END IF
+           ELSE
+             SURFA0 = 0.D0
+           END IF
+         END IF
+         
+       CASE(5)
+         !************************************************************* 
+         ! Baldock et al. (1998) modified by Janssen and Battjes (2007)
+         !*************************************************************
+         HMAX_LOC = BRCRIT(IP) * DEP(IP)
+         IF ( (HMAX_LOC .GT. VERYSMALL) .AND. (ETOT .GT. VERYSMALL) ) THEN
+           BETA  = SQRT(HMAX_LOC**2D0 / (8. * ETOT) )
+         ELSE
+           BETA = ZERO
+         END IF
+         CALL COMPUTE_ERF(BETA,ERF_BETA)
+         ! Implicit solver
+         ! TO DO
+         IF (ICOMP .GE. 2) THEN
+           CALL WWM_ABORT('IBREAK=5 not yet implemented in implicit')
+         ! Explicit Solver
+         ELSE
+           IF (BETA .GT. 0D0) THEN
+             SURFA0 = -0.75D0 * BR_COEF * SME / SQRTPI * BRCRIT(IP) / BETA &
+                    & * (1D0 + 4D0 / (3D0 * SQRTPI) * (BETA**3D0 + 1.5D0 * BETA) &
+                    & * exp(-BETA**2) - ERF_BETA)
+           ELSE
+             SURFA0 = 0D0
+           END IF
+         END IF
+       
+       CASE(6)
+         !***************************
+         ! Church and Thornton (1993)
+         !***************************
+         IF ( (DEP(IP) .GT. VERYSMALL) .AND. (ETOT .GT. VERYSMALL) ) THEN
+           BETA  = SQRT(8. * ETOT / ((BRCRIT(IP)*DEP(IP))**2D0))
+           BETA2 = BETA**2D0
+         ELSE
+           BETA = ZERO
+           BETA2 = ZERO
+         END IF
+         IF (ICOMP .GE. 2) THEN
+          !MP: These lines have to be checked
+          !IF ( BETA .GT. 0D0 ) THEN
+          !  IF ( BETA .LT. 1D0 ) THEN
+          !    WS = -(0.75d0*BR_COEF*SME/MyREAL(SQRT(PI)))*SQRT(8.d0*ETOT)/DEP(IP)&
+          !       & *(1+tanh(8*(BETA-1)))*(1-(1+BETA**2)**(-5/2)) 
+          !    SbrD = 5D-1*MyREAL(7.)*WS 
+          !  ELSE
+          !    WS = -(0.75d0*BR_COEF*SME/MyREAL(SQRT(PI)))*SQRT(8.d0*ETOT)/DEP(IP)
+          !    SbrD = WS 
+          !  ENDIF
+          !  SURFA0 = SbrD - WS
+          !  SURFA1 = SbrD
+          !ELSE
+          !  SURFA0 = 0D0
+          !  SURFA1 = 0D0
+          !ENDIF
+          CALL WWM_ABORT('IBREAK=6 not yet implemented in implicit')
+         ELSE ! AR : Only works in explicit for now
+          IF ( BETA .GT. 0D0 ) THEN
+            IF ( BETA .LT. 1D0 ) THEN
+              SURFA0 = - 0.75D0 * BR_COEF * SME / SQRTPI * BRCRIT(IP) * BETA &
+                     & * (1 + tanh(8 * (BETA - 1))) * (1 - (1 + BETA**2)**(-5/2)) 
+            ELSE
+              SURFA0 = - 0.75D0 * BR_COEF * SME / SQRTPI * BRCRIT(IP) &
+                     & * (1 - 2**(-5D0 / 2D0))
+            END IF
+          ELSE
+            SURFA0 = 0D0
+          END IF
+         END IF
+       END SELECT
+      
+!----------------------------------
+!     4. Filling the matrixes
+!----------------------------------
       DO IS = 1, NUMSIG
         DO ID = 1, NUMDIR
-          DSSBR(IS,ID)  = SURFA1
-          SSBR(IS,ID)   = SURFA0 * WALOC(IS,ID)
+          IF (ICOMP .GE. 2) THEN
+            DSSBR(IS,ID)  = SURFA0 
+            SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID)
+          ELSE IF (ICOMP .LT. 2) THEN
+            DSSBR(IS,ID)  = SURFA0
+            SSBR(IS,ID)   = SURFA0 * ACLOC(IS,ID)
+          END IF
         END DO
       END DO 
 
-#ifdef SCHISM
-      SBR(:,IP) = ZERO
-      DO IS=1,NUMSIG
-        DO ID=1,NUMDIR
-          COST = COSTH(ID)
-          SINT = SINTH(ID)
-          SBR(1,IP)=SBR(1,IP)+SINT*(WK(IS,IP)/SPSIG(IS))*SSBR(IS,ID)*DS_INCR(IS)*DDIR
-          SBR(2,IP)=SBR(2,IP)+COST*(WK(IS,IP)/SPSIG(IS))*SSBR(IS,ID)*DS_INCR(IS)*DDIR
-        ENDDO
-      ENDDO
-#endif
       END SUBROUTINE 
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+     SUBROUTINE COMPUTE_SBR(IP,SSBR)
+       USE DATAPOOL
+       IMPLICIT NONE
+       INTEGER                 :: IS, ID
+       INTEGER, INTENT(IN)     :: IP
+       REAL(rkind), INTENT(IN) :: SSBR(NUMSIG,NUMDIR)
+ 
+       ! Initialization
+#ifdef SCHISM
+       SBR(:,IP) = ZERO
+ 
+       ! Loop over frequencies and directions
+       DO IS = 1, NUMSIG
+         DO ID = 1, NUMDIR
+           SBR(1,IP) = SBR(1,IP) + G9*COSTH(ID)*WK(IS,IP)*SSBR(IS,ID)*DS_INCR(IS)*DDIR
+           SBR(2,IP) = SBR(2,IP) + G9*SINTH(ID)*WK(IS,IP)*SSBR(IS,ID)*DS_INCR(IS)*DDIR
+         END DO
+       END DO
+#endif
+     END SUBROUTINE
+!**********************************************************************
+!*                                                                    *
+!**********************************************************************
+      SUBROUTINE COMPUTE_ERF(x,erfx)
+
+      ! # MS Fortran
+      ! Error function from Numerical Recipes.
+      ! erf(x) = 1 - erfc(x)
+
+      USE DATAPOOL, only : rkind
+      IMPLICIT NONE
+
+      REAL(rkind), INTENT(IN)  :: x
+      REAL(rkind), INTENT(OUT) :: erfx
+      REAL(rkind)              :: dumerfc, t, z
+
+      z = abs(x)
+      t = 1.0 / ( 1.0 + 0.5 * z )
+
+      dumerfc =       t * exp(-z * z - 1.26551223 + t * &
+             ( 1.00002368 + t * ( 0.37409196 + t *           &
+             ( 0.09678418 + t * (-0.18628806 + t *           &
+             ( 0.27886807 + t * (-1.13520398 + t *           &
+             ( 1.48851587 + t * (-0.82215223 + t * 0.17087277 )))))))))
+
+      IF ( x.lt.0.0 ) dumerfc = 2.0 - dumerfc
+
+      erfx = 1.0 - dumerfc
+
+      END SUBROUTINE COMPUTE_ERF
 !**********************************************************************
 !*                                                                    *
 !**********************************************************************

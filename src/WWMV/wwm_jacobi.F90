@@ -661,9 +661,7 @@
 #endif
 !              WRITE(STAT%FHNDL,*) 'p_is_converged=', p_is_converged
               IF (IPstatus(IP) .eq. 1) THEN
-                IF (p_is_converged .LT. THR) THEN ! not real ... mostly never touched point or whatorever ...
-                  LCONVERGED(IP) = .FALSE. 
-                ELSE IF (.NOT. p_is_converged .LT. THR .AND. p_is_converged .LT. jgs_diff_solverthr) THEN
+                IF (p_is_converged .LT. jgs_diff_solverthr) THEN
                   !write(*,*) ip, p_is_converged, jgs_diff_solverthr
                   LCONVERGED(IP) = .TRUE.
                   is_converged(1) = is_converged(1) + 1
@@ -817,7 +815,7 @@
 !
       BSIDE =     eVal * (PHI - MIN(ZERO,DPHIDN) * Acin2(:,:,IP))
       DIAG  =   - eVal * MIN(ZERO,DPHIDN) ! AR: The minus put the DHPIDN on the left side of the equation as diagonal contributions with the right sign ... it inverts the sign ... however this is wrong now for IBREAK = 2 the SWAN stuff 
-!
+
 #ifdef DEBUG_SOURCE_TERM
       WRITE(STAT%FHNDL,'(I10,10G20.10,A40)') IP, SUM(ACin1), SUM(ACin2), SUM(PHI), SUM(DPHIDN), SUM(BSIDE), SUM(DIAG), SUM(BLOC), eval, 'GET_BSIDE_DIAG'
 #endif

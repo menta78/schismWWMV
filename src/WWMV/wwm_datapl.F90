@@ -68,10 +68,20 @@
      &                         WIND_INTPAR=>out_wwm_windpar, & ! boundary layer stuff from wwm ...
      &                         ISBND,                        & !bnd flags
      &                         RKIND,                        &
-     &                         JPRESS,SBR,SBF,               &
-     &                         STOKES_VEL,STOKES_VEL_SD,STOKES_W_ND,    & !for vortex formulation
+     &                         JPRESS,SBR,SBF,SROL, & !for vortex formulation
+     &                         STOKES_HVEL, STOKES_HVEL_SIDE, & !horizontal Stokes drift velocities (u,v)
+     &                         STOKES_WVEL, STOKES_WVEL_SIDE, & !vertical Stokes drift velocities
+     &                         ROLLER_STOKES_HVEL,ROLLER_STOKES_HVEL_SIDE, & ! horizontal Stokes drift velocities (u,v)for the surface rollers
      &                         SHOREWAFO,                     & ! wave forces at the shoreline
-     &                         SAV_ALPHA, SAV_H
+     &                         SAV_ALPHA, SAV_H,              & 
+     &                         fwvor_advxy_stokes,            & ! BM: accounting (1) or not (0) for the different 
+     &                         fwvor_advz_stokes,             & ! terms involved in the vortex force formalism (RADFLAG='VOR')
+     &                         fwvor_gradpress,               &
+     &                         fwvor_breaking,                &
+     &                         wafo_obcramp,                  &! BM: flag (0/1:off/on) to apply a ramp on wave forces at open boundary
+!     &                         wafo_opbnd_ramp                  ! The corresponding ramp value defined at sides
+     &                         tanbeta_x, tanbeta_y
+
 # endif
 #endif
       IMPLICIT NONE
@@ -135,6 +145,7 @@
          REAL(rkind), PARAMETER             :: INVPI2    = ONE/PI2
          REAL(rkind), PARAMETER             :: TPI       = PI2
          REAL(rkind), PARAMETER             :: INVTPI    = INVPI2
+         REAL(rkind), PARAMETER             :: SQRTPI    = SQRT(PI)
          REAL(rkind), PARAMETER             :: G9        = 9.806_rkind
          REAL(rkind), PARAMETER             :: CONST_ECMWF = -2.0*0.076/G9
 
@@ -715,6 +726,11 @@
          REAL(rkind), ALLOCATABLE        :: AC1(:,:,:)
          REAL(rkind), ALLOCATABLE        :: AC2(:,:,:)
 !
+! ... wave roller action arrays
+!
+         REAL(rkind), ALLOCATABLE        :: RAC1(:,:,:)  ! Roller
+         REAL(rkind), ALLOCATABLE        :: RAC2(:,:,:)  ! Roller
+!
 ! ... implicit splitting
 !
          REAL(rkind), ALLOCATABLE      :: DAC_ADV(:,:,:,:)
@@ -832,7 +848,7 @@
          REAL(rkind)                     :: DX_BND, DY_BND
 
          INTEGER                         :: IWINDFORMAT  = 1
-         LOGICAL                         :: EXTRAPOLATION_ALLOWED_WIND = .FALSE.
+         LOGICAL                         :: EXTRAPOLATION_ALLOWED_WIND = .TRUE.
          LOGICAL                         :: LSAVE_INTERP_ARRAY = .FALSE.
          LOGICAL                         :: USE_STEPRANGE = .TRUE.
          INTEGER                         :: IBOUNDFORMAT = 1
@@ -919,6 +935,8 @@
          LOGICAL                          :: LMONO_OUT = .FALSE.
 
          CHARACTER(LEN=3)                 :: RADFLAG  = 'LON'
+         LOGICAL                          :: LPP_FILT_FLAG = .FALSE.
+         REAL(rkind)                      :: LPP_FRAC = 0.50
 
          INTEGER                          :: ICPLT = 1
          INTEGER                          :: NLVT
@@ -946,24 +964,33 @@
          INTEGER                :: ICRIT   = 1
          INTEGER                :: IBREAK  = 1
          INTEGER                :: IFRIC   = 1
-          
+         ! MP: Parameterization for the breaking coefficient
+         INTEGER                :: BR_COEF_METHOD = 1
+         INTEGER                :: BC_BREAK = 1
+         INTEGER                :: IROLLER = 0
+         INTEGER                :: ZPROF_BREAK = 1
+
 
          REAL(rkind)             :: FRICC = -0.067
          REAL(rkind)             :: TRICO = 0.05
          REAL(rkind)             :: TRIRA = 2.5
          REAL(rkind)             :: TRIURS = 0.1
-         REAL(rkind)             :: ALPBJ
-         REAL(rkind)             :: BRHD = 0.78
+         REAL(rkind)             :: ALPBJ = 1.0
+         REAL(rkind)             :: BRCR = 0.78
+         REAL(rkind)             :: A_BRCR = 0.78
+         REAL(rkind)             :: B_BRCR = 0.78
+         REAL(rkind)             :: A_BIPH = 0.2
+         REAL(rkind)             :: MIN_BRCR = 0.d0
+         REAL(rkind)             :: MAX_BRCR = 2.d0 
 
          REAL(rkind), ALLOCATABLE      :: ETRIAD(:), SATRIAD(:,:)
 
-         INTEGER          :: ISPTR, ISP1TR, ISMTR, ISM1TR
-         REAL(rkind)             :: WISPTR, WISP1TR, WISMTR, WISM1TR
+         INTEGER                       :: ISPTR, ISP1TR, ISMTR, ISM1TR
+         REAL(rkind)                   :: WISPTR, WISP1TR, WISMTR, WISM1TR
 
          REAL(rkind)                   :: TAIL_ARR(8), PSHAP(6), PBOTF(6), PTRIAD(5), TRI_ARR(5)
          REAL(rkind)                   :: PSURF(6), PGIVE(8)
-
-         REAL(rkind), ALLOCATABLE      :: QBLOCAL(:) !, SBR(:,:), SBF(:,:)
+         REAL(rkind), ALLOCATABLE      :: QBLOCAL(:), A_BR_COEF(:), BRCRIT(:) 
 #ifndef SCHISM
          REAL(rkind), allocatable      :: STOKES_X(:,:), STOKES_Y(:,:), JPRESS(:)
 #endif
@@ -1144,11 +1171,13 @@
 
          REAL(rkind), ALLOCATABLE ::   RSXX(:), RSXY(:), RSYY(:), FORCEXY(:,:)
          REAL(rkind), ALLOCATABLE ::   SXX3D(:,:), SXY3D(:,:), SYY3D(:,:)
+         REAL(rkind), ALLOCATABLE ::   BETAROLLER(:)
 !
 ! switch for the numerics ... wwmDnumsw.mod
 !
          INTEGER                :: AMETHOD = 1
          INTEGER                :: SMETHOD = 1
+         INTEGER                :: ROLMETHOD = 2
          INTEGER                :: DMETHOD = 2
          INTEGER                :: FMETHOD = 1
          INTEGER                :: IVECTOR = 2

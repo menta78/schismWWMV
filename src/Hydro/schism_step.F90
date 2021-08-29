@@ -37,15 +37,18 @@
 #endif
 
 #ifdef USE_FABM
-#include "fabm_version.h"
+!#include "fabm_version.h"
       USE fabm_schism, only: fabm_schism_do, fs, fabm_istart => istart
       USE fabm_schism, only: fabm_schism_write_output_netcdf
 #endif
 
 #ifdef USE_ICM
-      use icm_mod, only : iSun,iRea,WMS,wqc,iPh,PH_nd,lfsav,stsav,rtsav, &
-                         &tlfsav,tstsav,trtsav,hcansav,Chl_el,PrmPrdt,DIN_el,PON_el,isav_icm, &
-                         &EROH2S,EROLPOC,ERORPOC,GP,GPT,netGP, &
+      use icm_mod, only : iSun,iRea,WMS,wqc,iPh,PH_nd,Chl_el,PrmPrdt,DIN_el,PON_el, &
+                         &tthcan,ttdens, & !ncai_sav + ncai_veg
+                         &tlfsav,tstsav,trtsav,hcansav,lfsav,stsav,rtsav,isav_icm, & !ncai_sav
+                         &tlfveg,tstveg,trtveg,hcanveg,iveg_icm, & !ncai_veg
+                         &EROH2S,EROLPOC,ERORPOC, & !ncai_erosion
+                         &GP,GPT,netGP, &
                          &rFI1,rFN1,rFP1,rFI2,rFN2,rFP2,rFI3,rFN3,rFP3,rFS,rFSal, &
                          &disoRPOC,disoLPOC,HRDOC,DenitDOC, &
                          &predRPOC,predLPOC,predDOC,basalDOC, &
@@ -60,13 +63,22 @@
                          &basalRPOP,basalLPOP,basalDOP,basalPO4,absPO4, &
                          &savmtPO4,savgrPO4,savmtRPOP,savmtLPOP,savmtDOP, &
                          &basalDOO,predDOO,NitDOO,HRDOO,chemDOO,phoDOO,reaDOO, &
-                         &savmtDOO,savgrDOO
+                         &savmtDOO,savgrDOO,&
+                         &vegmtRPOC,vegmtLPOC,vegmtDOC, &
+                         &vegmtNH4,veggrNH4,veggrNO3,vegmtRPON,vegmtLPON,vegmtDON, &
+                         &vegmtPO4,veggrPO4,vegmtRPOP,vegmtLPOP,vegmtDOP, & 
+                         &vegmtDOO,veggrDOO,&
+                         &tlfNH4sav,tlfPO4sav,trtpocsav,trtponsav,trtpopsav,trtdosav, &
+                         &tlfNH4veg,tlfPO4veg,trtpocveg,trtponveg,trtpopveg,trtdoveg, &
+                         &plfveg,pmaxveg,fiveg,fnveg,fpveg,fsveg,ffveg,rdephcanveg, &
+                         &plfsav,pmaxsav,fisav,fnsav,fpsav, &
+                         &PrmPrdtveg,PrmPrdtsav,rad_el
       USE icm_sed_mod, only: CNH4,CNO3,CPIP,CPOS,CCH4,CSO4,CH2S,CPON,CPOP,CPOC, &
-                            &sed_BENDO,CTEMP,BBM,PO4T2TM1S,NH4T2TM1S,NO3T2TM1S, &
-                            &HST2TM1S,CH4T2TM1S,CH41TM1S,SO4T2TM1S,SIT2TM1S,BENSTR1S,CPOP,CPON,CPOC,&
-                            &NH41TM1S,NO31TM1S,HS1TM1S,SI1TM1S,PO41TM1S,PON1TM1S,PON2TM1S,PON3TM1S,POC1TM1S,POC2TM1S,&
-                            &POC3TM1S,POP1TM1S,POP2TM1S,POP3TM1S,PSITM1S,BFORMAXS,ISWBENS,DFEEDM1S, &  !added by wangzg
-                            &SED_BENDOC,SED_BENNH4,SED_BENNO3,SED_BENPO4,SED_BENCOD,SED_BENSA
+                         &sed_BENDO,CTEMP,BBM,PO4T2TM1S,NH4T2TM1S,NO3T2TM1S, &
+                         &HST2TM1S,CH4T2TM1S,CH41TM1S,SO4T2TM1S,SIT2TM1S,BENSTR1S,CPOP,CPON,CPOC,&
+                         &NH41TM1S,NO31TM1S,HS1TM1S,SI1TM1S,PO41TM1S,PON1TM1S,PON2TM1S,PON3TM1S,POC1TM1S,POC2TM1S,&
+                         &POC3TM1S,POP1TM1S,POP2TM1S,POP3TM1S,PSITM1S,BFORMAXS,ISWBENS,DFEEDM1S, & !added by wangzg
+                         &SED_BENDOC,SED_BENNH4,SED_BENNO3,SED_BENPO4,SED_BENCOD,SED_BENSA
 #endif
 
 #ifdef USE_COSINE
@@ -172,7 +184,7 @@
                      &tot_salt_gb,dav_mag,tvol,tmass,tpe,tkne,enerf,ener_ob, &
                      &av_dep,vel_m1,vel_m2,xtmp,ytmp,ftmp,tvol12,fluxbnd, &
                      &fluxchan,fluxchan1,fluxchan2,tot_s,flux_s,ah,ubm,ramp_ss,Cdmax, &
-                     &wmag_e,wmag_factor, & !wmag_e and wmag_facotr addedy by wangzg
+                     &wmag_e, & !wmag_e and wmag_facotr addedy by wangzg
                      &bthick_ori,big_ubstar,big_vbstar,zsurf,tot_bedmass,w1,w2,slr_elev, &
                      &i34inv,av_cff1,av_cff2,av_cff3,av_cff2_chi,av_cff3_chi, &
                      &sav_cfk,sav_cfpsi,sav_h_sd,sav_alpha_sd,sav_nv_sd,sav_c,beta_bar, &
@@ -283,7 +295,7 @@
       if(istat/=0) call parallel_abort('STEP: alloc failure (3)')
 
 !     Source
-      if(if_source==1) then
+      if(if_source/=0) then
         allocate(msource(ntracers,nea),stat=istat)
         if(istat/=0) call parallel_abort('STEP: allocation failure (2)')
       endif !if_source
@@ -377,7 +389,7 @@
       endif
 
       !For source/sinks
-      if(if_source==1) then
+      if(if_source/=0) then
         if(nramp_ss==1) then
           ramp_ss=tanh(2.d0*time/86400.d0/dramp_ss)
         else
@@ -400,15 +412,19 @@
       enddo !i
 !$OMP end do
 
-!...  Earth tidal potential at nodes: pre-compute to save time
-!...
+!...  Earth tidal potential and loading tide at nodes: pre-compute to save time
+!... 
 !$OMP do
       do i=1,npa
         etp(i)=0.d0
         do j=1,ntip
           ncyc=int(tfreq(j)*time/2.d0/pi)
           arg=tfreq(j)*time-real(ncyc,rkind)*2.d0*pi+jspc(j)*xlon(i)+tear(j)
-          etp(i)=etp(i)+ramp*tamp(j)*tnf(j)*fun_lat(jspc(j),i)*cos(arg)
+          etp(i)=etp(i)+0.69d0*ramp*tamp(j)*tnf(j)*fun_lat(jspc(j),i)*cos(arg)
+
+          if(iloadtide/=0) then !loading tide
+            etp(i)=etp(i)+rloadtide(1,j,i)*cos(tfreq(j)*time-rloadtide(2,j,i))
+          endif !iloadtide/
         enddo !j
       enddo !i
 !$OMP end do
@@ -571,21 +587,21 @@
       endif !nws>=2
 
 !...  Re-scale wind
-      if(nws>0) then; if(iwindoff/=0) then
-        do i=1,npa
-          windx(i)=windx(i)*windfactor(i)
-          windy(i)=windy(i)*windfactor(i)
-        enddo !i
-      endif; endif
+!      if(nws>0) then; if(iwindoff/=0) then
+!        do i=1,npa
+!          windx(i)=windx(i)*windfactor(i)
+!          windy(i)=windy(i)*windfactor(i)
+!        enddo !i
+!      endif; endif
 
 #ifdef USE_ICM
 ! calculating WMS used for reareation,added by wangzg
       if(irea==1) then
-!$OMP parallel do default(shared) private(i,wmag_e,wmag_factor)
+!$OMP parallel do default(shared) private(i,wmag_e)
         do i=1,nea
           if(idry_e(i)==1) cycle
           wmag_e=sum(sqrt(windx(elnode(1:i34(i),i))**2.d0+windy(elnode(1:i34(i),i))**2.d0))/real(i34(i),rkind)
-          wmag_factor=sum(windfactor(elnode(1:i34(i),i)))/real(i34(i),rkind)
+!          wmag_factor=sum(windfactor(elnode(1:i34(i),i)))/real(i34(i),rkind)
           WMS(i)=wmag_e !*wmag_factor !no windfactor for DO reareation
         enddo !i
 !$OMP end parallel do
@@ -598,6 +614,36 @@
 !-------------------------------------------------------------------------------
 #ifdef USE_WWM
 
+      !BM: coupling current for WWM
+      if (cur_wwm==0) then ! surface currents
+        curx_wwm(:)=uu2(nvrt,:)
+        cury_wwm(:)=vv2(nvrt,:)
+      else if (cur_wwm==1) then ! depth-averaged currents
+        do i=1,npa
+          curx_wwm(i) = 0.d0 ; cury_wwm(i) = 0.d0
+          if(idry(i)==1) cycle
+          do k=kbp(i),nvrt-1
+            curx_wwm(i)=curx_wwm(i)+(uu2(k+1,i)+uu2(k,i))/2*(znl(k+1,i)-znl(k,i))
+            cury_wwm(i)=cury_wwm(i)+(vv2(k+1,i)+vv2(k,i))/2*(znl(k+1,i)-znl(k,i))
+          enddo !k
+          htot=eta2(i)+dp(i)
+          if(htot<=h0) then
+            curx_wwm(i)=0.0d0
+            cury_wwm(i)=0.0d0
+          else
+            curx_wwm(i)=curx_wwm(i)/htot
+            cury_wwm(i)=cury_wwm(i)/htot
+          endif
+        enddo !i=1,npa
+      else if (cur_wwm==2) then ! Kirby and Chen (1989)
+        call current2wave_KC89
+      end if
+!      if (cur_wwm < 2) then
+!        call exchange_p2d(curx_wwm)
+!        call exchange_p2d(cury_wwm)
+!      end if
+
+
       if(mod(it,nstep_wwm)==0) then
         wtmp1=mpi_wtime()
         if(myrank==0) write(16,*)'starting WWM'
@@ -606,9 +652,10 @@
 !       Outputs (via datapool):
 !       sbr(2,npa): momentum flux vector due to wave breaking (nearshore depth-induced breaking; see Bennis 2011)
 !       sbf(2,npa): momentum lost by waves due to the bottom friction (not used for the moment)
-!       stokes_vel(2,nvrt,npa): Stokes velocity at nodes and whole levels
-!       stokes_vel_sd(2,nvrt,nsa): Stokes velocity at sides and whole levels
-!       stokes_w_nd(nvrt,npa): Stokes vertical velocity at nodes and whole levels
+!       stokes_hvel(2,nvrt,npa): Stokes velocity at nodes and whole levels
+!       stokes_hvel_side(2,nvrt,nsa): Stokes velocity at sides and whole levels
+!       stokes_wvel(nvrt,npa): Stokes vertical velocity at nodes and whole levels
+!       stokes_wvel_side(nvrt,nsa): Stokes vertical velocity at sides and whole levels
 !       jpress(npa): waved-induced pressure
 !       wwave_force(2,nvrt,nsa): =0 if icou_elfe_wwm=0. In [e,p]frame (not sframe!).
 !       wwave_force(1:2,:,1:nsa) = Rsx, Rsy in my notes (the terms in momen. eq.)
@@ -727,8 +774,8 @@
             tau(1,i)=0.d0
             tau(2,i)=0.d0
           else !rescale as well
-            tau(1,i)=-tauxz(i)/rho0*rampwind*windfactor(i)**2.d0 !sign and scale difference between stresses tauxz and tau
-            tau(2,i)=-tauyz(i)/rho0*rampwind*windfactor(i)**2.d0
+            tau(1,i)=-tauxz(i)/rho0*rampwind !*windfactor(i)**2.d0 !sign and scale difference between stresses tauxz and tau
+            tau(2,i)=-tauyz(i)/rho0*rampwind !*windfactor(i)**2.d0
           endif
         else !if(nws==1.or.nws>=4.or.nws>=2.and.ihconsv==0.or.iwind_form==-1) then
           wmag=sqrt(windx(i)**2.d0+windy(i)**2.d0)
@@ -1331,7 +1378,7 @@
 !     Other tracers: 0 (otherwise additional nutrients from rain will fall onto
 !     water) 
       vsource=0 !init; dimension [m^3/s]; includes sinks as well
-      if(if_source==1) then
+      if(if_source/=0) then
         !init all first; dimension same as concentration (psu etc)
         msource=0.d0 
         !Exceptions
@@ -1339,16 +1386,33 @@
         if(nsources>0) then
           if(time>th_time3(2,1)) then !not '>=' to avoid last step
             ath3(:,1,1,1)=ath3(:,1,2,1)
-            read(63,*)tmp,ath3(1:nsources,1,2,1)
             th_time3(1,1)=th_time3(2,1)
             th_time3(2,1)=th_time3(2,1)+th_dt3(1)
+
+            if(if_source==1) then
+              read(63,*)tmp,ath3(1:nsources,1,2,1)
+            else !nc
+              itmp2=time/th_dt3(1)+2
+              j=nf90_inq_varid(ncid_source, "vsource",mm)
+              j=nf90_get_var(ncid_source,mm,ath3(1:nsources,1,2,1),(/1,itmp2/),(/nsources,1/))
+              if(j/=NF90_NOERR) call parallel_abort('STEP: vsource')
+            endif !if_source
           endif !time
 
+          !msource
           if(time>th_time3(2,3)) then !not '>=' to avoid last step
             ath3(:,:,1,3)=ath3(:,:,2,3)  
-            read(65,*)tmp,ath3(1:nsources,1:ntracers,2,3)
             th_time3(1,3)=th_time3(2,3)
             th_time3(2,3)=th_time3(2,3)+th_dt3(3)
+
+            if(if_source==1) then
+              read(65,*)tmp,ath3(1:nsources,1:ntracers,2,3)
+            else !nc
+              itmp2=time/th_dt3(3)+2
+              j=nf90_inq_varid(ncid_source, "msource",mm)
+              j=nf90_get_var(ncid_source,mm,ath3(1:nsources,1:ntracers,2,3),(/1,1,itmp2/),(/nsources,ntracers,1/))
+              if(j/=NF90_NOERR) call parallel_abort('STEP: msource')
+            endif !if_source
           endif !time
  
           rat=(time-th_time3(1,1))/th_dt3(1)
@@ -1358,17 +1422,18 @@
           endif
 
           do i=1,nsources
-            if(ath3(i,1,1,1)<0.d0.or.ath3(i,1,2,1)<0.d0) then
+            if(ath3(i,1,1,1)<0..or.ath3(i,1,2,1)<0.) then
               write(errmsg,*)'STEP: wrong sign vsource',it,i,ath3(i,1,1:2,1)
               call parallel_abort(errmsg)
             endif
 
             if(iegl(ieg_source(i))%rank==myrank) then
               ie=iegl(ieg_source(i))%id
-              vsource(ie)=vsource(ie)+((1-rat)*ath3(i,1,1,1)+rat*ath3(i,1,2,1))*ramp_ss
+              vsource(ie)=vsource(ie)+((1.d0-rat)*ath3(i,1,1,1)+rat*ath3(i,1,2,1))*ramp_ss
             endif !ielg
           enddo !i
 
+          !msource
           rat=(time-th_time3(1,3))/th_dt3(3)
           if(rat<-small1.or.rat>1.d0+small1) then
             write(errmsg,*) 'STEP: rat out in msource.th:',rat,time,th_time3(1:2,3)
@@ -1383,14 +1448,22 @@
               endif !ielg
             enddo !i
           enddo !j
-        endif !nsources
+        endif !nsources>0
 
         if(nsinks>0) then
           if(time>th_time3(2,2)) then !not '>=' to avoid last step
             ath3(:,1,1,2)=ath3(:,1,2,2)
-            read(64,*)tmp,ath3(1:nsinks,1,2,2)
             th_time3(1,2)=th_time3(2,2)
             th_time3(2,2)=th_time3(2,2)+th_dt3(2)
+ 
+            if(if_source==1) then
+              read(64,*)tmp,ath3(1:nsinks,1,2,2)
+            else !nc
+              itmp2=time/th_dt3(2)+2
+              j=nf90_inq_varid(ncid_source, "vsink",mm)
+              j=nf90_get_var(ncid_source,mm,ath3(1:nsinks,1,2,2),(/1,itmp2/),(/nsinks,1/))
+              if(j/=NF90_NOERR) call parallel_abort('STEP: vsink')
+            endif !if_source
           endif !time
 
           rat=(time-th_time3(1,2))/th_dt3(2)
@@ -1400,7 +1473,7 @@
           endif
 
           do i=1,nsinks
-            if(ath3(i,1,1,2)>0.d0.or.ath3(i,1,2,2)>0.d0) then
+            if(ath3(i,1,1,2)>0..or.ath3(i,1,2,2)>0.) then
               write(errmsg,*)'STEP: wrong sign vsink',it,i,ath3(i,1,1:2,2)
               call parallel_abort(errmsg)
             endif
@@ -1410,8 +1483,8 @@
               vsource(ie)=vsource(ie)+((1.d0-rat)*ath3(i,1,1,2)+rat*ath3(i,1,2,2))*ramp_ss
             endif !ielg
           enddo !i
-        endif !nsinks
-      endif !if_source
+        endif !nsinks>0
+      endif !if_source/=0
 
 !...  Volume sources from evap and precip
       if(isconsv/=0) then
@@ -1428,6 +1501,14 @@
           enddo !i
         endif !impose_net_flux
       endif !isconsv/=0
+
+!...  Option to zero out net sink @dry elem
+      if(meth_sink/=0) then
+        where(idry_e==1.and.vsource<0.d0) vsource=0.d0       
+!        do i=1,nea
+!          if(minval(idry(elnode(1:i34(i),i)))>0.and.vsource(i)<0.d0) vsource=0.d0 !all nodes dry
+!        enddo !i
+      endif !meth_sink
 
 !     Calculation of cross-section areas and length for flow b.c.
       if(lflbc) then
@@ -1494,7 +1575,7 @@
 
 !      if(myrank==8) write(99,*)carea
 
-!$OMP parallel default(shared) private(i,n1,n2,ibnd,nwild,j,vnth0,htot,sum1,vnorm,tmp,k,jfr,ncyc,arg,ubar1,vbar1)
+!$OMP parallel default(shared) private(i,n1,n2,ibnd,nwild,j,vnth0,htot,sum1,vnorm,tmp,k,jfr,ncyc,arg,ubar1,vbar1,tmpx,tmpy)
 
 !...  Compute new vel. for flow b.c. (uth,vth)
 !     For ics=1, uth, vth are in global frame
@@ -1600,7 +1681,25 @@
             uth(:,i)=uth(:,i)+ramp*ubar1/2.d0
             vth(:,i)=vth(:,i)+ramp*vbar1/2.d0
           endif !iabs(ifltype(ibnd))==5
-        endif
+        endif !ifltype
+
+        ! Deal with Stokes drift at open boundaries (KM)
+        ! Subtract depth-averaged Stokes drift vel per Bennis et al. (2011) and
+        ! Kevin Martin
+#ifdef USE_WWM
+        if(RADFLAG.eq.'VOR') then
+          tmpx = 0.d0; tmpy = 0.d0;
+          do k=kbs(i),nvrt-1
+            tmpx = tmpx + (zs(k+1,i)-zs(k,i))*(stokes_hvel_side(1,k,i)+stokes_hvel_side(1,k+1,i))/2.d0
+            tmpy = tmpy + (zs(k+1,i)-zs(k,i))*(stokes_hvel_side(2,k,i)+stokes_hvel_side(2,k+1,i))/2.d0
+          enddo !k
+!          n1 = isidenode(1,i); n2 = isidenode(2,i)
+          htot = (eta2(n1)+eta2(n2))/2 + dps(i)
+          uth(:,i) = uth(:,i)-tmpx/max(0.01d0,htot)
+          vth(:,i) = vth(:,i)-tmpy/max(0.01d0,htot)
+        endif !RADFLAG
+#endif
+
       enddo !i=1,nsa
 !$OMP end do
 
@@ -1813,8 +1912,12 @@
 
 !         Wet node
           htot=dp(i)+eta2(i)
-          if(rough_p(i)<=0.d0) then !time-independent Cd
-            Cdp(i)=abs(rough_p(i))
+          if(rough_p(i)<0.d0) then 
+            !Cdp(i)=abs(rough_p(i))
+            write(errmsg,*)'STEP: rough_p<0 at node ',iplg(i),rough_p(i)
+            call parallel_abort(errmsg)
+          else if(rough_p(i)==0.d0) then 
+            Cdp(i)=0.d0
           else !roughness >0 
             bthick_ori=znl(kbp(i)+1,i)-znl(kbp(i),i)  !thickness of bottom bnd layer
             bthick=max(dzb_min,bthick_ori)
@@ -1830,9 +1933,9 @@
             else
               Cdp(i)=1.d0/(2.5d0*log(bthick/rough_p(i)))**2.d0
 
-              if(dzb_decay/=0.d0.and.bthick_ori<bthick) then !dzb_decay=0 leads to no decay
-                Cdp(i)=Cdp(i)*exp(dzb_decay*(1.d0-bthick_ori/bthick))
-              endif
+!              if(dzb_decay/=0.d0.and.bthick_ori<bthick) then !dzb_decay=0 leads to no decay
+!                Cdp(i)=Cdp(i)*exp(dzb_decay*(1.d0-bthick_ori/bthick))
+!              endif
               !WBL
 #ifdef USE_WWM
               ! Quantities used in both formulations for the WBL
@@ -2078,7 +2181,16 @@
           endif
       
 !         Friction velocity: [\niu*|du/dz|]^0.5 (m/s)
+!BM Notes: [sbr]:m2.s-2
+!          turbinj: partial sink of momentum, fixed at 15% by Feddersen (2012),
+!          but can be adjusted in param.in depending on the wave breaking type.
+#ifdef USE_WWM
+          u_taus=sqrt( turbinj*sqrt(sbr(1,j)**2.d0+sbr(2,j)**2.d0)     &
+              &        + turbinj*sqrt(srol(1,j)**2.d0+srol(2,j)**2.d0) &
+              &        + sqrt(tau(1,j)**2+tau(2,j)**2) )
+#else
           u_taus=sqrt(sqrt(tau(1,j)**2.d0+tau(2,j)**2.d0))
+#endif
           u_taub=sqrt(Cdp(j)*(uu2(kbp(j)+1,j)**2.d0+vv2(kbp(j)+1,j)**2.d0))
           nlev=nvrt-kbp(j) !>1
           do k=0,nlev 
@@ -2130,7 +2242,12 @@
 !          h1d(0)=h1d(1)
           toth=eta2(j)+dp(j)
 !         surface and bottom roughness length (m)
+!BM
+#ifdef USE_WWM
+          z0s=0.3d0*out_wwm(j,1) ! according to Moghimi et al. (OM, 2013)
+#else
           z0s=min(0.1d0,toth/10.d0)
+#endif
           if(Cdp(j)==0.d0) then
             z0b=0.d0
           else
@@ -3416,9 +3533,6 @@
 !$OMP idry_e,iplg,isidenode,xcj,ycj,zcj,pframe,nvrt,islg,iadv,ics,xctr,yctr,zctr,zs,isbs,velmin_btrack, &
 !$OMP swild98,ibtrack_test,tsd,dt,dtb_min,dtb_max,ndelt_min,ndelt_max,elnode,i34,dldxy,btrack_nudge, &
 !$OMP xnd,ynd,l,nbtrk,mxnbt,btlist,myrank,ielg &
-#ifdef USE_WWM
-!$OMP ,stokes_w_nd &
-#endif
 !$OMP ) 
 
 !$OMP workshare
@@ -3437,7 +3551,7 @@
 !#ifdef USE_WWM
 !      if(RADFLAG.eq.'VOR') then
 !!$OMP workshare
-!        ww2=ww2+stokes_w_nd
+!        ww2=ww2+stokes_wvel
 !!$OMP end workshare
 !      endif
 !#endif
@@ -4015,7 +4129,7 @@
 !      if(RADFLAG.eq.'VOR') then
 !!$OMP parallel default(shared)
 !!$OMP   workshare
-!        ww2=ww2-stokes_w_nd
+!        ww2=ww2-stokes_wvel
 !!$OMP   end workshare
 !!$OMP end parallel
 !      endif
@@ -4832,8 +4946,10 @@
         ghat1(2,i)=ghat1(2,i)/real(i34(i),rkind)
       
         !Finish off terms in F, F^\alpha and f_b
-        botf1=0.69d0*grav*detpdx-dprdx/rho0 !const in each elem
-        botf2=0.69d0*grav*detpdy-dprdy/rho0
+        botf1=grav*detpdx-dprdx/rho0 !const in each elem
+        botf2=grav*detpdy-dprdy/rho0
+        !botf1=0.69d0*grav*detpdx-dprdx/rho0 !const in each elem
+        !botf2=0.69d0*grav*detpdy-dprdy/rho0
         tmp1=0.d0; tmp2=0.d0 !elem average of all terms; into ghat1
         do j=1,i34(i) !side
           isd=elside(j,i)
@@ -5066,18 +5182,17 @@
           endif !i34       
 
 #ifdef USE_WWM
-!Error: fold into ghat?
           if(RADFLAG.eq.'VOR'.and.idry_e(ie)==0) then
             sum1=0.d0; sum2=0.d0 !in eframe
-            do m=1,3 !wet sides
+            do m=1,i34(ie) !wet sides
               isd=elside(m,ie)
               do k=kbs(isd),nvrt-1
-                sum1=sum1+(zs(k+1,isd)-zs(k,isd))*(stokes_vel_sd(1,k+1,isd)+stokes_vel_sd(1,k,isd))/2.d0/3.d0
-                sum2=sum2+(zs(k+1,isd)-zs(k,isd))*(stokes_vel_sd(2,k+1,isd)+stokes_vel_sd(2,k,isd))/2.d0/3.d0
+                sum1=sum1+(zs(k+1,isd)-zs(k,isd))*(stokes_hvel_side(1,k+1,isd)+stokes_hvel_side(1,k,isd))/2.d0 !/3.d0
+                sum2=sum2+(zs(k+1,isd)-zs(k,isd))*(stokes_hvel_side(2,k+1,isd)+stokes_hvel_side(2,k,isd))/2.d0 !/3.d0
               enddo !k
             enddo !m
-            dot3=dldxy(id,1,ie)*sum1+dldxy(id,2,ie)*sum2
-            qel(i)=qel(i)+dt*dot3
+            dot3=(dldxy(id,1,ie)*sum1+dldxy(id,2,ie)*sum2)/dble(i34(ie))
+            qel(i)=qel(i)+dt*dot3*area(ie)
           endif
 #endif
 
@@ -5180,8 +5295,8 @@
                 sum1=0.d0 !integral; x-comp.
                 sum2=0.d0 !integral
                 do k=kbs(isd),nvrt-1 !isd is wet
-                  sum1=sum1+(zs(k+1,isd)-zs(k,isd))*(stokes_vel_sd(1,k+1,isd)+stokes_vel_sd(1,k,isd))/2.d0
-                  sum2=sum2+(zs(k+1,isd)-zs(k,isd))*(stokes_vel_sd(2,k+1,isd)+stokes_vel_sd(2,k,isd))/2.d0
+                  sum1=sum1+(zs(k+1,isd)-zs(k,isd))*(stokes_hvel_side(1,k+1,isd)+stokes_hvel_side(1,k,isd))/2.d0
+                  sum2=sum2+(zs(k+1,isd)-zs(k,isd))*(stokes_hvel_side(2,k+1,isd)+stokes_hvel_side(2,k,isd))/2.d0
                 enddo !k
                 Unbar=sum1*snx(isd)+sum2*sny(isd)
                 tmp0=thetai*dt*distj(isd)*Unbar/2.d0
@@ -5576,9 +5691,10 @@
           tauy2=(tau(2,node1)+tau(2,node2))/2.d0
 
           !hat_gam_[xy] has a dimension of m/s
-          hat_gam_x=sdbt(1,nvrt,j)+dt*(cori(j)*sv2(nvrt,j)-dpr_dx(j)/rho0+0.69d0*grav*detp_dx(j)+ &
+          !hat_gam_x=sdbt(1,nvrt,j)+dt*(cori(j)*sv2(nvrt,j)-dpr_dx(j)/rho0+0.69d0*grav*detp_dx(j)+ &
+          hat_gam_x=sdbt(1,nvrt,j)+dt*(cori(j)*sv2(nvrt,j)-dpr_dx(j)/rho0+grav*detp_dx(j)+ &
      &bcc(1,kbs(j),j)+taux2/htot)-grav*(1-thetai)*dt*deta1_dx(j)-grav*thetai*dt*deta2_dx(j)
-          hat_gam_y=sdbt(2,nvrt,j)+dt*(-cori(j)*su2(nvrt,j)-dpr_dy(j)/rho0+0.69d0*grav*detp_dy(j)+ &
+          hat_gam_y=sdbt(2,nvrt,j)+dt*(-cori(j)*su2(nvrt,j)-dpr_dy(j)/rho0+grav*detp_dy(j)+ &
      &bcc(2,kbs(j),j)+tauy2/htot)-grav*(1-thetai)*dt*deta1_dy(j)-grav*thetai*dt*deta2_dy(j)
 !         Radiation stress
 #ifdef USE_WWM
@@ -5666,15 +5782,15 @@
 !	  Elevation gradient, atmo. pressure and tidal potential
           if(k<nvrt) then
             rrhs(1,kin)=rrhs(1,kin)-dzz(k+1)/2.d0*dt*(grav*thetai*deta2_dx(j)+ &
-                       &grav*(1.d0-thetai)*deta1_dx(j)+dpr_dx(j)/rho0-0.69d0*grav*detp_dx(j))
+                       &grav*(1.d0-thetai)*deta1_dx(j)+dpr_dx(j)/rho0-grav*detp_dx(j))
             rrhs(2,kin)=rrhs(2,kin)-dzz(k+1)/2.d0*dt*(grav*thetai*deta2_dy(j)+ &
-                       &grav*(1.d0-thetai)*deta1_dy(j)+dpr_dy(j)/rho0-0.69d0*grav*detp_dy(j))
+                       &grav*(1.d0-thetai)*deta1_dy(j)+dpr_dy(j)/rho0-grav*detp_dy(j))
           endif
           if(k>kbs(j)+1) then 
             rrhs(1,kin)=rrhs(1,kin)-dzz(k)/2.d0*dt*(grav*thetai*deta2_dx(j)+ &
-                       &grav*(1.d0-thetai)*deta1_dx(j)+dpr_dx(j)/rho0-0.69d0*grav*detp_dx(j))
+                       &grav*(1.d0-thetai)*deta1_dx(j)+dpr_dx(j)/rho0-grav*detp_dx(j))
             rrhs(2,kin)=rrhs(2,kin)-dzz(k)/2.d0*dt*(grav*thetai*deta2_dy(j)+ &
-                       &grav*(1.d0-thetai)*deta1_dy(j)+dpr_dy(j)/rho0-0.69d0*grav*detp_dy(j))
+                       &grav*(1.d0-thetai)*deta1_dy(j)+dpr_dy(j)/rho0-grav*detp_dy(j))
           endif
 
 !	  Coriolis, advection, wind stress, and horizontal viscosity
@@ -5827,7 +5943,7 @@
               !Normal component from vortex formulation
 #ifdef USE_WWM
               if(RADFLAG.eq.'VOR') then
-                vnorm=stokes_vel_sd(1,k,j)*snx(j)+stokes_vel_sd(2,k,j)*sny(j)
+                vnorm=stokes_hvel_side(1,k,j)*snx(j)+stokes_hvel_side(2,k,j)*sny(j)
               endif !RADFLAG
 #endif               
 
@@ -6743,11 +6859,11 @@
 !$OMP ta,ie,kin,swild_m,swild_w,tmp0,vnf)
 
 !       Point sources/sinks using operator splitting (that guarentees max.
-!       principle); at bottom layer
+!       principle); imposed at bottom layer.
 !       Do nothing for net sinks
 !Error: need to reconcile with ICM
 
-        if(if_source==1) then
+        if(if_source/=0) then
 !$OMP     do
           do i=1,nea
             if(idry_e(i)==1.or.vsource(i)<=0.d0) cycle
@@ -6938,6 +7054,13 @@
         if(myrank==0) write(16,*)'calculating ICM kinetic source/sink'
         call ecosystem(it)
 
+
+        !ncai_sav, ncai_veg
+        !hcan_uni for a cell
+
+
+
+
         !feedback from ICM to Hydro 
         if(isav==1.and.isav_icm==1)then
           !Convert hcansav to nodes
@@ -7065,10 +7188,9 @@
         if(nwild(i)==1) then !marsh elem
           if(smax>0.5d0) then !drowned
             imarsh(i)=0
-!Error: OMP race
-            Cdp(elnode(1:i34(i),i))=0.001d0
-            Cd(elside(1:i34(i),i))=0.001d0
-            rough_p(elnode(1:i34(i),i))=1.d-4
+!            Cdp(elnode(1:i34(i),i))=0.001d0
+!            Cd(elside(1:i34(i),i))=0.001d0
+!            rough_p(elnode(1:i34(i),i))=1.d-4
           endif !smax
         else !non-marsh elem @last step
           if(smax<=0.d0.and.smin>=-1.d0) then !create marsh
@@ -7088,25 +7210,60 @@
       enddo !i=1,ne
 !$OMP end do
 
-      !Set Cd etc for marsh
+      !Set Cd etc for marsh and also drowned marsh
 !$OMP workshare
       sav_di=0.d0; sav_h=0.d0; sav_nv=0.d0; sav_alpha=0.d0
 !$OMP end workshare
 !$OMP do 
-      do i=1,ne
-        if(imarsh(i)==1) then
-          if(isav==0) then
-            Cdp(elnode(1:i34(i),i))=0.05d0
-            Cd(elside(1:i34(i),i))=0.05d0
-            rough_p(elnode(1:i34(i),i))=1.d-2
-          else
-            sav_di(elnode(1:i34(i),i))=sav_di0
-            sav_h(elnode(1:i34(i),i))=sav_h0
-            sav_nv(elnode(1:i34(i),i))=sav_nv0
-            sav_alpha(elnode(1:i34(i),i))=sav_di0*sav_nv0*sav_cd/2.d0
-          endif !isav
-        endif
+      do i=1,np
+        do j=1,nne(i)
+          ie=indel(j,i)
+          if(imarsh(ie)==1) then
+            if(isav==0) then
+              Cdp(i)=0.05d0
+              rough_p(i)=1.d-2
+            else !isav/=0
+              sav_di(i)=sav_di0
+              sav_h(i)=sav_h0
+              sav_nv(i)=sav_nv0
+              sav_alpha(i)=sav_di0*sav_nv0*sav_cd(i)/2.d0
+            endif !isav 
+          endif !imarsh
+
+          !drowned marsh
+          if(nwild(ie)==1.and.imarsh(ie)==0) then
+            Cdp(i)=0.001d0
+            rough_p(i)=1.d-4
+          endif
+        enddo !j
       enddo !i
+!$OMP end do
+
+!$OMP do
+      do i=1,ns
+        do j=1,2
+          ie=isdel(j,i)
+          if(isav==0.and.imarsh(ie)==1) Cd(i)=0.05d0
+          if(nwild(ie)==1.and.imarsh(ie)==0) Cd(i)=0.001d0
+        enddo !j
+      enddo !i
+!$OMP end do
+      
+
+!      do i=1,ne
+!        if(imarsh(i)==1) then
+!          if(isav==0) then
+!            Cdp(elnode(1:i34(i),i))=0.05d0
+!            Cd(elside(1:i34(i),i))=0.05d0
+!            rough_p(elnode(1:i34(i),i))=1.d-2
+!          else
+!            sav_di(elnode(1:i34(i),i))=sav_di0
+!            sav_h(elnode(1:i34(i),i))=sav_h0
+!            sav_nv(elnode(1:i34(i),i))=sav_nv0
+!            sav_alpha(elnode(1:i34(i),i))=sav_di0*sav_nv0*sav_cd0/2.d0
+!          endif !isav
+!        endif
+!      enddo !i
 !$OMP end do
 
 !$OMP master
@@ -7748,10 +7905,10 @@
 !      enddo !i
 
 #ifndef SINGLE_NETCDF_OUTPUT
-      if(mod(it,nspool)==0) then
-!        call writeout_nc(id_out_var(1),'wetdry_node',1,1,npa,dble(idry))
+      if(nc_out>0.and.mod(it,nspool)==0) then
+        call writeout_nc(id_out_var(1),'wetdry_node',1,1,npa,dble(idry))
         call writeout_nc(id_out_var(2),'wetdry_elem',4,1,nea,dble(idry_e))
-!        call writeout_nc(id_out_var(3),'wetdry_side',7,1,nsa,dble(idry_s))
+        call writeout_nc(id_out_var(3),'wetdry_side',7,1,nsa,dble(idry_s))
         !zcor MUST be 1st 3D var output for combine scripts to work!
         call writeout_nc(id_out_var(4),'zcor',2,nvrt,npa,znl(:,:))
         !call writeout_nc(id_out_var(4),'zcor',2,nvrt,npa,bcc(1,1:nvrt,1:npa)) !znl(:,:))
@@ -8115,8 +8272,210 @@
         if(iof_icm(116)==1.and.isav_icm/=0) call writeout_nc(id_out_var(noutput+120), &
      &'ICM_savgrDOO',5,nvrt,nea,dble(savgrDOO))
 
-        noutput=noutput+116
-        icount=116 !offset
+        !ncai_veg
+        if(iof_icm(117)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+121), &
+     &'ICM_tlfveg1',4,1,nea,dble(tlfveg(:,1)))
+        if(iof_icm(118)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+122), &
+     &'ICM_tlfveg2',4,1,nea,dble(tlfveg(:,2)))
+        if(iof_icm(119)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+123), &
+     &'ICM_tlfveg3',4,1,nea,dble(tlfveg(:,3)))
+        if(iof_icm(120)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+124), &
+     &'ICM_tstveg1',4,1,nea,dble(tstveg(:,1)))
+        if(iof_icm(121)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+125), &
+     &'ICM_tstveg2',4,1,nea,dble(tstveg(:,2)))
+        if(iof_icm(122)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+126), &
+     &'ICM_tstveg3',4,1,nea,dble(tstveg(:,3)))
+        if(iof_icm(123)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+127), &
+     &'ICM_trtveg1',4,1,nea,dble(trtveg(:,1)))
+        if(iof_icm(124)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+128), &
+     &'ICM_trtveg2',4,1,nea,dble(trtveg(:,2)))
+        if(iof_icm(125)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+129), &
+     &'ICM_trtveg3',4,1,nea,dble(trtveg(:,3)))
+        if(iof_icm(126)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+130), &
+     &'ICM_hcanveg1',4,1,nea,dble(hcanveg(:,1)))
+        if(iof_icm(127)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+131), &
+     &'ICM_hcanveg2',4,1,nea,dble(hcanveg(:,2)))
+        if(iof_icm(128)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+132), &
+     &'ICM_hcanveg3',4,1,nea,dble(hcanveg(:,3)))
+
+        !veg-related process to nutrient dynamics in water column
+        if(iof_icm(129)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+133), &
+     &'ICM_vegmtRPOC',5,nvrt,nea,dble(vegmtRPOC))
+        if(iof_icm(130)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+134), &
+     &'ICM_vegmtLPOC',5,nvrt,nea,dble(vegmtLPOC))
+        if(iof_icm(131)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+135), &
+     &'ICM_vegmtDOC',5,nvrt,nea,dble(vegmtDOC))
+        if(iof_icm(132)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+136), &
+     &'ICM_vegmtRPON',5,nvrt,nea,dble(vegmtRPON))
+        if(iof_icm(133)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+137), &
+     &'ICM_vegmtLPON',5,nvrt,nea,dble(vegmtLPON))
+        if(iof_icm(134)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+138), &
+     &'ICM_vegmtDON',5,nvrt,nea,dble(vegmtDON))
+        if(iof_icm(135)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+139), &
+     &'ICM_vegmtNH4',5,nvrt,nea,dble(vegmtNH4))
+        if(iof_icm(136)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+140), &
+     &'ICM_veggrNH4',5,nvrt,nea,dble(veggrNH4))
+        if(iof_icm(137)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+141), &
+     &'ICM_veggrNO3',5,nvrt,nea,dble(veggrNO3))
+        if(iof_icm(138)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+142), &
+     &'ICM_vegmtRPOP',5,nvrt,nea,dble(vegmtRPOP))
+        if(iof_icm(139)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+143), &
+     &'ICM_vegmtLPOP',5,nvrt,nea,dble(vegmtLPOP))
+        if(iof_icm(140)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+144), &
+     &'ICM_vegmtDOP',5,nvrt,nea,dble(vegmtDOP))
+        if(iof_icm(141)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+145), &
+     &'ICM_vegmtPO4',5,nvrt,nea,dble(vegmtPO4))
+        if(iof_icm(142)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+146), &
+     &'ICM_veggrPO4',5,nvrt,nea,dble(veggrPO4))
+        if(iof_icm(143)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+147), &
+     &'ICM_vegmtDOO',5,nvrt,nea,dble(vegmtDOO))
+        if(iof_icm(144)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+148), &
+     &'ICM_veggrDOO',5,nvrt,nea,dble(veggrDOO))
+
+        !savand veg -induced nutrient fluxes to sediment
+        if(iof_icm(145)==1.and.isav_icm/=0) call writeout_nc(id_out_var(noutput+149), &
+     &'ICM_tlfNH4sav',4,1,nea,dble(tlfNH4sav))
+        if(iof_icm(146)==1.and.isav_icm/=0) call writeout_nc(id_out_var(noutput+150), &
+     &'ICM_tlfPO4sav',4,1,nea,dble(tlfPO4sav))
+        if(iof_icm(147)==1.and.isav_icm/=0) call writeout_nc(id_out_var(noutput+151), &
+     &'ICM_trtpocsav',4,1,nea,dble(trtpocsav))
+        if(iof_icm(148)==1.and.isav_icm/=0) call writeout_nc(id_out_var(noutput+152), &
+     &'ICM_trtponsav',4,1,nea,dble(trtponsav))
+        if(iof_icm(149)==1.and.isav_icm/=0) call writeout_nc(id_out_var(noutput+153), &
+     &'ICM_trtpopsav',4,1,nea,dble(trtpopsav))
+        if(iof_icm(150)==1.and.isav_icm/=0) call writeout_nc(id_out_var(noutput+154), &
+     &'ICM_trtdosav',4,1,nea,dble(trtdosav))
+        if(iof_icm(151)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+155), &
+     &'ICM_tlfNH4veg1',4,1,nea,dble(tlfNH4veg(:,1)))
+        if(iof_icm(152)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+156), &
+     &'ICM_tlfNH4veg2',4,1,nea,dble(tlfNH4veg(:,2)))
+        if(iof_icm(153)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+157), &
+     &'ICM_tlfNH4veg3',4,1,nea,dble(tlfNH4veg(:,3)))
+        if(iof_icm(154)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+158), &
+     &'ICM_tlfPO4veg1',4,1,nea,dble(tlfPO4veg(:,1)))
+        if(iof_icm(155)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+159), &
+     &'ICM_tlfPO4veg2',4,1,nea,dble(tlfPO4veg(:,2)))
+        if(iof_icm(156)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+160), &
+     &'ICM_tlfPO4veg3',4,1,nea,dble(tlfPO4veg(:,3)))
+        if(iof_icm(157)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+161), &
+     &'ICM_trtpocveg1',4,1,nea,dble(trtpocveg(:,1)))
+        if(iof_icm(158)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+162), &
+     &'ICM_trtpocveg2',4,1,nea,dble(trtpocveg(:,2)))
+        if(iof_icm(159)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+163), &
+     &'ICM_trtpocveg3',4,1,nea,dble(trtpocveg(:,3)))
+        if(iof_icm(160)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+164), &
+     &'ICM_trtponveg1',4,1,nea,dble(trtponveg(:,1)))
+        if(iof_icm(161)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+165), &
+     &'ICM_trtponveg2',4,1,nea,dble(trtponveg(:,2)))
+        if(iof_icm(162)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+166), &
+     &'ICM_trtponveg3',4,1,nea,dble(trtponveg(:,3)))
+        if(iof_icm(163)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+167), &
+     &'ICM_trtpopveg1',4,1,nea,dble(trtpopveg(:,1)))
+        if(iof_icm(164)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+168), &
+     &'ICM_trtpopveg2',4,1,nea,dble(trtpopveg(:,2)))
+        if(iof_icm(165)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+169), &
+     &'ICM_trtpopveg3',4,1,nea,dble(trtpopveg(:,3)))
+        if(iof_icm(166)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+170), &
+     &'ICM_trtdoveg1',4,1,nea,dble(trtdoveg(:,1)))
+        if(iof_icm(167)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+171), &
+     &'ICM_trtdoveg2',4,1,nea,dble(trtdoveg(:,2)))
+        if(iof_icm(168)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+172), &
+     &'ICM_trtdoveg3',4,1,nea,dble(trtdoveg(:,3)))
+
+        if(iveg_icm/=0) then
+          if(iof_icm(169)==1) call writeout_nc(id_out_var(noutput+173), &
+       &'ICM_plfveg',4,1,nea,dble(plfveg(:,1)))
+          if(iof_icm(169)==2) call writeout_nc(id_out_var(noutput+173), &
+       &'ICM_plfveg',4,1,nea,dble(plfveg(:,2)))
+          if(iof_icm(169)==3) call writeout_nc(id_out_var(noutput+173), &
+       &'ICM_plfveg',4,1,nea,dble(plfveg(:,3)))
+        endif
+
+        if(iveg_icm/=0) then
+          if(iof_icm(170)==1) call writeout_nc(id_out_var(noutput+174), &
+       &'ICM_pmaxveg',4,1,nea,dble(pmaxveg(:,1)))
+          if(iof_icm(170)==2) call writeout_nc(id_out_var(noutput+174), &
+       &'ICM_pmaxveg',4,1,nea,dble(pmaxveg(:,2)))
+          if(iof_icm(170)==3) call writeout_nc(id_out_var(noutput+174), &
+       &'ICM_pmaxveg',4,1,nea,dble(pmaxveg(:,3)))
+        endif
+
+        if(iveg_icm/=0) then
+          if(iof_icm(171)==1) call writeout_nc(id_out_var(noutput+175), &
+       &'ICM_fiveg',4,1,nea,dble(fiveg(:,1)))
+          if(iof_icm(171)==2) call writeout_nc(id_out_var(noutput+175), &
+       &'ICM_fiveg',4,1,nea,dble(fiveg(:,2)))
+          if(iof_icm(171)==3) call writeout_nc(id_out_var(noutput+175), &
+       &'ICM_fiveg',4,1,nea,dble(fiveg(:,3)))
+        endif
+
+        if(iveg_icm/=0) then
+          if(iof_icm(172)==1) call writeout_nc(id_out_var(noutput+176), &
+       &'ICM_fnveg',4,1,nea,dble(fnveg(:,1)))
+          if(iof_icm(172)==2) call writeout_nc(id_out_var(noutput+176), &
+       &'ICM_fnveg',4,1,nea,dble(fnveg(:,2)))
+          if(iof_icm(172)==3) call writeout_nc(id_out_var(noutput+176), &
+       &'ICM_fnveg',4,1,nea,dble(fnveg(:,3)))
+        endif
+
+        if(iveg_icm/=0) then
+          if(iof_icm(173)==1) call writeout_nc(id_out_var(noutput+177), &
+       &'ICM_fpveg',4,1,nea,dble(fpveg(:,1)))
+          if(iof_icm(173)==2) call writeout_nc(id_out_var(noutput+177), &
+       &'ICM_fpveg',4,1,nea,dble(fpveg(:,2)))
+          if(iof_icm(173)==3) call writeout_nc(id_out_var(noutput+177), &
+       &'ICM_fpveg',4,1,nea,dble(fpveg(:,3)))
+        endif
+
+        if(iveg_icm/=0) then
+          if(iof_icm(174)==1) call writeout_nc(id_out_var(noutput+178), &
+       &'ICM_fsveg',4,1,nea,dble(fsveg(:,1)))
+          if(iof_icm(174)==2) call writeout_nc(id_out_var(noutput+178), &
+       &'ICM_fsveg',4,1,nea,dble(fsveg(:,2)))
+          if(iof_icm(174)==3) call writeout_nc(id_out_var(noutput+178), &
+       &'ICM_fsveg',4,1,nea,dble(fsveg(:,3)))
+        endif
+
+        if(iveg_icm/=0) then
+          if(iof_icm(175)==1) call writeout_nc(id_out_var(noutput+179), &
+       &'ICM_ffveg',4,1,nea,dble(ffveg(:,1)))
+          if(iof_icm(175)==2) call writeout_nc(id_out_var(noutput+179), &
+       &'ICM_ffveg',4,1,nea,dble(ffveg(:,2)))
+          if(iof_icm(175)==3) call writeout_nc(id_out_var(noutput+179), &
+       &'ICM_ffveg',4,1,nea,dble(ffveg(:,3)))
+        endif
+
+        if(iveg_icm/=0) then
+          if(iof_icm(176)==1) call writeout_nc(id_out_var(noutput+180), &
+       &'ICM_rdephcanveg',4,1,nea,dble(rdephcanveg(:,1)))
+          if(iof_icm(176)==2) call writeout_nc(id_out_var(noutput+180), &
+       &'ICM_rdephcanveg',4,1,nea,dble(rdephcanveg(:,2)))
+          if(iof_icm(176)==3) call writeout_nc(id_out_var(noutput+180), &
+       &'ICM_rdephcanveg',4,1,nea,dble(rdephcanveg(:,3)))
+        endif
+
+        if(iof_icm(177)==1.and.iveg_icm/=0) call writeout_nc(id_out_var(noutput+181), &
+     &'ICM_PrmPrdtveg',4,1,nea,dble(PrmPrdtveg))
+        if(iof_icm(178)==1.and.isav_icm/=0) call writeout_nc(id_out_var(noutput+182), &
+     &'ICM_PrmPrdtsav',5,nvrt,nea,dble(PrmPrdtsav))
+
+        if(iof_icm(179)==1.and.isav_icm/=0) call writeout_nc(id_out_var(noutput+183), &
+     &'ICM_plfsav',5,nvrt,nea,dble(plfsav))
+        if(iof_icm(180)==1.and.isav_icm/=0) call writeout_nc(id_out_var(noutput+184), &
+     &'ICM_pmaxsav',5,nvrt,nea,dble(pmaxsav))
+        if(iof_icm(181)==1.and.isav_icm/=0) call writeout_nc(id_out_var(noutput+185), &
+     &'ICM_fisav',5,nvrt,nea,dble(fisav))
+        if(iof_icm(182)==1.and.isav_icm/=0) call writeout_nc(id_out_var(noutput+186), &
+     &'ICM_fnsav',5,nvrt,nea,dble(fnsav))
+        if(iof_icm(183)==1.and.isav_icm/=0) call writeout_nc(id_out_var(noutput+187), &
+     &'ICM_fpsav',5,nvrt,nea,dble(fpsav))
+
+
+        if(iof_icm(184)==1) call writeout_nc(id_out_var(noutput+188), &
+     &'ICM_rad',5,nvrt,nea,dble(rad_el))
+
+        noutput=noutput+184
+        icount=184 !offset
 
         do i=1,ntrs(7)
           write(it_char,'(i72)')i
@@ -8156,11 +8515,12 @@
 
 #ifdef USE_FABM
         do i=1,ntrs(11)
-#if _FABM_API_VERSION_ < 1
-          call writeout_nc(id_out_var(noutput+i+4),trim(fs%model%state_variables(i)%name),2,nvrt,npa,tr_nd(i+fabm_istart-1,:,:))
-#else
+!          call writeout_nc(id_out_var(noutput+i+4),trim(fs%model%state_variables(i)%name),2,nvrt,npa,tr_nd(i+fabm_istart-1,:,:))
+!#if _FABM_API_VERSION_ < 1
+!          call writeout_nc(id_out_var(noutput+i+4),trim(fs%model%state_variables(i)%name),2,nvrt,npa,tr_nd(i+fabm_istart-1,:,:))
+!#else
           call writeout_nc(id_out_var(noutput+i+4),trim(fs%model%interior_state_variables(i)%name),2,nvrt,npa,tr_nd(i+fabm_istart-1,:,:))
-#endif
+!#endif
         end do
         noutput=noutput+ntrs(11)
 
@@ -8297,9 +8657,9 @@
         if(iof_ana(2)==1) call writeout_nc(id_out_var(noutput+6), &
      &'ANA_air_pres_grad_y',7,1,nsa,dpr_dy/rho0)
         if(iof_ana(3)==1) call writeout_nc(id_out_var(noutput+7), &
-     &'ANA_tide_pot_grad_x',7,1,nsa,0.69*grav*detp_dx)
+     &'ANA_tide_pot_grad_x',7,1,nsa,grav*detp_dx)
         if(iof_ana(4)==1) call writeout_nc(id_out_var(noutput+8), &
-     &'ANA_tide_pot_grad_y',7,1,nsa,0.69*grav*detp_dy)
+     &'ANA_tide_pot_grad_y',7,1,nsa,grav*detp_dy)
         if(iof_ana(5)==1) call writeout_nc(id_out_var(noutput+9), &
      &'ANA_hor_viscosity_x',8,nvrt,nsa,d2uv(1,:,:))
         if(iof_ana(6)==1) call writeout_nc(id_out_var(noutput+10), &
@@ -8327,7 +8687,7 @@
         if(noutput+4>2000) call parallel_abort('STEP: index over for id_out_var')
 
         !write(12,*)'id_out_var=',it,id_out_var(1:noutput)
-      endif !mod(it,nspool)==0
+      endif !mod(it,nspool)==0 && nc_out>0
 #else /*SINGLE_NETCDF_OUTPUT*/
       IF (mod(it,nspool)==0) THEN
         CALL NETCDF_SINGLE_OUTPUT(it)
@@ -8342,7 +8702,7 @@
 #endif
 
 !     Open new global output files and write header data
-      if(mod(it,ihfskip)==0) then
+      if(nc_out>0.and.mod(it,ihfskip)==0) then
         ifile=ifile+1  !output file #
         !ifile=it/ihfskip+1
         call fill_nc_header(1)
@@ -8692,13 +9052,17 @@
         j=nf90_def_var(ncid_hot,'CPOP',NF90_DOUBLE,var2d_dim,nwild(nvars_hot+33))
         j=nf90_def_var(ncid_hot,'CPON',NF90_DOUBLE,var2d_dim,nwild(nvars_hot+34))
         j=nf90_def_var(ncid_hot,'CPOC',NF90_DOUBLE,var2d_dim,nwild(nvars_hot+35))
+        j=nf90_def_var(ncid_hot,'tlfveg',NF90_DOUBLE,var2d_dim,nwild(nvars_hot+36))
+        j=nf90_def_var(ncid_hot,'tstveg',NF90_DOUBLE,var2d_dim,nwild(nvars_hot+37))
+        j=nf90_def_var(ncid_hot,'trtveg',NF90_DOUBLE,var2d_dim,nwild(nvars_hot+38))
+        j=nf90_def_var(ncid_hot,'hcanveg',NF90_DOUBLE,var2d_dim,nwild(nvars_hot+39))
         var2d_dim(1)=nvrt_dim; var2d_dim(2)=elem_dim
-        j=nf90_def_var(ncid_hot,'lfsav',NF90_DOUBLE,var2d_dim,nwild(nvars_hot+36))
-        j=nf90_def_var(ncid_hot,'stsav',NF90_DOUBLE,var2d_dim,nwild(nvars_hot+37))
-        j=nf90_def_var(ncid_hot,'rtsav',NF90_DOUBLE,var2d_dim,nwild(nvars_hot+38))
+        j=nf90_def_var(ncid_hot,'lfsav',NF90_DOUBLE,var2d_dim,nwild(nvars_hot+40))
+        j=nf90_def_var(ncid_hot,'stsav',NF90_DOUBLE,var2d_dim,nwild(nvars_hot+41))
+        j=nf90_def_var(ncid_hot,'rtsav',NF90_DOUBLE,var2d_dim,nwild(nvars_hot+42))
         !3D arrays
         var3d_dim(1)=ICM_ntr_dim; var3d_dim(2)=nvrt_dim; var3d_dim(3)=elem_dim
-        j=nf90_def_var(ncid_hot,'wqc',NF90_DOUBLE,var3d_dim,nwild(nvars_hot+39))
+        j=nf90_def_var(ncid_hot,'wqc',NF90_DOUBLE,var3d_dim,nwild(nvars_hot+43))
         j=nf90_enddef(ncid_hot)
 
         j=nf90_put_var(ncid_hot,nwild(nvars_hot+1),dble(SED_BENDO),(/1/),(/ne/))
@@ -8736,12 +9100,16 @@
         j=nf90_put_var(ncid_hot,nwild(nvars_hot+33),dble(transpose(CPOP(1:ne,1:3))),(/1,1/),(/3,ne/))
         j=nf90_put_var(ncid_hot,nwild(nvars_hot+34),dble(transpose(CPON(1:ne,1:3))),(/1,1/),(/3,ne/))
         j=nf90_put_var(ncid_hot,nwild(nvars_hot+35),dble(transpose(CPOC(1:ne,1:3))),(/1,1/),(/3,ne/))
-        j=nf90_put_var(ncid_hot,nwild(nvars_hot+36),dble(lfsav(1:nvrt,1:ne)),(/1,1/),(/nvrt,ne/))
-        j=nf90_put_var(ncid_hot,nwild(nvars_hot+37),dble(stsav(1:nvrt,1:ne)),(/1,1/),(/nvrt,ne/))
-        j=nf90_put_var(ncid_hot,nwild(nvars_hot+38),dble(rtsav(1:nvrt,1:ne)),(/1,1/),(/nvrt,ne/))
-        j=nf90_put_var(ncid_hot,nwild(nvars_hot+39),dble(wqc(1:ntrs(7),1:nvrt,1:ne)),(/1,1,1/),(/ntrs(7),nvrt,ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+36),dble(transpose(tlfveg(1:ne,1:3))),(/1,1/),(/3,ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+37),dble(transpose(tstveg(1:ne,1:3))),(/1,1/),(/3,ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+38),dble(transpose(trtveg(1:ne,1:3))),(/1,1/),(/3,ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+39),dble(transpose(hcanveg(1:ne,1:3))),(/1,1/),(/3,ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+40),dble(lfsav(1:nvrt,1:ne)),(/1,1/),(/nvrt,ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+41),dble(stsav(1:nvrt,1:ne)),(/1,1/),(/nvrt,ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+42),dble(rtsav(1:nvrt,1:ne)),(/1,1/),(/nvrt,ne/))
+        j=nf90_put_var(ncid_hot,nwild(nvars_hot+43),dble(wqc(1:ntrs(7),1:nvrt,1:ne)),(/1,1,1/),(/ntrs(7),nvrt,ne/))
         
-        nvars_hot=nvars_hot+39 !update
+        nvars_hot=nvars_hot+43 !update
 #endif /*USE_ICM*/
 
         !write(12,*)'After hot trcr:',it,real(trel),real(tr_nd0)
@@ -8919,7 +9287,7 @@
       first_call=.false.
 
 !     Deallocate temp. arrays to avoid memory leak
-      if(if_source==1) deallocate(msource)
+      if(if_source/=0) deallocate(msource)
       deallocate(hp_int,uth,vth,d2uv,dr_dxy,bcc)
       if(allocated(rwild)) deallocate(rwild)
       deallocate(swild9)
