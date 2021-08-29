@@ -782,13 +782,8 @@
      &      EXPORT_WALV_DELTC
 
          NAMELIST /ENGS/ ISOURCE, MESNL, MESIN, IFRIC, MESBF, FRICC,    &
-<<<<<<< HEAD
-     &      MESBR, MEVEG, ICRIT, IBREAK, ALPBJ, BRHD,                   &
-     &      LMAXETOT, MESDS, MESTR, TRICO, TRIRA, TRIURS, MESUO, MESIC
-=======
      &      MESBR, MEVEG, ICRIT, IBREAK, ALPBJ, BRCR,                   &
-     &      LMAXETOT, MESDS, MESTR, TRICO, TRIRA, TRIURS, MESUO
->>>>>>> b439711c3e28bca3759e668cfda732f9464dab53
+     &      LMAXETOT, MESDS, MESTR, TRICO, TRIRA, TRIURS, MESUO, MESIC
 
          NAMELIST /NUMS/ ICOMP, AMETHOD, SMETHOD, DMETHOD,              &
      &      IMPL_GEOADVECT,                                             &

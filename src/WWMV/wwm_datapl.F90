@@ -78,8 +78,9 @@
      &                         fwvor_advz_stokes,             & ! terms involved in the vortex force formalism (RADFLAG='VOR')
      &                         fwvor_gradpress,               &
      &                         fwvor_breaking,                &
-     &                         wafo_obcramp                   ! BM: flag (0/1:off/on) to apply a ramp on wave forces at open boundary
+     &                         wafo_obcramp,                  &! BM: flag (0/1:off/on) to apply a ramp on wave forces at open boundary
 !     &                         wafo_opbnd_ramp                  ! The corresponding ramp value defined at sides
+     &                         tanbeta_x, tanbeta_y
 
 # endif
 #endif

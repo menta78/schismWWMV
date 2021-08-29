@@ -418,13 +418,8 @@
       !just add the output statements in _step and flags in param.nml (same
       !order). Flags for modules other than hydro are only used inside USE_*
       if(iorder==0) then
-<<<<<<< HEAD
         allocate(iof_hydro(40),iof_wwm(44),iof_gen(max(1,ntracer_gen)),iof_age(max(1,ntracer_age)),level_age(ntracer_age/2), &
-     &iof_sed(3*sed_class+20),iof_eco(max(1,eco_class)),iof_icm(180),iof_cos(20),iof_fib(5), &
-=======
-        allocate(iof_hydro(40),iof_wwm(30),iof_gen(max(1,ntracer_gen)),iof_age(max(1,ntracer_age)),level_age(ntracer_age/2), &
      &iof_sed(3*sed_class+20),iof_eco(max(1,eco_class)),iof_icm(210),iof_cos(20),iof_fib(5), &
->>>>>>> b439711c3e28bca3759e668cfda732f9464dab53
      &iof_sed2d(14),iof_ice(10),iof_ana(20),iof_marsh(2),iof_dvd(max(1,ntrs(12))),stat=istat)
         if(istat/=0) call parallel_abort('INIT: iof failure')
         !Global output on/off flags
@@ -1776,18 +1771,12 @@
 !     Wave model arrays
 #ifdef  USE_WWM
       if(iorder==0) then
-<<<<<<< HEAD
-        allocate(wwave_force(2,nvrt,nsa), out_wwm(npa,50), out_wwm_windpar(npa,10), &
-               & stokes_vel(2,nvrt,npa), jpress(npa), sbr(2,npa), sbf(2,npa), &
-               & stokes_w_nd(nvrt,npa), stokes_vel_sd(2,nvrt,nsa),nne_wwm(np), stat=istat)
-=======
-        allocate(wwave_force(2,nvrt,nsa), out_wwm(npa,35), out_wwm_windpar(npa,10),   &
+        allocate(wwave_force(2,nvrt,nsa), out_wwm(npa,50), out_wwm_windpar(npa,10),   &
                & out_wwm_rol(npa,35), &
                & stokes_hvel(2,nvrt,npa), stokes_wvel(nvrt,npa),stokes_hvel_side(2,nvrt,nsa), stokes_wvel_side(nvrt,nsa), &
                & roller_stokes_hvel(2,nvrt,npa), roller_stokes_hvel_side(2,nvrt,nsa), &
                & jpress(npa), sbr(2,npa), sbf(2,npa), srol(2,npa),                    &
                & nne_wwm(np), stat=istat)
->>>>>>> b439711c3e28bca3759e668cfda732f9464dab53
         if(istat/=0) call parallel_abort('MAIN: WWM allocation failure')
       endif !iorder
       wwave_force=0.d0; out_wwm=0.d0; out_wwm_windpar=0.d0; out_wwm_rol=0.d0
