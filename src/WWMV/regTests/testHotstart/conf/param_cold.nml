@@ -384,7 +384,6 @@
   wtiminc = 8640000. !time step for atmos. forcing
   nrampwind = 0 !ramp-up option for atmos. forcing
   drampwind = 2. !needed if nrampwind/=0; ramp-up period in days
-  iwindoff = 0 !needed only if nws/=0; '1': needs windfactor.gr3
   iwind_form = -2 !needed if nws/=0
   !If impose_net_flux/=0 and nws=2, read in net _surface_ heat flux as var 'dlwrf'
   !(Downward Long Wave) in sflux_rad (solar radiation is still used separately),
@@ -517,7 +516,6 @@
 ! If USE_MARSH is on and isav=1, all .gr3 must have constant depths!
 !----------------------------------------------------------------------
   isav = 0 !on/off flag
-  sav_cd = 1.13 !only needed if isav=1. Drag coefficient
 
 !----------------------------------------------------------------------
 ! Coupling step with ICE module.

@@ -57,7 +57,7 @@ class testSPart(util.wwmTestTemplate):
     self.assertTrue(ratioP1NotZero > .999)
     ratioP2NotZero = np.sum(p2hs>0)/len(p2hs.flatten())
     self.assertTrue(ratioP2NotZero > .8) # the second peak develops after some fetch
-    ratioP3NotZero = np.sum(p3hs>0)/len(p3hs.flatten())
+    ratioP3NotZero = np.sum(p3hs>.01)/len(p3hs.flatten())
     self.assertTrue(ratioP3NotZero < .03) # p3hs should be always 0 but in about 2% of the point/time the algorithm splits one peak
 
     pt = [6., 34.]
