@@ -158,7 +158,7 @@
  MESUO          = 0                  ! Unresolved Obstacles Source Term
  ICRIT          = 0                  ! Wave breaking criterion: set as 1 - SWAN, 2 - Dingemans - default = 2
  ALPBJ          = 1.                 ! Dissipation proportionality coefficient (0.5 is default)
- BRHD           = 0.73               ! Wave breaking coefficient for Const. type wave breaking criterion; range: 0.6-0.83 (suggested 0.78)
+ BRCR           = 0.73               ! Wave breaking coefficient for Const. type wave breaking criterion; range: 0.6-0.83 (suggested 0.78)
  MEVEG          = 0
  LMAXETOT       = T                  ! Limit shallow water wave height by wave breaking limiter (default=T)
  MESDS          = 0                  ! Formulation for the whitecapping source function; usually same as MESIN
