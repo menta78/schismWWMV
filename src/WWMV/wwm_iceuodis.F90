@@ -1,5 +1,6 @@
       ! author: Lorenzo Mentaschi
-      !  First order approximation of the wave attenuation due to ice concentration.
+      !  Zero-order approximation of the wave attenuation due to ice concentration.
+      !  ICEUODIS stands for Ice Unresolved Obstacles Dissipation
       !  Based on UOST (Mentaschi et al. 2015, 2018, 2020)
       !  
       !  From the ice concentration an isotropic transparency coefficient is estimated.
@@ -13,12 +14,13 @@
       !  In the future, if this approximation will not be enough, 
       !  some improvement could be introduced:
       !  - a beta different from alpha could be estimated by assuming 
-      !  a uniform distribution of the ice in the cell
+      !  a uniform distribution of the ice in the cell, or by loading
+      !  the distribution of the ice,
       !  and the shadow could be estimated for the neighboring cells.
       !  - local wave growth could be taken into account (see the psi function in UOST)
       !  - if there is information on the size of the ice flows, the transparency coeff. 
       !  could be made frequency-dependent.
-      SUBROUTINE ICEDISSIP_SRCTRM(IP, SPEC, S, D)
+      SUBROUTINE ICEUODIS_SRCTRM(IP, SPEC, S, D)
          USE DATAPOOL
 
          IMPLICIT NONE
@@ -38,15 +40,17 @@
          IF (ICEC .LE. THR) RETURN
 
          ! computing the transparency coefficient
-         ! the total obstruction coefficient is given by sqrt(1-concentration)
+         ! the total obstruction coefficient is given by sqrt(concentration)
          ! the total transparency alpha is given by 1-obstruction
          ! here we assume that beta==alpha
          OBSTSECTION = SQRT(ICEC)
          BETA = 1-OBSTSECTION
 
-         DEG2M = REARTH*PI/180._rkind
          CELLAREA = SI(IP)
-         IF (LSPHE) CELLAREA = CELLAREA*DEG2M*DEG2M ! converting cell area to meters
+         IF (LSPHE) THEN
+           DEG2M = REARTH*PI/180._rkind
+           CELLAREA = CELLAREA*DEG2M*DEG2M ! converting cell area to meters
+         END IF
          ! cellsize computed as the ray of the equivalent circle
          CELLSIZE = SQRT(CELLAREA/PI) 
 
@@ -59,6 +63,6 @@
          END DO
          S = D*SPEC
          
-      END SUBROUTINE ICEDISSIP_SRCTRM
+      END SUBROUTINE ICEUODIS_SRCTRM
 
      
