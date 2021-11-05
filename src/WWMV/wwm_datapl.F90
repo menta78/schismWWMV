@@ -690,6 +690,8 @@
          LOGICAL                          :: L_HOTFILE = .FALSE.
          LOGICAL                          :: L_BOUC_PARAM = .FALSE.
          LOGICAL                          :: L_BOUC_SPEC = .FALSE.
+         LOGICAL                          :: USE_SINGLE_HOT = .FALSE.
+         INTEGER                          :: NF90_HOTFILE_TYPE
          TYPE NESTING_INFORMATION
            integer IWBMNP
            TYPE(TIMEDEF)                  :: eTime

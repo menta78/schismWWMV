@@ -71,8 +71,8 @@ class test2DExplicitPropagation(util.wwmTestTemplate):
     tmHot = ds1.variables['time'][:]
     ds1.close()
 
-    np.testing.assert_almost_equal(hsNoHot, hsHot)
-    np.testing.assert_almost_equal(tmNoHot, tmHot)
+    np.testing.assert_almost_equal(hsNoHot, hsHot, decimal=6)
+    np.testing.assert_almost_equal(tmNoHot, tmHot, decimal=6)
 
     ### CHECKING THE 2nd HOTSTART FILE #
     dshf = nc.Dataset('wwm_hot.nc')

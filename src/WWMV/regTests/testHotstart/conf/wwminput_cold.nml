@@ -473,6 +473,7 @@ ASPAR_LOCAL_LEVEL = 0               ! locality level 0 - a lot of memory 10 - no
  MULTIPLEIN     = 0    ! 0: read hotfile from one single file
                        ! 1: read hotfile from multiple files.
  FILEHOT_IN     = 'wwm_hot.nc' ! Hot file name for input
+ USE_SINGLE_HOT = T
 /
 
 &NESTING
