@@ -807,7 +807,8 @@
 
          NAMELIST /HOTFILE/ BEGTC, DELTC, UNITC, ENDTC, LHOTF,          &
      &      LCYCLEHOT, FILEHOT_OUT, HOTSTYLE_IN, HOTSTYLE_OUT,          &
-     &      MULTIPLEIN, MULTIPLEOUT, IHOTPOS_IN, FILEHOT_IN
+     &      MULTIPLEIN, MULTIPLEOUT, IHOTPOS_IN, FILEHOT_IN,            &
+     &      USE_SINGLE_HOT
 
          NAMELIST /NESTING/ L_NESTING, NB_GRID_NEST,                    &
      &      ListBEGTC, ListDELTC, ListUNITC, ListENDTC,                 &
@@ -1203,6 +1204,16 @@
          READ(INP%FHNDL, NML = HOTFILE)
          wwm_print_namelist(HOTFILE)
          FLUSH(CHK%FHNDL)
+         
+         IF (rkind.eq.4) THEN
+           NF90_HOTFILE_TYPE=NF90_FLOAT
+         ELSE
+           IF (USE_SINGLE_HOT) THEN
+             NF90_HOTFILE_TYPE=NF90_FLOAT
+           ELSE
+             NF90_HOTFILE_TYPE=NF90_DOUBLE
+           ENDIF
+         ENDIF
 
          MULTIPLEIN_HOT=MULTIPLEIN
          MULTIPLEOUT_HOT=MULTIPLEOUT

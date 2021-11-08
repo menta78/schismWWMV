@@ -85,7 +85,7 @@ MODULE wwm_hotfile_mod
       INTEGER :: HMNP, HMNE
       INTEGER :: HNUMSIG, HNUMDIR
       REAL(rkind) :: HFRLOW, HFRHIGH
-      OPEN(HOTIN%FHNDL, FILE = TRIM(FILEHOT), STATUS = 'OLD', FORM = 'UNFORMATTED')
+      OPEN(HOTIN%FHNDL, FILE = TRIM(FILEHOT), STATUS = 'OLD', FORM = 'UNFORMATTED', ACCESS = 'STREAM')
       READ(HOTIN%FHNDL) HMNP, HMNE
       READ(HOTIN%FHNDL) HNUMSIG, HNUMDIR, HFRLOW, HFRHIGH
       IF ( HMNP .NE. NP_TOTAL .OR. HMNE .NE. NE_TOTAL .OR.          &
@@ -93,14 +93,19 @@ MODULE wwm_hotfile_mod
      &    HFRHIGH .NE. FRHIGH ) THEN
         CALL WWM_ABORT('THE HOTFILE GEOMETRY DOES NOT FIT THE INPUT FILE')
       ENDIF
-      READ(HOTIN%FHNDL) NPLOC
-      allocate(IPLGloc(NPLOC), stat=istat)
-      IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 1')
-      READ(HOTIN%FHNDL) IPLGloc
-      deallocate(IPLGloc)
-!todo ordering      
-      READ(HOTIN%FHNDL) ACread
-      READ(HOTIN%FHNDL) VAR_ONEDread
+      IF (MULTIPLEOUT_HOT.eq.0) THEN
+        READ(HOTIN%FHNDL) ACread
+        READ(HOTIN%FHNDL) VAR_ONEDread
+      ELSE
+        READ(HOTIN%FHNDL) NPLOC
+        allocate(IPLGloc(NPLOC), stat=istat)
+        IF (istat/=0) CALL WWM_ABORT('wwm_hotfile, allocate error 1')
+        READ(HOTIN%FHNDL) IPLGloc
+        deallocate(IPLGloc)
+!tod  o ordering      
+        READ(HOTIN%FHNDL) ACread
+        READ(HOTIN%FHNDL) VAR_ONEDread
+      ENDIF
       CLOSE(HOTIN%FHNDL)
       END SUBROUTINE
 !**********************************************************************
@@ -600,7 +605,7 @@ MODULE wwm_hotfile_mod
       IMPLICIT NONE
       CHARACTER(len=140) :: FILERET
       CALL CREATE_LOCAL_HOTNAME(HOTOUT%FNAME, FILERET, MULTIPLEOUT_HOT, HOTSTYLE_OUT)
-      OPEN(HOTOUT%FHNDL, FILE = TRIM(FILERET), STATUS = 'UNKNOWN',  FORM = 'UNFORMATTED')
+      OPEN(HOTOUT%FHNDL, FILE = TRIM(FILERET), STATUS = 'UNKNOWN',  FORM = 'UNFORMATTED', ACCESS = 'STREAM')
       WRITE(HOTOUT%FHNDL) NP_TOTAL, NE_TOTAL
       WRITE(HOTOUT%FHNDL) NUMSIG, NUMDIR, FRLOW, FRHIGH
 #ifndef MPI_PARALL_GRID
@@ -800,7 +805,7 @@ MODULE wwm_hotfile_mod
       integer nboned_dims, nfreq_dims, ndir_dims, ntime_dims, mnp_dims
       integer ac_id
 !
-      iret = nf90_create(FILERET, NF90_CLOBBER, ncid)
+      iret = nf90_create(path=FILERET, cmode=OR(NF90_CLOBBER, NF90_64BIT_OFFSET), ncid=ncid)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 1, iret)
 
       CALL WRITE_NETCDF_HEADERS_1(ncid, nbTime, MULTIPLEOUT_W, GRIDWRITE_W, IOBPD_HISTORY_W, CG_HISTORY_W, np_write, ne_write)
@@ -820,10 +825,10 @@ MODULE wwm_hotfile_mod
       iret=nf90_inq_dimid(ncid, 'ocean_time', ntime_dims)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, iret)
 
-      iret=nf90_def_var(ncid,"ac",NF90_RUNTYPE,(/ nfreq_dims, ndir_dims, mnp_dims, ntime_dims/),ac_id)
+      iret=nf90_def_var(ncid,"ac",NF90_HOTFILE_TYPE,(/ nfreq_dims, ndir_dims, mnp_dims, ntime_dims/),ac_id)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 7, iret)
 
-      iret=nf90_def_var(ncid,"var_oned",NF90_RUNTYPE,(/ nboned_dims, mnp_dims, ntime_dims/),ac_id)
+      iret=nf90_def_var(ncid,"var_oned",NF90_HOTFILE_TYPE,(/ nboned_dims, mnp_dims, ntime_dims/),ac_id)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 8, iret)
 
       iret=nf90_put_att(ncid,ac_id,UNITS,'unknown')
@@ -886,11 +891,12 @@ MODULE wwm_hotfile_mod
       CALL CREATE_LOCAL_HOTNAME(HOTOUT%FNAME, FILERET, MULTIPLEOUT_HOT, HOTSTYLE_OUT)
       IF (IDXHOTOUT.eq.0) THEN
 !$OMP MASTER
-        IF (LCYCLEHOT) THEN
-          nbTime=2
-        ELSE
-          nbTime=-1
-        END IF
+       !IF (LCYCLEHOT) THEN
+       !  nbTime=2
+       !ELSE
+       !  nbTime=-1
+       !END IF
+        nbTime = -1
         IF (WriteOutputProcess_hot) THEN
           CALL WRITE_HOTFILE_PART_1(FILERET, nbTime, MULTIPLEOUT_HOT, GRIDWRITE, IOBPD_HISTORY, CG_HISTORY_W, np_write, ne_write)
         END IF
