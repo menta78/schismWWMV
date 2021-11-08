@@ -377,6 +377,14 @@
         WHERE(WWAVE_FORCE /= WWAVE_FORCE)
           WWAVE_FORCE = 0
         END WHERE
+
+        WHERE(WIND_INTPAR /= WIND_INTPAR)
+          WIND_INTPAR = 0
+        END WHERE
+
+        WHERE(OUTT_INTPAR /= OUTT_INTPAR)
+          OUTT_INTPAR = 0
+        END WHERE
       END SUBROUTINE WWM_II
 !**********************************************************************
 !*                                                                    *
