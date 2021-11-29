@@ -1676,7 +1676,7 @@
       SUBROUTINE SET_HMAX
         USE DATAPOOL
 
-        HMAX = BRCR * DEP
+        HMAX = BRCR * DEP * LMAXETOTFCT
 
         IF (LMONO_IN) HMAX = HMAX * SQRT(TWO)
 

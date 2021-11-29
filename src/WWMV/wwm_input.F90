@@ -783,7 +783,7 @@
 
          NAMELIST /ENGS/ ISOURCE, MESNL, MESIN, IFRIC, MESBF, FRICC,    &
      &      MESBR, MEVEG, ICRIT, IBREAK, ALPBJ, BRCR,                   &
-     &      LMAXETOT, MESDS, MESTR, TRICO, TRIRA, TRIURS, MESUO, MESIC
+     &      LMAXETOT, LMAXETOTFCT, MESDS, MESTR, TRICO, TRIRA, TRIURS, MESUO, MESIC
 
          NAMELIST /NUMS/ ICOMP, AMETHOD, SMETHOD, DMETHOD,              &
      &      IMPL_GEOADVECT,                                             &

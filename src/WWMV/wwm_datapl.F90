@@ -338,6 +338,7 @@
          LOGICAL    :: MULTIPLE_IN_WIND = .TRUE.
          LOGICAL    :: MULTIPLE_IN_WATLEV = .TRUE.
          LOGICAL    :: MULTIPLE_IN_CURR = .TRUE.
+         REAL(rkind):: LMAXETOTFCT = 1
 !
 ! SIN4 parameters
 !
