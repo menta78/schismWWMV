@@ -49,11 +49,11 @@
                      GDL = SQRT(DDEP(IP,1)**2 + DDEP(IP,2)**2) ! Achtung Gradient mit SQRT berechnet ...
                      GDD = MyATAN2(DDEP(IP,2), DDEP(IP,1))
                      IF (GDL < 1.0E-8) CYCLE
-                     GDL = SQRT(GDL)
+                    !GDL = SQRT(GDL)
                      IF (GDL > SLMAX) THEN
+                        WRITE(STAT%FHNDL,*) IP, SLMAX, GDL, GDD, DDEP(IP,1), DDEP(IP,2), 'MAXSLOPE'
                         DDEP(IP,1) = SLMAX*COS(GDD)
                         DDEP(IP,2) = SLMAX*SIN(GDD)
-                        WRITE(STAT%FHNDL,*) IP, SLMAX, GDL, GDD , 'MAXSLOPE'
                      END IF
                   END DO
                   FLUSH(STAT%FHNDL)
