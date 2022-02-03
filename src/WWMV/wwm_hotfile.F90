@@ -861,6 +861,8 @@ MODULE wwm_hotfile_mod
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 4, iret)
       iret=nf90_put_var(ncid,var_oned_id,VAR_ONEDwrite,start=(/1, 1, POS/), count=(/ nbOned, np_write, 1 /))
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 5, iret)
+      ! the file could be large. Sleeping for a while before attempting to close
+      CALL SLEEP(5)
       iret=nf90_close(ncid)
       CALL GENERIC_NETCDF_ERROR_WWM(CallFct, 6, iret)
       END SUBROUTINE

@@ -38,7 +38,7 @@
     &data_start_1d(1),data_start_2d(2),data_start_3d(3),data_start_4d(4), &
     &data_count_1d(1),data_count_2d(2),data_count_3d(3),data_count_4d(4)
 
-    integer,save,public :: ncid_schism_io
+    integer,save,public :: ncid_schism_io = 0
     public :: write_obe
     public :: report_timers
     public :: writeout_nc
@@ -382,7 +382,10 @@
       fname=out_dir(1:len_out_dir)//('schout_'//fgb//'_'//ifile_char(1:ifile_len)//'.nc')
 !'
 
-      if(iopen==1) iret=nf90_close(ncid_schism_io)
+      if(iopen==1) then
+        iret=nf90_sync(ncid_schism_io)
+        iret=nf90_close(ncid_schism_io)
+      endif
       iret=nf90_create(trim(adjustl(fname)),OR(NF90_NETCDF4,NF90_CLOBBER),ncid_schism_io)
       iret=nf90_def_dim(ncid_schism_io,'nSCHISM_hgrid_node',np,node_dim)
       iret=nf90_def_dim(ncid_schism_io,'nSCHISM_hgrid_face',ne,nele_dim)
