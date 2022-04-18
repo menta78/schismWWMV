@@ -695,6 +695,9 @@
         eTime1=eVAR % ListTime(iTime-1)
         eTime2=eVAR % ListTime(iTime)
         IF ((eTime1 .le. MAIN%TMJD).and.(MAIN%TMJD .le. eTime2)) THEN
+          IF (eTime1 .eq. eTime2) THEN
+            CALL WWM_ABORT('Error in CF ice forcing time setup, 2 consecutive time steps are the same time step', eTime1, eTime2)
+          END IF
           REC2=iTime
           REC1=iTime-1
           w2=(MAIN % TMJD - eTime1)/(eTime2-eTime1)
