@@ -95,6 +95,9 @@
                 TAUTOT(IP)=(UFRIC(IP)**2)*rhoa
 
               CASE (4)
+               ! formulation according to
+               ! Makin, V.K., 2003. A note on a parameterization of the sea
+               ! drag. Boundary-Layer Meteorology, 106, pp.593-600.
 
                 UFRIC(IP)  = WIND10 / 28.0_rkind ! First Guess
                 VISK   = 1.5E-5_rkind
