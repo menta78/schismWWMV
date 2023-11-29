@@ -1,0 +1,112 @@
+################################################################################
+# Parallel SCHISM Makefile
+#
+# User makes environment settings for particular OS / PLATFORM / COMPILER / MPI
+# below as well as setting flags having to do with included algorithms (e.g. sediment)
+# and the compiler configuration (debug, timing). 
+#
+# The environment settings are based on the following options.
+#
+# Compiler name:
+#   FCS: Serial compiler (for utilities)
+#   FCP: Parallel compiler
+#   FLD: Linker (in general same as parallel compiler)
+#
+# Compilation flags
+#   FCSFLAGS: Flags for serial compilation
+#   FCPFLAGS: Flags for parallel compilation (including all pre-processing flags)
+#   FLDFLAGS: Flags for linker (e.g., -O2)
+#
+# Preprocessor flags:
+#   DEBUG: Enable debugging code
+#   ORDERED_SUM: Enable globally ordered sums & dot-products for bit reproducibility
+#     of state quantities independent of number of processors (note: this can
+#     significantly degrade performance);
+#   INCLUDE_TIMING: Enable wallclock timing of code (note: this can have slight
+#     effect on performance);
+#   MPI_VERSION = 1 or 2: Version of MPI (try 2 first, if compile fails due to mpi
+#     related errors then switch to version 1;
+#
+# Libraries (needed for parallel code)
+#   MTSLIBS: Flags for linking ParMeTiS/MeTiS libaries
+################################################################################
+
+################################################################################
+## Environment for TACC/Stampede
+## Some modules are loaded at start-up thru .modules
+#################################################################################
+ENV = MENTA_ZEUS
+
+################################################################################
+# Environment 
+################################################################################
+
+NETCDF = /zeus/opt/impi19.5/netcdf/C_4.7.2-F_4.5.2_CXX_4.3.1
+HDF5   = /zeus/opt/impi19.5/hdf5/1.10.5
+MPI    = /zeus/opt/intel_2019/intel/compilers_and_libraries_2019.5.281/linux/mpi/intel64/
+
+
+FCP = mpiifort #MPI compiler
+FLD = $(FCP)
+# MPI vserion (1 or 2)
+PPFLAGS := $(PPFLAGS) -DMPIVERSION=2
+##########################################################################################
+############################ DEBUG + DEVELOPEMENT
+##########################################################################################
+#  FCPFLAGS = $(PPFLAGS) -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn all,nounused -gen-interfaces 
+#  FLDFLAGS = -O1 -g -fp-model precise -traceback -assume byterecl -check uninit -check bounds -check pointers -warn interfaces,nouncalled -gen-interfaces 
+##########################################################################################
+############################ PERFORMANCE SAVE OPTIMIZATION
+##########################################################################################
+# FCPFLAGS = $(PPFLAGS) -O1 -g -traceback -assume byterecl
+# FLDFLAGS = -O1 -g -traceback -assume byterecl
+##########################################################################################
+############################ AGGRESSIVE OPTIMIZATION
+##########################################################################################
+#  FCPFLAGS = $(PPFLAGS) -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl 
+#  FLDFLAGS = -g -traceback -O5 -axSSE4.2 -unroll-aggressive -assume byterecl
+##########################################################################################
+FCPFLAGS = $(PPFLAGS) -O3 -traceback -xCORE-AVX2 -L$(MPI)/lib -I$(MPI)/include
+FLDFLAGS = -O3 -traceback -xCORE-AVX2
+#####Libraries
+#From my own dir
+MTSLIBS = -L$(METIS_PATH)/lib -lparmetis -lmetis 
+#From Harry's dir
+#MTSLIBS = -L/work/01555/harryw/ParMetis-3.1-64bit/ -lparmetis -lmetis
+
+CDFLIBS = -L$(NETCDF)/lib -lnetcdff -lnetcdf -L$(HDF5)/lib -lhdf5_hl -lhdf5
+CDFMOD  = -I$(NETCDF)/include -I$(HDF5)/include # modules for netcdf
+
+################################################################################
+# Alternate executable name if you do not want the default. 
+################################################################################
+EXEC   := schism.ex
+
+################################################################################
+# Algorithm preference flags.
+# Comment out unwanted modules and flags.
+################################################################################
+
+# -DSCHISM is always on and is defined elsewhere
+
+include ../mk/include_modules
+
+# Don't comment out the follow ifdef
+ifdef USE_GOTM
+  GTMMOD =  -I/home1/01621/zhangy/selfe/trunk/src/GOTM3.2.5/modules/IFORT #modules
+  GTMLIBS = -L/home1/01621/zhangy/selfe/trunk/src/GOTM3.2.5/lib/IFORT -lturbulence_prod -lutil_prod
+else
+  GTMMOD =
+  GTMLIBS =
+endif
+
+######### Specialty compiler flags and workarounds
+
+# Add -DNO_TR_15581 like below for allocatable array problem in sflux_subs.F90
+# PPFLAGS := $(PPFLAGS) -DNO_TR_15581
+
+# Obsolete flags: use USE_WRAP flag to avoid problems in ParMetis lib (calling C from FORTRAN)
+# PPFLAGS := $(PPFLAGS) -DUSE_WRAP 
+
+#Temporary fix for Stampede cluster; leave it on
+# PPFLAGS := $(PPFLAGS) -DSTAMPEDE
